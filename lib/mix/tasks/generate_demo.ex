@@ -40,7 +40,7 @@ defmodule Mix.Tasks.GenerateDemo do
 
   @shortdoc "Generate demo contexts with router injection"
 
-  @default_delay 1.2
+  @default_delay 0.2
 
   def run(args) do
     {opts, remaining_args, _} =
@@ -88,34 +88,40 @@ defmodule Mix.Tasks.GenerateDemo do
   end
 
   defp join_multiline_commands(lines) do
-    lines
-    |> Enum.reduce([], fn line, acc ->
-      cond do
-        String.ends_with?(line, "\\") ->
-          # This line continues, remove the backslash and start accumulating
-          cleaned_line = String.trim_trailing(line, "\\")
-          [cleaned_line | acc]
+    {commands, current_command} =
+      Enum.reduce(lines, {[], ""}, fn line, {commands, accumulator} ->
+        trimmed_line = String.trim(line)
 
-        length(acc) > 0 ->
-          # We're in a multiline command, join with previous lines
-          accumulated = acc |> Enum.reverse() |> Enum.join(" ")
-          completed_command = "#{accumulated} #{line}"
-          # Reset accumulator and add completed command
-          # But we need to return this differently to maintain the list structure
-          [completed_command | Enum.drop(acc, length(acc))]
+        cond do
+          String.ends_with?(trimmed_line, "\\") ->
+            # This line continues, remove the backslash and accumulate
+            cleaned_line = String.trim_trailing(trimmed_line, "\\") |> String.trim()
 
-        true ->
-          # Single line command
-          [line | acc]
-      end
-    end)
+            new_accumulator =
+              if accumulator == "", do: cleaned_line, else: "#{accumulator} #{cleaned_line}"
+
+            {commands, new_accumulator}
+
+          accumulator != "" ->
+            # We're finishing a multiline command
+            completed_command = "#{accumulator} #{trimmed_line}" |> String.trim()
+            {[completed_command | commands], ""}
+
+          true ->
+            # Single line command
+            {[trimmed_line | commands], ""}
+        end
+      end)
+
+    # Handle case where file ends with a multiline command
+    final_commands = if current_command != "", do: [current_command | commands], else: commands
+
+    final_commands
     |> Enum.reverse()
     # Only keep actual mix commands
     |> Enum.filter(&String.contains?(&1, "mix "))
-  end
-
-  defp create_default_commands_file(_file_path) do
-    # Removed - no defaults
+    # Filter out malformed commands
+    |> Enum.filter(&(String.length(&1) > 10))
   end
 
   defp generate_demo_with_commands(commands, delay) do
@@ -124,8 +130,7 @@ defmodule Mix.Tasks.GenerateDemo do
     Mix.shell().info("Total commands: #{total}")
     Mix.shell().info("Delay between commands: #{delay} seconds")
     Mix.shell().info("Estimated time: #{estimate_time(total, delay)}")
-
-    Mix.shell().yes?("Continue with generation?") || Mix.raise("Aborted by user")
+    Mix.shell().info("Starting generation...")
 
     route_injections = []
 
@@ -188,9 +193,9 @@ defmodule Mix.Tasks.GenerateDemo do
   end
 
   defp extract_routes_from_output(output) do
-    # Look for the "Add the live routes" section
+    # Look for the "Add the live routes" or "Add the routes" section
     case Regex.run(
-           ~r/Add the (?:live )?routes to your browser scope.*?:\n(.*?)(?:\n\n|\nRemember)/s,
+           ~r/Add the (?:live )?routes to your browser scope.*?:\s*(.*?)(?:\s*Remember|\s*$)/s,
            output
          ) do
       [_full_match, routes_section] ->
@@ -209,9 +214,15 @@ defmodule Mix.Tasks.GenerateDemo do
             "resources "
           ])
         )
+        |> Enum.map(&String.trim/1)
 
       _ ->
-        []
+        # Fallback: look for any lines that look like routes
+        output
+        |> String.split("\n")
+        |> Enum.map(&String.trim/1)
+        |> Enum.filter(&Regex.match?(~r/^\s*(live|get|post|put|patch|delete|resources)\s+"/, &1))
+        |> Enum.map(&String.trim/1)
     end
   end
 
