@@ -14,13 +14,6 @@ defmodule CodeMySpec.Agents.AgentBehaviour do
   @callback execute(Agent.t(), prompt(), stream_handler()) ::
               {:ok, execution_result()} | {:error, execution_error()}
 
-  @doc """
-  Validate agent-specific configuration before agent creation.
-  Returns validated config or list of validation errors.
-  """
-  @callback validate_config(config()) ::
-              {:ok, config()} | {:error, [validation_error()]}
-
   @type prompt() :: String.t()
   @type stream_handler() :: (any() -> :ok)
   @type config() :: map()
