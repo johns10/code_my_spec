@@ -28,13 +28,14 @@ defmodule CodeMySpec.MixProject do
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
-  #
+  # mix archive.install hex phx_new 1.8.0-rc.4
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.7.21"},
-      {:phoenix_ecto, "~> 4.5"},
-      {:ecto_sql, "~> 3.10"},
+      {:bcrypt_elixir, "~> 3.0"},
+      {:phoenix, "~> 1.8.0-rc.4"},
+      {:phoenix_ecto, "~> 4.6"},
+      {:ecto_sql, "~> 3.13"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
