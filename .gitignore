@@ -35,3 +35,4 @@ code_my_spec-*.tar
 npm-debug.log
 /assets/node_modules/
 
+.DS_Store
