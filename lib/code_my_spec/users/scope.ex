@@ -17,8 +17,9 @@ defmodule CodeMySpec.Users.Scope do
   """
 
   alias CodeMySpec.Users.User
+  alias CodeMySpec.UserPreferences
 
-  defstruct user: nil
+  defstruct user: nil, active_account_id: nil, active_project_id: nil, token: nil
 
   @doc """
   Creates a scope for the given user.
@@ -26,7 +27,20 @@ defmodule CodeMySpec.Users.Scope do
   Returns nil if no user is given.
   """
   def for_user(%User{} = user) do
-    %__MODULE__{user: user}
+    scope = %__MODULE__{user: user}
+
+    case UserPreferences.get_user_preference(scope) do
+      {:ok, preferences} ->
+        %__MODULE__{
+          user: user,
+          active_account_id: preferences.active_account_id,
+          active_project_id: preferences.active_project_id,
+          token: preferences.token
+        }
+
+      {:error, :not_found} ->
+        scope
+    end
   end
 
   def for_user(nil), do: nil
