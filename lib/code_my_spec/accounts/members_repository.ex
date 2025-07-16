@@ -78,6 +78,7 @@ defmodule CodeMySpec.Accounts.MembersRepository do
     Repo.exists?(from m in Member, where: m.user_id == ^user_id and m.account_id == ^account_id)
   end
 
+  # TODO: Add logic when billing implemented
   @spec can_add_user_to_account?(integer()) :: true
   def can_add_user_to_account?(_account_id) do
     true

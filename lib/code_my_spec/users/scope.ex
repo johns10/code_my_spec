@@ -19,7 +19,13 @@ defmodule CodeMySpec.Users.Scope do
   alias CodeMySpec.Users.User
   alias CodeMySpec.UserPreferences
 
-  defstruct user: nil, active_account_id: nil, active_project_id: nil, token: nil
+  defstruct user: nil, active_account_id: nil, active_project_id: nil
+
+  @type t :: %__MODULE__{
+          user: User.t() | nil,
+          active_account_id: integer() | nil,
+          active_project_id: integer() | nil
+        }
 
   @doc """
   Creates a scope for the given user.
@@ -34,8 +40,7 @@ defmodule CodeMySpec.Users.Scope do
         %__MODULE__{
           user: user,
           active_account_id: preferences.active_account_id,
-          active_project_id: preferences.active_project_id,
-          token: preferences.token
+          active_project_id: preferences.active_project_id
         }
 
       {:error, :not_found} ->
