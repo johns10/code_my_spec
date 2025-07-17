@@ -12,8 +12,6 @@ defmodule CodeMySpec.Application do
       CodeMySpec.Repo,
       {DNSCluster, query: Application.get_env(:code_my_spec, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: CodeMySpec.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: CodeMySpec.Finch},
       # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
       # {CodeMySpec.Worker, arg},
       # Start to serve requests, typically the last entry
