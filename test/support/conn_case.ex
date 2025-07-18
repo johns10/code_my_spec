@@ -57,23 +57,6 @@ defmodule CodeMySpecWeb.ConnCase do
   end
 
   @doc """
-  Setup helper that sets up an active account for the user.
-
-      setup :setup_active_account
-
-  It creates an account and sets it as active for the user.
-  """
-  def setup_active_account(%{user: user} = context) do
-    account = CodeMySpec.AccountsFixtures.account_with_owner_fixture(user)
-    updated_scope = CodeMySpec.UsersFixtures.user_scope_fixture(user, account)
-    
-    # Create user preferences with the active account ID
-    CodeMySpec.UserPreferences.select_active_account(updated_scope, account.id)
-
-    Map.merge(context, %{account: account, scope: updated_scope})
-  end
-
-  @doc """
   Logs the given `user` into the `conn`.
 
   It returns an updated `conn`.
@@ -86,6 +69,36 @@ defmodule CodeMySpecWeb.ConnCase do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
+  end
+
+  @doc """
+  Setup helper that sets up an active account for the user.
+
+      setup :setup_active_account
+
+  It creates an account and sets it as active for the user.
+  """
+  def setup_active_account(%{user: user} = context) do
+    account = CodeMySpec.AccountsFixtures.account_with_owner_fixture(user)
+    updated_scope = CodeMySpec.UsersFixtures.user_scope_fixture(user, account)
+
+    # Create user preferences with the active account ID
+    CodeMySpec.UserPreferences.select_active_account(updated_scope, account.id)
+
+    Map.merge(context, %{account: account, scope: updated_scope})
+  end
+
+  @doc """
+  Setup helper that registers and logs in a user, then sets up an active account.
+
+      setup :register_log_in_setup_account
+
+  It combines register_and_log_in_user and setup_active_account.
+  """
+  def register_log_in_setup_account(context) do
+    context
+    |> register_and_log_in_user()
+    |> setup_active_account()
   end
 
   defp maybe_set_token_authenticated_at(_token, nil), do: nil

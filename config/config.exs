@@ -12,12 +12,12 @@ config :code_my_spec, :scopes,
     default: true,
     module: CodeMySpec.Users.Scope,
     assign_key: :current_scope,
-    access_path: [:user, :id],
-    schema_key: :user_id,
+    access_path: [:active_account, :id],
+    schema_key: :account_id,
     schema_type: :id,
-    schema_table: :users,
+    schema_table: :accounts,
     test_data_fixture: CodeMySpec.UsersFixtures,
-    test_setup_helper: :register_and_log_in_user
+    test_setup_helper: :register_log_in_setup_account
   ]
 
 config :code_my_spec,

@@ -16,14 +16,22 @@ defmodule CodeMySpec.Users.Scope do
   growing application requirements.
   """
 
+  alias CodeMySpec.Projects.Project
+  alias CodeMySpec.Accounts.Account
   alias CodeMySpec.Users.User
   alias CodeMySpec.UserPreferences
 
-  defstruct user: nil, active_account_id: nil, active_project_id: nil
+  defstruct user: nil,
+            active_account: nil,
+            active_account_id: nil,
+            active_project: nil,
+            active_project_id: nil
 
   @type t :: %__MODULE__{
           user: User.t() | nil,
+          active_account: Account.t() | nil,
           active_account_id: integer() | nil,
+          active_project: Project.t() | nil,
           active_project_id: integer() | nil
         }
 
@@ -39,7 +47,9 @@ defmodule CodeMySpec.Users.Scope do
       {:ok, preferences} ->
         %__MODULE__{
           user: user,
+          active_account: preferences.active_account,
           active_account_id: preferences.active_account_id,
+          active_project: preferences.active_project,
           active_project_id: preferences.active_project_id
         }
 

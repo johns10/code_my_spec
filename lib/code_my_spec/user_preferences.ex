@@ -46,7 +46,10 @@ defmodule CodeMySpec.UserPreferences do
 
   """
   def get_user_preference(%Scope{} = scope) do
-    case Repo.get_by(UserPreference, user_id: scope.user.id) do
+    UserPreference
+    |> preload([:active_account, :active_project])
+    |> Repo.get_by(user_id: scope.user.id)
+    |> case do
       nil -> {:error, :not_found}
       user_preference -> {:ok, user_preference}
     end
@@ -67,7 +70,9 @@ defmodule CodeMySpec.UserPreferences do
 
   """
   def get_user_preference!(%Scope{} = scope) do
-    Repo.get_by!(UserPreference, user_id: scope.user.id)
+    UserPreference
+    |> preload([:active_account, :active_project])
+    |> Repo.get_by!(user_id: scope.user.id)
   end
 
   @doc """
@@ -83,12 +88,17 @@ defmodule CodeMySpec.UserPreferences do
 
   """
   def create_user_preferences(%Scope{} = scope, attrs) do
-    with {:ok, user_preference = %UserPreference{}} <-
-           %UserPreference{}
-           |> UserPreference.changeset(attrs, scope)
-           |> Repo.insert() do
-      broadcast(scope, {:created, user_preference})
-      {:ok, user_preference}
+    %UserPreference{}
+    |> UserPreference.changeset(attrs, scope)
+    |> Repo.insert()
+    |> case do
+      {:ok, user_preference} ->
+        user_preference = Repo.preload(user_preference, [:active_account, :active_project])
+        broadcast(scope, {:created, user_preference})
+        {:ok, user_preference}
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
@@ -107,12 +117,17 @@ defmodule CodeMySpec.UserPreferences do
   def update_user_preferences(%Scope{} = scope, attrs) do
     user_preference = get_user_preference!(scope)
 
-    with {:ok, user_preference = %UserPreference{}} <-
-           user_preference
-           |> UserPreference.changeset(attrs, scope)
-           |> Repo.update() do
-      broadcast(scope, {:updated, user_preference})
-      {:ok, user_preference}
+    user_preference
+    |> UserPreference.changeset(attrs, scope)
+    |> Repo.update()
+    |> case do
+      {:ok, user_preference} ->
+        user_preference = Repo.preload(user_preference, [:active_account, :active_project])
+        broadcast(scope, {:updated, user_preference})
+        {:ok, user_preference}
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
