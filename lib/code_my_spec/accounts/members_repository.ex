@@ -109,6 +109,15 @@ defmodule CodeMySpec.Accounts.MembersRepository do
     |> Repo.all()
   end
 
+  @spec list_account_members(integer()) :: [Member.t()]
+  def list_account_members(account_id) do
+    from(m in Member,
+      where: m.account_id == ^account_id,
+      preload: [:user]
+    )
+    |> Repo.all()
+  end
+
   @spec list_accounts_with_role(integer(), account_role()) :: [Account.t()]
   def list_accounts_with_role(user_id, role) do
     from(a in Account,

@@ -245,7 +245,7 @@ defmodule CodeMySpec.AccountsTest do
       scope = user_scope_fixture(user)
       personal_account = personal_account_with_owner_fixture(user)
 
-      {:ok, result} = Accounts.ensure_personal_account(scope)
+      result = Accounts.ensure_personal_account(scope)
 
       assert result.id == personal_account.id
     end
@@ -254,7 +254,7 @@ defmodule CodeMySpec.AccountsTest do
       user = user_fixture()
       scope = user_scope_fixture(user)
 
-      {:ok, result} = Accounts.ensure_personal_account(scope)
+      result = Accounts.ensure_personal_account(scope)
 
       assert result.type == :personal
     end
@@ -269,7 +269,7 @@ defmodule CodeMySpec.AccountsTest do
       members = Accounts.list_account_members(scope, account.id)
 
       assert length(members) == 1
-      assert hd(members).id == user.id
+      assert hd(members).user_id == user.id
     end
 
     test "returns only owner for account with owner" do
@@ -278,8 +278,9 @@ defmodule CodeMySpec.AccountsTest do
       account = account_with_owner_fixture(user)
 
       members = Accounts.list_account_members(scope, account.id)
+      result = members |> Enum.at(0) |> Map.get(:user)
 
-      assert members == [user]
+      assert result == user
     end
   end
 
@@ -300,7 +301,9 @@ defmodule CodeMySpec.AccountsTest do
       account = account_with_owner_fixture(owner)
       user = user_fixture()
 
-      assert {:ok, member} = Accounts.add_user_to_account(owner_scope, user.id, account.id, :admin)
+      assert {:ok, member} =
+               Accounts.add_user_to_account(owner_scope, user.id, account.id, :admin)
+
       assert member.role == :admin
     end
 
@@ -325,7 +328,9 @@ defmodule CodeMySpec.AccountsTest do
       user = user_fixture()
       {:ok, member} = Accounts.add_user_to_account(owner_scope, user.id, account.id)
 
-      assert {:ok, removed_member} = Accounts.remove_user_from_account(owner_scope, user.id, account.id)
+      assert {:ok, removed_member} =
+               Accounts.remove_user_from_account(owner_scope, user.id, account.id)
+
       assert removed_member.id == member.id
     end
 
@@ -351,7 +356,9 @@ defmodule CodeMySpec.AccountsTest do
       user = user_fixture()
       {:ok, _member} = Accounts.add_user_to_account(owner_scope, user.id, account.id)
 
-      assert {:ok, updated_member} = Accounts.update_user_role(owner_scope, user.id, account.id, :admin)
+      assert {:ok, updated_member} =
+               Accounts.update_user_role(owner_scope, user.id, account.id, :admin)
+
       assert updated_member.role == :admin
     end
 

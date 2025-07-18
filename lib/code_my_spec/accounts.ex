@@ -61,6 +61,22 @@ defmodule CodeMySpec.Accounts do
   @doc """
   Gets a single account.
 
+  Returns nil if the Account does not exist or user has no access.
+  """
+  def get_account(%Scope{} = scope, id) do
+    case AccountsRepository.get_account(id) do
+      nil -> nil
+      account ->
+        case Authorization.authorize(:read_account, scope, account.id) do
+          false -> nil
+          true -> account
+        end
+    end
+  end
+
+  @doc """
+  Gets a single account.
+
   Raises `Ecto.NoResultsError` if the Account does not exist or user has no access.
   """
   def get_account!(%Scope{} = scope, id) do
@@ -152,7 +168,7 @@ defmodule CodeMySpec.Accounts do
   def list_account_members(%Scope{} = scope, account_id) do
     Authorization.authorize!(:read_account, scope, account_id)
 
-    MembersRepository.list_account_users(account_id)
+    MembersRepository.list_account_members(account_id)
   end
 
   @doc """
@@ -171,7 +187,7 @@ defmodule CodeMySpec.Accounts do
   Removes a user from an account.
   """
   def remove_user_from_account(%Scope{} = scope, user_id, account_id) do
-    Authorization.authorize!(:manage_account, scope, account_id)
+    Authorization.authorize!(:manage_members, scope, account_id)
 
     with {:ok, member} <- MembersRepository.remove_user_from_account(user_id, account_id) do
       broadcast_member(scope, {:deleted, member})
@@ -183,7 +199,7 @@ defmodule CodeMySpec.Accounts do
   Updates a user's role in an account.
   """
   def update_user_role(%Scope{} = scope, user_id, account_id, role) do
-    Authorization.authorize!(:manage_account, scope, account_id)
+    Authorization.authorize!(:manage_members, scope, account_id)
 
     with {:ok, member} <- MembersRepository.update_user_role(user_id, account_id, role) do
       broadcast_member(scope, {:updated, member})

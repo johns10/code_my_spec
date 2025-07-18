@@ -15,6 +15,10 @@ defmodule CodeMySpec.Authorization do
         user_role = MembersRepository.get_user_role(scope.user.id, account_id)
         user_role in [:owner, :admin]
 
+      {:delete_account, account_id} when is_integer(account_id) ->
+        user_role = MembersRepository.get_user_role(scope.user.id, account_id)
+        user_role == :owner
+
       _ ->
         false
     end

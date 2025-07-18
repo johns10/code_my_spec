@@ -59,12 +59,11 @@ defmodule CodeMySpec.Accounts.AccountsRepository do
 
     attrs = %{
       name: name,
-      slug: String.downcase(name) |> String.replace(~r/[^a-z0-9]/, "-"),
-      type: :personal
+      slug: String.downcase(name) |> String.replace(~r/[^a-z0-9]/, "-")
     }
 
     Repo.transaction(fn ->
-      with {:ok, account} <- create_account(attrs),
+      with {:ok, account} <- create_account_with_type(attrs, :personal),
            {:ok, _member} <-
              create_member(%{user_id: user_id, account_id: account.id, role: :owner}) do
         account
@@ -77,10 +76,8 @@ defmodule CodeMySpec.Accounts.AccountsRepository do
   @spec create_team_account(attrs :: map(), creator_id :: integer()) ::
           {:ok, Account.t()} | {:error, Ecto.Changeset.t()}
   def create_team_account(attrs, creator_id) do
-    team_attrs = Map.put(attrs, :type, :team)
-
     Repo.transaction(fn ->
-      with {:ok, account} <- create_account(team_attrs),
+      with {:ok, account} <- create_account_with_type(attrs, :team),
            {:ok, _member} <-
              create_member(%{user_id: creator_id, account_id: account.id, role: :owner}) do
         account
@@ -100,11 +97,15 @@ defmodule CodeMySpec.Accounts.AccountsRepository do
     |> Repo.one()
   end
 
-  @spec ensure_personal_account(user_id :: integer()) :: {:ok, Account.t()}
+  @spec ensure_personal_account(user_id :: integer()) :: Account.t()
   def ensure_personal_account(user_id) do
     case get_personal_account(user_id) do
-      nil -> create_personal_account(user_id)
-      account -> {:ok, account}
+      nil ->
+        {:ok, account} = create_personal_account(user_id)
+        account
+
+      account ->
+        account
     end
   end
 
@@ -126,6 +127,13 @@ defmodule CodeMySpec.Accounts.AccountsRepository do
   end
 
   ## Helper Functions
+
+  defp create_account_with_type(attrs, type) do
+    %Account{}
+    |> Account.changeset(attrs)
+    |> Ecto.Changeset.put_change(:type, type)
+    |> Repo.insert()
+  end
 
   defp create_member(attrs) do
     %Member{}

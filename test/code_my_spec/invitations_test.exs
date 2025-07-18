@@ -19,7 +19,7 @@ defmodule CodeMySpec.InvitationsTest do
     end
   end
 
-  describe "invite_user/3" do
+  describe "invite_user/4" do
     setup do
       owner = user_fixture()
       account = account_with_owner_fixture(owner)
@@ -32,7 +32,9 @@ defmodule CodeMySpec.InvitationsTest do
       email = "invitee@example.com"
       role = :member
 
-      assert {:ok, %Invitation{} = invitation} = Invitations.invite_user(scope, email, role)
+      assert {:ok, %Invitation{} = invitation} =
+               Invitations.invite_user(scope, scope.active_account_id, email, role)
+
       assert invitation.email == email
       assert invitation.role == role
       assert invitation.account_id == scope.active_account_id
@@ -48,7 +50,7 @@ defmodule CodeMySpec.InvitationsTest do
       add_member_to_account(member, scope.active_account_id, :member)
 
       assert {:error, :user_already_member} =
-               Invitations.invite_user(scope, member.email, :member)
+               Invitations.invite_user(scope, scope.active_account_id, member.email, :member)
     end
 
     test "returns error when user lacks manage_members permission" do
@@ -61,7 +63,7 @@ defmodule CodeMySpec.InvitationsTest do
       member_scope = user_scope_fixture(member, account)
 
       assert {:error, :not_authorized} =
-               Invitations.invite_user(member_scope, "test@example.com", :member)
+               Invitations.invite_user(member_scope, account.id, "test@example.com", :member)
     end
 
     test "returns error when scope has no active account" do
@@ -70,17 +72,17 @@ defmodule CodeMySpec.InvitationsTest do
       scope = user_scope_fixture(user)
 
       assert {:error, :no_active_account} =
-               Invitations.invite_user(scope, "test@example.com", :member)
+               Invitations.invite_user(scope, nil, "test@example.com", :member)
     end
 
     test "returns error with invalid email format", %{scope: scope} do
       assert {:error, %Ecto.Changeset{}} =
-               Invitations.invite_user(scope, "invalid-email", :member)
+               Invitations.invite_user(scope, scope.active_account_id, "invalid-email", :member)
     end
 
     test "returns error with invalid role", %{scope: scope} do
       assert_raise FunctionClauseError, fn ->
-        Invitations.invite_user(scope, "test@example.com", :invalid_role)
+        Invitations.invite_user(scope, scope.active_account_id, "test@example.com", :invalid_role)
       end
     end
 
@@ -90,7 +92,7 @@ defmodule CodeMySpec.InvitationsTest do
       admin_scope = user_scope_fixture(admin, account)
 
       assert {:ok, %Invitation{}} =
-               Invitations.invite_user(admin_scope, "test@example.com", :member)
+               Invitations.invite_user(admin_scope, account.id, "test@example.com", :member)
     end
   end
 
@@ -198,19 +200,12 @@ defmodule CodeMySpec.InvitationsTest do
       other_account = account_fixture()
       _other_invitation = invitation_fixture(other_account, owner)
 
-      invitations = Invitations.list_pending_invitations(scope)
+      invitations = Invitations.list_pending_invitations(scope, scope.active_account_id)
 
       assert length(invitations) == 2
       invitation_ids = Enum.map(invitations, & &1.id)
       assert invitation1.id in invitation_ids
       assert invitation2.id in invitation_ids
-    end
-
-    test "returns empty list when no active account" do
-      user = user_fixture()
-      scope = user_scope_fixture(user)
-
-      assert [] = Invitations.list_pending_invitations(scope)
     end
 
     test "returns empty list when user lacks read access" do
@@ -222,7 +217,7 @@ defmodule CodeMySpec.InvitationsTest do
       other_user = user_fixture()
       other_scope = user_scope_fixture(other_user, account)
 
-      assert [] = Invitations.list_pending_invitations(other_scope)
+      assert [] = Invitations.list_pending_invitations(other_scope, other_scope.active_account_id)
     end
   end
 
@@ -271,14 +266,15 @@ defmodule CodeMySpec.InvitationsTest do
 
     test "cancels invitation successfully", %{scope: scope, invitation: invitation} do
       assert {:ok, %Invitation{} = cancelled_invitation} =
-               Invitations.cancel_invitation(scope, invitation.id)
+               Invitations.cancel_invitation(scope, scope.active_account_id, invitation.id)
 
       assert cancelled_invitation.cancelled_at != nil
       assert cancelled_invitation.id == invitation.id
     end
 
     test "returns error when invitation not found", %{scope: scope} do
-      assert {:error, :not_found} = Invitations.cancel_invitation(scope, 999_999)
+      assert {:error, :not_found} =
+               Invitations.cancel_invitation(scope, scope.active_account_id, 999_999)
     end
 
     test "returns error when user lacks manage_members permission" do
@@ -292,7 +288,7 @@ defmodule CodeMySpec.InvitationsTest do
       member_scope = user_scope_fixture(member, account)
 
       assert {:error, :not_authorized} =
-               Invitations.cancel_invitation(member_scope, invitation.id)
+               Invitations.cancel_invitation(member_scope, account.id, invitation.id)
     end
 
     test "returns error when no active account" do
@@ -307,7 +303,8 @@ defmodule CodeMySpec.InvitationsTest do
       add_member_to_account(admin, account.id, :admin)
       admin_scope = user_scope_fixture(admin, account)
 
-      assert {:ok, %Invitation{}} = Invitations.cancel_invitation(admin_scope, invitation.id)
+      assert {:ok, %Invitation{}} =
+               Invitations.cancel_invitation(admin_scope, account.id, invitation.id)
     end
   end
 

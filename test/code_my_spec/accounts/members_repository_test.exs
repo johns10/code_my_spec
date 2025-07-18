@@ -252,6 +252,36 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
     end
   end
 
+  describe "list_account_members/1" do
+    test "returns members for account with users preloaded" do
+      account = account_fixture()
+      user1 = user_fixture()
+      user2 = user_fixture()
+      member1 = member_fixture(user1, account, :admin)
+      member2 = member_fixture(user2, account, :member)
+
+      members = MembersRepository.list_account_members(account.id)
+      member_ids = Enum.map(members, & &1.id)
+
+      assert length(members) == 2
+      assert member1.id in member_ids
+      assert member2.id in member_ids
+
+      # Verify users are preloaded
+      member_with_admin = Enum.find(members, &(&1.role == :admin))
+      member_with_member = Enum.find(members, &(&1.role == :member))
+
+      assert member_with_admin.user.id == user1.id
+      assert member_with_member.user.id == user2.id
+    end
+
+    test "returns empty list for account with no members" do
+      account = account_fixture()
+
+      assert MembersRepository.list_account_members(account.id) == []
+    end
+  end
+
   describe "list_accounts_with_role/2" do
     test "returns accounts where user has specific role" do
       user = user_fixture()

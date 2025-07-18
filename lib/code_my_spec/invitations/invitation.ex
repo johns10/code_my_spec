@@ -46,10 +46,12 @@ defmodule CodeMySpec.Invitations.Invitation do
       :cancelled_at,
       :expires_at
     ])
+    |> unique_constraint([:email, :account_id, :accepted_at, :cancelled_at],
+      name: :unique_account_email_when_nulls
+    )
     |> validate_required([:email, :role, :account_id, :invited_by_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/)
     |> validate_inclusion(:role, [:owner, :admin, :member])
-    |> unique_constraint([:email, :account_id])
     |> assoc_constraint(:account)
     |> assoc_constraint(:invited_by)
     |> put_token()

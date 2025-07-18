@@ -89,18 +89,10 @@ defmodule CodeMySpecWeb.CoreComponents do
       <.button navigate={~p"/"}>Home</.button>
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :string
-  attr :variant, :string, values: ~w(primary)
+  attr :class, :string, default: "btn btn-primary"
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
-
-    assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
-      end)
-
     if rest[:href] || rest[:navigate] || rest[:patch] do
       ~H"""
       <.link class={@class} {@rest}>
@@ -468,5 +460,67 @@ defmodule CodeMySpecWeb.CoreComponents do
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+  end
+
+  @doc """
+  Renders a button that morphs into an inline yes/no confirmation dialog with tooltip.
+
+  ## Examples
+
+      <.confirmation>
+        <:button>Delete</:button>
+        <:message>Are you sure you want to delete this item?</:message>
+      </.confirmation>
+
+      <.confirmation phx-click="delete" phx-value-id="123">
+        <:button class="btn-error">Delete User</:button>
+        <:message>This action cannot be undone. Are you sure?</:message>
+      </.confirmation>
+  """
+  attr :rest, :global, include: ~w(phx-click phx-value-id phx-target)
+  attr :class, :string, default: ""
+  attr :yes_text, :string, default: "Yes"
+  attr :no_text, :string, default: "No"
+
+  attr :tooltip_position, :string,
+    default: "tooltip-top",
+    values: ~w(tooltip-top tooltip-bottom tooltip-left tooltip-right)
+
+  slot :button, required: true do
+    attr :class, :string
+  end
+
+  slot :message, required: true
+
+  def confirmation(assigns) do
+    ~H"""
+    <div class={["inline-block", @class]} x-data="{ confirming: false }">
+      <!-- Initial Button State -->
+      <div x-show="!confirming" x-transition>
+        <button
+          class={["btn", @button[:class] || "btn-primary"]}
+          x-on:click="confirming = true"
+          type="button"
+        >
+          {render_slot(@button)}
+        </button>
+      </div>
+      
+    <!-- Confirmation State -->
+      <div x-show="confirming" x-transition class="inline-flex items-center gap-2">
+        <!-- Yes Button with Tooltip -->
+        <div class={["tooltip", @tooltip_position]} data-tip={render_slot(@message)}>
+          <button class="btn btn-sm btn-error" {@rest} x-on:click="confirming = false" type="button">
+            {@yes_text}
+          </button>
+        </div>
+        
+    <!-- No Button -->
+        <button class="btn btn-sm btn-ghost" x-on:click="confirming = false" type="button">
+          {@no_text}
+        </button>
+      </div>
+    </div>
+    """
   end
 end

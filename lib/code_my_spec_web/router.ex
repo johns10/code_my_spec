@@ -51,10 +51,13 @@ defmodule CodeMySpecWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{CodeMySpecWeb.UserAuth, :require_authenticated}] do
+      on_mount: [{CodeMySpecWeb.UserAuth, :require_authenticated}, {CodeMySpecWeb.Live.CurrentPathHook, :default}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/users/preferences", UserPreferenceLive.Form, :edit
+      live "/accounts", AccountLive.Index, :index
+      live "/accounts/picker", AccountLive.Picker, :index
+      live "/accounts/:id", AccountLive.Show, :show
     end
 
     post "/users/update-password", UserSessionController, :update_password

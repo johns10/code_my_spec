@@ -48,7 +48,12 @@ defmodule CodeMySpec.Invitations do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec invite_user(scope :: Scope.t(), email :: String.t(), role :: account_role()) ::
+  @spec invite_user(
+          scope :: Scope.t(),
+          account_id :: integer(),
+          email :: String.t(),
+          role :: account_role()
+        ) ::
           {:ok, Invitation.t()}
           | {:error,
              Ecto.Changeset.t()
@@ -57,19 +62,19 @@ defmodule CodeMySpec.Invitations do
              | :not_authorized
              | :no_active_account
              | :email_delivery_failed}
-  def invite_user(%Scope{active_account_id: account_id} = scope, email, role)
+  def invite_user(scope, account_id, email, role)
       when is_binary(email) and role in [:owner, :admin, :member] and not is_nil(account_id) do
     with :ok <- validate_manage_members_permission(scope, account_id),
          :ok <- validate_user_not_already_member(email, account_id),
          :ok <- validate_user_limit(account_id),
-         {:ok, invitation} <- create_invitation(scope, email, role),
+         {:ok, invitation} <- create_invitation(scope, account_id, email, role),
          :ok <- send_invitation_email(invitation) do
       broadcast_invitation(scope, {:created, invitation})
       {:ok, invitation}
     end
   end
 
-  def invite_user(%Scope{active_account_id: nil}, _email, _role) do
+  def invite_user(%Scope{active_account_id: nil}, _account_id, _email, _role) do
     {:error, :no_active_account}
   end
 
@@ -110,17 +115,17 @@ defmodule CodeMySpec.Invitations do
       [%Invitation{}, ...]
 
   """
-  @spec list_pending_invitations(scope :: Scope.t()) :: [Invitation.t()]
-  def list_pending_invitations(%Scope{active_account_id: account_id} = scope)
+  @spec list_pending_invitations(scope :: Scope.t(), account_id :: integer()) :: [Invitation.t()]
+  def list_pending_invitations(scope, account_id)
       when not is_nil(account_id) do
     with :ok <- validate_read_account_permission(scope, account_id) do
-      InvitationRepository.list_pending_invitations(scope)
+      InvitationRepository.list_pending_invitations(scope, account_id)
     else
       _ -> []
     end
   end
 
-  def list_pending_invitations(%Scope{active_account_id: nil}), do: []
+  def list_pending_invitations(_scope, nil), do: []
 
   @doc """
   Lists all invitations sent to a specific email address.
@@ -145,9 +150,9 @@ defmodule CodeMySpec.Invitations do
       {:error, :not_found}
 
   """
-  @spec cancel_invitation(scope :: Scope.t(), invitation_id :: integer()) ::
+  @spec cancel_invitation(scope :: Scope.t(), account_id :: integer(), invitation_id :: integer()) ::
           {:ok, Invitation.t()} | {:error, :not_found | :not_authorized | :no_active_account}
-  def cancel_invitation(%Scope{active_account_id: account_id} = scope, invitation_id)
+  def cancel_invitation(scope, account_id, invitation_id)
       when is_integer(invitation_id) and not is_nil(account_id) do
     with :ok <- validate_manage_members_permission(scope, account_id),
          {:ok, invitation} <- get_invitation_for_account(invitation_id, account_id),
@@ -158,6 +163,7 @@ defmodule CodeMySpec.Invitations do
     end
   end
 
+  @spec cancel_invitation(CodeMySpec.Users.Scope.t(), any()) :: {:error, :no_active_account}
   def cancel_invitation(%Scope{active_account_id: nil}, _invitation_id) do
     {:error, :no_active_account}
   end
@@ -233,11 +239,11 @@ defmodule CodeMySpec.Invitations do
     end
   end
 
-  defp create_invitation(scope, email, role) do
+  defp create_invitation(scope, account_id, email, role) do
     attrs = %{
       email: email,
       role: role,
-      account_id: scope.active_account_id,
+      account_id: account_id,
       invited_by_id: scope.user.id
     }
 
@@ -246,7 +252,7 @@ defmodule CodeMySpec.Invitations do
 
   defp send_invitation_email(invitation) do
     # In a real implementation, you would generate the proper URL
-    url = "https://example.com/invitations/#{invitation.token}"
+    url = "#{CodeMySpecWeb.Endpoint.url()}/invitations/accept/#{invitation.token}"
 
     case InvitationNotifier.deliver_invitation_email(invitation, url) do
       {:ok, _} -> :ok
@@ -286,7 +292,7 @@ defmodule CodeMySpec.Invitations do
   defp resolve_or_create_user(invitation, user_attrs) do
     # No email provided, use invitation email
     user_attrs_with_email = Map.put(user_attrs, :email, invitation.email)
-    
+
     case Users.get_user_by_email(invitation.email) do
       nil -> Users.register_user(user_attrs_with_email)
       existing_user -> {:ok, existing_user}
@@ -297,7 +303,7 @@ defmodule CodeMySpec.Invitations do
     # Get the inviter to create a scope with proper permissions
     inviter = Users.get_user!(invitation.invited_by_id)
     inviter_scope = %Scope{user: inviter, active_account_id: invitation.account_id}
-    
+
     Accounts.add_user_to_account(inviter_scope, user.id, invitation.account_id, invitation.role)
   end
 

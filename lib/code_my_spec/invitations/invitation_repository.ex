@@ -22,10 +22,8 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
 
   @spec create_invitation(scope :: Scope.t(), attrs :: invitation_attrs()) ::
           {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()}
-  def create_invitation(%Scope{active_account_id: account_id}, attrs)
+  def create_invitation(_scope, %{account_id: account_id} = attrs)
       when not is_nil(account_id) do
-    attrs = Map.put(attrs, :account_id, account_id)
-
     %Invitation{}
     |> Invitation.changeset(attrs)
     |> Repo.insert()
@@ -53,34 +51,21 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
     |> Repo.all()
   end
 
-  def get_invitation(%Scope{active_account_id: nil}, _id), do: nil
-
   @spec get_invitation(scope :: Scope.t(), id :: integer()) :: Invitation.t() | nil
-  def get_invitation(%Scope{active_account_id: account_id}, id) when not is_nil(account_id) do
+  def get_invitation(_scope, id) do
     from(i in Invitation, preload: [:account])
-    |> by_account(account_id)
     |> Repo.get(id)
   end
 
-  def get_invitation!(%Scope{active_account_id: nil}, _id) do
-    raise Ecto.NoResultsError, queryable: Invitation
-  end
-
   @spec get_invitation!(scope :: Scope.t(), id :: integer()) :: Invitation.t()
-  def get_invitation!(%Scope{active_account_id: account_id}, id) when not is_nil(account_id) do
+  def get_invitation!(_scope, id) do
     from(i in Invitation, preload: [:account])
-    |> by_account(account_id)
     |> Repo.get!(id)
   end
 
   @spec update_invitation(scope :: Scope.t(), Invitation.t(), attrs :: map()) ::
           {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()}
-  def update_invitation(
-        %Scope{active_account_id: account_id},
-        %Invitation{account_id: invitation_account_id} = invitation,
-        attrs
-      )
-      when account_id == invitation_account_id do
+  def update_invitation(_scope, invitation, attrs) do
     invitation
     |> Invitation.changeset(attrs)
     |> Repo.update()
@@ -88,11 +73,7 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
 
   @spec delete_invitation(scope :: Scope.t(), Invitation.t()) ::
           {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()}
-  def delete_invitation(
-        %Scope{active_account_id: account_id},
-        %Invitation{account_id: invitation_account_id} = invitation
-      )
-      when account_id == invitation_account_id do
+  def delete_invitation(_scope, invitation) do
     Repo.delete(invitation)
   end
 
@@ -100,7 +81,7 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
 
   @spec get_invitation_by_token(token :: String.t()) :: Invitation.t() | nil
   def get_invitation_by_token(token) do
-    from(i in Invitation, where: i.token == ^token, preload: [:account])
+    from(i in Invitation, where: i.token == ^token, preload: [:account, :invited_by])
     |> Repo.one()
   end
 
@@ -115,21 +96,16 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
 
   @spec accept(scope :: Scope.t(), Invitation.t()) ::
           {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()}
-  def accept(
-        %Scope{active_account_id: account_id},
-        %Invitation{account_id: invitation_account_id} = invitation
-      )
-      when account_id == invitation_account_id do
+  def accept(_scope, invitation) do
     update_invitation_status(invitation, :accepted_at)
   end
 
   @spec cancel(scope :: Scope.t(), Invitation.t()) ::
           {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()}
   def cancel(
-        %Scope{active_account_id: account_id},
-        %Invitation{account_id: invitation_account_id} = invitation
-      )
-      when account_id == invitation_account_id do
+        _scope,
+        %Invitation{} = invitation
+      ) do
     update_invitation_status(invitation, :cancelled_at)
   end
 
@@ -193,20 +169,20 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
     |> Repo.delete_all()
   end
 
-  @spec list_pending_invitations(scope :: Scope.t()) :: [Invitation.t()]
-  def list_pending_invitations(%Scope{active_account_id: account_id})
-      when not is_nil(account_id) do
+  @spec list_pending_invitations(scope :: Scope.t(), account_id :: integer()) :: [Invitation.t()]
+  def list_pending_invitations(_scope, nil), do: []
+
+  def list_pending_invitations(_scope, account_id) do
     from(i in Invitation)
     |> by_account(account_id)
     |> pending()
     |> not_expired()
+    |> preload(:invited_by)
     |> Repo.all()
   end
 
-  def list_pending_invitations(%Scope{active_account_id: nil}), do: []
-
-  @spec count_pending_invitations(scope :: Scope.t()) :: integer()
-  def count_pending_invitations(%Scope{active_account_id: account_id})
+  @spec count_pending_invitations(scope :: Scope.t(), account_id :: integer()) :: integer()
+  def count_pending_invitations(_scope, account_id)
       when not is_nil(account_id) do
     from(i in Invitation)
     |> by_account(account_id)
@@ -215,5 +191,5 @@ defmodule CodeMySpec.Invitations.InvitationRepository do
     |> Repo.aggregate(:count, :id)
   end
 
-  def count_pending_invitations(%Scope{active_account_id: nil}), do: 0
+  def count_pending_invitations(_scope, nil), do: 0
 end
