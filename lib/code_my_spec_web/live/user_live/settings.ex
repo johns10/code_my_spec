@@ -7,7 +7,7 @@ defmodule CodeMySpecWeb.UserLive.Settings do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_path={@current_path}>
       <div class="text-center">
         <.header>
           Account Settings
@@ -23,7 +23,7 @@ defmodule CodeMySpecWeb.UserLive.Settings do
           autocomplete="username"
           required
         />
-        <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
+        <.button phx-disable-with="Changing...">Change Email</.button>
       </.form>
 
       <div class="divider" />
@@ -57,7 +57,7 @@ defmodule CodeMySpecWeb.UserLive.Settings do
           label="Confirm new password"
           autocomplete="new-password"
         />
-        <.button variant="primary" phx-disable-with="Saving...">
+        <.button phx-disable-with="Saving...">
           Save Password
         </.button>
       </.form>

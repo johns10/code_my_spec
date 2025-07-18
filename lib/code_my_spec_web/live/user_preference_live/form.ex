@@ -6,7 +6,7 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_path={@current_path}>
       <.header>
         User Preferences
         <:subtitle>Manage your user preferences and settings.</:subtitle>
@@ -17,7 +17,7 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
         <.input field={@form[:active_project_id]} type="number" label="Active project" />
         <.input field={@form[:token]} type="text" label="Token" readonly />
         <footer>
-          <.button phx-disable-with="Saving..." variant="primary">Save Preferences</.button>
+          <.button phx-disable-with="Saving...">Save Preferences</.button>
           <.button type="button" phx-click="generate_token">Generate New Token</.button>
         </footer>
       </.form>
@@ -36,7 +36,12 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
 
   @impl true
   def handle_event("validate", %{"user_preference" => user_preference_params}, socket) do
-    changeset = UserPreferences.change_user_preferences(socket.assigns.current_scope, user_preference_params)
+    changeset =
+      UserPreferences.change_user_preferences(
+        socket.assigns.current_scope,
+        user_preference_params
+      )
+
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
@@ -44,6 +49,7 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
     case UserPreferences.get_user_preference(socket.assigns.current_scope) do
       {:ok, _user_preference} ->
         update_user_preferences(socket, user_preference_params)
+
       {:error, :not_found} ->
         create_user_preferences(socket, user_preference_params)
     end
@@ -53,6 +59,7 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
     case UserPreferences.generate_token(socket.assigns.current_scope) do
       {:ok, _user_preference} ->
         changeset = UserPreferences.change_user_preferences(socket.assigns.current_scope)
+
         {:noreply,
          socket
          |> put_flash(:info, "Token generated successfully")
@@ -64,12 +71,18 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
   end
 
   defp update_user_preferences(socket, user_preference_params) do
-    case UserPreferences.update_user_preferences(socket.assigns.current_scope, user_preference_params) do
+    case UserPreferences.update_user_preferences(
+           socket.assigns.current_scope,
+           user_preference_params
+         ) do
       {:ok, _user_preference} ->
         {:noreply,
          socket
          |> put_flash(:info, "User preferences updated successfully")
-         |> assign(:form, to_form(UserPreferences.change_user_preferences(socket.assigns.current_scope)))}
+         |> assign(
+           :form,
+           to_form(UserPreferences.change_user_preferences(socket.assigns.current_scope))
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -77,12 +90,18 @@ defmodule CodeMySpecWeb.UserPreferenceLive.Form do
   end
 
   defp create_user_preferences(socket, user_preference_params) do
-    case UserPreferences.create_user_preferences(socket.assigns.current_scope, user_preference_params) do
+    case UserPreferences.create_user_preferences(
+           socket.assigns.current_scope,
+           user_preference_params
+         ) do
       {:ok, _user_preference} ->
         {:noreply,
          socket
          |> put_flash(:info, "User preferences created successfully")
-         |> assign(:form, to_form(UserPreferences.change_user_preferences(socket.assigns.current_scope)))}
+         |> assign(
+           :form,
+           to_form(UserPreferences.change_user_preferences(socket.assigns.current_scope))
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

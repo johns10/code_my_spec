@@ -15,10 +15,14 @@ defmodule CodeMySpec.Repo.Migrations.CreateInvitationsTable do
       timestamps()
     end
 
+    create unique_index(:invitations, [:email, :account_id],
+             where: "accepted_at IS NULL AND cancelled_at IS NULL",
+             name: :unique_account_email_when_nulls
+           )
+
     create unique_index(:invitations, [:token])
     create index(:invitations, [:account_id])
     create index(:invitations, [:email])
-    create index(:invitations, [:status])
     create index(:invitations, [:expires_at])
   end
 end

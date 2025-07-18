@@ -51,13 +51,19 @@ defmodule CodeMySpecWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{CodeMySpecWeb.UserAuth, :require_authenticated}, {CodeMySpecWeb.Live.CurrentPathHook, :default}] do
+      on_mount: [
+        {CodeMySpecWeb.UserAuth, :require_authenticated},
+        {CodeMySpecWeb.Live.CurrentPathHook, :default}
+      ] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/users/preferences", UserPreferenceLive.Form, :edit
       live "/accounts", AccountLive.Index, :index
       live "/accounts/picker", AccountLive.Picker, :index
-      live "/accounts/:id", AccountLive.Show, :show
+      live "/accounts/:id", AccountLive.Manage, :show
+      live "/accounts/:id/manage", AccountLive.Manage, :show
+      live "/accounts/:id/members", AccountLive.Members, :show
+      live "/accounts/:id/invitations", AccountLive.Invitations, :show
     end
 
     post "/users/update-password", UserSessionController, :update_password
@@ -71,6 +77,8 @@ defmodule CodeMySpecWeb.Router do
       live "/users/register", UserLive.Registration, :new
       live "/users/log-in", UserLive.Login, :new
       live "/users/log-in/:token", UserLive.Confirmation, :new
+      live "/invitations/accept", InvitationsLive.Accept, :new
+      live "/invitations/accept/:token", InvitationsLive.Accept, :new
     end
 
     post "/users/log-in", UserSessionController, :create

@@ -5,6 +5,8 @@ defmodule CodeMySpecWeb.Layouts do
   """
   use CodeMySpecWeb, :html
 
+  import CodeMySpecWeb.AccountLive.Components.AccountsBreadcrumb
+
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
@@ -31,6 +33,8 @@ defmodule CodeMySpecWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :current_path, :string, default: "/"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -45,7 +49,12 @@ defmodule CodeMySpecWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
+            <%= if @current_scope do %>
+              <.account_breadcrumb scope={@current_scope} current_path={@current_path} />
+            <% end %>
+          </li>
+          <li>
+            <.link href={~p"/accounts"} class="btn btn-ghost">Accounts</.link>
           </li>
           <li>
             <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
