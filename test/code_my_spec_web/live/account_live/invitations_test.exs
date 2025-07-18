@@ -221,7 +221,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       |> form("#invite-form", invitation: %{email: existing_member.email, role: "member"})
       |> render_submit()
 
-      html = render(invitations_live)
+      _html = render(invitations_live)
       assert has_element?(invitations_live, "form#invite-form")
       # TODO: Fix this test
       # assert html =~ "has already been taken"

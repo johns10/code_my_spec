@@ -6,6 +6,7 @@ defmodule CodeMySpecWeb.Layouts do
   use CodeMySpecWeb, :html
 
   import CodeMySpecWeb.AccountLive.Components.AccountsBreadcrumb
+  import CodeMySpecWeb.ProjectLive.Components.ProjectBreadcrumb
 
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
@@ -49,15 +50,10 @@ defmodule CodeMySpecWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
-            <%= if @current_scope do %>
-              <.account_breadcrumb scope={@current_scope} current_path={@current_path} />
-            <% end %>
-          </li>
-          <li>
             <.link href={~p"/accounts"} class="btn btn-ghost">Accounts</.link>
           </li>
           <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
+            <.link href={~p"/projects"} class="btn btn-ghost">Projects</.link>
           </li>
           <li>
             <.theme_toggle />
@@ -70,6 +66,15 @@ defmodule CodeMySpecWeb.Layouts do
         </ul>
       </div>
     </header>
+
+    <%= if @current_scope do %>
+      <div class="breadcrumbs text-sm px-8">
+        <ul>
+          <li><.account_breadcrumb scope={@current_scope} current_path={@current_path} /></li>
+          <li><.project_breadcrumb scope={@current_scope} current_path={@current_path} /></li>
+        </ul>
+      </div>
+    <% end %>
 
     <main class="px-4 py-20 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl space-y-4">

@@ -64,6 +64,11 @@ defmodule CodeMySpecWeb.Router do
       live "/accounts/:id/manage", AccountLive.Manage, :show
       live "/accounts/:id/members", AccountLive.Members, :show
       live "/accounts/:id/invitations", AccountLive.Invitations, :show
+      live "/projects", ProjectLive.Index, :index
+      live "/projects/picker", ProjectLive.Picker, :index
+      live "/projects/new", ProjectLive.Form, :new
+      live "/projects/:id", ProjectLive.Show, :show
+      live "/projects/:id/edit", ProjectLive.Form, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password
