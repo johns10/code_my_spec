@@ -77,6 +77,14 @@ config :code_my_spec, :agent_implementations, %{
   unit_coder: :claude_code
 }
 
+
+config :code_my_spec, ExOauth2Provider,
+  repo: CodeMySpec.Repo,
+  access_token: CodeMySpec.Oauth.AccessToken,
+  application: CodeMySpec.Oauth.Application,
+  access_grant: CodeMySpec.Oauth.AccessGrant,
+  resource_owner: CodeMySpec.Users.User
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -2,6 +2,19 @@ defmodule CodeMySpec.Projects.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          name: String.t(),
+          description: String.t() | nil,
+          code_repo: String.t() | nil,
+          docs_repo: String.t() | nil,
+          setup_error: String.t() | nil,
+          account_id: integer() | nil,
+          status: :created | :setup_queued | :initializing | :deps_installing | :setting_up_auth | :compiling | :testing | :committing | :ready | :failed,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
   schema "projects" do
     field :name, :string
     field :description, :string

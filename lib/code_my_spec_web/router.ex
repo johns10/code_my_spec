@@ -23,6 +23,23 @@ defmodule CodeMySpecWeb.Router do
     get "/", PageController, :home
   end
 
+  # OAuth2 routes
+  scope "/oauth", CodeMySpecWeb do
+    pipe_through :browser
+    
+    get "/authorize", OAuthController, :authorize
+    post "/authorize", OAuthController, :create
+    delete "/authorize", OAuthController, :delete
+  end
+  
+  # OAuth2 API endpoints (no CSRF protection)
+  scope "/oauth", CodeMySpecWeb do
+    pipe_through :api
+    
+    post "/token", OAuthController, :token
+    post "/revoke", OAuthController, :revoke
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", CodeMySpecWeb do
   #   pipe_through :api

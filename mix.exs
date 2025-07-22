@@ -62,10 +62,11 @@ defmodule CodeMySpec.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:mox, "~> 1.2"},
-      {:paper_trail, "~> 1.1.2"},
+      {:paper_trail, "~> 1.1"},
       {:mcp_sse, "~> 0.1.6"},
       {:oban, "~> 2.19.4"},
-      {:briefly, "~> 0.5.1"}
+      {:briefly, "~> 0.5.1"},
+      {:ex_oauth2_provider, "~> 0.5.7"}
     ]
   end
 
