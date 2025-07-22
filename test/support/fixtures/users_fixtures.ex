@@ -54,6 +54,7 @@ defmodule CodeMySpec.UsersFixtures do
     # Set the active account for the user
     Scope.for_user(user)
     |> Map.put(:active_account_id, account.id)
+    |> Map.put(:active_account, account)
   end
 
   def set_password(user) do

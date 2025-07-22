@@ -112,7 +112,6 @@ defmodule CodeMySpecWeb.AccountLive.Invitations do
          |> assign(:invite_form, to_form(Invitation.changeset(%Invitation{}, %{})))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        IO.inspect(changeset)
         {:noreply, assign(socket, :invite_form, to_form(changeset))}
 
       {:error, :user_already_member} ->

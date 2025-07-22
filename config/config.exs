@@ -77,6 +77,8 @@ config :code_my_spec, :agent_implementations, %{
   unit_coder: :claude_code
 }
 
+config :paper_trail, repo: CodeMySpec.Repo, strict_mode: true
+
 
 config :code_my_spec, ExOauth2Provider,
   repo: CodeMySpec.Repo,
