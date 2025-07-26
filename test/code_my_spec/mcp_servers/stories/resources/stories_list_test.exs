@@ -5,6 +5,10 @@ defmodule CodeMySpec.MCPServers.Stories.Resources.StoriesListTest do
   alias CodeMySpec.Users.Scope
   alias Hermes.Server.Frame
 
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(CodeMySpec.Repo)
+  end
+
   describe "StoriesList resource" do
     test "returns correct uri and mime_type" do
       assert StoriesList.uri() == "stories://project/template"

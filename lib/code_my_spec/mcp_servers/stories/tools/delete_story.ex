@@ -14,7 +14,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteStory do
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.delete_story(scope, params.id) do
+         story <- Stories.get_story!(scope, params.id),
+         {:ok, story} <- Stories.delete_story(scope, story) do
       {:reply, StoriesMapper.story_response(story), frame}
     else
       {:error, changeset = %Ecto.Changeset{}} ->

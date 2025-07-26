@@ -5,6 +5,8 @@ defmodule CodeMySpec.UsersFixtures do
   """
 
   import Ecto.Query
+  import CodeMySpec.AccountsFixtures
+  import CodeMySpec.ProjectsFixtures
 
   alias CodeMySpec.Users
   alias CodeMySpec.Users.Scope
@@ -62,6 +64,13 @@ defmodule CodeMySpec.UsersFixtures do
     user_scope_fixture(user, account)
     |> Map.put(:active_project_id, project.id)
     |> Map.put(:active_project, project)
+  end
+
+  def full_scope_fixture() do
+    user = user_fixture()
+    account = account_fixture()
+    project = user_scope_fixture(user, account) |> project_fixture()
+    user_scope_fixture(user, account, project)
   end
 
   def set_password(user) do

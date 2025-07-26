@@ -2,8 +2,13 @@ defmodule CodeMySpec.MCPServers.Stories.Resources.StoryTest do
   use ExUnit.Case, async: true
 
   alias CodeMySpec.MCPServers.Stories.Resources.Story
-  alias CodeMySpec.Users.Scope
   alias Hermes.Server.Frame
+  import CodeMySpec.StoriesFixtures
+  import CodeMySpec.UsersFixtures
+
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(CodeMySpec.Repo)
+  end
 
   describe "Story resource" do
     test "returns correct uri and mime_type" do
@@ -13,15 +18,9 @@ defmodule CodeMySpec.MCPServers.Stories.Resources.StoryTest do
     end
 
     test "reads story with valid params and scope" do
-      params = %{"story_id" => "story-123"}
-      
-      scope = %Scope{
-        user: %{id: 1},
-        active_account: %{id: 1},
-        active_account_id: 1,
-        active_project: %{id: 1},
-        active_project_id: 1
-      }
+      scope = full_scope_fixture()
+      story = story_fixture(scope)
+      params = %{"story_id" => story.id}
 
       frame = %Frame{assigns: %{current_scope: scope}}
 

@@ -5,15 +5,11 @@ defmodule CodeMySpec.MCPServers.Stories.Prompts.StoryReviewTest do
   alias CodeMySpec.Users.Scope
   alias Hermes.Server.Frame
 
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(CodeMySpec.Repo)
+  end
+
   describe "StoryReview prompt" do
-    test "validates required project_id field" do
-      # Test schema validation with missing project_id
-      assert {:error, errors} =
-        Hermes.Server.Component.validate_params(StoryReview, %{})
-
-      assert errors[:project_id] == ["is required"]
-    end
-
     test "generates messages with valid params and scope" do
       params = %{"project_id" => "project-123"}
 

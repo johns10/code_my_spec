@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.Stories.Resources.Story do
 
   def read(%{"story_id" => story_id}, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.get_story(scope, story_id) do
+         story <- Stories.get_story(scope, story_id) do
       response = StoriesMapper.story_resource(story)
       {:reply, response, frame}
     else

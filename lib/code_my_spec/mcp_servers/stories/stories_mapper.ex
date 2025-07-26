@@ -47,6 +47,31 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
     |> Response.error("Resource not found")
   end
 
+  def stories_batch_response(stories) do
+    Response.tool()
+    |> Response.json(%{
+      success: true,
+      count: length(stories),
+      stories: Enum.map(stories, &story_summary/1)
+    })
+  end
+
+  def batch_errors_response(successes, failures) do
+    Response.tool()
+    |> Response.json(%{
+      success: false,
+      created_count: length(successes),
+      failed_count: length(failures),
+      created_stories: Enum.map(successes, &story_summary/1),
+      errors: Enum.map(failures, fn {index, changeset} ->
+        %{
+          index: index,
+          errors: Formatters.format_changeset_errors(changeset)
+        }
+      end)
+    })
+  end
+
   defp story_summary(story) do
     %{
       id: story.id,
