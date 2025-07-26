@@ -17,6 +17,15 @@ defmodule CodeMySpecWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :mcp do
+    plug :accepts, ["json", "sse"]
+  end
+
+  pipeline :mcp_protected do
+    plug :accepts, ["json", "sse"]
+    plug :require_oauth_token
+  end
+
   scope "/", CodeMySpecWeb do
     pipe_through :browser
 
@@ -26,18 +35,33 @@ defmodule CodeMySpecWeb.Router do
   # OAuth2 routes
   scope "/oauth", CodeMySpecWeb do
     pipe_through :browser
-    
+
     get "/authorize", OAuthController, :authorize
     post "/authorize", OAuthController, :create
     delete "/authorize", OAuthController, :delete
   end
-  
+
   # OAuth2 API endpoints (no CSRF protection)
   scope "/oauth", CodeMySpecWeb do
     pipe_through :api
-    
+
     post "/token", OAuthController, :token
     post "/revoke", OAuthController, :revoke
+    post "/register", OAuthController, :register
+  end
+
+  # MCP OAuth discovery endpoints
+  scope "/.well-known", CodeMySpecWeb do
+    pipe_through :api
+
+    get "/oauth-protected-resource", OAuthController, :protected_resource_metadata
+    get "/oauth-authorization-server", OAuthController, :authorization_server_metadata
+  end
+
+  # MCP Server routes
+  scope "/mcp" do
+    pipe_through :mcp_protected
+    forward "/stories", Hermes.Server.Transport.StreamableHTTP.Plug, server: CodeMySpec.MCPServers.StoriesServer
   end
 
   # Other scopes may use custom stacks.
@@ -86,6 +110,11 @@ defmodule CodeMySpecWeb.Router do
       live "/projects/new", ProjectLive.Form, :new
       live "/projects/:id", ProjectLive.Show, :show
       live "/projects/:id/edit", ProjectLive.Form, :edit
+
+      live "/stories", StoryLive.Index, :index
+      live "/stories/new", StoryLive.Form, :new
+      live "/stories/:id", StoryLive.Show, :show
+      live "/stories/:id/edit", StoryLive.Form, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password

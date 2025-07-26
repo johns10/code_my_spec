@@ -57,6 +57,13 @@ defmodule CodeMySpec.UsersFixtures do
     |> Map.put(:active_account, account)
   end
 
+  def user_scope_fixture(user, account, project) do
+    # Set the active account for the user
+    user_scope_fixture(user, account)
+    |> Map.put(:active_project_id, project.id)
+    |> Map.put(:active_project, project)
+  end
+
   def set_password(user) do
     {:ok, {user, _expired_tokens}} =
       Users.update_user_password(user, %{password: valid_user_password()})

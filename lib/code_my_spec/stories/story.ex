@@ -55,9 +55,7 @@ defmodule CodeMySpec.Stories.Story do
     |> validate_required([
       :title,
       :description,
-      :acceptance_criteria,
-      :priority,
-      :status
+      :acceptance_criteria
     ])
     |> put_change(:account_id, user_scope.active_account.id)
   end

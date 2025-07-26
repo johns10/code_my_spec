@@ -12,6 +12,12 @@ defmodule CodeMySpec.Application do
       CodeMySpec.Repo,
       {DNSCluster, query: Application.get_env(:code_my_spec, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: CodeMySpec.PubSub},
+      Hermes.Server.Registry,
+      {CodeMySpec.MCPServers.StoriesServer, transport: :streamable_http},
+      {Ngrok,
+       port: 4000,
+       name: CodeMySpec.Ngrok,
+       additional_arguments: ["--url", "special-mutually-falcon.ngrok-free.app"]},
       # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
       # {CodeMySpec.Worker, arg},
       # Start to serve requests, typically the last entry

@@ -63,10 +63,11 @@ defmodule CodeMySpec.MixProject do
       {:bandit, "~> 1.5"},
       {:mox, "~> 1.2"},
       {:paper_trail, "~> 1.1"},
-      {:mcp_sse, "~> 0.1.6"},
+      {:hermes_mcp, "~> 0.13"},
       {:oban, "~> 2.19.4"},
       {:briefly, "~> 0.5.1"},
-      {:ex_oauth2_provider, "~> 0.5.7"}
+      {:ex_oauth2_provider, "~> 0.5.7"},
+      {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]}
     ]
   end
 

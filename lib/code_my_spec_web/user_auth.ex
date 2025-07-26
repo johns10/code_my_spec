@@ -6,6 +6,7 @@ defmodule CodeMySpecWeb.UserAuth do
 
   alias CodeMySpec.Users
   alias CodeMySpec.Users.Scope
+  alias ExOauth2Provider.AccessTokens
 
   # Make the remember me cookie valid for 14 days. This should match
   # the session validity setting in UserToken.
@@ -284,4 +285,54 @@ defmodule CodeMySpecWeb.UserAuth do
   end
 
   defp maybe_store_return_to(conn), do: conn
+
+  @doc """
+  Plug for OAuth Bearer token authentication for MCP endpoints.
+  
+  Checks for Authorization: Bearer <token> header and validates the OAuth access token.
+  Returns 401 Unauthorized with WWW-Authenticate header if no token is provided.
+  Returns 401 if the token is invalid or expired.
+  Sets current_scope if the token is valid.
+  """
+  def require_oauth_token(conn, _opts) do
+    case get_req_header(conn, "authorization") do
+      ["Bearer " <> access_token] ->
+        case AccessTokens.get_by_token(access_token, otp_app: :code_my_spec) do
+          %{} = token ->
+            if AccessTokens.is_accessible?(token) do
+              user = Users.get_user!(token.resource_owner_id)
+              assign(conn, :current_scope, Scope.for_user(user))
+            else
+              send_unauthorized_response(conn, "invalid_token", "The access token is expired or invalid")
+            end
+
+          nil ->
+            send_unauthorized_response(conn, "invalid_token", "The access token is invalid")
+        end
+
+      _other ->
+        send_unauthorized_response(conn, "invalid_request", "The request is missing a required Authorization header")
+    end
+  end
+
+  defp send_unauthorized_response(conn, error_code, error_description) do
+    base_url = get_base_url()
+    
+    conn
+    |> put_resp_header("www-authenticate", "Bearer realm=\"#{base_url}/mcp\", error=\"#{error_code}\", error_description=\"#{error_description}\"")
+    |> put_status(:unauthorized)
+    |> json(%{
+      error: error_code,
+      error_description: error_description
+    })
+    |> halt()
+  end
+
+  defp get_base_url do
+    if Mix.env() == :dev do
+      "https://special-mutually-falcon.ngrok-free.app"
+    else
+      CodeMySpecWeb.Endpoint.url()
+    end
+  end
 end
