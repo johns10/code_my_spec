@@ -16,13 +16,39 @@ defmodule CodeMySpecWeb.StoryLive.Form do
       <.form for={@form} id="story-form" phx-change="validate" phx-submit="save">
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:description]} type="textarea" label="Description" />
-        <.input
-          field={@form[:acceptance_criteria]}
-          type="select"
-          multiple
-          label="Acceptance criteria"
-          options={[{"Option 1", "option1"}, {"Option 2", "option2"}]}
-        />
+        <div class="fieldset mb-2">
+          <label>
+            <span class="label mb-1">Acceptance Criteria</span>
+            <div class="space-y-2">
+              <div :for={{criterion, index} <- Enum.with_index(@acceptance_criteria)} class="flex items-center gap-2">
+                <input
+                  type="text"
+                  name={"acceptance_criteria[#{index}]"}
+                  value={criterion}
+                  class="flex-1 input"
+                  phx-change="update_criterion"
+                  phx-value-index={index}
+                />
+                <button
+                  type="button"
+                  class="btn btn-sm btn-error btn-outline"
+                  phx-click="remove_criterion"
+                  phx-value-index={index}
+                >
+                  <.icon name="hero-x-mark" class="size-4" />
+                </button>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline"
+                phx-click="add_criterion"
+              >
+                <.icon name="hero-plus" class="size-4" />
+                Add Criterion
+              </button>
+            </div>
+          </label>
+        </div>
         <.input field={@form[:priority]} type="number" label="Priority" />
         <.input
           field={@form[:status]}
@@ -31,8 +57,6 @@ defmodule CodeMySpecWeb.StoryLive.Form do
           prompt="Choose a value"
           options={Ecto.Enum.values(CodeMySpec.Stories.Story, :status)}
         />
-        <.input field={@form[:locked_at]} type="datetime-local" label="Locked at" />
-        <.input field={@form[:lock_expires_at]} type="datetime-local" label="Lock expires at" />
         <footer>
           <.button phx-disable-with="Saving...">Save Story</.button>
           <.button navigate={return_path(@current_scope, @return_to, @story)}>Cancel</.button>
@@ -59,6 +83,7 @@ defmodule CodeMySpecWeb.StoryLive.Form do
     socket
     |> assign(:page_title, "Edit Story")
     |> assign(:story, story)
+    |> assign(:acceptance_criteria, story.acceptance_criteria || [])
     |> assign(:form, to_form(Stories.change_story(socket.assigns.current_scope, story)))
   end
 
@@ -68,6 +93,7 @@ defmodule CodeMySpecWeb.StoryLive.Form do
     socket
     |> assign(:page_title, "New Story")
     |> assign(:story, story)
+    |> assign(:acceptance_criteria, [])
     |> assign(:form, to_form(Stories.change_story(socket.assigns.current_scope, story)))
   end
 
@@ -80,7 +106,25 @@ defmodule CodeMySpecWeb.StoryLive.Form do
   end
 
   def handle_event("save", %{"story" => story_params}, socket) do
+    story_params = Map.put(story_params, "acceptance_criteria", socket.assigns.acceptance_criteria)
     save_story(socket, socket.assigns.live_action, story_params)
+  end
+
+  def handle_event("add_criterion", _params, socket) do
+    {:noreply, assign(socket, :acceptance_criteria, socket.assigns.acceptance_criteria ++ [""])}
+  end
+
+  def handle_event("remove_criterion", %{"index" => index}, socket) do
+    index = String.to_integer(index)
+    criteria = List.delete_at(socket.assigns.acceptance_criteria, index)
+    {:noreply, assign(socket, :acceptance_criteria, criteria)}
+  end
+
+  def handle_event("update_criterion", %{"_target" => ["acceptance_criteria", index_str], "acceptance_criteria" => acceptance_criteria}, socket) do
+    index = String.to_integer(index_str)
+    value = Map.get(acceptance_criteria, index_str, "")
+    criteria = List.replace_at(socket.assigns.acceptance_criteria, index, value)
+    {:noreply, assign(socket, :acceptance_criteria, criteria)}
   end
 
   defp save_story(socket, :edit, story_params) do

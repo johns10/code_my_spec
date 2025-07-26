@@ -16,33 +16,52 @@ defmodule CodeMySpecWeb.StoryLive.Index do
         </:actions>
       </.header>
 
-      <.table
-        id="stories"
-        rows={@streams.stories}
-        row_click={fn {_id, story} -> JS.navigate(~p"/stories/#{story}") end}
-      >
-        <:col :let={{_id, story}} label="Title">{story.title}</:col>
-        <:col :let={{_id, story}} label="Description">{story.description}</:col>
-        <:col :let={{_id, story}} label="Acceptance criteria">{story.acceptance_criteria}</:col>
-        <:col :let={{_id, story}} label="Priority">{story.priority}</:col>
-        <:col :let={{_id, story}} label="Status">{story.status}</:col>
-        <:col :let={{_id, story}} label="Locked at">{story.locked_at}</:col>
-        <:col :let={{_id, story}} label="Lock expires at">{story.lock_expires_at}</:col>
-        <:action :let={{_id, story}}>
-          <div class="sr-only">
-            <.link navigate={~p"/stories/#{story}"}>Show</.link>
+      <div class="space-y-8">
+        <div :for={{id, story} <- @streams.stories} id={id} class="card bg-base-100 shadow-md">
+          <div class="card-body">
+            <h2
+              class="card-title text-2xl mb-4 cursor-pointer hover:text-primary"
+              phx-click={JS.navigate(~p"/stories/#{story}")}
+            >
+              {story.title}
+            </h2>
+
+            <p class="text-base-content/80 mb-4 leading-relaxed">
+              {story.description}
+            </p>
+
+            <div class="mb-4">
+              <h3 class="font-semibold mb-2">Acceptance Criteria:</h3>
+              <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                <li :for={criterion <- parse_acceptance_criteria(story.acceptance_criteria)}>
+                  {criterion}
+                </li>
+              </ul>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <.badge color={status_color(story.status)}>
+                  Priority: {story.priority}
+                </.badge>
+              </div>
+
+              <div class="card-actions">
+                <.link navigate={~p"/stories/#{story}/edit"} class="btn btn-sm btn-outline">
+                  Edit
+                </.link>
+                <.link
+                  phx-click={JS.push("delete", value: %{id: story.id}) |> hide("##{id}")}
+                  data-confirm="Are you sure?"
+                  class="btn btn-sm btn-error btn-outline"
+                >
+                  Delete
+                </.link>
+              </div>
+            </div>
           </div>
-          <.link navigate={~p"/stories/#{story}/edit"}>Edit</.link>
-        </:action>
-        <:action :let={{id, story}}>
-          <.link
-            phx-click={JS.push("delete", value: %{id: story.id}) |> hide("##{id}")}
-            data-confirm="Are you sure?"
-          >
-            Delete
-          </.link>
-        </:action>
-      </.table>
+        </div>
+      </div>
     </Layouts.app>
     """
   end
@@ -56,7 +75,10 @@ defmodule CodeMySpecWeb.StoryLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Stories")
-     |> stream(:stories, Stories.list_stories(socket.assigns.current_scope))}
+     |> stream(
+       :stories,
+       Stories.list_stories(socket.assigns.current_scope) |> Enum.sort_by(&priority_order/1)
+     )}
   end
 
   @impl true
@@ -71,6 +93,30 @@ defmodule CodeMySpecWeb.StoryLive.Index do
   def handle_info({type, %CodeMySpec.Stories.Story{}}, socket)
       when type in [:created, :updated, :deleted] do
     {:noreply,
-     stream(socket, :stories, Stories.list_stories(socket.assigns.current_scope), reset: true)}
+     stream(
+       socket,
+       :stories,
+       Stories.list_stories(socket.assigns.current_scope) |> Enum.sort_by(&priority_order/1),
+       reset: true
+     )}
+  end
+
+  defp status_color(:in_progress), do: "info"
+  defp status_color(:completed), do: "success"
+  defp status_color(:dirty), do: "warning"
+  defp status_color(_), do: "neutral"
+
+  defp priority_order(%{priority: priority}) when is_integer(priority), do: priority
+  defp priority_order(_), do: 999
+
+  defp parse_acceptance_criteria(nil), do: []
+  defp parse_acceptance_criteria(""), do: []
+  defp parse_acceptance_criteria(criteria) when is_list(criteria), do: criteria
+
+  defp parse_acceptance_criteria(criteria) when is_binary(criteria) do
+    criteria
+    |> String.split("\n")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
   end
 end

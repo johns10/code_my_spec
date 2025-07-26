@@ -34,10 +34,16 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
     })
   end
 
-  def stories_list_resource(stories, project_id) do
+  def stories_list_resource(stories) do
     Response.resource()
     |> Response.json(%{
-      project_id: project_id,
+      stories: Enum.map(stories, &story_summary/1)
+    })
+  end
+
+  def stories_list_response(stories) do
+    Response.tool()
+    |> Response.json(%{
       stories: Enum.map(stories, &story_summary/1)
     })
   end

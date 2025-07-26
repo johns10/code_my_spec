@@ -463,6 +463,27 @@ defmodule CodeMySpecWeb.CoreComponents do
   end
 
   @doc """
+  Renders a badge with different color variants.
+
+  ## Examples
+
+      <.badge>Default</.badge>
+      <.badge color="primary">Primary</.badge>
+      <.badge color="error">Error</.badge>
+  """
+  attr :color, :string, default: "neutral"
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
+  def badge(assigns) do
+    ~H"""
+    <span class={["badge", "badge-#{@color}", @class]}>
+      {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  @doc """
   Renders a button that morphs into an inline yes/no confirmation dialog with tooltip.
 
   ## Examples

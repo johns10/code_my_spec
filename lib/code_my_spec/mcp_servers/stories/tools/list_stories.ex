@@ -8,17 +8,13 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStories do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :project_id, :string, required: true
   end
 
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame) do
-      stories =
-        Stories.list_stories(scope)
-        |> Enum.filter(&(&1.project_id == params.project_id))
-
-      {:reply, StoriesMapper.stories_list_resource(stories, params.project_id), frame}
+      stories = Stories.list_project_stories(scope)
+      {:reply, StoriesMapper.stories_list_response(stories), frame}
     else
       {:error, changeset = %Ecto.Changeset{}} ->
         {:reply, StoriesMapper.validation_error(changeset), frame}

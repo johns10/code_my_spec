@@ -1,6 +1,7 @@
 defmodule CodeMySpec.Stories.StoriesRepository do
   import Ecto.Query, warn: false
 
+  alias CodeMySpec.Projects.Project
   alias CodeMySpec.Repo
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Stories.Story
@@ -10,7 +11,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
   end
 
   def list_project_stories(%Scope{} = scope) do
-    Repo.all_by(Story, account_id: scope.active_project.id)
+    Repo.all_by(Story, project_id: scope.active_project.id)
   end
 
   def get_story(%Scope{} = scope, id) do
@@ -19,6 +20,17 @@ defmodule CodeMySpec.Stories.StoriesRepository do
 
   def get_story!(%Scope{} = scope, id) do
     Repo.get_by!(Story, id: id, account_id: scope.active_account.id)
+  end
+
+  def create_story(%Scope{active_project: %Project{id: project_id}} = scope, attrs) do
+    %Story{}
+    |> Story.changeset(attrs, scope)
+    |> Ecto.Changeset.put_change(:project_id, project_id)
+    |> PaperTrail.insert(originator: scope.user)
+    |> case do
+      {:ok, %{model: story}} -> {:ok, story}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   def create_story(%Scope{} = scope, attrs) do
