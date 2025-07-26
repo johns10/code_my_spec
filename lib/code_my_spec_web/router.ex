@@ -61,7 +61,9 @@ defmodule CodeMySpecWeb.Router do
   # MCP Server routes
   scope "/mcp" do
     pipe_through :mcp_protected
-    forward "/stories", Hermes.Server.Transport.StreamableHTTP.Plug, server: CodeMySpec.MCPServers.StoriesServer
+
+    forward "/stories", Hermes.Server.Transport.StreamableHTTP.Plug,
+      server: CodeMySpec.MCPServers.StoriesServer
   end
 
   # Other scopes may use custom stacks.

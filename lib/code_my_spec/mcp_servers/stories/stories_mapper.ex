@@ -63,12 +63,20 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       created_count: length(successes),
       failed_count: length(failures),
       created_stories: Enum.map(successes, &story_summary/1),
-      errors: Enum.map(failures, fn {index, changeset} ->
-        %{
-          index: index,
-          errors: Formatters.format_changeset_errors(changeset)
-        }
-      end)
+      errors:
+        Enum.map(failures, fn {index, changeset} ->
+          %{
+            index: index,
+            errors: Formatters.format_changeset_errors(changeset)
+          }
+        end)
+    })
+  end
+
+  def prompt_response(prompt) do
+    Response.tool()
+    |> Response.json(%{
+      content: prompt
     })
   end
 

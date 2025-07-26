@@ -1,18 +1,19 @@
-defmodule CodeMySpec.MCPServers.Stories.Prompts.StoryReview do
-  use Hermes.Server.Component, type: :prompt
+defmodule CodeMySpec.MCPServers.Stories.Tools.StartStoryReview do
+  @moduledoc "Starts a comprehensive review of user stories in a project"
+
+  use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
+  alias CodeMySpec.MCPServers.Stories.StoriesMapper
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :project_id, :string, required: true
   end
 
-  def get_messages(%{"project_id" => project_id}, frame) do
+  @impl true
+  def execute(_params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame) do
-      stories =
-        Stories.list_stories(scope)
-        |> Enum.filter(&(&1.project_id == project_id))
+      stories = Stories.list_project_stories(scope)
 
       prompt = """
       You are an expert Product Manager conducting a comprehensive story review.
@@ -40,12 +41,13 @@ defmodule CodeMySpec.MCPServers.Stories.Prompts.StoryReview do
       Give specific, actionable feedback for each story.
       """
 
-      messages = [%{"role" => "system", "content" => prompt}]
-      {:ok, messages, frame}
+      {:reply, StoriesMapper.prompt_response(prompt), frame}
     else
-      {:error, reason} ->
-        error = %Hermes.MCP.Error{code: -1, message: "Failed to generate prompt", reason: reason}
-        {:error, error, frame}
+      {:error, changeset = %Ecto.Changeset{}} ->
+        {:reply, StoriesMapper.validation_error(changeset), frame}
+
+      {:error, atom} ->
+        {:reply, StoriesMapper.error(atom), frame}
     end
   end
 

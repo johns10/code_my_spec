@@ -39,6 +39,7 @@ defmodule CodeMySpec.Stories do
 
   """
   defdelegate list_stories(scope), to: StoriesRepository
+  defdelegate list_project_stories(scope), to: StoriesRepository
 
   @doc """
   Gets a single story.

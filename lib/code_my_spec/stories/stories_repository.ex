@@ -9,6 +9,10 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     Repo.all_by(Story, account_id: scope.active_account.id)
   end
 
+  def list_project_stories(%Scope{} = scope) do
+    Repo.all_by(Story, account_id: scope.active_project.id)
+  end
+
   def get_story(%Scope{} = scope, id) do
     Repo.get_by(Story, id: id, account_id: scope.active_account.id)
   end

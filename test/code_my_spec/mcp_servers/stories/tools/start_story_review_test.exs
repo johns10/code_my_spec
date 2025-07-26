@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Stories.Prompts.StoryReviewTest do
+defmodule CodeMySpec.MCPServers.Stories.Tools.StartStoryReviewTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Stories.Prompts.StoryReview
+  alias CodeMySpec.MCPServers.Stories.Tools.StartStoryReview
   alias CodeMySpec.Users.Scope
   alias Hermes.Server.Frame
 
@@ -9,9 +9,9 @@ defmodule CodeMySpec.MCPServers.Stories.Prompts.StoryReviewTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(CodeMySpec.Repo)
   end
 
-  describe "StoryReview prompt" do
-    test "generates messages with valid params and scope" do
-      params = %{"project_id" => "project-123"}
+  describe "StartStoryReview tool" do
+    test "executes with valid params and scope" do
+      params = %{project_id: "project-123"}
 
       scope = %Scope{
         user: %{id: 1},
@@ -23,10 +23,10 @@ defmodule CodeMySpec.MCPServers.Stories.Prompts.StoryReviewTest do
 
       frame = %Frame{assigns: %{current_scope: scope}}
 
-      assert {:ok, messages, ^frame} = StoryReview.get_messages(params, frame)
-      assert is_list(messages)
-      assert length(messages) == 1
-      assert %{"role" => "system", "content" => content} = hd(messages)
+      assert {:reply, response, ^frame} = StartStoryReview.execute(params, frame)
+      assert response.type == :tool
+      assert response.isError == false
+      [%{"text" => content}] = response.content
       assert String.contains?(content, "comprehensive story review")
     end
   end
