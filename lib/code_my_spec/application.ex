@@ -7,28 +7,38 @@ defmodule CodeMySpec.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      CodeMySpecWeb.Telemetry,
-      CodeMySpec.Repo,
-      {DNSCluster, query: Application.get_env(:code_my_spec, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: CodeMySpec.PubSub},
-      Hermes.Server.Registry,
-      {CodeMySpec.MCPServers.StoriesServer, transport: :streamable_http},
-      {Ngrok,
-       port: 4000,
-       name: CodeMySpec.Ngrok,
-       additional_arguments: ["--url", "special-mutually-falcon.ngrok-free.app"]},
-      # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
-      # {CodeMySpec.Worker, arg},
-      # Start to serve requests, typically the last entry
-      CodeMySpecWeb.Endpoint
-    ]
+    children =
+      [
+        CodeMySpecWeb.Telemetry,
+        CodeMySpec.Repo,
+        {DNSCluster, query: Application.get_env(:code_my_spec, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: CodeMySpec.PubSub},
+        Hermes.Server.Registry,
+        {CodeMySpec.MCPServers.StoriesServer, transport: :streamable_http},
+        # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
+        # {CodeMySpec.Worker, arg},
+        # Start to serve requests, typically the last entry
+        CodeMySpecWeb.Endpoint
+      ]
+      |> children(Mix.env())
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: CodeMySpec.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
+  def children(children, :dev),
+    do:
+      children ++
+        [
+          {Ngrok,
+           port: 4000,
+           name: CodeMySpec.Ngrok,
+           additional_arguments: ["--url", "special-mutually-falcon.ngrok-free.app"]}
+        ]
+
+  def children(children, _), do: children
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.

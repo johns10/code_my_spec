@@ -1,5 +1,9 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
-  @moduledoc "Creates a user story"
+defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
+  @moduledoc """
+  Updates a user story.
+  Include all acceptance query in the input.
+  It will be persisted exactly as you send it.
+  """
 
   use Hermes.Server.Component, type: :tool
 
@@ -8,15 +12,17 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :title, :string, required: true
-    field :description, :string, required: true
-    field :acceptance_criteria, {:list, :string}, required: true
+    field :id, :string, required: true
+    field :title, :string
+    field :description, :string
+    field :acceptance_criteria, {:list, :string}
   end
 
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.create_story(scope, params) do
+         story <- Stories.get_story(scope, params.id),
+         {:ok, story} <- Stories.update_story(scope, story, Map.drop(params, [:id])) do
       {:reply, StoriesMapper.story_response(story), frame}
     else
       {:error, changeset = %Ecto.Changeset{}} ->

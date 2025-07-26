@@ -1,5 +1,5 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
-  @moduledoc "Creates a user story"
+defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteStory do
+  @moduledoc "Deletes a user story"
 
   use Hermes.Server.Component, type: :tool
 
@@ -8,15 +8,13 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :title, :string, required: true
-    field :description, :string, required: true
-    field :acceptance_criteria, {:list, :string}, required: true
+    field :id, :string, required: true
   end
 
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.create_story(scope, params) do
+         {:ok, story} <- Stories.delete_story(scope, params.id) do
       {:reply, StoriesMapper.story_response(story), frame}
     else
       {:error, changeset = %Ecto.Changeset{}} ->

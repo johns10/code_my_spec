@@ -55,6 +55,7 @@ defmodule CodeMySpec.Stories do
 
   """
   defdelegate get_story!(scope, id), to: StoriesRepository
+  defdelegate get_story(scope, id), to: StoriesRepository
 
   @doc """
   Creates a story.

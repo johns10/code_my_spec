@@ -6,14 +6,14 @@ defmodule CodeMySpec.MCPServers.StoriesServer do
 
   # Tool components
   component(CodeMySpec.MCPServers.Stories.Tools.CreateStory)
-  # component(CodeMySpec.MCPServers.Stories.Tools.UpdateStory)
-  # component(CodeMySpec.MCPServers.Stories.Tools.DeleteStory)
+  component(CodeMySpec.MCPServers.Stories.Tools.UpdateStory)
+  component(CodeMySpec.MCPServers.Stories.Tools.DeleteStory)
 
   # Resource components
-  # component(CodeMySpec.MCPServers.Stories.Resources.Story)
-  # component(CodeMySpec.MCPServers.Stories.Resources.StoriesList)
+  component(CodeMySpec.MCPServers.Stories.Resources.Story)
+  component(CodeMySpec.MCPServers.Stories.Resources.StoriesList)
 
   # Prompt components (conversation starters)
-  # component(CodeMySpec.MCPServers.Stories.Prompts.StoryInterview)
-  # component(CodeMySpec.MCPServers.Stories.Prompts.StoryReview)
+  component(CodeMySpec.MCPServers.Stories.Prompts.StoryInterview)
+  component(CodeMySpec.MCPServers.Stories.Prompts.StoryReview)
 end

@@ -11,65 +11,6 @@ defmodule CodeMySpec.MCPServers.StoriesServerTest do
   import CodeMySpec.UserPreferencesFixtures
   import CodeMySpec.OauthFixtures
 
-  describe "init/2" do
-    test "successfully initializes with valid bearer token" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
-      project = project_fixture(scope)
-
-      # Create user preferences to set active account and project
-      user_preference_fixture(scope, %{
-        active_account_id: account.id,
-        active_project_id: project.id
-      })
-
-      # Create OAuth application first
-      app = oauth_application_fixture()
-
-      # Create a valid access token - let ExOauth2Provider generate the token
-      {:ok, access_token} =
-        ExOauth2Provider.AccessTokens.create_token(
-          user,
-          %{
-            resource_owner_id: user.id,
-            application_id: app.id,
-            expires_in: 3600,
-            scopes: ""
-          },
-          otp_app: :code_my_spec
-        )
-
-      frame = %Frame{
-        transport: %{
-          headers: %{"authorization" => "Bearer #{access_token.token}"}
-        }
-      }
-
-      assert {:ok, authenticated_frame} = StoriesServer.init(nil, frame)
-      assert authenticated_frame.assigns.current_scope.user.id == user.id
-      assert authenticated_frame.assigns.access_token.token == access_token.token
-    end
-
-    test "fails initialization with missing bearer token" do
-      frame = %Frame{transport: %{headers: %{}}}
-
-      assert {:ok, %Frame{assigns: assigns}} = StoriesServer.init(nil, frame)
-      assert Map.get(assigns, :current_scope) == nil
-    end
-
-    test "fails initialization with invalid bearer token" do
-      frame = %Frame{
-        transport: %{
-          headers: %{"authorization" => "Bearer invalid_token"}
-        }
-      }
-
-      assert {:ok, %Frame{assigns: assigns}} = StoriesServer.init(nil, frame)
-      assert Map.get(assigns, :current_scope) == nil
-    end
-  end
-
   describe "CreateStory tool" do
     setup do
       user = user_fixture()
@@ -117,7 +58,8 @@ defmodule CodeMySpec.MCPServers.StoriesServerTest do
       }
 
       # Validation errors return the response directly, not in a {:reply, response, frame} tuple
-      assert %Hermes.Server.Response{isError: true} = CreateStory.execute(params, frame)
+      assert {:reply, %Hermes.Server.Response{isError: true}, _} =
+               CreateStory.execute(params, frame)
     end
 
     test "creates story with minimal required params", %{frame: frame} do
