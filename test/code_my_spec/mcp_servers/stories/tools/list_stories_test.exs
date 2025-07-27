@@ -12,7 +12,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStoriesTest do
   describe "ListStories tool" do
     test "executes with valid params and scope" do
       params = %{project_id: "project-123"}
-      
+
       scope = %Scope{
         user: %{id: 1},
         active_account: %{id: 1},
@@ -24,7 +24,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStoriesTest do
       frame = %Frame{assigns: %{current_scope: scope}}
 
       assert {:reply, response, ^frame} = ListStories.execute(params, frame)
-      assert response.type == :resource
+      assert response.type == :tool
     end
   end
 end

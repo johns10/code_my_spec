@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStories do
   end
 
   @impl true
-  def execute(params, frame) do
+  def execute(_params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame) do
       stories = Stories.list_project_stories(scope)
       {:reply, StoriesMapper.stories_list_response(stories), frame}

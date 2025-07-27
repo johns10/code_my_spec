@@ -19,7 +19,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.GetStoryTest do
       frame = %Frame{assigns: %{current_scope: scope}}
 
       assert {:reply, response, ^frame} = GetStory.execute(params, frame)
-      assert response.type == :resource
+      assert response.type == :tool
     end
   end
 end

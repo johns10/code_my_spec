@@ -115,6 +115,7 @@ defmodule CodeMySpecWeb.Router do
 
       live "/stories", StoryLive.Index, :index
       live "/stories/new", StoryLive.Form, :new
+      live "/stories/import", StoryLive.Import, :import
       live "/stories/:id", StoryLive.Show, :show
       live "/stories/:id/edit", StoryLive.Form, :edit
     end

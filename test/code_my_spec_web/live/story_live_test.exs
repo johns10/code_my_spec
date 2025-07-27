@@ -8,31 +8,22 @@ defmodule CodeMySpecWeb.StoryLiveTest do
     priority: 42,
     status: :in_progress,
     description: "some description",
-    title: "some title",
-    acceptance_criteria: ["option1", "option2"],
-    locked_at: "2025-07-17T12:48:00Z",
-    lock_expires_at: "2025-07-17T12:48:00Z"
+    title: "some title"
   }
   @update_attrs %{
     priority: 43,
     status: :completed,
     description: "some updated description",
-    title: "some updated title",
-    acceptance_criteria: ["option1"],
-    locked_at: "2025-07-18T12:48:00Z",
-    lock_expires_at: "2025-07-18T12:48:00Z"
+    title: "some updated title"
   }
   @invalid_attrs %{
     priority: nil,
     status: nil,
     description: nil,
-    title: nil,
-    acceptance_criteria: [],
-    locked_at: nil,
-    lock_expires_at: nil
+    title: nil
   }
 
-  setup [:register_log_in_setup_account, :setup_active_account]
+  setup [:register_log_in_setup_account, :setup_active_account, :setup_active_project]
 
   defp create_story(%{scope: scope}) do
     story = story_fixture(scope)

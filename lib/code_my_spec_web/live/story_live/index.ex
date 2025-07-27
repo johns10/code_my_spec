@@ -2,6 +2,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
   use CodeMySpecWeb, :live_view
 
   alias CodeMySpec.Stories
+  alias CodeMySpec.Stories.Markdown
 
   @impl true
   def render(assigns) do
@@ -10,6 +11,12 @@ defmodule CodeMySpecWeb.StoryLive.Index do
       <.header>
         Listing Stories
         <:actions>
+          <button phx-click="export_markdown" class="btn btn-outline mr-3">
+            <.icon name="hero-arrow-down-tray" /> Export
+          </button>
+          <.button navigate={~p"/stories/import"} class="btn btn-outline mr-3">
+            <.icon name="hero-arrow-up-tray" /> Import
+          </.button>
           <.button navigate={~p"/stories/new"}>
             <.icon name="hero-plus" /> New Story
           </.button>
@@ -77,7 +84,8 @@ defmodule CodeMySpecWeb.StoryLive.Index do
      |> assign(:page_title, "Listing Stories")
      |> stream(
        :stories,
-       Stories.list_stories(socket.assigns.current_scope) |> Enum.sort_by(&priority_order/1)
+       Stories.list_project_stories(socket.assigns.current_scope)
+       |> Enum.sort_by(&priority_order/1)
      )}
   end
 
@@ -89,6 +97,29 @@ defmodule CodeMySpecWeb.StoryLive.Index do
     {:noreply, stream_delete(socket, :stories, story)}
   end
 
+
+  @impl true
+  def handle_event("export_markdown", _params, socket) do
+    stories = Stories.list_project_stories(socket.assigns.current_scope)
+    project_name = socket.assigns.current_scope.active_project.name
+
+    story_attrs =
+      stories
+      |> Enum.sort_by(&priority_order/1)
+      |> Enum.map(&story_to_attrs/1)
+
+    markdown_content = Markdown.format_stories(story_attrs, project_name)
+    filename = "#{String.downcase(String.replace(project_name, " ", "_"))}_stories.md"
+
+    {:noreply,
+     socket
+     |> push_event("download_file", %{
+       content: markdown_content,
+       filename: filename,
+       content_type: "text/markdown"
+     })}
+  end
+
   @impl true
   def handle_info({type, %CodeMySpec.Stories.Story{}}, socket)
       when type in [:created, :updated, :deleted] do
@@ -96,10 +127,12 @@ defmodule CodeMySpecWeb.StoryLive.Index do
      stream(
        socket,
        :stories,
-       Stories.list_stories(socket.assigns.current_scope) |> Enum.sort_by(&priority_order/1),
+       Stories.list_project_stories(socket.assigns.current_scope)
+       |> Enum.sort_by(&priority_order/1),
        reset: true
      )}
   end
+
 
   defp status_color(:in_progress), do: "info"
   defp status_color(:completed), do: "success"
@@ -118,5 +151,13 @@ defmodule CodeMySpecWeb.StoryLive.Index do
     |> String.split("\n")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
+  end
+
+  defp story_to_attrs(story) do
+    %{
+      title: story.title,
+      description: story.description,
+      acceptance_criteria: parse_acceptance_criteria(story.acceptance_criteria)
+    }
   end
 end

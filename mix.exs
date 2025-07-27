@@ -67,6 +67,7 @@ defmodule CodeMySpec.MixProject do
       {:oban, "~> 2.19.4"},
       {:briefly, "~> 0.5.1"},
       {:ex_oauth2_provider, "~> 0.5.7"},
+      {:earmark, "~> 1.4"},
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]}
     ]
   end

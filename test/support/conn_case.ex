@@ -88,6 +88,13 @@ defmodule CodeMySpecWeb.ConnCase do
     Map.merge(context, %{account: account, scope: updated_scope})
   end
 
+  def setup_active_project(%{user: user, account: account, scope: scope} = context) do
+    project = CodeMySpec.ProjectsFixtures.project_fixture(scope, account_id: account.id)
+    updated_scope = CodeMySpec.UsersFixtures.user_scope_fixture(user, account, project)
+    CodeMySpec.UserPreferences.select_active_project(updated_scope, project.id)
+    Map.merge(context, %{project: project, scope: updated_scope})
+  end
+
   @doc """
   Setup helper that registers and logs in a user, then sets up an active account.
 
