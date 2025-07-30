@@ -68,7 +68,8 @@ defmodule CodeMySpec.MixProject do
       {:briefly, "~> 0.5.1"},
       {:ex_oauth2_provider, "~> 0.5.7"},
       {:earmark, "~> 1.4"},
-      {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]}
+      {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 

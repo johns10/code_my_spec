@@ -41,9 +41,6 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.StartStoryInterview do
 
       {:reply, StoriesMapper.prompt_response(prompt), frame}
     else
-      {:error, changeset = %Ecto.Changeset{}} ->
-        {:reply, StoriesMapper.validation_error(changeset), frame}
-
       {:error, atom} ->
         {:reply, StoriesMapper.error(atom), frame}
     end

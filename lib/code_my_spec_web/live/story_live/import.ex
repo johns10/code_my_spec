@@ -167,10 +167,9 @@ defmodule CodeMySpecWeb.StoryLive.Import do
   end
 
   defp format_error(:empty_document), do: "Document is empty"
+  defp format_error(:missing_sections), do: "Markdown is missing required sections"
   defp format_error(:invalid_format), do: "Invalid markdown format"
-  defp format_error(:missing_sections), do: "Missing required sections"
-  defp format_error(:malformed_headers), do: "Malformed headers"
-  defp format_error(_), do: "Invalid markdown format"
+  defp format_error(:missing_story_data), do: "Missing Story Data"
 
   defp error_to_string(:too_large), do: "File too large (max 1MB)"
   defp error_to_string(:not_accepted), do: "Invalid file type (must be .md, .markdown, or .txt)"

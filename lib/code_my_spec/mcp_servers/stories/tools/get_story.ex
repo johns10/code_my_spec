@@ -17,9 +17,6 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.GetStory do
          story <- Stories.get_story!(scope, params.story_id) do
       {:reply, StoriesMapper.story_response(story), frame}
     else
-      {:error, changeset = %Ecto.Changeset{}} ->
-        {:reply, StoriesMapper.validation_error(changeset), frame}
-
       {:error, atom} ->
         {:reply, StoriesMapper.error(atom), frame}
     end

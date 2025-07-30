@@ -97,7 +97,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
       |> form("form", %{"markdown_content" => markdown_content})
       |> render_submit()
 
-      assert render(live) =~ "Import failed: Malformed headers"
+      assert render(live) =~ "Import failed: Markdown is missing required sections"
     end
 
     test "shows success message on successful import", %{conn: conn} do

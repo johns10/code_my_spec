@@ -16,9 +16,6 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStories do
       stories = Stories.list_project_stories(scope)
       {:reply, StoriesMapper.stories_list_response(stories), frame}
     else
-      {:error, changeset = %Ecto.Changeset{}} ->
-        {:reply, StoriesMapper.validation_error(changeset), frame}
-
       {:error, atom} ->
         {:reply, StoriesMapper.error(atom), frame}
     end
