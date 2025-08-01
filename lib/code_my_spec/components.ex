@@ -7,9 +7,11 @@ defmodule CodeMySpec.Components do
 
   defdelegate list_components(scope), to: ComponentRepository
   defdelegate get_component!(scope, id), to: ComponentRepository
+  defdelegate get_component(scope, id), to: ComponentRepository
   defdelegate create_component(scope, attrs), to: ComponentRepository
   defdelegate update_component(scope, component, attrs), to: ComponentRepository
   defdelegate delete_component(scope, component), to: ComponentRepository
+  defdelegate show_architecture(scope), to: ComponentRepository
   defdelegate list_dependencies(scope), to: DependencyRepository
   defdelegate get_dependency!(scope, id), to: DependencyRepository
   defdelegate create_dependency(attrs), to: DependencyRepository

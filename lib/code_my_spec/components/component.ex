@@ -21,6 +21,7 @@ defmodule CodeMySpec.Components.Component do
           incoming_dependencies: [Dependency.t()] | Ecto.Association.NotLoaded.t(),
           dependencies: [t()] | Ecto.Association.NotLoaded.t(),
           dependents: [t()] | Ecto.Association.NotLoaded.t(),
+          stories: [CodeMySpec.Stories.Story.t()] | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -50,6 +51,7 @@ defmodule CodeMySpec.Components.Component do
 
     has_many :dependencies, through: [:outgoing_dependencies, :target_component]
     has_many :dependents, through: [:incoming_dependencies, :source_component]
+    has_many :stories, CodeMySpec.Stories.Story
 
     timestamps(type: :utc_datetime)
   end

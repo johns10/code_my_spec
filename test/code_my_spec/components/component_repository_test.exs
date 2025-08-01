@@ -2,9 +2,11 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
   use CodeMySpec.DataCase, async: true
 
   import CodeMySpec.ComponentsFixtures
+  import CodeMySpec.DependencyFixtures
   import CodeMySpec.ProjectsFixtures
   import CodeMySpec.UsersFixtures
   import CodeMySpec.AccountsFixtures
+  import CodeMySpec.StoriesFixtures
 
   alias CodeMySpec.Components.{Component, ComponentRepository}
   alias CodeMySpec.Repo
@@ -395,6 +397,121 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
 
       assert length(result) == 1
       assert hd(result).id == component.id
+    end
+  end
+
+  describe "show_architecture/1" do
+    test "returns empty list when no components with stories exist", %{scope: scope} do
+      _component_without_story = component_fixture(scope)
+
+      result = ComponentRepository.show_architecture(scope)
+
+      assert result == []
+    end
+
+    test "returns only components with stories at depth 0", %{scope: scope} do
+      component_with_story = component_fixture(scope)
+      component_without_story = component_fixture(scope)
+      story_fixture(scope, %{component_id: component_with_story.id})
+
+      result = ComponentRepository.show_architecture(scope)
+
+      assert length(result) == 1
+      assert %{component: comp, depth: 0} = hd(result)
+      assert comp.id == component_with_story.id
+      refute Enum.any?(result, &(&1.component.id == component_without_story.id))
+    end
+
+    test "includes dependencies in the architecture graph", %{scope: scope} do
+      root = component_fixture(scope, %{name: "Root"})
+      dep1 = component_fixture(scope, %{name: "Dep1"})
+      dep2 = component_fixture(scope, %{name: "Dep2"})
+      
+      story_fixture(scope, %{component_id: root.id})
+      dependency_fixture(root, dep1)
+      dependency_fixture(dep1, dep2)
+
+      result = ComponentRepository.show_architecture(scope)
+
+      assert length(result) == 3
+      
+      root_result = Enum.find(result, &(&1.component.id == root.id))
+      dep1_result = Enum.find(result, &(&1.component.id == dep1.id))
+      dep2_result = Enum.find(result, &(&1.component.id == dep2.id))
+      
+      assert root_result.depth == 0
+      assert dep1_result.depth == 1
+      assert dep2_result.depth == 2
+    end
+
+    test "handles multiple root components with stories", %{scope: scope} do
+      root1 = component_fixture(scope, %{name: "Root1"})
+      root2 = component_fixture(scope, %{name: "Root2"})
+      shared_dep = component_fixture(scope, %{name: "SharedDep"})
+      
+      story_fixture(scope, %{component_id: root1.id})
+      story_fixture(scope, %{component_id: root2.id})
+      dependency_fixture(root1, shared_dep)
+      dependency_fixture(root2, shared_dep)
+
+      result = ComponentRepository.show_architecture(scope)
+
+      assert length(result) == 3
+      
+      root_results = Enum.filter(result, &(&1.depth == 0))
+      assert length(root_results) == 2
+      
+      shared_dep_result = Enum.find(result, &(&1.component.id == shared_dep.id))
+      assert shared_dep_result.depth == 1
+    end
+
+    test "avoids infinite loops in circular dependencies", %{scope: scope} do
+      comp1 = component_fixture(scope, %{name: "Comp1"})
+      comp2 = component_fixture(scope, %{name: "Comp2"})
+      
+      story_fixture(scope, %{component_id: comp1.id})
+      dependency_fixture(comp1, comp2)
+      dependency_fixture(comp2, comp1)
+
+      result = ComponentRepository.show_architecture(scope)
+
+      assert length(result) == 2
+      comp1_result = Enum.find(result, &(&1.component.id == comp1.id))
+      comp2_result = Enum.find(result, &(&1.component.id == comp2.id))
+      
+      assert comp1_result.depth == 0
+      assert comp2_result.depth == 1
+    end
+
+    test "excludes components from other projects", %{scope: scope} do
+      root = component_fixture(scope)
+      story_fixture(scope, %{component_id: root.id})
+      
+      other_user = user_fixture()
+      other_account = account_with_owner_fixture(other_user)
+      other_scope = user_scope_fixture(other_user, other_account)
+      other_project = project_fixture(other_scope)
+      other_scope = user_scope_fixture(other_user, other_account, other_project)
+      other_component = component_fixture(other_scope)
+      story_fixture(other_scope, %{component_id: other_component.id})
+
+      result = ComponentRepository.show_architecture(scope)
+
+      assert length(result) == 1
+      assert hd(result).component.id == root.id
+    end
+
+    test "preloads stories and dependencies on returned components", %{scope: scope} do
+      root = component_fixture(scope)
+      dep = component_fixture(scope)
+      story_fixture(scope, %{component_id: root.id})
+      dependency_fixture(root, dep)
+
+      result = ComponentRepository.show_architecture(scope)
+
+      root_result = Enum.find(result, &(&1.component.id == root.id))
+      assert Ecto.assoc_loaded?(root_result.component.stories)
+      assert Ecto.assoc_loaded?(root_result.component.outgoing_dependencies)
     end
   end
 end
