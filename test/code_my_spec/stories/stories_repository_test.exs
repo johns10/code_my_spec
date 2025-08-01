@@ -6,8 +6,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
   describe "stories" do
     alias CodeMySpec.Stories.Story
 
-    import CodeMySpec.UsersFixtures, only: [user_fixture: 0, user_scope_fixture: 2]
-    import CodeMySpec.AccountsFixtures, only: [account_with_owner_fixture: 1]
+    import CodeMySpec.UsersFixtures
     import CodeMySpec.StoriesFixtures
 
     @invalid_attrs %{
@@ -21,12 +20,8 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     }
 
     test "list_stories/1 returns all scoped stories" do
-      user = user_fixture()
-      other_user = user_fixture()
-      account = account_with_owner_fixture(user)
-      other_account = account_with_owner_fixture(other_user)
-      scope = user_scope_fixture(user, account)
-      other_scope = user_scope_fixture(other_user, other_account)
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
       story = story_fixture(scope)
       other_story = story_fixture(other_scope)
       assert StoriesRepository.list_stories(scope) == [story]
@@ -34,12 +29,8 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "get_story!/2 returns the story with given id" do
-      user = user_fixture()
-      other_user = user_fixture()
-      account = account_with_owner_fixture(user)
-      other_account = account_with_owner_fixture(other_user)
-      scope = user_scope_fixture(user, account)
-      other_scope = user_scope_fixture(other_user, other_account)
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
       story = story_fixture(scope)
       assert StoriesRepository.get_story!(scope, story.id) == story
 
@@ -59,9 +50,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
         lock_expires_at: ~U[2025-07-17 12:48:00Z]
       }
 
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       assert {:ok, %Story{} = story} = StoriesRepository.create_story(scope, valid_attrs)
       assert story.priority == 42
@@ -75,16 +64,12 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "create_story/2 with invalid data returns error changeset" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       assert {:error, %Ecto.Changeset{}} = StoriesRepository.create_story(scope, @invalid_attrs)
     end
 
     test "update_story/3 with valid data updates the story" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       story = story_fixture(scope)
 
       update_attrs = %{
@@ -108,9 +93,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "update_story/3 with invalid data returns error changeset" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       story = story_fixture(scope)
 
       assert {:error, %Ecto.Changeset{}} =
@@ -120,9 +103,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "delete_story/2 deletes the story" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       story = story_fixture(scope)
       assert {:ok, %Story{}} = StoriesRepository.delete_story(scope, story)
       assert_raise Ecto.NoResultsError, fn -> StoriesRepository.get_story!(scope, story.id) end
@@ -132,21 +113,17 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
   describe "query functions" do
     alias CodeMySpec.Stories.Story
 
-    import CodeMySpec.UsersFixtures, only: [user_fixture: 0, user_scope_fixture: 2]
-    import CodeMySpec.AccountsFixtures, only: [account_with_owner_fixture: 1]
+    import CodeMySpec.UsersFixtures
     import CodeMySpec.StoriesFixtures
     import CodeMySpec.ProjectsFixtures
     import Ecto.Query
 
     test "by_project/2 filters stories by project" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
-      project = project_fixture(scope)
-      other_project = project_fixture(scope)
+      %{active_project: project} = scope = full_scope_fixture()
+      %{active_project: other_project} = other_scope = full_scope_fixture()
 
       story1 = story_fixture(scope, %{project_id: project.id})
-      _story2 = story_fixture(scope, %{project_id: other_project.id})
+      _story2 = story_fixture(other_scope, %{project_id: other_project.id})
 
       results =
         Story
@@ -158,9 +135,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "by_status/2 filters stories by status" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       story1 = story_fixture(scope, %{status: :in_progress})
       _story2 = story_fixture(scope, %{status: :completed})
@@ -175,9 +150,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "by_priority/2 filters stories by minimum priority" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       _story1 = story_fixture(scope, %{priority: 10})
       _story2 = story_fixture(scope, %{priority: 50})
@@ -193,9 +166,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "search_text/2 searches title and description" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       story1 = story_fixture(scope, %{title: "User Login Feature"})
       story2 = story_fixture(scope, %{description: "Feature for user authentication"})
@@ -212,10 +183,8 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "locked_by/2 filters stories by lock owner" do
-      user = user_fixture()
-      other_user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      %{user: user} = scope = full_scope_fixture()
+      %{user: other_user} = _other_scope = full_scope_fixture()
 
       story1 = story_fixture(scope, %{locked_by: user.id})
       _story2 = story_fixture(scope, %{locked_by: other_user.id})
@@ -230,9 +199,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "lock_expired/1 filters expired locks" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      %{user: user} = scope = full_scope_fixture()
 
       past_time = DateTime.utc_now() |> DateTime.add(-1, :hour)
       future_time = DateTime.utc_now() |> DateTime.add(1, :hour)
@@ -250,9 +217,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "ordered_by_priority/1 orders by priority desc then inserted_at asc" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       _story1 = story_fixture(scope, %{priority: 10})
       _story2 = story_fixture(scope, %{priority: 50})
@@ -270,9 +235,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "ordered_by_status/1 orders by status asc then inserted_at asc" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       _story1 = story_fixture(scope, %{status: :completed})
       _story2 = story_fixture(scope, %{status: :in_progress})
@@ -290,9 +253,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "paginate/3 limits and offsets results" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
 
       for _ <- 1..10 do
         story_fixture(scope)
@@ -316,9 +277,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "with_preloads/2 preloads associations" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       project = project_fixture(scope)
 
       _story = story_fixture(scope, %{project_id: project.id})
@@ -334,14 +293,11 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
   end
 
   describe "lock management" do
-    import CodeMySpec.UsersFixtures, only: [user_fixture: 0, user_scope_fixture: 2]
-    import CodeMySpec.AccountsFixtures, only: [account_with_owner_fixture: 1]
+    import CodeMySpec.UsersFixtures
     import CodeMySpec.StoriesFixtures
 
     test "acquire_lock/3 successfully locks unlocked story" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      %{user: user} = scope = full_scope_fixture()
       story = story_fixture(scope)
 
       assert {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
@@ -352,11 +308,8 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "acquire_lock/3 fails when story already locked" do
-      user = user_fixture()
-      other_user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
-      other_scope = user_scope_fixture(other_user, account)
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
 
       story = story_fixture(scope)
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
@@ -366,9 +319,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "release_lock/2 successfully releases lock" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       story = story_fixture(scope)
 
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
@@ -382,9 +333,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "extend_lock/3 successfully extends lock for owner" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       story = story_fixture(scope)
 
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
@@ -395,11 +344,8 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "extend_lock/3 fails when not lock owner" do
-      user = user_fixture()
-      other_user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
-      other_scope = user_scope_fixture(other_user, account)
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
 
       story = story_fixture(scope)
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
@@ -409,9 +355,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "is_locked?/1 returns true for valid lock" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      scope = full_scope_fixture()
       story = story_fixture(scope)
 
       refute StoriesRepository.is_locked?(story)
@@ -420,9 +364,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "is_locked?/1 returns false for expired lock" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      %{user: user} = scope = full_scope_fixture()
 
       past_time = DateTime.utc_now() |> DateTime.add(-1, :hour)
 
@@ -437,14 +379,62 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     end
 
     test "lock_owner/1 returns lock owner user id" do
-      user = user_fixture()
-      account = account_with_owner_fixture(user)
-      scope = user_scope_fixture(user, account)
+      %{user: user} = scope = full_scope_fixture()
       story = story_fixture(scope)
 
       assert is_nil(StoriesRepository.lock_owner(story))
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
       assert StoriesRepository.lock_owner(locked_story) == user.id
+    end
+  end
+
+  describe "component assignment" do
+    import CodeMySpec.UsersFixtures
+    import CodeMySpec.StoriesFixtures
+    import CodeMySpec.ComponentsFixtures
+
+    test "set_story_component/3 successfully assigns component to story" do
+      scope = full_scope_fixture()
+      story = story_fixture(scope)
+      component = component_fixture(scope)
+
+      assert {:ok, updated_story} =
+               StoriesRepository.set_story_component(scope, story, component.id)
+
+      assert updated_story.component_id == component.id
+    end
+
+    test "clear_story_component/2 successfully removes component assignment" do
+      scope = full_scope_fixture()
+      component = component_fixture(scope)
+      story = story_fixture(scope, %{component_id: component.id})
+
+      assert {:ok, updated_story} = StoriesRepository.clear_story_component(scope, story)
+      assert is_nil(updated_story.component_id)
+    end
+
+    test "set_story_component/3 creates audit trail" do
+      scope = full_scope_fixture()
+      story = story_fixture(scope)
+      component = component_fixture(scope)
+
+      {:ok, _updated_story} = StoriesRepository.set_story_component(scope, story, component.id)
+
+      versions = CodeMySpec.Repo.all(PaperTrail.Version)
+      # Creation + component assignment
+      assert length(versions) >= 2
+    end
+
+    test "clear_story_component/2 creates audit trail" do
+      scope = full_scope_fixture()
+      component = component_fixture(scope)
+      story = story_fixture(scope, %{component_id: component.id})
+
+      {:ok, _updated_story} = StoriesRepository.clear_story_component(scope, story)
+
+      versions = CodeMySpec.Repo.all(PaperTrail.Version)
+      # Creation + component clearing
+      assert length(versions) >= 2
     end
   end
 end

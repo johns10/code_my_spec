@@ -2,6 +2,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
   import Ecto.Query, warn: false
 
   alias CodeMySpec.Projects.Project
+  alias CodeMySpec.Accounts.Account
   alias CodeMySpec.Repo
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Stories.Story
@@ -22,10 +23,15 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     Repo.get_by!(Story, id: id, account_id: scope.active_account.id)
   end
 
-  def create_story(%Scope{active_project: %Project{id: project_id}} = scope, attrs) do
+  def create_story(
+        %Scope{active_project: %Project{id: project_id}, active_account: %Account{id: account_id}} =
+          scope,
+        attrs
+      ) do
     %Story{}
-    |> Story.changeset(attrs, scope)
+    |> Story.changeset(attrs)
     |> Ecto.Changeset.put_change(:project_id, project_id)
+    |> Ecto.Changeset.put_change(:account_id, account_id)
     |> PaperTrail.insert(originator: scope.user)
     |> case do
       {:ok, %{model: story}} -> {:ok, story}
@@ -35,7 +41,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
 
   def create_story(%Scope{} = scope, attrs) do
     %Story{}
-    |> Story.changeset(attrs, scope)
+    |> Story.changeset(attrs)
     |> PaperTrail.insert(originator: scope.user)
     |> case do
       {:ok, %{model: story}} -> {:ok, story}
@@ -45,7 +51,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
 
   def update_story(%Scope{} = scope, %Story{} = story, attrs) do
     story
-    |> Story.changeset(attrs, scope)
+    |> Story.changeset(attrs)
     |> PaperTrail.update(originator: scope.user)
     |> case do
       {:ok, %{model: story}} -> {:ok, story}
@@ -149,6 +155,26 @@ defmodule CodeMySpec.Stories.StoriesRepository do
 
   def lock_owner(%Story{} = story) do
     story.locked_by
+  end
+
+  def set_story_component(%Scope{} = scope, %Story{} = story, component_id) do
+    story
+    |> Story.changeset(%{component_id: component_id})
+    |> PaperTrail.update(originator: scope.user)
+    |> case do
+      {:ok, %{model: story}} -> {:ok, story}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  def clear_story_component(%Scope{} = scope, %Story{} = story) do
+    story
+    |> Story.changeset(%{component_id: nil})
+    |> PaperTrail.update(originator: scope.user)
+    |> case do
+      {:ok, %{model: story}} -> {:ok, story}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   # Private function for lock operations that don't need audit trail

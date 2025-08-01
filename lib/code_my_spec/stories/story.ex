@@ -13,6 +13,7 @@ defmodule CodeMySpec.Stories.Story do
           lock_expires_at: DateTime.t() | nil,
           locked_by: integer() | nil,
           project_id: integer() | nil,
+          component_id: integer() | nil,
           account_id: integer() | nil,
           first_version: PaperTrail.Version.t() | nil,
           current_version: PaperTrail.Version.t() | nil,
@@ -34,12 +35,13 @@ defmodule CodeMySpec.Stories.Story do
 
     belongs_to :first_version, PaperTrail.Version
     belongs_to :current_version, PaperTrail.Version, on_replace: :update
+    belongs_to :component, CodeMySpec.Components.Component
 
     timestamps(type: :utc_datetime)
   end
 
   @doc false
-  def changeset(story, attrs, user_scope) do
+  def changeset(story, attrs) do
     story
     |> cast(attrs, [
       :title,
@@ -50,14 +52,14 @@ defmodule CodeMySpec.Stories.Story do
       :locked_at,
       :lock_expires_at,
       :locked_by,
-      :project_id
+      :project_id,
+      :component_id
     ])
     |> validate_required([
       :title,
       :description,
       :acceptance_criteria
     ])
-    |> put_change(:account_id, user_scope.active_account.id)
   end
 
   @doc false

@@ -131,6 +131,46 @@ defmodule CodeMySpec.Stories do
   def change_story(%Scope{} = scope, %Story{} = story, attrs \\ %{}) do
     true = story.account_id == scope.active_account.id
 
-    Story.changeset(story, attrs, scope)
+    Story.changeset(story, attrs)
+  end
+
+  @doc """
+  Sets the component that satisfies a story.
+
+  ## Examples
+
+      iex> set_story_component(scope, story, component_id)
+      {:ok, %Story{}}
+
+      iex> set_story_component(scope, story, invalid_component_id)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def set_story_component(%Scope{} = scope, %Story{} = story, component_id) do
+    true = story.account_id == scope.active_account.id
+
+    with {:ok, story = %Story{}} <-
+           StoriesRepository.set_story_component(scope, story, component_id) do
+      broadcast(scope, {:updated, story})
+      {:ok, story}
+    end
+  end
+
+  @doc """
+  Clears the component assignment from a story.
+
+  ## Examples
+
+      iex> clear_story_component(scope, story)
+      {:ok, %Story{}}
+
+  """
+  def clear_story_component(%Scope{} = scope, %Story{} = story) do
+    true = story.account_id == scope.active_account.id
+
+    with {:ok, story = %Story{}} <- StoriesRepository.clear_story_component(scope, story) do
+      broadcast(scope, {:updated, story})
+      {:ok, story}
+    end
   end
 end
