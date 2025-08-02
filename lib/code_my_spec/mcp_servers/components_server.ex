@@ -24,5 +24,8 @@ defmodule CodeMySpec.MCPServers.ComponentsServer do
   component(CodeMySpec.MCPServers.Components.Tools.StartContextDesign)
   component(CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign)
   component(CodeMySpec.MCPServers.Components.Tools.ShowArchitecture)
+  component(CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary)
+  component(CodeMySpec.MCPServers.Components.Tools.ContextStatistics)
+  component(CodeMySpec.MCPServers.Components.Tools.OrphanedContexts)
   component(CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent)
 end

@@ -132,4 +132,53 @@ defmodule CodeMySpec.Components.ComponentRepository do
 
     Enum.map(root_components, &%{component: &1, depth: 0})
   end
+
+  @spec list_orphaned_contexts(Scope.t()) :: [Component.t()]
+  def list_orphaned_contexts(%Scope{} = scope) do
+    all_components = list_components_with_dependencies(scope)
+
+    # Get all component IDs that are reachable from entry points (components with stories)
+    entry_components =
+      Enum.filter(all_components, fn c ->
+        length(c.stories || []) > 0
+      end)
+
+    dependency_ids =
+      entry_components
+      |> Enum.flat_map(fn c -> get_all_dependency_ids(c, all_components) end)
+      |> MapSet.new()
+
+    # Filter for contexts that have no stories and are not dependencies of entry points
+    all_components
+    |> Enum.filter(fn c ->
+      c.type == :context and
+        length(c.stories || []) == 0 and
+        not MapSet.member?(dependency_ids, c.id)
+    end)
+  end
+
+  defp get_all_dependency_ids(component, all_components, visited \\ MapSet.new()) do
+    if MapSet.member?(visited, component.id) do
+      []
+    else
+      visited = MapSet.put(visited, component.id)
+
+      direct_deps =
+        Enum.map(component.outgoing_dependencies || [], fn dep ->
+          dep.target_component.id
+        end)
+
+      # Recursively get dependencies of dependencies
+      indirect_deps =
+        (component.outgoing_dependencies || [])
+        |> Enum.flat_map(fn dep ->
+          case Enum.find(all_components, &(&1.id == dep.target_component.id)) do
+            nil -> []
+            dep_component -> get_all_dependency_ids(dep_component, all_components, visited)
+          end
+        end)
+
+      direct_deps ++ indirect_deps
+    end
+  end
 end

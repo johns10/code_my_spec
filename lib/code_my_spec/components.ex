@@ -30,6 +30,7 @@ defmodule CodeMySpec.Components do
 
   defdelegate list_components(scope), to: ComponentRepository
   defdelegate list_components_with_dependencies(scope), to: ComponentRepository
+  defdelegate list_orphaned_contexts(scope), to: ComponentRepository
   defdelegate get_component!(scope, id), to: ComponentRepository
   defdelegate get_component(scope, id), to: ComponentRepository
   defdelegate show_architecture(scope), to: ComponentRepository
