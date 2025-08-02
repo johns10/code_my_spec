@@ -11,7 +11,7 @@ defmodule CodeMySpec.Stories.Markdown do
         }
 
   @type format_error :: :invalid_structure | :missing_sections | :malformed_headers
-  @type parse_error :: :invalid_format | :empty_document | :missing_story_data
+  @type parse_error :: :invalid_format | :empty_document | :missing_story_data | :missing_sections
 
   @spec validate_format(binary()) :: {:ok, :valid} | {:error, format_error()}
   def validate_format(markdown) when is_binary(markdown) do

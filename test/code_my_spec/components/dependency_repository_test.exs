@@ -16,14 +16,14 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       source = component_fixture(scope, %{name: "Source", type: :context})
       target = component_fixture(scope, %{name: "Target", type: :schema})
       
-      dependency = dependency_fixture(source, target)
+      dependency = dependency_fixture(scope, source, target)
 
       # Create dependency in different project that should not be returned
       other_scope = full_scope_fixture()
       other_source = component_fixture(other_scope, %{name: "OtherSource"})
       other_target = component_fixture(other_scope, %{name: "OtherTarget"})
       
-      _other_dependency = dependency_fixture(other_source, other_target, %{type: :import})
+      _other_dependency = dependency_fixture(other_scope, other_source, other_target, %{type: :import})
 
       dependencies = DependencyRepository.list_dependencies(scope)
 
@@ -46,7 +46,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       source = component_fixture(scope)
       target = component_fixture(scope)
       
-      _dependency = dependency_fixture(source, target, %{type: :use})
+      _dependency = dependency_fixture(scope, source, target, %{type: :use})
 
       [dependency] = DependencyRepository.list_dependencies(scope)
 
@@ -61,7 +61,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       source = component_fixture(scope)
       target = component_fixture(scope)
       
-      created_dependency = dependency_fixture(source, target, %{type: :alias})
+      created_dependency = dependency_fixture(scope, source, target, %{type: :alias})
 
       dependency = DependencyRepository.get_dependency!(scope, created_dependency.id)
 
@@ -88,7 +88,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       source = component_fixture(other_scope)
       target = component_fixture(other_scope)
       
-      dependency = dependency_fixture(source, target)
+      dependency = dependency_fixture(other_scope, source, target)
 
       assert_raise Ecto.NoResultsError, fn ->
         DependencyRepository.get_dependency!(scope, dependency.id)
@@ -108,7 +108,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
         type: :require
       }
 
-      assert {:ok, dependency} = DependencyRepository.create_dependency(attrs)
+      assert {:ok, dependency} = DependencyRepository.create_dependency(scope, attrs)
       assert dependency.source_component_id == source.id
       assert dependency.target_component_id == target.id
       assert dependency.type == :require
@@ -119,7 +119,9 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
     end
 
     test "returns error changeset with missing required fields" do
-      assert {:error, changeset} = DependencyRepository.create_dependency(%{})
+      scope = full_scope_fixture()
+      
+      assert {:error, changeset} = DependencyRepository.create_dependency(scope, %{})
       
       assert errors_on(changeset) == %{
         source_component_id: ["can't be blank"],
@@ -138,18 +140,20 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
         type: :call
       }
 
-      assert {:error, changeset} = DependencyRepository.create_dependency(attrs)
+      assert {:error, changeset} = DependencyRepository.create_dependency(scope, attrs)
       assert "cannot depend on itself" in errors_on(changeset).target_component_id
     end
 
     test "returns error changeset with invalid foreign key" do
+      scope = full_scope_fixture()
+      
       attrs = %{
         source_component_id: 999,
         target_component_id: 998,
         type: :import
       }
 
-      assert {:error, changeset} = DependencyRepository.create_dependency(attrs)
+      assert {:error, changeset} = DependencyRepository.create_dependency(scope, attrs)
       assert changeset.errors != []
     end
 
@@ -164,8 +168,8 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
         type: :call
       }
 
-      assert {:ok, _dependency} = DependencyRepository.create_dependency(attrs)
-      assert {:error, changeset} = DependencyRepository.create_dependency(attrs)
+      assert {:ok, _dependency} = DependencyRepository.create_dependency(scope, attrs)
+      assert {:error, changeset} = DependencyRepository.create_dependency(scope, attrs)
       
       assert changeset.errors != []
     end
@@ -177,7 +181,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       source = component_fixture(scope)
       target = component_fixture(scope)
       
-      dependency = dependency_fixture(source, target, %{type: :other})
+      dependency = dependency_fixture(scope, source, target, %{type: :other})
 
       assert {:ok, deleted_dependency} = DependencyRepository.delete_dependency(dependency)
       assert deleted_dependency.id == dependency.id
@@ -191,7 +195,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       source = component_fixture(scope)
       target = component_fixture(scope)
       
-      dependency = dependency_fixture(source, target, %{type: :use})
+      dependency = dependency_fixture(scope, source, target, %{type: :use})
 
       # Delete the dependency directly to make it stale
       Repo.delete!(dependency)
@@ -212,7 +216,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       comp_c = component_fixture(scope, %{name: "C"})
 
       # Create linear dependencies: A -> B -> C
-      _deps = dependency_chain_fixture([comp_a, comp_b, comp_c])
+      _deps = dependency_chain_fixture(scope, [comp_a, comp_b, comp_c])
 
       assert DependencyRepository.validate_dependency_graph(scope) == :ok
     end
@@ -224,7 +228,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       comp_b = component_fixture(scope, %{name: "ComponentB"})
 
       # Create circular dependency: A -> B and B -> A
-      {_dep1, _dep2} = circular_dependency_fixture(comp_a, comp_b)
+      {_dep1, _dep2} = circular_dependency_fixture(scope, comp_a, comp_b)
 
       assert {:error, cycles} = DependencyRepository.validate_dependency_graph(scope)
       assert length(cycles) == 2  # Both directions detected
@@ -244,7 +248,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       other_a = component_fixture(other_scope, %{name: "OtherA"})
       other_b = component_fixture(other_scope, %{name: "OtherB"})
 
-      {_dep1, _dep2} = circular_dependency_fixture(other_a, other_b)
+      {_dep1, _dep2} = circular_dependency_fixture(other_scope, other_a, other_b)
 
       # Current scope should be clean
       assert DependencyRepository.validate_dependency_graph(scope) == :ok
@@ -262,9 +266,9 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       target = component_fixture(scope, %{name: "Target"})
 
       # Create dependencies: one_dep -> target, two_deps -> target, two_deps -> no_deps
-      _dep1 = dependency_fixture(one_dep, target)
-      _dep2 = dependency_fixture(two_deps, target, %{type: :import})
-      _dep3 = dependency_fixture(two_deps, no_deps, %{type: :use})
+      _dep1 = dependency_fixture(scope, one_dep, target)
+      _dep2 = dependency_fixture(scope, two_deps, target, %{type: :import})
+      _dep3 = dependency_fixture(scope, two_deps, no_deps, %{type: :use})
 
       assert {:ok, components} = DependencyRepository.resolve_dependency_order(scope)
       

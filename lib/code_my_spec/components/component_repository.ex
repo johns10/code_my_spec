@@ -111,9 +111,8 @@ defmodule CodeMySpec.Components.ComponentRepository do
       {"dependency_graph", Component}
       |> recursive_ctes(true)
       |> with_cte("dependency_graph", as: ^cte_query)
-      |> select([dg], %{id: fragment("?.id", dg), depth: fragment("MIN(?.depth)", dg)})
-      |> group_by([dg], fragment("?.id", dg))
-      |> order_by([dg], [asc: fragment("MIN(?.depth)", dg), asc: fragment("?.id", dg)])
+      |> select([dg], %{id: fragment("?.id", dg), depth: fragment("?.depth", dg)})
+      |> order_by([dg], [asc: fragment("?.depth", dg), asc: fragment("?.id", dg)])
       |> Repo.all()
 
     component_ids = Enum.map(results, & &1.id)
