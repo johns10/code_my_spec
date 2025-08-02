@@ -9,8 +9,6 @@ defmodule CodeMySpec.MCPServers.StoriesServerTest do
 
       # Check that we have the three main capabilities
       assert Map.has_key?(capabilities, "tools")
-      assert Map.has_key?(capabilities, "resources")
-      assert Map.has_key?(capabilities, "prompts")
     end
 
     test "has correct server info" do

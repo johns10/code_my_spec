@@ -10,6 +10,7 @@ defmodule CodeMySpec.MCPServers.ComponentsServer do
   component(CodeMySpec.MCPServers.Components.Tools.DeleteComponent)
   component(CodeMySpec.MCPServers.Components.Tools.GetComponent)
   component(CodeMySpec.MCPServers.Components.Tools.ListComponents)
+  component(CodeMySpec.MCPServers.Stories.Tools.ListStories)
 
   # Batch operations
   component(CodeMySpec.MCPServers.Components.Tools.CreateComponents)
@@ -23,4 +24,5 @@ defmodule CodeMySpec.MCPServers.ComponentsServer do
   component(CodeMySpec.MCPServers.Components.Tools.StartContextDesign)
   component(CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign)
   component(CodeMySpec.MCPServers.Components.Tools.ShowArchitecture)
+  component(CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent)
 end
