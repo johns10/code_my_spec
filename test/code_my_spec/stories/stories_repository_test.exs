@@ -32,10 +32,10 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       other_scope = full_scope_fixture()
       story = story_fixture(scope)
       other_story = story_fixture(other_scope)
-      
+
       assert length(StoriesRepository.list_project_stories(scope)) == 1
       assert hd(StoriesRepository.list_project_stories(scope)).id == story.id
-      
+
       assert length(StoriesRepository.list_project_stories(other_scope)) == 1
       assert hd(StoriesRepository.list_project_stories(other_scope)).id == other_story.id
     end
@@ -43,21 +43,21 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     test "list_unsatisfied_stories/1 returns only stories without components" do
       scope = full_scope_fixture()
       other_scope = full_scope_fixture()
-      
+
       # Need to import ComponentsFixtures for component_fixture
       import CodeMySpec.ComponentsFixtures
       component = component_fixture(scope)
-      
+
       # Create stories with and without components in same project
       satisfied_story = story_fixture(scope, %{component_id: component.id})
       unsatisfied_story1 = story_fixture(scope, %{component_id: nil})
       unsatisfied_story2 = story_fixture(scope)
-      
+
       # Story in different project should not be included
       _other_unsatisfied = story_fixture(other_scope, %{component_id: nil})
-      
+
       results = StoriesRepository.list_unsatisfied_stories(scope)
-      
+
       assert length(results) == 2
       story_ids = Enum.map(results, & &1.id)
       assert unsatisfied_story1.id in story_ids
@@ -80,7 +80,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       valid_attrs = %{
         status: :in_progress,
         description: "some description",
-        title: "some title",
+        title: title = Faker.Lorem.word(),
         acceptance_criteria: ["option1", "option2"],
         locked_at: ~U[2025-07-17 12:48:00Z],
         lock_expires_at: ~U[2025-07-17 12:48:00Z]
@@ -91,7 +91,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       assert {:ok, %Story{} = story} = StoriesRepository.create_story(scope, valid_attrs)
       assert story.status == :in_progress
       assert story.description == "some description"
-      assert story.title == "some title"
+      assert story.title == title
       assert story.acceptance_criteria == ["option1", "option2"]
       assert story.locked_at == ~U[2025-07-17 12:48:00Z]
       assert story.lock_expires_at == ~U[2025-07-17 12:48:00Z]
@@ -185,7 +185,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     test "by_component_priority/2 filters stories by component priority" do
       scope = full_scope_fixture()
       import CodeMySpec.ComponentsFixtures
-      
+
       component1 = component_fixture(scope, %{priority: 10})
       component2 = component_fixture(scope, %{priority: 50})
       component3 = component_fixture(scope, %{priority: 100})

@@ -5,7 +5,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
 
   alias CodeMySpec.Stories
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
+  alias CodeMySpec.MCPServers.Components.{ComponentsMapper, Tools.ShowArchitecture}
   alias CodeMySpec.MCPServers.Validators
 
   schema do
@@ -15,14 +15,14 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
   def execute(_params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame) do
       unsatisfied_stories = Stories.list_unsatisfied_stories(scope)
-      architecture = Components.show_architecture(scope)
+      {:reply, architecture_response, _} = ShowArchitecture.execute(%{}, frame)
       dependency_validation = Components.validate_dependency_graph(scope)
 
       prompt = """
       ## Context Design Review
 
       **Current Architecture:**
-      #{format_architecture(architecture)}
+      #{format_architecture_from_response(architecture_response)}
 
       **Unsatisfied Stories:** #{length(unsatisfied_stories)} stories without assigned components
       #{format_unsatisfied_stories(unsatisfied_stories)}
@@ -42,8 +42,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
       - Assigning contexts to the #{length(unsatisfied_stories)} unsatisfied stories
       - Reviewing dependency issues if any were found
       - Ensuring each context has clear ownership boundaries
-
-      Would you like me to provide specific recommendations for any of these areas?
       """
 
       {:reply, ComponentsMapper.prompt_response(prompt), frame}
@@ -77,16 +75,79 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
   defp format_dependency_analysis({:error, cycles}),
     do: "#{length(cycles)} circular dependencies detected ❌"
 
-  defp format_architecture([]) do
-    "No components defined yet"
+  defp format_architecture_from_response(response) do
+    case response.content do
+      [%{"text" => json_text}] ->
+        case Jason.decode(json_text) do
+          {:ok, architecture_data} -> format_architecture_json(architecture_data)
+          {:error, _} -> "Unable to parse architecture data"
+        end
+
+      _ ->
+        "Unable to retrieve architecture data"
+    end
   end
 
-  defp format_architecture(architecture) do
-    architecture
-    |> Enum.map(fn %{component: component, depth: depth} ->
-      indent = String.duplicate("  ", depth)
-      stories_count = length(component.stories || [])
-      "#{indent}- **#{component.name}** (#{component.type}) - #{stories_count} stories"
+  defp format_architecture_json(%{"architecture" => arch}) do
+    components = arch["components"]
+
+    # Get entry points (components with stories at depth 0)
+    entry_points =
+      components
+      |> Enum.filter(fn comp ->
+        comp["depth"] == 0 and comp["component"]["metrics"]["has_stories"]
+      end)
+      |> Enum.uniq_by(& &1["component"]["id"])
+
+    entry_points
+    |> Enum.map(&format_component_tree(&1))
+    |> Enum.join("\n\n")
+  end
+
+  defp format_component_tree(%{"component" => comp}) do
+    # Format the main component
+    stories_text = format_component_stories(comp["stories"])
+    deps_text = format_component_dependencies(comp["dependencies"])
+
+    header = "**#{comp["name"]}** (#{comp["type"]}) - #{comp["description"]}"
+
+    stories_section =
+      if length(comp["stories"]) > 0 do
+        "\n  Stories:\n#{stories_text}"
+      else
+        "\n  No stories"
+      end
+
+    deps_section =
+      if length(comp["dependencies"]) > 0 do
+        "\n  Dependencies:\n#{deps_text}"
+      else
+        ""
+      end
+
+    "#{header}#{stories_section}#{deps_section}"
+  end
+
+  defp format_component_stories(stories) do
+    stories
+    |> Enum.map(fn story ->
+      criteria =
+        if length(story["acceptance_criteria"]) > 0 do
+          criteria_list = Enum.map(story["acceptance_criteria"], &"      - #{&1}")
+          "\n    Acceptance Criteria:\n#{Enum.join(criteria_list, "\n")}"
+        else
+          ""
+        end
+
+      "    - **#{story["title"]}**: #{story["description"]}#{criteria}"
+    end)
+    |> Enum.join("\n")
+  end
+
+  defp format_component_dependencies(dependencies) do
+    dependencies
+    |> Enum.map(fn dep ->
+      "    - #{dep["target"]["name"]} (#{dep["target"]["type"]})"
     end)
     |> Enum.join("\n")
   end

@@ -4,11 +4,13 @@ defmodule CodeMySpecWeb.StoryLiveTest do
   import Phoenix.LiveViewTest
   import CodeMySpec.StoriesFixtures
 
-  @create_attrs %{
-    status: :in_progress,
-    description: "some description",
-    title: "some title"
-  }
+  def create_attrs(),
+    do: %{
+      status: :in_progress,
+      description: "some description",
+      title: Faker.Lorem.word()
+    }
+
   @update_attrs %{
     status: :completed,
     description: "some updated description",
@@ -53,15 +55,17 @@ defmodule CodeMySpecWeb.StoryLiveTest do
              |> form("#story-form", story: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
+      attrs = %{title: title} = create_attrs()
+
       assert {:ok, index_live, _html} =
                form_live
-               |> form("#story-form", story: @create_attrs)
+               |> form("#story-form", story: attrs)
                |> render_submit()
                |> follow_redirect(conn, ~p"/stories")
 
       html = render(index_live)
       assert html =~ "Story created successfully"
-      assert html =~ "some title"
+      assert html =~ title
     end
 
     test "updates story in listing", %{conn: conn, story: story} do
