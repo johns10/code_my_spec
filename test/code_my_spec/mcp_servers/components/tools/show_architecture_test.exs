@@ -32,7 +32,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitectureTest do
       
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      assert parsed["architecture"] == []
+      assert parsed["architecture"]["components"] == []
     end
 
     test "returns components with stories and their dependencies", %{scope: scope} do
@@ -51,7 +51,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitectureTest do
 
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      architecture = parsed["architecture"]
+      architecture = parsed["architecture"]["components"]
       
       assert length(architecture) == 3
 
@@ -83,7 +83,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitectureTest do
 
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      architecture = parsed["architecture"]
+      architecture = parsed["architecture"]["components"]
       
       assert length(architecture) == 4
 
