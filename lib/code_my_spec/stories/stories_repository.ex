@@ -15,6 +15,13 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     Repo.all_by(Story, project_id: scope.active_project.id)
   end
 
+  def list_unsatisfied_stories(%Scope{} = scope) do
+    from(s in Story,
+      where: s.project_id == ^scope.active_project.id and is_nil(s.component_id)
+    )
+    |> Repo.all()
+  end
+
   def get_story(%Scope{} = scope, id) do
     Repo.get_by(Story, id: id, account_id: scope.active_account.id)
   end

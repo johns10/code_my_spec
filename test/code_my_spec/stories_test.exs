@@ -70,5 +70,19 @@ defmodule CodeMySpec.StoriesTest do
         Stories.clear_story_component(other_scope, story)
       end
     end
+
+    test "list_unsatisfied_stories/1 returns stories without components" do
+      scope = full_scope_fixture()
+      component = component_fixture(scope)
+      
+      satisfied_story = story_fixture(scope, %{component_id: component.id})
+      unsatisfied_story = story_fixture(scope, %{component_id: nil})
+      
+      unsatisfied = Stories.list_unsatisfied_stories(scope)
+      
+      assert length(unsatisfied) == 1
+      assert hd(unsatisfied).id == unsatisfied_story.id
+      refute Enum.any?(unsatisfied, fn s -> s.id == satisfied_story.id end)
+    end
   end
 end

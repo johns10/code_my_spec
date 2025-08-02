@@ -28,6 +28,44 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       assert StoriesRepository.list_stories(other_scope) == [other_story]
     end
 
+    test "list_project_stories/1 returns all project stories" do
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
+      story = story_fixture(scope)
+      other_story = story_fixture(other_scope)
+      
+      assert length(StoriesRepository.list_project_stories(scope)) == 1
+      assert hd(StoriesRepository.list_project_stories(scope)).id == story.id
+      
+      assert length(StoriesRepository.list_project_stories(other_scope)) == 1
+      assert hd(StoriesRepository.list_project_stories(other_scope)).id == other_story.id
+    end
+
+    test "list_unsatisfied_stories/1 returns only stories without components" do
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
+      
+      # Need to import ComponentsFixtures for component_fixture
+      import CodeMySpec.ComponentsFixtures
+      component = component_fixture(scope)
+      
+      # Create stories with and without components in same project
+      satisfied_story = story_fixture(scope, %{component_id: component.id})
+      unsatisfied_story1 = story_fixture(scope, %{component_id: nil})
+      unsatisfied_story2 = story_fixture(scope)
+      
+      # Story in different project should not be included
+      _other_unsatisfied = story_fixture(other_scope, %{component_id: nil})
+      
+      results = StoriesRepository.list_unsatisfied_stories(scope)
+      
+      assert length(results) == 2
+      story_ids = Enum.map(results, & &1.id)
+      assert unsatisfied_story1.id in story_ids
+      assert unsatisfied_story2.id in story_ids
+      refute satisfied_story.id in story_ids
+    end
+
     test "get_story!/2 returns the story with given id" do
       scope = full_scope_fixture()
       other_scope = full_scope_fixture()
