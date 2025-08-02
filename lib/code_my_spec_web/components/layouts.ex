@@ -50,13 +50,16 @@ defmodule CodeMySpecWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
-            <.link href={~p"/stories"} class="btn btn-ghost">Stories</.link>
-          </li>
-          <li>
             <.link href={~p"/accounts"} class="btn btn-ghost">Accounts</.link>
           </li>
           <li>
             <.link href={~p"/projects"} class="btn btn-ghost">Projects</.link>
+          </li>
+          <li>
+            <.link href={~p"/stories"} class="btn btn-ghost">Stories</.link>
+          </li>
+          <li>
+            <.link href={~p"/components"} class="btn btn-ghost">Components</.link>
           </li>
           <li>
             <.theme_toggle />
