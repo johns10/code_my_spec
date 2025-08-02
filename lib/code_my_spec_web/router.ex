@@ -64,6 +64,9 @@ defmodule CodeMySpecWeb.Router do
 
     forward "/stories", Hermes.Server.Transport.StreamableHTTP.Plug,
       server: CodeMySpec.MCPServers.StoriesServer
+
+    forward "/components", Hermes.Server.Transport.StreamableHTTP.Plug,
+      server: CodeMySpec.MCPServers.ComponentsServer
   end
 
   # Other scopes may use custom stacks.
@@ -118,6 +121,10 @@ defmodule CodeMySpecWeb.Router do
       live "/stories/import", StoryLive.Import, :import
       live "/stories/:id", StoryLive.Show, :show
       live "/stories/:id/edit", StoryLive.Form, :edit
+
+      live "/components", ComponentLive.Index, :index
+      live "/components/new", ComponentLive.Form, :new
+      live "/components/:id/edit", ComponentLive.Form, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password

@@ -51,7 +51,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def list_components_with_dependencies(%Scope{active_project_id: project_id}) do
     Component
     |> where([c], c.project_id == ^project_id)
-    |> preload([:dependencies, :dependents, :outgoing_dependencies, :incoming_dependencies])
+    |> preload([:dependencies, :dependents, :outgoing_dependencies, :incoming_dependencies, :stories])
     |> Repo.all()
   end
 

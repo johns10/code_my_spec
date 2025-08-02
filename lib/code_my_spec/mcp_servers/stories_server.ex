@@ -2,7 +2,7 @@ defmodule CodeMySpec.MCPServers.StoriesServer do
   use Hermes.Server,
     name: "stories-server",
     version: "1.0.0",
-    capabilities: [:tools, :resources, :prompts]
+    capabilities: [:tools]
 
   # Tool components
   component(CodeMySpec.MCPServers.Stories.Tools.CreateStory)

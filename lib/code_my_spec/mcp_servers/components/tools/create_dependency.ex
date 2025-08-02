@@ -10,7 +10,11 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependency do
   schema do
     field :source_component_id, :integer, required: true
     field :target_component_id, :integer, required: true
-    field :type, :enum, values: [:require, :import, :alias, :use, :call, :other], required: true
+
+    field :type, :string,
+      required: true,
+      enum: [:require, :import, :alias, :use, :call, :other],
+      description: "Must be one of require, import, alias, use, call"
   end
 
   @impl true
@@ -56,10 +60,11 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependency do
   defp circular_dependency_error(cycles) do
     alias Hermes.Server.Response
 
-    cycle_descriptions = Enum.map(cycles, fn cycle ->
-      path = Enum.join(cycle.path, " -> ")
-      "#{path} -> #{hd(cycle.path)}"
-    end)
+    cycle_descriptions =
+      Enum.map(cycles, fn cycle ->
+        path = Enum.join(cycle.path, " -> ")
+        "#{path} -> #{hd(cycle.path)}"
+      end)
 
     error_message = """
     Circular dependency detected. This would create the following cycles:

@@ -2,7 +2,7 @@ defmodule CodeMySpec.MCPServers.ComponentsServer do
   use Hermes.Server,
     name: "components-server",
     version: "1.0.0",
-    capabilities: [:tools, :resources, :prompts]
+    capabilities: [:tools]
 
   # Core CRUD operations
   component(CodeMySpec.MCPServers.Components.Tools.CreateComponent)

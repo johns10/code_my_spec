@@ -4,7 +4,8 @@ defmodule CodeMySpec.ComponentsFixtures do
   entities via the `CodeMySpec.Components` context.
   """
 
-  alias CodeMySpec.Components.{ComponentRepository, Dependency}
+  alias CodeMySpec.Components.Dependency
+  alias CodeMySpec.Components
   alias CodeMySpec.Repo
 
   @doc """
@@ -21,7 +22,7 @@ defmodule CodeMySpec.ComponentsFixtures do
         description: "A test component"
       })
 
-    {:ok, component} = ComponentRepository.create_component(scope, attrs)
+    {:ok, component} = Components.create_component(scope, attrs)
     component
   end
 
@@ -47,8 +48,8 @@ defmodule CodeMySpec.ComponentsFixtures do
       module_name: "MyApp.ChildComponent#{unique_id}"
     }
 
-    {:ok, parent} = ComponentRepository.create_component(scope, parent_attrs)
-    {:ok, child} = ComponentRepository.create_component(scope, child_attrs)
+    {:ok, parent} = Components.create_component(scope, parent_attrs)
+    {:ok, child} = Components.create_component(scope, child_attrs)
 
     # Create dependency relationship directly via changeset
     %Dependency{}

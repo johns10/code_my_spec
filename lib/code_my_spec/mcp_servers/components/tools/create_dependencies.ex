@@ -11,7 +11,18 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencies do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :dependencies, {:list, :map}, required: true
+    field :dependencies,
+          {:list,
+           {:object,
+            %{
+              source_component_id: {:required, :integer},
+              target_component_id: {:required, :integer},
+              type:
+                {:required, :string,
+                 enum: [:require, :import, :alias, :use, :call, :other],
+                 description: "Must be one of require, import, alias, use, call"}
+            }}},
+          required: true
   end
 
   @impl true

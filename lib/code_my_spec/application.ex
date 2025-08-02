@@ -15,6 +15,7 @@ defmodule CodeMySpec.Application do
         {Phoenix.PubSub, name: CodeMySpec.PubSub},
         Hermes.Server.Registry,
         {CodeMySpec.MCPServers.StoriesServer, transport: :streamable_http},
+        {CodeMySpec.MCPServers.ComponentsServer, transport: :streamable_http},
         # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
         # {CodeMySpec.Worker, arg},
         # Start to serve requests, typically the last entry
