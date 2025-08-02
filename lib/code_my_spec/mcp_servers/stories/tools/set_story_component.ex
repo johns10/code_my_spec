@@ -13,12 +13,15 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent do
   end
 
   @impl true
-  def execute(%{"story_id" => story_id, "component_id" => component_id}, frame) do
+  def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.get_story(scope, story_id),
-         {:ok, updated_story} <- Stories.set_story_component(scope, story, component_id) do
+         story when not is_nil(story) <- Stories.get_story(scope, params.story_id),
+         {:ok, updated_story} <- Stories.set_story_component(scope, story, params.component_id) do
       {:reply, StoriesMapper.story_response(updated_story), frame}
     else
+      nil ->
+        {:reply, StoriesMapper.error("Story not found"), frame}
+
       {:error, changeset = %Ecto.Changeset{}} ->
         {:reply, StoriesMapper.validation_error(changeset), frame}
 

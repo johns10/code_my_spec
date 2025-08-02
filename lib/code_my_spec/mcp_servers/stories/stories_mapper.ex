@@ -8,7 +8,8 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       id: story.id,
       title: story.title,
       description: story.description,
-      acceptance_criteria: story.acceptance_criteria
+      acceptance_criteria: story.acceptance_criteria,
+      component_id: story.component_id
     })
   end
 
@@ -30,7 +31,8 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       id: story.id,
       title: story.title,
       description: story.description,
-      acceptance_criteria: story.acceptance_criteria
+      acceptance_criteria: story.acceptance_criteria,
+      component_id: story.component_id
     })
   end
 
@@ -90,7 +92,8 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
     %{
       id: story.id,
       title: story.title,
-      description: story.description
+      description: story.description,
+      component_id: story.component_id
     }
   end
 end
