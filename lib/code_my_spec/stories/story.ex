@@ -7,7 +7,6 @@ defmodule CodeMySpec.Stories.Story do
           title: String.t(),
           description: String.t(),
           acceptance_criteria: [String.t()],
-          priority: integer(),
           status: :in_progress | :completed | :dirty,
           locked_at: DateTime.t() | nil,
           lock_expires_at: DateTime.t() | nil,
@@ -25,7 +24,6 @@ defmodule CodeMySpec.Stories.Story do
     field :title, :string
     field :description, :string
     field :acceptance_criteria, {:array, :string}
-    field :priority, :integer
     field :status, Ecto.Enum, values: [:in_progress, :completed, :dirty]
     field :locked_at, :utc_datetime
     field :lock_expires_at, :utc_datetime
@@ -47,7 +45,6 @@ defmodule CodeMySpec.Stories.Story do
       :title,
       :description,
       :acceptance_criteria,
-      :priority,
       :status,
       :locked_at,
       :lock_expires_at,

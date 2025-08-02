@@ -10,7 +10,6 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     import CodeMySpec.StoriesFixtures
 
     @invalid_attrs %{
-      priority: nil,
       status: nil,
       description: nil,
       title: nil,
@@ -79,7 +78,6 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
 
     test "create_story/2 with valid data creates a story" do
       valid_attrs = %{
-        priority: 42,
         status: :in_progress,
         description: "some description",
         title: "some title",
@@ -91,7 +89,6 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       scope = full_scope_fixture()
 
       assert {:ok, %Story{} = story} = StoriesRepository.create_story(scope, valid_attrs)
-      assert story.priority == 42
       assert story.status == :in_progress
       assert story.description == "some description"
       assert story.title == "some title"
@@ -111,7 +108,6 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       story = story_fixture(scope)
 
       update_attrs = %{
-        priority: 43,
         status: :completed,
         description: "some updated description",
         title: "some updated title",
@@ -121,7 +117,6 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       }
 
       assert {:ok, %Story{} = story} = StoriesRepository.update_story(scope, story, update_attrs)
-      assert story.priority == 43
       assert story.status == :completed
       assert story.description == "some updated description"
       assert story.title == "some updated title"
@@ -187,20 +182,24 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       assert hd(results).id == story1.id
     end
 
-    test "by_priority/2 filters stories by minimum priority" do
+    test "by_component_priority/2 filters stories by component priority" do
       scope = full_scope_fixture()
+      import CodeMySpec.ComponentsFixtures
+      
+      component1 = component_fixture(scope, %{priority: 10})
+      component2 = component_fixture(scope, %{priority: 50})
+      component3 = component_fixture(scope, %{priority: 100})
 
-      _story1 = story_fixture(scope, %{priority: 10})
-      _story2 = story_fixture(scope, %{priority: 50})
-      _story3 = story_fixture(scope, %{priority: 100})
+      _story1 = story_fixture(scope, %{component_id: component1.id})
+      _story2 = story_fixture(scope, %{component_id: component2.id})
+      _story3 = story_fixture(scope, %{component_id: component3.id})
 
       results =
-        StoriesRepository.by_priority(50)
+        StoriesRepository.by_component_priority(50)
         |> where([s], s.account_id == ^scope.active_account.id)
         |> Repo.all()
 
       assert length(results) == 2
-      assert Enum.all?(results, fn s -> s.priority >= 50 end)
     end
 
     test "search_text/2 searches title and description" do
@@ -254,22 +253,22 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       assert hd(results).id == story1.id
     end
 
-    test "ordered_by_priority/1 orders by priority desc then inserted_at asc" do
+    test "ordered_by_name/1 orders by title alphabetically" do
       scope = full_scope_fixture()
 
-      _story1 = story_fixture(scope, %{priority: 10})
-      _story2 = story_fixture(scope, %{priority: 50})
-      _story3 = story_fixture(scope, %{priority: 50})
+      _story1 = story_fixture(scope, %{title: "Zoo Story"})
+      _story2 = story_fixture(scope, %{title: "Alpha Story"})
+      _story3 = story_fixture(scope, %{title: "Beta Story"})
 
       results =
-        StoriesRepository.ordered_by_priority()
+        StoriesRepository.ordered_by_name()
         |> where([s], s.account_id == ^scope.active_account.id)
         |> Repo.all()
 
       assert length(results) == 3
-      assert Enum.at(results, 0).priority == 50
-      assert Enum.at(results, 1).priority == 50
-      assert Enum.at(results, 2).priority == 10
+      assert Enum.at(results, 0).title == "Alpha Story"
+      assert Enum.at(results, 1).title == "Beta Story"
+      assert Enum.at(results, 2).title == "Zoo Story"
     end
 
     test "ordered_by_status/1 orders by status asc then inserted_at asc" do

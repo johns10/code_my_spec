@@ -24,7 +24,6 @@ defmodule CodeMySpecWeb.StoryLive.Show do
         <:item title="Title">{@story.title}</:item>
         <:item title="Description">{@story.description}</:item>
         <:item title="Acceptance criteria">{@story.acceptance_criteria}</:item>
-        <:item title="Priority">{@story.priority}</:item>
         <:item title="Status">{@story.status}</:item>
         <:item title="Locked at">{@story.locked_at}</:item>
         <:item title="Lock expires at">{@story.lock_expires_at}</:item>

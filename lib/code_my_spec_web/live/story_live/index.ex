@@ -49,7 +49,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-4">
                 <.badge color={status_color(story.status)}>
-                  Priority: {story.priority}
+                  {String.capitalize(to_string(story.status))}
                 </.badge>
               </div>
 
@@ -85,7 +85,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
      |> stream(
        :stories,
        Stories.list_project_stories(socket.assigns.current_scope)
-       |> Enum.sort_by(&priority_order/1)
+       |> Enum.sort_by(& &1.title)
      )}
   end
 
@@ -105,7 +105,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
 
     story_attrs =
       stories
-      |> Enum.sort_by(&priority_order/1)
+      |> Enum.sort_by(& &1.title)
       |> Enum.map(&story_to_attrs/1)
 
     markdown_content = Markdown.format_stories(story_attrs, project_name)
@@ -128,7 +128,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
        socket,
        :stories,
        Stories.list_project_stories(socket.assigns.current_scope)
-       |> Enum.sort_by(&priority_order/1),
+       |> Enum.sort_by(& &1.title),
        reset: true
      )}
   end
@@ -139,8 +139,6 @@ defmodule CodeMySpecWeb.StoryLive.Index do
   defp status_color(:dirty), do: "warning"
   defp status_color(_), do: "neutral"
 
-  defp priority_order(%{priority: priority}) when is_integer(priority), do: priority
-  defp priority_order(_), do: 999
 
   defp parse_acceptance_criteria(nil), do: []
   defp parse_acceptance_criteria(""), do: []

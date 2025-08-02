@@ -15,6 +15,7 @@ defmodule CodeMySpec.Components.Component do
           type: atom(),
           module_name: String.t(),
           description: String.t() | nil,
+          priority: integer() | nil,
           project_id: integer(),
           project: Project.t() | Ecto.Association.NotLoaded.t(),
           outgoing_dependencies: [Dependency.t()] | Ecto.Association.NotLoaded.t(),
@@ -43,6 +44,7 @@ defmodule CodeMySpec.Components.Component do
 
     field :module_name, :string
     field :description, :string
+    field :priority, :integer
 
     belongs_to :project, Project
 
@@ -58,7 +60,7 @@ defmodule CodeMySpec.Components.Component do
 
   def changeset(component, attrs, %CodeMySpec.Users.Scope{} = scope) do
     component
-    |> cast(attrs, [:name, :type, :module_name, :description])
+    |> cast(attrs, [:name, :type, :module_name, :description, :priority])
     |> validate_required([:name, :type, :module_name])
     |> validate_length(:name, min: 1, max: 255)
     |> validate_length(:module_name, min: 1, max: 255)

@@ -5,19 +5,16 @@ defmodule CodeMySpecWeb.StoryLiveTest do
   import CodeMySpec.StoriesFixtures
 
   @create_attrs %{
-    priority: 42,
     status: :in_progress,
     description: "some description",
     title: "some title"
   }
   @update_attrs %{
-    priority: 43,
     status: :completed,
     description: "some updated description",
     title: "some updated title"
   }
   @invalid_attrs %{
-    priority: nil,
     status: nil,
     description: nil,
     title: nil

@@ -81,8 +81,11 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     from(s in query, where: s.status == ^status)
   end
 
-  def by_priority(query \\ Story, min_priority) do
-    from(s in query, where: s.priority >= ^min_priority)
+  def by_component_priority(query \\ Story, min_priority) do
+    from(s in query, 
+      join: c in assoc(s, :component),
+      where: c.priority >= ^min_priority
+    )
   end
 
   def search_text(query \\ Story, text) do
@@ -103,8 +106,8 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     )
   end
 
-  def ordered_by_priority(query \\ Story) do
-    from(s in query, order_by: [desc: s.priority, asc: s.inserted_at])
+  def ordered_by_name(query \\ Story) do
+    from(s in query, order_by: [asc: s.title])
   end
 
   def ordered_by_status(query \\ Story) do

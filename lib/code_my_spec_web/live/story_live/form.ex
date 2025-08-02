@@ -49,7 +49,6 @@ defmodule CodeMySpecWeb.StoryLive.Form do
             </div>
           </label>
         </div>
-        <.input field={@form[:priority]} type="number" label="Priority" />
         <.input
           field={@form[:status]}
           type="select"
