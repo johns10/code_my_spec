@@ -23,9 +23,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponent do
   @impl true
   @spec execute(any(), any()) :: {:reply, Hermes.Server.Response.t(), any()}
   def execute(params, frame) do
-    IO.puts("In create component")
-    IO.inspect(params)
-
     with {:ok, scope} <- Validators.validate_scope(frame),
          {:ok, component} <- Components.create_component(scope, params) do
       {:reply, ComponentsMapper.component_response(component), frame}

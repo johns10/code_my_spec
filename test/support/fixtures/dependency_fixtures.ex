@@ -13,8 +13,7 @@ defmodule CodeMySpec.DependencyFixtures do
     attrs =
       Enum.into(attrs, %{
         source_component_id: source_component.id,
-        target_component_id: target_component.id,
-        type: :call
+        target_component_id: target_component.id
       })
 
     {:ok, dependency} = DependencyRepository.create_dependency(scope, attrs)
@@ -25,11 +24,11 @@ defmodule CodeMySpec.DependencyFixtures do
   Generate multiple dependencies creating a chain.
   Returns list of dependencies in order: first -> second -> third
   """
-  def dependency_chain_fixture(scope, components, type \\ :call) when length(components) >= 2 do
+  def dependency_chain_fixture(scope, components) when length(components) >= 2 do
     components
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map(fn [source, target] ->
-      dependency_fixture(scope, source, target, %{type: type})
+      dependency_fixture(scope, source, target, %{})
     end)
   end
 
@@ -37,9 +36,9 @@ defmodule CodeMySpec.DependencyFixtures do
   Generate circular dependencies between components.
   Creates A -> B -> A cycle.
   """
-  def circular_dependency_fixture(scope, comp_a, comp_b, type \\ :call) do
-    dep1 = dependency_fixture(scope, comp_a, comp_b, %{type: type})
-    dep2 = dependency_fixture(scope, comp_b, comp_a, %{type: type})
+  def circular_dependency_fixture(scope, comp_a, comp_b) do
+    dep1 = dependency_fixture(scope, comp_a, comp_b, %{})
+    dep2 = dependency_fixture(scope, comp_b, comp_a, %{})
     {dep1, dep2}
   end
 end

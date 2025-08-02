@@ -66,7 +66,6 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       dependency = DependencyRepository.get_dependency!(scope, created_dependency.id)
 
       assert dependency.id == created_dependency.id
-      assert dependency.type == :alias
       assert Ecto.assoc_loaded?(dependency.source_component)
       assert Ecto.assoc_loaded?(dependency.target_component)
       assert dependency.source_component.name == source.name
@@ -111,7 +110,6 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       assert {:ok, dependency} = DependencyRepository.create_dependency(scope, attrs)
       assert dependency.source_component_id == source.id
       assert dependency.target_component_id == target.id
-      assert dependency.type == :require
 
       # Verify it was persisted to database
       persisted = Repo.get!(Dependency, dependency.id)
@@ -125,8 +123,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       
       assert errors_on(changeset) == %{
         source_component_id: ["can't be blank"],
-        target_component_id: ["can't be blank"],
-        type: ["can't be blank"]
+        target_component_id: ["can't be blank"]
       }
     end
 
@@ -136,8 +133,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
 
       attrs = %{
         source_component_id: component.id,
-        target_component_id: component.id,
-        type: :call
+        target_component_id: component.id
       }
 
       assert {:error, changeset} = DependencyRepository.create_dependency(scope, attrs)
@@ -164,8 +160,7 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
 
       attrs = %{
         source_component_id: source.id,
-        target_component_id: target.id,
-        type: :call
+        target_component_id: target.id
       }
 
       assert {:ok, _dependency} = DependencyRepository.create_dependency(scope, attrs)

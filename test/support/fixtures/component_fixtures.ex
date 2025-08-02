@@ -55,8 +55,7 @@ defmodule CodeMySpec.ComponentsFixtures do
     %Dependency{}
     |> Dependency.changeset(%{
       source_component_id: parent.id,
-      target_component_id: child.id,
-      type: :call
+      target_component_id: child.id
     })
     |> Repo.insert!()
 

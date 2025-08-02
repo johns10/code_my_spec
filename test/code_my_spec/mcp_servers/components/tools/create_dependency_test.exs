@@ -18,8 +18,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
 
       params = %{
         source_component_id: source_component.id,
-        target_component_id: target_component.id,
-        type: :call
+        target_component_id: target_component.id
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}
@@ -33,7 +32,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
       response_data = Jason.decode!(json_text)
       
       assert response_data["id"]
-      assert response_data["type"] == "call"
       assert response_data["source_component"]["id"] == source_component.id
       assert response_data["target_component"]["id"] == target_component.id
     end
@@ -44,8 +42,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
 
       params = %{
         source_component_id: component.id,
-        target_component_id: component.id,
-        type: :call
+        target_component_id: component.id
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}
@@ -63,8 +60,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
       # Create first dependency A -> B
       first_params = %{
         source_component_id: component_a.id,
-        target_component_id: component_b.id,
-        type: :call
+        target_component_id: component_b.id
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}
@@ -73,8 +69,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
       # Try to create circular dependency B -> A
       circular_params = %{
         source_component_id: component_b.id,
-        target_component_id: component_a.id,
-        type: :call
+        target_component_id: component_a.id
       }
 
       assert {:reply, response, ^frame} = CreateDependency.execute(circular_params, frame)

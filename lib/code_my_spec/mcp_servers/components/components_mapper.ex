@@ -90,7 +90,6 @@ defmodule CodeMySpec.MCPServers.Components.ComponentsMapper do
   defp dependency_summary(dependency) do
     %{
       id: dependency.id,
-      type: dependency.type,
       source_component: component_summary(dependency.source_component),
       target_component: component_summary(dependency.target_component)
     }

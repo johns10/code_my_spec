@@ -32,7 +32,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.DeleteDependency do
     Response.tool()
     |> Response.json(%{
       id: dependency.id,
-      type: dependency.type,
       source_component: component_summary(dependency.source_component),
       target_component: component_summary(dependency.target_component),
       deleted: true

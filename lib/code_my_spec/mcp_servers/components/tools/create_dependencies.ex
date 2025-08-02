@@ -16,11 +16,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencies do
            {:object,
             %{
               source_component_id: {:required, :integer},
-              target_component_id: {:required, :integer},
-              type:
-                {:required, :string,
-                 enum: [:require, :import, :alias, :use, :call, :other],
-                 description: "Must be one of require, import, alias, use, call"}
+              target_component_id: {:required, :integer}
             }}},
           required: true
   end

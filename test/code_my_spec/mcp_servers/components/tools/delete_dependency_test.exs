@@ -20,8 +20,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.DeleteDependencyTest do
       # Create a dependency to delete
       {:ok, dependency} = Components.create_dependency(scope, %{
         source_component_id: source_component.id,
-        target_component_id: target_component.id,
-        type: :call
+        target_component_id: target_component.id
       })
 
       params = %{id: dependency.id}

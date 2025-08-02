@@ -10,11 +10,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependency do
   schema do
     field :source_component_id, :integer, required: true
     field :target_component_id, :integer, required: true
-
-    field :type, :string,
-      required: true,
-      enum: [:require, :import, :alias, :use, :call, :other],
-      description: "Must be one of require, import, alias, use, call"
   end
 
   @impl true
@@ -42,7 +37,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependency do
     Response.tool()
     |> Response.json(%{
       id: dependency.id,
-      type: dependency.type,
       source_component: component_summary(dependency.source_component),
       target_component: component_summary(dependency.target_component)
     })

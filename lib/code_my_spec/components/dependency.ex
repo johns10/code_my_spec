@@ -11,7 +11,6 @@ defmodule CodeMySpec.Components.Dependency do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          type: dependency_type(),
           source_component_id: integer(),
           target_component_id: integer(),
           source_component: Component.t() | Ecto.Association.NotLoaded.t(),
@@ -20,11 +19,7 @@ defmodule CodeMySpec.Components.Dependency do
           updated_at: DateTime.t() | nil
         }
 
-  @type dependency_type :: :require | :import | :alias | :use | :call | :other
-
   schema "dependencies" do
-    field :type, Ecto.Enum, values: [:require, :import, :alias, :use, :call, :other]
-
     belongs_to :source_component, Component
     belongs_to :target_component, Component
 
@@ -36,10 +31,10 @@ defmodule CodeMySpec.Components.Dependency do
   """
   def changeset(dependency, attrs) do
     dependency
-    |> cast(attrs, [:type, :source_component_id, :target_component_id])
-    |> validate_required([:type, :source_component_id, :target_component_id])
+    |> cast(attrs, [:source_component_id, :target_component_id])
+    |> validate_required([:source_component_id, :target_component_id])
     |> validate_no_self_dependency()
-    |> unique_constraint([:source_component_id, :target_component_id, :type])
+    |> unique_constraint([:source_component_id, :target_component_id])
     |> foreign_key_constraint(:source_component_id)
     |> foreign_key_constraint(:target_component_id)
   end
