@@ -22,7 +22,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
       ## Context Design Review
 
       **Current Architecture:**
-      #{architecture}
+      #{format_architecture(architecture)}
 
       **Unsatisfied Stories:** #{length(unsatisfied_stories)} stories without assigned components
       #{format_unsatisfied_stories(unsatisfied_stories)}
@@ -73,5 +73,21 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
   end
 
   defp format_dependency_analysis(:ok), do: "No circular dependencies found ✅"
-  defp format_dependency_analysis({:error, cycles}), do: "#{length(cycles)} circular dependencies detected ❌"
+
+  defp format_dependency_analysis({:error, cycles}),
+    do: "#{length(cycles)} circular dependencies detected ❌"
+
+  defp format_architecture([]) do
+    "No components defined yet"
+  end
+
+  defp format_architecture(architecture) do
+    architecture
+    |> Enum.map(fn %{component: component, depth: depth} ->
+      indent = String.duplicate("  ", depth)
+      stories_count = length(component.stories || [])
+      "#{indent}- **#{component.name}** (#{component.type}) - #{stories_count} stories"
+    end)
+    |> Enum.join("\n")
+  end
 end

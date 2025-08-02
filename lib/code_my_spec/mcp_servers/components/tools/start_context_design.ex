@@ -14,14 +14,15 @@ defmodule CodeMySpec.MCPServers.Components.Tools.StartContextDesign do
   @impl true
   def execute(_params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame) do
-      stories = Stories.list_project_stories(scope)
+      stories = Stories.list_unsatisfied_stories(scope)
       components = Components.list_components_with_dependencies(scope)
 
       prompt = """
       You are an expert Elixir architect specializing in Phoenix contexts.
       Your job is to design a clean context architecture that satisfies the user stories.
+      We will only focus on unsatisfied user stories for this conversation, so if there are no unsatisfied user stories, there's nothing to do.
 
-      **Current User Stories:**
+      **Unsatisfied User Stories:**
       #{format_stories_context(stories)}
 
       **Existing Components:**
@@ -29,7 +30,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.StartContextDesign do
 
       **Your Role:**
       - Map user stories to Phoenix contexts based on entity ownership
-      - Use business capability grouping within entity boundaries  
+      - Use business capability grouping within entity boundaries
       - Ensure flat context structure (no nested contexts)
       - Distinguish between domain contexts (own entities) and coordination contexts (orchestrate workflows)
       - Create components and dependencies to represent the complete system
@@ -54,7 +55,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.StartContextDesign do
     end
   end
 
-  defp format_stories_context([]), do: "No stories currently exist for this project."
+  defp format_stories_context([]),
+    do: "The requirements for all user stories have been satisfied."
 
   defp format_stories_context(stories) do
     stories
@@ -108,7 +110,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.StartContextDesign do
 
   defp format_dependencies(dependencies) do
     dependencies
-    |> Enum.map(&"- #{&1.type}: #{&1.target_component.name}")
+    |> Enum.map(&"- #{&1.target_component.name}")
     |> Enum.join("\n")
   end
 end
