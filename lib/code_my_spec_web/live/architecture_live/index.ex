@@ -28,14 +28,12 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
             <h2 class="card-title mb-4">Project Architecture</h2>
 
             <div class="gap-6">
-              <!-- Stories as Top-level Menu Items -->
               <div>
                 <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                   <.icon name="hero-document-text" class="size-5" /> Stories & Components
                 </h3>
 
                 <ul class="menu bg-base-200 rounded-box w-full">
-                  <!-- Unsatisfied Stories -->
                   <li :for={story <- @architecture_data.unsatisfied}>
                     <details>
                       <summary class="text-warning font-medium">
@@ -71,8 +69,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
                       </ul>
                     </details>
                   </li>
-                  
-    <!-- Orphaned Components -->
+
                   <li :for={component <- @architecture_data.orphaned}>
                     <details>
                       <summary class="text-warning font-medium">
@@ -116,7 +113,6 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
                         {component.name} ({length(component.stories)} stories)
                       </summary>
                       <ul>
-                        <!-- Stories section -->
                         <li>
                           <details open={MapSet.member?(@expanded_stories, component.id)}>
                             <summary phx-click="toggle_stories" phx-value-component-id={component.id}>
@@ -205,8 +201,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
                       </ul>
                     </details>
                   </li>
-                  
-    <!-- Empty State -->
+
                   <li :if={
                     @architecture_data.satisfied == [] and @architecture_data.unsatisfied == []
                   }>
@@ -228,8 +223,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
             </div>
           </div>
         </div>
-        
-    <!-- Hidden Architecture Export for Copy -->
+
         <div id="architecture-export" class="hidden">
           {generate_architecture_text(@architecture_data)}
         </div>
