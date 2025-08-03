@@ -26,11 +26,11 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
       assert {:reply, response, ^frame} = CreateDependency.execute(params, frame)
       assert response.type == :tool
       assert response.isError == false
-      
+
       # Extract JSON data from response content
       [%{"text" => json_text}] = response.content
       response_data = Jason.decode!(json_text)
-      
+
       assert response_data["id"]
       assert response_data["source_component"]["id"] == source_component.id
       assert response_data["target_component"]["id"] == target_component.id
@@ -75,7 +75,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
       assert {:reply, response, ^frame} = CreateDependency.execute(circular_params, frame)
       assert response.type == :tool
       assert response.isError == true
-      
+
       # Extract error message from response content
       [%{"text" => error_text}] = response.content
       assert String.contains?(error_text, "Circular dependency detected")

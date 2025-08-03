@@ -10,7 +10,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       user = user_fixture()
       account = account_fixture()
 
-      assert {:ok, %Member{} = member} = MembersRepository.add_user_to_account(user.id, account.id)
+      assert {:ok, %Member{} = member} =
+               MembersRepository.add_user_to_account(user.id, account.id)
+
       assert member.user_id == user.id
       assert member.account_id == account.id
       assert member.role == :member
@@ -20,7 +22,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       user = user_fixture()
       account = account_fixture()
 
-      assert {:ok, %Member{} = member} = MembersRepository.add_user_to_account(user.id, account.id, :admin)
+      assert {:ok, %Member{} = member} =
+               MembersRepository.add_user_to_account(user.id, account.id, :admin)
+
       assert member.role == :admin
     end
 
@@ -54,7 +58,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       account = account_fixture()
       member = member_fixture(user, account)
 
-      assert {:ok, deleted_member} = MembersRepository.remove_user_from_account(user.id, account.id)
+      assert {:ok, deleted_member} =
+               MembersRepository.remove_user_from_account(user.id, account.id)
+
       assert deleted_member.id == member.id
       refute Repo.get(Member, member.id)
     end
@@ -63,7 +69,8 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       user = user_fixture()
       account = account_fixture()
 
-      assert {:error, :not_found} = MembersRepository.remove_user_from_account(user.id, account.id)
+      assert {:error, :not_found} =
+               MembersRepository.remove_user_from_account(user.id, account.id)
     end
 
     test "prevents removal of last owner" do
@@ -71,7 +78,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       account = account_fixture()
       member_fixture(user, account, :owner)
 
-      assert {:error, :last_owner} = MembersRepository.remove_user_from_account(user.id, account.id)
+      assert {:error, :last_owner} =
+               MembersRepository.remove_user_from_account(user.id, account.id)
+
       assert Repo.get_by(Member, user_id: user.id, account_id: account.id)
     end
 
@@ -105,7 +114,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       account = account_fixture()
       member = member_fixture(user, account, :member)
 
-      assert {:ok, updated_member} = MembersRepository.update_user_role(user.id, account.id, :admin)
+      assert {:ok, updated_member} =
+               MembersRepository.update_user_role(user.id, account.id, :admin)
+
       assert updated_member.role == :admin
       assert updated_member.id == member.id
     end
@@ -114,7 +125,8 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       user = user_fixture()
       account = account_fixture()
 
-      assert {:error, :not_found} = MembersRepository.update_user_role(user.id, account.id, :admin)
+      assert {:error, :not_found} =
+               MembersRepository.update_user_role(user.id, account.id, :admin)
     end
 
     test "prevents changing last owner role" do
@@ -133,7 +145,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       member_fixture(user1, account, :owner)
       member_fixture(user2, account, :owner)
 
-      assert {:ok, updated_member} = MembersRepository.update_user_role(user1.id, account.id, :admin)
+      assert {:ok, updated_member} =
+               MembersRepository.update_user_role(user1.id, account.id, :admin)
+
       assert updated_member.role == :admin
     end
 
@@ -142,7 +156,9 @@ defmodule CodeMySpec.Accounts.MembersRepositoryTest do
       account = account_fixture()
       member_fixture(user, account, :admin)
 
-      assert {:ok, updated_member} = MembersRepository.update_user_role(user.id, account.id, :owner)
+      assert {:ok, updated_member} =
+               MembersRepository.update_user_role(user.id, account.id, :owner)
+
       assert updated_member.role == :owner
     end
   end

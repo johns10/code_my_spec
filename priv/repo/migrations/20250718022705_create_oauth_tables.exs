@@ -2,7 +2,6 @@ defmodule CodeMySpec.Repo.Migrations.CreateOauthTables do
   use Ecto.Migration
 
   def change do
-
     create table(:oauth_applications) do
       add :name, :string, null: false
       add :uid, :string, null: false
@@ -45,6 +44,5 @@ defmodule CodeMySpec.Repo.Migrations.CreateOauthTables do
 
     create unique_index(:oauth_access_tokens, [:token])
     create unique_index(:oauth_access_tokens, [:refresh_token])
-
   end
 end

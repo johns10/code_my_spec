@@ -220,7 +220,6 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       refute has_element?(members_live, "td", member_user.email)
     end
 
-
     test "non-admins cannot remove members", %{conn: conn, user: user} do
       owner = user_fixture()
       account = account_with_owner_fixture(owner)
@@ -308,7 +307,11 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
 
       {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
 
-      assert has_element?(members_live, "a[href='/accounts/#{account.id}/invitations']", "Invitations")
+      assert has_element?(
+               members_live,
+               "a[href='/accounts/#{account.id}/invitations']",
+               "Invitations"
+             )
     end
 
     test "hides invitations tab for users who cannot manage members", %{conn: conn, user: user} do
@@ -318,7 +321,11 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
 
       {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
 
-      refute has_element?(members_live, "a[href='/accounts/#{account.id}/invitations']", "Invitations")
+      refute has_element?(
+               members_live,
+               "a[href='/accounts/#{account.id}/invitations']",
+               "Invitations"
+             )
     end
   end
 end

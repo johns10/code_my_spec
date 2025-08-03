@@ -13,6 +13,9 @@ defmodule CodeMySpec.Repo.Migrations.CreateMembersTable do
     create index(:members, [:user_id])
     create index(:members, [:account_id])
     create index(:members, [:role])
-    create unique_index(:members, [:user_id, :account_id], name: :members_user_id_account_id_index)
+
+    create unique_index(:members, [:user_id, :account_id],
+             name: :members_user_id_account_id_index
+           )
   end
 end

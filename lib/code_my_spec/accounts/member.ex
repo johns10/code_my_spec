@@ -19,15 +19,15 @@ defmodule CodeMySpec.Accounts.Member do
   import Ecto.Query
 
   @type t :: %__MODULE__{
-    id: integer(),
-    role: :owner | :admin | :member,
-    user_id: integer(),
-    account_id: integer(),
-    user: CodeMySpec.Users.User.t() | Ecto.Association.NotLoaded.t(),
-    account: CodeMySpec.Accounts.Account.t() | Ecto.Association.NotLoaded.t(),
-    inserted_at: NaiveDateTime.t(),
-    updated_at: NaiveDateTime.t()
-  }
+          id: integer(),
+          role: :owner | :admin | :member,
+          user_id: integer(),
+          account_id: integer(),
+          user: CodeMySpec.Users.User.t() | Ecto.Association.NotLoaded.t(),
+          account: CodeMySpec.Accounts.Account.t() | Ecto.Association.NotLoaded.t(),
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
 
   schema "members" do
     field :role, Ecto.Enum, values: [:owner, :admin, :member], default: :member
@@ -76,10 +76,11 @@ defmodule CodeMySpec.Accounts.Member do
         if user_id && account_id do
           case repo.get_by(__MODULE__, user_id: user_id, account_id: account_id) do
             %{role: :owner} ->
-              owner_count = repo.aggregate(
-                from(m in __MODULE__, where: m.account_id == ^account_id and m.role == :owner),
-                :count
-              )
+              owner_count =
+                repo.aggregate(
+                  from(m in __MODULE__, where: m.account_id == ^account_id and m.role == :owner),
+                  :count
+                )
 
               if owner_count <= 1 do
                 add_error(changeset, :role, "account must have at least one owner")

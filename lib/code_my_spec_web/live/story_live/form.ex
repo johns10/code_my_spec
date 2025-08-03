@@ -20,7 +20,10 @@ defmodule CodeMySpecWeb.StoryLive.Form do
           <label>
             <span class="label mb-1">Acceptance Criteria</span>
             <div class="space-y-2">
-              <div :for={{criterion, index} <- Enum.with_index(@acceptance_criteria)} class="flex items-center gap-2">
+              <div
+                :for={{criterion, index} <- Enum.with_index(@acceptance_criteria)}
+                class="flex items-center gap-2"
+              >
                 <input
                   type="text"
                   name={"acceptance_criteria[#{index}]"}
@@ -38,13 +41,8 @@ defmodule CodeMySpecWeb.StoryLive.Form do
                   <.icon name="hero-x-mark" class="size-4" />
                 </button>
               </div>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline"
-                phx-click="add_criterion"
-              >
-                <.icon name="hero-plus" class="size-4" />
-                Add Criterion
+              <button type="button" class="btn btn-sm btn-outline" phx-click="add_criterion">
+                <.icon name="hero-plus" class="size-4" /> Add Criterion
               </button>
             </div>
           </label>
@@ -105,7 +103,9 @@ defmodule CodeMySpecWeb.StoryLive.Form do
   end
 
   def handle_event("save", %{"story" => story_params}, socket) do
-    story_params = Map.put(story_params, "acceptance_criteria", socket.assigns.acceptance_criteria)
+    story_params =
+      Map.put(story_params, "acceptance_criteria", socket.assigns.acceptance_criteria)
+
     save_story(socket, socket.assigns.live_action, story_params)
   end
 
@@ -119,7 +119,14 @@ defmodule CodeMySpecWeb.StoryLive.Form do
     {:noreply, assign(socket, :acceptance_criteria, criteria)}
   end
 
-  def handle_event("update_criterion", %{"_target" => ["acceptance_criteria", index_str], "acceptance_criteria" => acceptance_criteria}, socket) do
+  def handle_event(
+        "update_criterion",
+        %{
+          "_target" => ["acceptance_criteria", index_str],
+          "acceptance_criteria" => acceptance_criteria
+        },
+        socket
+      ) do
     index = String.to_integer(index_str)
     value = Map.get(acceptance_criteria, index_str, "")
     criteria = List.replace_at(socket.assigns.acceptance_criteria, index, value)

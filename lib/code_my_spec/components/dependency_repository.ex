@@ -39,7 +39,8 @@ defmodule CodeMySpec.Components.DependencyRepository do
   @doc """
   Creates a dependency.
   """
-  @spec create_dependency(Scope.t(), map()) :: {:ok, Dependency.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_dependency(Scope.t(), map()) ::
+          {:ok, Dependency.t()} | {:error, Ecto.Changeset.t()}
   def create_dependency(%Scope{} = _scope, attrs) do
     %Dependency{}
     |> Dependency.changeset(attrs)

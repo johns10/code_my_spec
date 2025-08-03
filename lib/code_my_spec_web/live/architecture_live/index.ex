@@ -71,8 +71,8 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
                       </ul>
                     </details>
                   </li>
-
-                  <!-- Orphaned Components -->
+                  
+    <!-- Orphaned Components -->
                   <li :for={component <- @architecture_data.orphaned}>
                     <details>
                       <summary class="text-warning font-medium">
@@ -312,7 +312,11 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
   end
 
   @impl true
-  def handle_event("assign_story_to_component", %{"id" => story_id, "component_id" => component_id}, socket) do
+  def handle_event(
+        "assign_story_to_component",
+        %{"id" => story_id, "component_id" => component_id},
+        socket
+      ) do
     story = Stories.get_story!(socket.assigns.current_scope, story_id)
 
     case Stories.set_story_component(

@@ -9,7 +9,7 @@ defmodule CodeMySpec.AccountsFixtures do
 
   def valid_account_attributes(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
-    
+
     Enum.into(attrs, %{
       name: "Test Account #{unique_id}",
       slug: "test-account-#{unique_id}",
@@ -19,7 +19,7 @@ defmodule CodeMySpec.AccountsFixtures do
 
   def valid_personal_account_attributes(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
-    
+
     Enum.into(attrs, %{
       name: "Personal Account #{unique_id}",
       slug: "personal-#{unique_id}",

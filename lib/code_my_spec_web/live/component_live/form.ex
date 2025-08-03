@@ -51,7 +51,10 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
     socket
     |> assign(:page_title, "Edit Component")
     |> assign(:component, component)
-    |> assign(:form, to_form(Components.change_component(socket.assigns.current_scope, component)))
+    |> assign(
+      :form,
+      to_form(Components.change_component(socket.assigns.current_scope, component))
+    )
   end
 
   defp apply_action(socket, :new, _params) do
@@ -60,13 +63,20 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
     socket
     |> assign(:page_title, "New Component")
     |> assign(:component, component)
-    |> assign(:form, to_form(Components.change_component(socket.assigns.current_scope, component)))
+    |> assign(
+      :form,
+      to_form(Components.change_component(socket.assigns.current_scope, component))
+    )
   end
 
   @impl true
   def handle_event("validate", %{"component" => component_params}, socket) do
     changeset =
-      Components.change_component(socket.assigns.current_scope, socket.assigns.component, component_params)
+      Components.change_component(
+        socket.assigns.current_scope,
+        socket.assigns.component,
+        component_params
+      )
 
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
@@ -76,7 +86,11 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
   end
 
   defp save_component(socket, :edit, component_params) do
-    case Components.update_component(socket.assigns.current_scope, socket.assigns.component, component_params) do
+    case Components.update_component(
+           socket.assigns.current_scope,
+           socket.assigns.component,
+           component_params
+         ) do
       {:ok, component} ->
         {:noreply,
          socket

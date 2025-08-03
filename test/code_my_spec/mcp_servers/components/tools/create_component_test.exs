@@ -12,7 +12,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponentTest do
   describe "CreateComponent tool" do
     test "executes with valid params and scope" do
       scope = full_scope_fixture()
-      
+
       params = %{
         name: "LoginButton",
         type: :context,

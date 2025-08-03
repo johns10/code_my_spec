@@ -5,7 +5,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
   - Context distribution: components grouped by story count (1, 2-6, 7+)
   - Dependency issues: missing references, high fan-out contexts
   - Data quality: duplicate stories and other consistency issues
-  
+
   This gives LLMs and developers a quick health assessment of the entire architecture.
   """
 
@@ -41,39 +41,46 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
 
   defp analyze_story_coverage(components) do
     total_components = length(components)
-    
+
     # Components with stories (entry points)
-    entry_components = Enum.filter(components, fn c -> 
-      length(c.stories || []) > 0 
-    end)
-    
+    entry_components =
+      Enum.filter(components, fn c ->
+        length(c.stories || []) > 0
+      end)
+
     # Get all component IDs that are dependencies of entry points
-    dependency_ids = 
+    dependency_ids =
       entry_components
       |> Enum.flat_map(fn c -> get_all_dependency_ids(c, components) end)
       |> MapSet.new()
-    
+
     # Categorize all components
     entry_count = length(entry_components)
-    dependency_count = Enum.count(components, fn c ->
-      length(c.stories || []) == 0 and MapSet.member?(dependency_ids, c.id)
-    end)
+
+    dependency_count =
+      Enum.count(components, fn c ->
+        length(c.stories || []) == 0 and MapSet.member?(dependency_ids, c.id)
+      end)
+
     orphaned_count = total_components - entry_count - dependency_count
-    
+
     # Coverage based on entry points vs components that should have stories (entry + orphaned)
     components_needing_stories = entry_count + orphaned_count
-    story_coverage = if components_needing_stories > 0 do
-      Float.round(entry_count / components_needing_stories * 100, 1)
-    else
-      100.0
-    end
-    
+
+    story_coverage =
+      if components_needing_stories > 0 do
+        Float.round(entry_count / components_needing_stories * 100, 1)
+      else
+        100.0
+      end
+
     # Health based on orphaned components (the real issue)
-    orphaned_percentage = if total_components > 0 do
-      Float.round(orphaned_count / total_components * 100, 1)
-    else
-      0.0
-    end
+    orphaned_percentage =
+      if total_components > 0 do
+        Float.round(orphaned_count / total_components * 100, 1)
+      else
+        0.0
+      end
 
     %{
       total_components: total_components,
@@ -91,13 +98,14 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
       []
     else
       visited = MapSet.put(visited, component.id)
-      
-      direct_deps = Enum.map(component.outgoing_dependencies || [], fn dep ->
-        dep.target_component.id
-      end)
-      
+
+      direct_deps =
+        Enum.map(component.outgoing_dependencies || [], fn dep ->
+          dep.target_component.id
+        end)
+
       # Recursively get dependencies of dependencies
-      indirect_deps = 
+      indirect_deps =
         (component.outgoing_dependencies || [])
         |> Enum.flat_map(fn dep ->
           case Enum.find(all_components, &(&1.id == dep.target_component.id)) do
@@ -105,7 +113,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
             dep_component -> get_all_dependency_ids(dep_component, all_components, visited)
           end
         end)
-      
+
       direct_deps ++ indirect_deps
     end
   end
@@ -113,20 +121,21 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
   defp analyze_context_distribution(components) do
     # Get component categorization from story coverage analysis
     coverage_analysis = analyze_story_coverage(components)
-    
+
     # Get raw story count distribution
-    story_distribution = 
+    story_distribution =
       components
       |> Enum.map(fn c -> length(c.stories || []) end)
       |> Enum.frequencies()
       |> Enum.into(%{}, fn {count, freq} -> {Integer.to_string(count), freq} end)
 
     # Calculate health based on distribution patterns
-    high_story_components = Enum.sum(
-      story_distribution
-      |> Enum.filter(fn {count_str, _freq} -> String.to_integer(count_str) >= 7 end)
-      |> Enum.map(fn {_count, freq} -> freq end)
-    )
+    high_story_components =
+      Enum.sum(
+        story_distribution
+        |> Enum.filter(fn {count_str, _freq} -> String.to_integer(count_str) >= 7 end)
+        |> Enum.map(fn {_count, freq} -> freq end)
+      )
 
     %{
       story_distribution: story_distribution,
@@ -138,25 +147,27 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
 
   defp analyze_dependency_issues(components, scope) do
     all_component_ids = MapSet.new(components, & &1.id)
-    
+
     missing_refs = find_missing_references(components, all_component_ids)
     high_fan_out = find_high_fan_out_components(components)
-    
+
     dependency_validation = Components.validate_dependency_graph(scope)
-    circular_dependencies = case dependency_validation do
-      {:error, cycles} -> cycles
-      :ok -> []
-    end
-    
+
+    circular_dependencies =
+      case dependency_validation do
+        {:error, cycles} -> cycles
+        :ok -> []
+      end
+
     %{
       missing_references: missing_refs,
       high_fan_out_components: high_fan_out,
       circular_dependencies: circular_dependencies,
       dependency_validation: dependency_validation,
-      dependency_health: dependency_health_status(missing_refs, high_fan_out, circular_dependencies)
+      dependency_health:
+        dependency_health_status(missing_refs, high_fan_out, circular_dependencies)
     }
   end
-
 
   defp find_missing_references(components, all_component_ids) do
     components
@@ -183,22 +194,20 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
         id: c.id,
         name: c.name,
         dependency_count: length(c.outgoing_dependencies || []),
-        dependencies: Enum.map(c.outgoing_dependencies || [], fn dep ->
-          %{id: dep.target_component.id, name: dep.target_component.name}
-        end)
+        dependencies:
+          Enum.map(c.outgoing_dependencies || [], fn dep ->
+            %{id: dep.target_component.id, name: dep.target_component.name}
+          end)
       }
     end)
   end
 
-
-
-
   defp calculate_overall_score(components, scope) do
     coverage_score = coverage_score(components)
     dependency_score = dependency_score(components, scope)
-    
+
     overall = Float.round((coverage_score + dependency_score) / 2, 1)
-    
+
     %{
       overall_score: overall,
       coverage_score: coverage_score,
@@ -215,24 +224,30 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
 
   defp dependency_score(components, scope) do
     all_component_ids = MapSet.new(components, & &1.id)
-    
+
     missing_refs = find_missing_references(components, all_component_ids)
     high_fan_out = find_high_fan_out_components(components)
-    
-    circular_penalty = case Components.validate_dependency_graph(scope) do
-      {:error, _cycles} -> 20
-      :ok -> 0
-    end
-    
+
+    circular_penalty =
+      case Components.validate_dependency_graph(scope) do
+        {:error, _cycles} -> 20
+        :ok -> 0
+      end
+
     penalty = length(missing_refs) * 10 + length(high_fan_out) * 5 + circular_penalty
     max(0.0, 100.0 - penalty)
   end
 
-
   # Health status helpers
-  defp coverage_health_status_by_orphans(orphaned_percentage) when orphaned_percentage == 0, do: :excellent
-  defp coverage_health_status_by_orphans(orphaned_percentage) when orphaned_percentage <= 10, do: :good
-  defp coverage_health_status_by_orphans(orphaned_percentage) when orphaned_percentage <= 25, do: :fair
+  defp coverage_health_status_by_orphans(orphaned_percentage) when orphaned_percentage == 0,
+    do: :excellent
+
+  defp coverage_health_status_by_orphans(orphaned_percentage) when orphaned_percentage <= 10,
+    do: :good
+
+  defp coverage_health_status_by_orphans(orphaned_percentage) when orphaned_percentage <= 25,
+    do: :fair
+
   defp coverage_health_status_by_orphans(_), do: :poor
 
   defp distribution_health_status(high_story_components) do
@@ -245,7 +260,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
 
   defp dependency_health_status(missing_refs, high_fan_out, circular_deps) do
     issues = length(missing_refs) + length(high_fan_out) + length(circular_deps)
-    
+
     cond do
       issues == 0 -> :excellent
       issues <= 2 -> :good
@@ -253,7 +268,6 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
       true -> :poor
     end
   end
-
 
   defp score_to_health_level(score) when score >= 85, do: :excellent
   defp score_to_health_level(score) when score >= 70, do: :good

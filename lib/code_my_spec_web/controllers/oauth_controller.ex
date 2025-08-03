@@ -66,7 +66,19 @@ defmodule CodeMySpecWeb.OAuthController do
             conn
             |> put_status(http_status)
             |> put_flash(:error, "Authorization failed: #{inspect(error)}")
-            |> redirect(to: ~p"/oauth/authorize?" <> URI.encode_query(Map.take(params, ["client_id", "redirect_uri", "scope", "response_type", "state"])))
+            |> redirect(
+              to:
+                ~p"/oauth/authorize?" <>
+                  URI.encode_query(
+                    Map.take(params, [
+                      "client_id",
+                      "redirect_uri",
+                      "scope",
+                      "response_type",
+                      "state"
+                    ])
+                  )
+            )
         end
     end
   end
@@ -221,8 +233,11 @@ defmodule CodeMySpecWeb.OAuthController do
     |> Repo.insert()
   end
 
-  defp generate_client_id, do: "mcp_" <> (:crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false))
-  defp generate_client_secret, do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+  defp generate_client_id,
+    do: "mcp_" <> (:crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false))
+
+  defp generate_client_secret,
+    do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
 
   defp format_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)

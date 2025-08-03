@@ -82,7 +82,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
   end
 
   def by_component_priority(query \\ Story, min_priority) do
-    from(s in query, 
+    from(s in query,
       join: c in assoc(s, :component),
       where: c.priority >= ^min_priority
     )

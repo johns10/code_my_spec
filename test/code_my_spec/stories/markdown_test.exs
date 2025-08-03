@@ -39,7 +39,6 @@ defmodule CodeMySpec.Stories.MarkdownTest do
       assert {:error, :empty_document} = Markdown.validate_format("   \n  ")
     end
 
-
     test "returns error for missing story sections" do
       markdown = """
       # Project Name
@@ -84,7 +83,7 @@ defmodule CodeMySpec.Stories.MarkdownTest do
           description: "As a user, I want to log in to access my account.",
           acceptance_criteria: [
             "User can enter email and password",
-            "System validates credentials", 
+            "System validates credentials",
             "User is redirected to dashboard on success"
           ]
         }
@@ -181,7 +180,7 @@ defmodule CodeMySpec.Stories.MarkdownTest do
       ]
 
       result = Markdown.format_stories(stories)
-      
+
       assert String.contains?(result, "## User Login")
       assert String.contains?(result, "User authentication functionality.")
       assert String.contains?(result, "**Acceptance Criteria**")
@@ -197,14 +196,14 @@ defmodule CodeMySpec.Stories.MarkdownTest do
           acceptance_criteria: ["Criterion 1"]
         },
         %{
-          title: "Story Two", 
+          title: "Story Two",
           description: "Second story.",
           acceptance_criteria: ["Criterion 2"]
         }
       ]
 
       result = Markdown.format_stories(stories)
-      
+
       assert String.contains?(result, "## Story One")
       assert String.contains?(result, "## Story Two")
       assert String.contains?(result, "First story.")
@@ -221,7 +220,7 @@ defmodule CodeMySpec.Stories.MarkdownTest do
       ]
 
       result = Markdown.format_stories(stories)
-      
+
       assert String.contains?(result, "## Simple Story")
       assert String.contains?(result, "Basic description.")
       refute String.contains?(result, "**Acceptance Criteria**")
@@ -258,7 +257,7 @@ defmodule CodeMySpec.Stories.MarkdownTest do
       assert {:ok, stories} = Markdown.parse_markdown(original_markdown)
       formatted = Markdown.format_stories(stories, "Test Project")
       assert {:ok, reparsed_stories} = Markdown.parse_markdown(formatted)
-      
+
       assert stories == reparsed_stories
     end
 

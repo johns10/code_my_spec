@@ -65,7 +65,9 @@ defmodule CodeMySpec.Accounts do
   """
   def get_account(%Scope{} = scope, id) do
     case AccountsRepository.get_account(id) do
-      nil -> nil
+      nil ->
+        nil
+
       account ->
         case Authorization.authorize(:read_account, scope, account.id) do
           false -> nil

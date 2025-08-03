@@ -57,7 +57,10 @@ defmodule CodeMySpec.Stories.Story do
       :description,
       :acceptance_criteria
     ])
-    |> foreign_key_constraint(:component_id, name: :stories_component_id_fkey, message: "Component not found")
+    |> foreign_key_constraint(:component_id,
+      name: :stories_component_id_fkey,
+      message: "Component not found"
+    )
     |> unique_constraint([:title, :project_id])
   end
 

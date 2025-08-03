@@ -43,9 +43,11 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode.RecorderTest do
           # This will trigger the mock expectation inside use_recording
           {:ok, agent_type} = AgentTypes.get(:unit_coder)
           agent = %Agent{name: "test", agent_type: agent_type, config: %{}}
-          
+
           {:ok, messages} =
-            CodeMySpec.Agents.Implementations.ClaudeCode.execute(agent, "Test query", fn _ -> :ok end)
+            CodeMySpec.Agents.Implementations.ClaudeCode.execute(agent, "Test query", fn _ ->
+              :ok
+            end)
 
           assert is_map(messages)
           :test_passed

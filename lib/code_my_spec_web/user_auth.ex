@@ -288,7 +288,7 @@ defmodule CodeMySpecWeb.UserAuth do
 
   @doc """
   Plug for OAuth Bearer token authentication for MCP endpoints.
-  
+
   Checks for Authorization: Bearer <token> header and validates the OAuth access token.
   Returns 401 Unauthorized with WWW-Authenticate header if no token is provided.
   Returns 401 if the token is invalid or expired.
@@ -303,7 +303,11 @@ defmodule CodeMySpecWeb.UserAuth do
               user = Users.get_user!(token.resource_owner_id)
               assign(conn, :current_scope, Scope.for_user(user))
             else
-              send_unauthorized_response(conn, "invalid_token", "The access token is expired or invalid")
+              send_unauthorized_response(
+                conn,
+                "invalid_token",
+                "The access token is expired or invalid"
+              )
             end
 
           nil ->
@@ -311,15 +315,22 @@ defmodule CodeMySpecWeb.UserAuth do
         end
 
       _other ->
-        send_unauthorized_response(conn, "invalid_request", "The request is missing a required Authorization header")
+        send_unauthorized_response(
+          conn,
+          "invalid_request",
+          "The request is missing a required Authorization header"
+        )
     end
   end
 
   defp send_unauthorized_response(conn, error_code, error_description) do
     base_url = get_base_url()
-    
+
     conn
-    |> put_resp_header("www-authenticate", "Bearer realm=\"#{base_url}/mcp\", error=\"#{error_code}\", error_description=\"#{error_description}\"")
+    |> put_resp_header(
+      "www-authenticate",
+      "Bearer realm=\"#{base_url}/mcp\", error=\"#{error_code}\", error_description=\"#{error_description}\""
+    )
     |> put_status(:unauthorized)
     |> json(%{
       error: error_code,

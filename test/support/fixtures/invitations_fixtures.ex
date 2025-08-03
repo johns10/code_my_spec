@@ -42,9 +42,13 @@ defmodule CodeMySpec.InvitationsFixtures do
   def expired_invitation_fixture(account \\ nil, inviter \\ nil, attrs \\ %{}) do
     past_date = DateTime.utc_now() |> DateTime.add(-1, :day) |> DateTime.truncate(:second)
 
-    invitation_fixture(account, inviter, Map.merge(attrs, %{
-      expires_at: past_date
-    }))
+    invitation_fixture(
+      account,
+      inviter,
+      Map.merge(attrs, %{
+        expires_at: past_date
+      })
+    )
   end
 
   def cancelled_invitation_fixture(account \\ nil, inviter \\ nil, attrs \\ %{}) do

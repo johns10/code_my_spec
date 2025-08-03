@@ -10,7 +10,17 @@ defmodule CodeMySpec.Projects.Project do
           docs_repo: String.t() | nil,
           setup_error: String.t() | nil,
           account_id: integer() | nil,
-          status: :created | :setup_queued | :initializing | :deps_installing | :setting_up_auth | :compiling | :testing | :committing | :ready | :failed,
+          status:
+            :created
+            | :setup_queued
+            | :initializing
+            | :deps_installing
+            | :setting_up_auth
+            | :compiling
+            | :testing
+            | :committing
+            | :ready
+            | :failed,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }

@@ -249,7 +249,9 @@ defmodule CodeMySpecWeb.InvitationsLive.AcceptTest do
       refute has_element?(lv, "button[phx-disable-with='Accepting...']")
 
       # Existing user - should show accept invitation button
-      existing_user_invitation = invitation_fixture(account, inviter, %{email: existing_user.email})
+      existing_user_invitation =
+        invitation_fixture(account, inviter, %{email: existing_user.email})
+
       {:ok, lv, _html} = live(conn, ~p"/invitations/accept/#{existing_user_invitation.token}")
       assert has_element?(lv, "button[phx-disable-with='Accepting...']")
       refute has_element?(lv, "button", "Create Account & Accept Invitation")

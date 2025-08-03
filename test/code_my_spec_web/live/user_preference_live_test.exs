@@ -9,7 +9,6 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
 
   setup :register_and_log_in_user
 
-
   describe "UserPreference form" do
     test "renders user preferences form", %{conn: conn} do
       {:ok, _form_live, html} = live(conn, ~p"/users/preferences")

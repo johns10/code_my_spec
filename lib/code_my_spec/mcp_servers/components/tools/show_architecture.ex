@@ -5,7 +5,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitecture do
   - All stories associated with each component
   - Architecture layers organized by dependency depth
   - Detailed component information and metrics
-  
+
   This provides LLMs with a complete picture of the system architecture,
   showing which components satisfy which stories and how components depend on each other.
   """
@@ -43,12 +43,18 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitecture do
 
   defp architecture_overview(architecture) do
     total_components = length(architecture)
-    components_with_stories = Enum.count(architecture, fn %{component: c} -> 
-      length(c.stories || []) > 0 
-    end)
-    total_dependencies = Enum.sum(Enum.map(architecture, fn %{component: c} -> 
-      length(c.outgoing_dependencies || []) 
-    end))
+
+    components_with_stories =
+      Enum.count(architecture, fn %{component: c} ->
+        length(c.stories || []) > 0
+      end)
+
+    total_dependencies =
+      Enum.sum(
+        Enum.map(architecture, fn %{component: c} ->
+          length(c.outgoing_dependencies || [])
+        end)
+      )
 
     %{
       total_components: total_components,
@@ -128,13 +134,17 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitecture do
   end
 
   defp build_dependency_graph(architecture) do
-    all_relationships = 
+    all_relationships =
       architecture
       |> Enum.flat_map(fn %{component: component} ->
         Enum.map(component.outgoing_dependencies || [], fn dep ->
           %{
             from: %{id: component.id, name: component.name, module_name: component.module_name},
-            to: %{id: dep.target_component.id, name: dep.target_component.name, module_name: dep.target_component.module_name},
+            to: %{
+              id: dep.target_component.id,
+              name: dep.target_component.name,
+              module_name: dep.target_component.module_name
+            },
             dependency_id: dep.id
           }
         end)

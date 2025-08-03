@@ -10,7 +10,14 @@ defmodule CodeMySpec.ProjectsTest do
     import CodeMySpec.AccountsFixtures, only: [account_with_owner_fixture: 1]
     import CodeMySpec.ProjectsFixtures
 
-    @invalid_attrs %{name: nil, description: nil, status: nil, code_repo: nil, docs_repo: nil, setup_error: nil}
+    @invalid_attrs %{
+      name: nil,
+      description: nil,
+      status: nil,
+      code_repo: nil,
+      docs_repo: nil,
+      setup_error: nil
+    }
 
     test "list_projects/1 returns all scoped projects" do
       user = user_fixture()

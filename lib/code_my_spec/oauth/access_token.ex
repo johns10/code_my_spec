@@ -22,7 +22,7 @@ defmodule CodeMySpec.Oauth.AccessToken do
       token = generate_token()
       expires_in = get_field(changeset, :expires_in) || 7200
       expires_at = DateTime.utc_now() |> DateTime.add(expires_in, :second)
-      
+
       changeset
       |> put_change(:token, token)
       |> put_change(:expires_in, expires_in)

@@ -17,18 +17,21 @@ defmodule CodeMySpecWeb.AccountLive.Picker do
 
         <div class="mt-8">
           <ul class="menu bg-base-200 rounded-box w-full">
-            <li :for={account <- @accounts} class={if account.id == @current_account_id, do: "bordered", else: ""}>
+            <li
+              :for={account <- @accounts}
+              class={if account.id == @current_account_id, do: "bordered", else: ""}
+            >
               <a
                 phx-click="account-selected"
                 phx-value-account-id={account.id}
                 class={if account.id == @current_account_id, do: "active", else: ""}
               >
                 <div class="flex-1">
-                  <div class="font-semibold"><%= account.name %></div>
+                  <div class="font-semibold">{account.name}</div>
                   <div class="text-sm opacity-70">
-                    <%= if account.type == :personal, do: "Personal", else: "Team" %>
+                    {if account.type == :personal, do: "Personal", else: "Team"}
                     <span :if={account.type == :team && @user_roles[account.id]}>
-                      • <%= String.capitalize(to_string(@user_roles[account.id])) %>
+                      • {String.capitalize(to_string(@user_roles[account.id]))}
                     </span>
                   </div>
                 </div>
@@ -96,7 +99,8 @@ defmodule CodeMySpecWeb.AccountLive.Picker do
   # Helper function to get user role for team accounts
   defp get_user_role(account_id, user_id) do
     case MembersRepository.get_user_role(user_id, account_id) do
-      nil -> :member  # Default fallback
+      # Default fallback
+      nil -> :member
       role -> role
     end
   end

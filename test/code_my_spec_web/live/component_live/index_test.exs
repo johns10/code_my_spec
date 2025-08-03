@@ -1,4 +1,4 @@
-defmodule CodeMySpecWeb.ComponentLive.IndexTest do  
+defmodule CodeMySpecWeb.ComponentLive.IndexTest do
   use CodeMySpecWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -11,7 +11,6 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     component = component_fixture(scope)
     %{component: component}
   end
-
 
   describe "Index" do
     setup [:create_component]
@@ -32,12 +31,11 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
 
     test "displays component priority", %{conn: conn, scope: scope} do
       _priority_component = component_fixture(scope, %{priority: 5})
-      
+
       {:ok, _index_live, html} = live(conn, ~p"/components")
 
       assert html =~ "Priority: 5"
     end
-
 
     test "saves new component via new button", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/components")
@@ -87,7 +85,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
 
     test "displays component relationships", %{conn: conn, scope: scope} do
       {_parent, _child} = component_with_dependencies_fixture(scope)
-      
+
       {:ok, _index_live, html} = live(conn, ~p"/components")
 
       assert html =~ "Dependencies: 1"
@@ -96,7 +94,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     test "displays linked stories", %{conn: conn, scope: scope} do
       component = component_fixture(scope, %{name: "UserService"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
-      
+
       {:ok, _index_live, html} = live(conn, ~p"/components")
 
       # Component should be listed
@@ -108,13 +106,14 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     test "sorts components by priority then name", %{conn: conn, scope: scope} do
       component_fixture(scope, %{name: "ZComponent", priority: 1})
       component_fixture(scope, %{name: "AComponent", priority: 2})
-      component_fixture(scope, %{name: "BComponent"}) # no priority
-      
+      # no priority
+      component_fixture(scope, %{name: "BComponent"})
+
       {:ok, index_live, _html} = live(conn, ~p"/components")
-      
+
       # Get all component names in order they appear
       component_elements = index_live |> element("div[class*='space-y-8']") |> render()
-      
+
       # Should be ordered: priority 1, priority 2, then no priority (alphabetically)
       assert component_elements =~ ~r/ZComponent.*AComponent.*BComponent/s
     end
@@ -122,7 +121,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     test "navigates to story when story badge is clicked", %{conn: conn, scope: scope} do
       component = component_fixture(scope, %{name: "UserService"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
-      
+
       {:ok, index_live, _html} = live(conn, ~p"/components")
 
       # Check if there's a link to the story (may not be visible if associations aren't loaded)
@@ -130,9 +129,12 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       assert index_live |> render() =~ "User Login"
     end
 
-    test "navigates to component edit when dependency badge is clicked", %{conn: conn, scope: scope} do
+    test "navigates to component edit when dependency badge is clicked", %{
+      conn: conn,
+      scope: scope
+    } do
       {_parent, child} = component_with_dependencies_fixture(scope)
-      
+
       {:ok, index_live, _html} = live(conn, ~p"/components")
 
       assert index_live
@@ -157,7 +159,11 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       assert render(index_live) =~ "NewComponent"
     end
 
-    test "updates list when component is updated", %{conn: conn, component: component, scope: scope} do
+    test "updates list when component is updated", %{
+      conn: conn,
+      component: component,
+      scope: scope
+    } do
       {:ok, index_live, html} = live(conn, ~p"/components")
 
       # Should see original name
@@ -165,10 +171,11 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       assert html =~ original_name
 
       # Update the component - this will broadcast and update the LiveView
-      {:ok, _updated_component} = CodeMySpec.Components.update_component(scope, component, %{
-        name: "BroadcastUpdated",
-        module_name: "MyApp.BroadcastUpdated"
-      })
+      {:ok, _updated_component} =
+        CodeMySpec.Components.update_component(scope, component, %{
+          name: "BroadcastUpdated",
+          module_name: "MyApp.BroadcastUpdated"
+        })
 
       # Should see the updated name and not the original
       updated_html = render(index_live)

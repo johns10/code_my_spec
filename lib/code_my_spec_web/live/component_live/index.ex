@@ -32,7 +32,7 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
                 <.badge color="primary">{component.type}</.badge>
                 <span class="text-base-content/60 font-mono text-sm">{component.module_name}</span>
               </div>
-              
+
               <div class="flex items-center gap-6 text-sm text-base-content/60">
                 <span :if={component.priority}>Priority: {component.priority}</span>
                 <span>Dependencies: {safe_length(component.dependencies)}</span>
@@ -134,7 +134,9 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
      )}
   end
 
-  defp component_sort_key(%{priority: priority, name: name}) when is_integer(priority), do: {priority, name}
+  defp component_sort_key(%{priority: priority, name: name}) when is_integer(priority),
+    do: {priority, name}
+
   defp component_sort_key(%{name: name}), do: {999, name}
 
   defp safe_length(%Ecto.Association.NotLoaded{}), do: 0

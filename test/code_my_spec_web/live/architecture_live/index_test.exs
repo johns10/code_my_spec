@@ -13,7 +13,6 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     %{component: component, story: story}
   end
 
-
   describe "Index" do
     test "displays architecture overview header", %{conn: conn} do
       {:ok, _live, html} = live(conn, ~p"/architecture")
@@ -60,7 +59,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     test "displays component type badges correctly", %{conn: conn, scope: scope} do
       genserver = component_fixture(scope, %{name: "UserService", type: :genserver})
       repository = component_fixture(scope, %{name: "UserRepo", type: :repository})
-      
+
       _story1 = story_fixture(scope, %{title: "User Login", component_id: genserver.id})
       _story2 = story_fixture(scope, %{title: "User Data", component_id: repository.id})
 
@@ -85,12 +84,13 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       component1 = component_fixture(scope, %{name: "UserService", type: :genserver})
       component2 = component_fixture(scope, %{name: "UserRepo", type: :repository})
       _story = story_fixture(scope, %{title: "User Login", component_id: component1.id})
-      
+
       # Create dependency
-      {:ok, _dependency} = CodeMySpec.Components.create_dependency(scope, %{
-        source_component_id: component1.id,
-        target_component_id: component2.id
-      })
+      {:ok, _dependency} =
+        CodeMySpec.Components.create_dependency(scope, %{
+          source_component_id: component1.id,
+          target_component_id: component2.id
+        })
 
       {:ok, _live, html} = live(conn, ~p"/architecture")
 
@@ -164,7 +164,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     test "updates when story component is assigned", %{conn: conn, scope: scope} do
       # Create unsatisfied story first
       story = story_fixture(scope, %{title: "Feature Request", component_id: nil})
-      
+
       {:ok, live, html} = live(conn, ~p"/architecture")
 
       # Should see story in unsatisfied section
@@ -181,21 +181,31 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       assert updated_html =~ "FeatureService (1 stories)"
     end
 
-    test "displays updated component data on refresh", %{conn: conn, component: component, scope: scope} do
+    test "displays updated component data on refresh", %{
+      conn: conn,
+      component: component,
+      scope: scope
+    } do
       # Update the component first
-      {:ok, updated_component} = CodeMySpec.Components.update_component(scope, component, %{
-        name: "UpdatedUserService"
-      })
+      {:ok, updated_component} =
+        CodeMySpec.Components.update_component(scope, component, %{
+          name: "UpdatedUserService"
+        })
 
       # Load the architecture page and verify the updated name appears
       {:ok, _live, html} = live(conn, ~p"/architecture")
-      
+
       # Check that the updated name appears
       assert html =~ updated_component.name
       # Note: Not checking absence of old name as there might be caching or other complexities
     end
 
-    test "updates when component is deleted", %{conn: conn, component: component, story: story, scope: scope} do
+    test "updates when component is deleted", %{
+      conn: conn,
+      component: component,
+      story: story,
+      scope: scope
+    } do
       {:ok, live, html} = live(conn, ~p"/architecture")
 
       # Should see the component initially
@@ -217,15 +227,16 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       # Create multiple components for same story
       component1 = component_fixture(scope, %{name: "AuthService", type: :genserver})
       component2 = component_fixture(scope, %{name: "UserRepo", type: :repository})
-      
+
       _story = story_fixture(scope, %{title: "User Authentication", component_id: component1.id})
 
       # Create dependency relationship
-      {:ok, _dependency} = CodeMySpec.Components.create_dependency(scope, %{
-        source_component_id: component1.id,
-        target_component_id: component2.id,
-        dependency_type: :uses
-      })
+      {:ok, _dependency} =
+        CodeMySpec.Components.create_dependency(scope, %{
+          source_component_id: component1.id,
+          target_component_id: component2.id,
+          dependency_type: :uses
+        })
 
       {:ok, _live, html} = live(conn, ~p"/architecture")
 
@@ -271,12 +282,13 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       component1 = component_fixture(scope, %{name: "UserService"})
       component2 = component_fixture(scope, %{name: "UserRepo"})
       _story = story_fixture(scope, %{title: "User Management", component_id: component1.id})
-      
+
       # Create dependency
-      {:ok, _dependency} = CodeMySpec.Components.create_dependency(scope, %{
-        source_component_id: component1.id,
-        target_component_id: component2.id
-      })
+      {:ok, _dependency} =
+        CodeMySpec.Components.create_dependency(scope, %{
+          source_component_id: component1.id,
+          target_component_id: component2.id
+        })
 
       {:ok, _live, html} = live(conn, ~p"/architecture")
 

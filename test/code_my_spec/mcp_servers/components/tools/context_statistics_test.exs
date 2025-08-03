@@ -25,12 +25,14 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
     test "returns empty statistics when no components exist", %{scope: scope} do
       frame = %Frame{assigns: %{current_scope: scope}}
 
-      assert {:reply, response, ^frame} = ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+      assert {:reply, response, ^frame} =
+               ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+
       assert response.type == :tool
 
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       assert parsed["component_statistics"] == []
       assert parsed["summary"]["total_components"] == 0
     end
@@ -52,12 +54,14 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
 
       frame = %Frame{assigns: %{current_scope: scope}}
 
-      assert {:reply, response, ^frame} = ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+      assert {:reply, response, ^frame} =
+               ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+
       assert response.type == :tool
 
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       stats = parsed["component_statistics"]
       assert length(stats) == 3
 
@@ -83,13 +87,14 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
 
       frame = %Frame{assigns: %{current_scope: scope}}
 
-      assert {:reply, response, ^frame} = ContextStatistics.execute(%{sort_by: "dependency_count"}, frame)
-      
+      assert {:reply, response, ^frame} =
+               ContextStatistics.execute(%{sort_by: "dependency_count"}, frame)
+
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       stats = parsed["component_statistics"]
-      
+
       # Should be sorted by total dependency count (desc)
       assert hd(stats)["component"]["name"] == "Component2"
       assert hd(stats)["dependency_counts"]["total"] == 2
@@ -107,14 +112,15 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
 
       frame = %Frame{assigns: %{current_scope: scope}}
 
-      assert {:reply, response, ^frame} = ContextStatistics.execute(%{sort_by: "story_count"}, frame)
-      
+      assert {:reply, response, ^frame} =
+               ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       stats = parsed["component_statistics"]
       comp2_stats = Enum.find(stats, &(&1["component"]["name"] == "Component2"))
-      
+
       assert comp2_stats["dependency_counts"]["outgoing"] == 1
       assert comp2_stats["dependency_counts"]["incoming"] == 1
       assert comp2_stats["dependency_counts"]["total"] == 2
@@ -123,7 +129,9 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
     test "handles scope validation errors" do
       frame = %Frame{assigns: %{}}
 
-      assert {:reply, response, ^frame} = ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+      assert {:reply, response, ^frame} =
+               ContextStatistics.execute(%{sort_by: "story_count"}, frame)
+
       assert response.type == :tool
       assert response.isError == true
     end

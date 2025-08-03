@@ -30,46 +30,49 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummaryTest d
 
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       health = parsed["architecture_health"]
       assert health["overall_score"]["health_level"] == "excellent"
       assert health["story_coverage"]["total_components"] == 0
     end
 
-    test "analyzes story coverage correctly distinguishing entry/dependency/orphaned", %{scope: scope} do
+    test "analyzes story coverage correctly distinguishing entry/dependency/orphaned", %{
+      scope: scope
+    } do
       entry_comp = component_fixture(scope, %{name: "EntryComponent"})
       dependency_comp = component_fixture(scope, %{name: "DependencyComponent"})
       _orphaned_comp = component_fixture(scope, %{name: "OrphanedComponent"})
-      
+
       story_fixture(scope, %{component_id: entry_comp.id})
       dependency_fixture(scope, entry_comp, dependency_comp)
 
       frame = %Frame{assigns: %{current_scope: scope}}
 
       assert {:reply, response, ^frame} = ArchitectureHealthSummary.execute(%{}, frame)
-      
+
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       coverage = parsed["architecture_health"]["story_coverage"]
       assert coverage["total_components"] == 3
       assert coverage["entry_components"] == 1
       assert coverage["dependency_components"] == 1
       assert coverage["orphaned_components"] == 1
-      assert coverage["story_coverage_percentage"] == 50.0  # 1 entry / (1 entry + 1 orphaned) = 50%
+      # 1 entry / (1 entry + 1 orphaned) = 50%
+      assert coverage["story_coverage_percentage"] == 50.0
       assert coverage["orphaned_percentage"] == 33.3
     end
 
     test "analyzes context distribution with raw story counts", %{scope: scope} do
       entry_comp = component_fixture(scope, %{name: "EntryComp"})
       dependency_comp = component_fixture(scope, %{name: "DependencyComp"})
-      single_story_comp = component_fixture(scope, %{name: "SingleStory"}) 
+      single_story_comp = component_fixture(scope, %{name: "SingleStory"})
       multi_story_comp = component_fixture(scope, %{name: "MultiStory"})
       _orphaned_comp = component_fixture(scope, %{name: "OrphanedComp"})
-      
+
       story_fixture(scope, %{component_id: entry_comp.id})
       dependency_fixture(scope, entry_comp, dependency_comp)
-      
+
       story_fixture(scope, %{component_id: single_story_comp.id})
       story_fixture(scope, %{component_id: multi_story_comp.id, title: "Story 1"})
       story_fixture(scope, %{component_id: multi_story_comp.id, title: "Story 2"})
@@ -78,16 +81,19 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummaryTest d
       frame = %Frame{assigns: %{current_scope: scope}}
 
       assert {:reply, response, ^frame} = ArchitectureHealthSummary.execute(%{}, frame)
-      
+
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       distribution = parsed["architecture_health"]["context_distribution"]
       story_dist = distribution["story_distribution"]
-      
-      assert story_dist["0"] == 2  # dependency + orphaned
-      assert story_dist["1"] == 2  # entry + single_story
-      assert story_dist["3"] == 1  # multi_story
+
+      # dependency + orphaned
+      assert story_dist["0"] == 2
+      # entry + single_story
+      assert story_dist["1"] == 2
+      # multi_story
+      assert story_dist["3"] == 1
       assert distribution["orphaned_components"] == 1
       assert distribution["dependency_components"] == 1
     end
@@ -95,7 +101,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummaryTest d
     test "detects high fan-out components", %{scope: scope} do
       root = component_fixture(scope, %{name: "HighFanOut"})
       story_fixture(scope, %{component_id: root.id})
-      
+
       for i <- 1..6 do
         dep = component_fixture(scope, %{name: "Dep#{i}"})
         dependency_fixture(scope, root, dep)
@@ -104,18 +110,17 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummaryTest d
       frame = %Frame{assigns: %{current_scope: scope}}
 
       assert {:reply, response, ^frame} = ArchitectureHealthSummary.execute(%{}, frame)
-      
+
       content_text = hd(response.content)["text"]
       parsed = Jason.decode!(content_text)
-      
+
       dep_issues = parsed["architecture_health"]["dependency_issues"]
       assert length(dep_issues["high_fan_out_components"]) == 1
-      
+
       high_fan_out = hd(dep_issues["high_fan_out_components"])
       assert high_fan_out["name"] == "HighFanOut"
       assert high_fan_out["dependency_count"] == 6
     end
-
 
     test "handles scope validation errors" do
       frame = %Frame{assigns: %{}}

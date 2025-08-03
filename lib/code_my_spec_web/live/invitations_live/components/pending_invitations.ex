@@ -16,22 +16,22 @@ defmodule CodeMySpecWeb.InvitationsLive.Components.PendingInvitations do
         <div class="overflow-x-auto">
           <.table id="pending-invitations" rows={@invitations}>
             <:col :let={invitation} label="Email">
-              <%= invitation.email %>
+              {invitation.email}
             </:col>
             <:col :let={invitation} label="Role">
-              <span class="capitalize"><%= invitation.role %></span>
+              <span class="capitalize">{invitation.role}</span>
             </:col>
             <:col :let={invitation} label="Invited By">
-              <%= invitation.invited_by.email %>
+              {invitation.invited_by.email}
             </:col>
             <:col :let={invitation} label="Date Sent">
-              <%= Calendar.strftime(invitation.inserted_at, "%b %d, %Y") %>
+              {Calendar.strftime(invitation.inserted_at, "%b %d, %Y")}
             </:col>
             <:col :let={invitation} label="Expires At">
               <span class={[
                 expired?(invitation) && "text-warning font-semibold"
               ]}>
-                <%= Calendar.strftime(invitation.expires_at, "%b %d, %Y") %>
+                {Calendar.strftime(invitation.expires_at, "%b %d, %Y")}
               </span>
             </:col>
             <:action :let={invitation}>

@@ -59,7 +59,10 @@ defmodule CodeMySpecWeb.InvitationsLive.Accept do
                     {@invitation.account.name}
                   </p>
                   <p class="text-sm text-base-content/70">
-                    as a <span class="capitalize font-medium">{String.capitalize(to_string(@invitation.role))}</span>
+                    as a
+                    <span class="capitalize font-medium">
+                      {String.capitalize(to_string(@invitation.role))}
+                    </span>
                   </p>
                 </div>
 
@@ -99,7 +102,13 @@ defmodule CodeMySpecWeb.InvitationsLive.Accept do
               </p>
 
               <div class="space-y-4">
-                <.input name="email" type="email" label="Email" readonly={true} value={@invitation.email} />
+                <.input
+                  name="email"
+                  type="email"
+                  label="Email"
+                  readonly={true}
+                  value={@invitation.email}
+                />
 
                 <div class="card-actions justify-end">
                   <.button

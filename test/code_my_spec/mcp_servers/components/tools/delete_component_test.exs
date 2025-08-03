@@ -21,7 +21,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.DeleteComponentTest do
       assert {:reply, response, ^frame} = DeleteComponent.execute(params, frame)
       assert response.type == :tool
       assert response.isError == false
-      
+
       [%{"text" => json_content}] = response.content
       content = Jason.decode!(json_content)
       assert content["id"] == component.id
@@ -29,7 +29,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.DeleteComponentTest do
 
     test "returns error for non-existent component" do
       scope = full_scope_fixture()
-      params = %{id: 999999}
+      params = %{id: 999_999}
 
       frame = %Frame{assigns: %{current_scope: scope}}
 
