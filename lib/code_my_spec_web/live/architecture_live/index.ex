@@ -261,6 +261,37 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
   end
 
   @impl true
+  def handle_info(
+        {_type, %CodeMySpec.Components.Component{}},
+        socket
+      ) do
+    {:noreply, reload_architecture_data(socket)}
+  end
+
+  @impl true
+  def handle_info(
+        {_type, %CodeMySpec.Stories.Story{}},
+        socket
+      ) do
+    {:noreply, reload_architecture_data(socket)}
+  end
+
+  @impl true
+  def handle_info({:add_dependency, params}, socket) do
+    handle_event("add_dependency", params, socket)
+  end
+
+  @impl true
+  def handle_info({:move_story, params}, socket) do
+    handle_event("move_story", params, socket)
+  end
+
+  @impl true
+  def handle_info({:assign_story_to_component, params}, socket) do
+    handle_event("assign_story_to_component", params, socket)
+  end
+
+  @impl true
   def handle_event(
         "assign_component",
         %{"story-id" => story_id, "component-id" => component_id},
@@ -367,37 +398,6 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
             {:noreply, put_flash(socket, :error, "Failed to remove dependency")}
         end
     end
-  end
-
-  @impl true
-  def handle_info(
-        {_type, %CodeMySpec.Components.Component{}},
-        socket
-      ) do
-    {:noreply, reload_architecture_data(socket)}
-  end
-
-  @impl true
-  def handle_info(
-        {_type, %CodeMySpec.Stories.Story{}},
-        socket
-      ) do
-    {:noreply, reload_architecture_data(socket)}
-  end
-
-  @impl true
-  def handle_info({:add_dependency, params}, socket) do
-    handle_event("add_dependency", params, socket)
-  end
-
-  @impl true
-  def handle_info({:move_story, params}, socket) do
-    handle_event("move_story", params, socket)
-  end
-
-  @impl true
-  def handle_info({:assign_story_to_component, params}, socket) do
-    handle_event("assign_story_to_component", params, socket)
   end
 
   @impl true
