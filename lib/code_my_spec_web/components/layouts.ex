@@ -62,6 +62,9 @@ defmodule CodeMySpecWeb.Layouts do
             <.link href={~p"/components"} class="btn btn-ghost">Components</.link>
           </li>
           <li>
+            <.link href={~p"/architecture"} class="btn btn-ghost">Architecture</.link>
+          </li>
+          <li>
             <.theme_toggle />
           </li>
           <li>

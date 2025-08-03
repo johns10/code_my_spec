@@ -106,11 +106,12 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
     test "update_story/3 with valid data updates the story" do
       scope = full_scope_fixture()
       story = story_fixture(scope)
+      title = Faker.Lorem.word()
 
       update_attrs = %{
         status: :completed,
         description: "some updated description",
-        title: "some updated title",
+        title: title,
         acceptance_criteria: ["option1"],
         locked_at: ~U[2025-07-18 12:48:00Z],
         lock_expires_at: ~U[2025-07-18 12:48:00Z]
@@ -119,7 +120,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       assert {:ok, %Story{} = story} = StoriesRepository.update_story(scope, story, update_attrs)
       assert story.status == :completed
       assert story.description == "some updated description"
-      assert story.title == "some updated title"
+      assert story.title == title
       assert story.acceptance_criteria == ["option1"]
       assert story.locked_at == ~U[2025-07-18 12:48:00Z]
       assert story.lock_expires_at == ~U[2025-07-18 12:48:00Z]

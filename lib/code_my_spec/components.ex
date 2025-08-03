@@ -69,7 +69,8 @@ defmodule CodeMySpec.Components do
   def update_component(%Scope{} = scope, %Component{} = component, attrs) do
     true = component.project_id == scope.active_project.id
 
-    with {:ok, component = %Component{}} <- ComponentRepository.update_component(scope, component, attrs) do
+    with {:ok, component = %Component{}} <-
+           ComponentRepository.update_component(scope, component, attrs) do
       broadcast(scope, {:updated, component})
       {:ok, component}
     end
@@ -110,6 +111,7 @@ defmodule CodeMySpec.Components do
 
     Component.changeset(component, attrs, scope)
   end
+
   defdelegate list_dependencies(scope), to: DependencyRepository
   defdelegate get_dependency!(scope, id), to: DependencyRepository
   defdelegate create_dependency(scope, attrs), to: DependencyRepository

@@ -125,6 +125,8 @@ defmodule CodeMySpecWeb.Router do
       live "/components", ComponentLive.Index, :index
       live "/components/new", ComponentLive.Form, :new
       live "/components/:id/edit", ComponentLive.Form, :edit
+
+      live "/architecture", ArchitectureLive.Index, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password

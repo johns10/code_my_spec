@@ -47,12 +47,6 @@ defmodule CodeMySpecWeb.StoryLive.Index do
             </div>
 
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <.badge color={status_color(story.status)}>
-                  {String.capitalize(to_string(story.status))}
-                </.badge>
-              </div>
-
               <div class="card-actions">
                 <.link navigate={~p"/stories/#{story}/edit"} class="btn btn-sm btn-outline">
                   Edit
@@ -97,7 +91,6 @@ defmodule CodeMySpecWeb.StoryLive.Index do
     {:noreply, stream_delete(socket, :stories, story)}
   end
 
-
   @impl true
   def handle_event("export_markdown", _params, socket) do
     stories = Stories.list_project_stories(socket.assigns.current_scope)
@@ -132,13 +125,6 @@ defmodule CodeMySpecWeb.StoryLive.Index do
        reset: true
      )}
   end
-
-
-  defp status_color(:in_progress), do: "info"
-  defp status_color(:completed), do: "success"
-  defp status_color(:dirty), do: "warning"
-  defp status_color(_), do: "neutral"
-
 
   defp parse_acceptance_criteria(nil), do: []
   defp parse_acceptance_criteria(""), do: []
