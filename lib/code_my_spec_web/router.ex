@@ -126,6 +126,11 @@ defmodule CodeMySpecWeb.Router do
       live "/components/new", ComponentLive.Form, :new
       live "/components/:id/edit", ComponentLive.Form, :edit
 
+      live "/rules", RuleLive.Index, :index
+      live "/rules/new", RuleLive.Form, :new
+      live "/rules/:id", RuleLive.Show, :show
+      live "/rules/:id/edit", RuleLive.Form, :edit
+
       live "/architecture", ArchitectureLive.Index, :index
     end
 
