@@ -30,4 +30,20 @@ defmodule CodeMySpec.Rules.RulesRepository do
     true = rule.account_id == scope.active_account.id
     Repo.delete(rule)
   end
+
+  def find_matching_rules(%Scope{} = scope, component_type, session_type) do
+    from(r in Rule,
+      where: r.account_id == ^scope.active_account.id,
+      where: r.component_type == ^component_type or r.component_type == "*",
+      where: r.session_type == ^session_type or r.session_type == "*",
+      order_by: [r.component_type, r.session_type]
+    )
+    |> Repo.all()
+  end
+
+  def change_rule(%Scope{} = scope, %Rule{} = rule, attrs \\ %{}) do
+    true = rule.account_id == scope.active_account.id
+
+    Rule.changeset(rule, attrs, scope)
+  end
 end

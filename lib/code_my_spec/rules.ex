@@ -124,9 +124,5 @@ defmodule CodeMySpec.Rules do
       %Ecto.Changeset{data: %Rule{}}
 
   """
-  def change_rule(%Scope{} = scope, %Rule{} = rule, attrs \\ %{}) do
-    true = rule.account_id == scope.active_account.id
-
-    Rule.changeset(rule, attrs, scope)
-  end
+  defdelegate change_rule(scope, rule, attrs \\ %{}), to: RulesRepository
 end
