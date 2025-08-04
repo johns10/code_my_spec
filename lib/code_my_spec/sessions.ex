@@ -1,0 +1,147 @@
+defmodule CodeMySpec.Sessions do
+  @moduledoc """
+  The Sessions context.
+  """
+
+  import Ecto.Query, warn: false
+  alias CodeMySpec.Repo
+
+  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.Users.Scope
+
+  @doc """
+  Subscribes to scoped notifications about any session changes.
+
+  The broadcasted messages match the pattern:
+
+    * {:created, %Session{}}
+    * {:updated, %Session{}}
+    * {:deleted, %Session{}}
+
+  """
+  def subscribe_sessions(%Scope{} = scope) do
+    key = scope.active_account.id
+
+    Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "account:#{key}:sessions")
+  end
+
+  defp broadcast(%Scope{} = scope, message) do
+    key = scope.active_account.id
+
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{key}:sessions", message)
+  end
+
+  @doc """
+  Returns the list of sessions.
+
+  ## Examples
+
+      iex> list_sessions(scope)
+      [%Session{}, ...]
+
+  """
+  def list_sessions(%Scope{} = scope) do
+    Repo.all_by(Session, account_id: scope.active_account.id)
+  end
+
+  @doc """
+  Gets a single session.
+
+  Raises `Ecto.NoResultsError` if the Session does not exist.
+
+  ## Examples
+
+      iex> get_session!(123)
+      %Session{}
+
+      iex> get_session!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_session!(%Scope{} = scope, id) do
+    Repo.get_by!(Session, id: id, account_id: scope.active_account.id)
+  end
+
+  @doc """
+  Creates a session.
+
+  ## Examples
+
+      iex> create_session(%{field: value})
+      {:ok, %Session{}}
+
+      iex> create_session(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_session(%Scope{} = scope, attrs) do
+    with {:ok, session = %Session{}} <-
+           %Session{}
+           |> Session.changeset(attrs, scope)
+           |> Repo.insert() do
+      broadcast(scope, {:created, session})
+      {:ok, session}
+    end
+  end
+
+  @doc """
+  Updates a session.
+
+  ## Examples
+
+      iex> update_session(session, %{field: new_value})
+      {:ok, %Session{}}
+
+      iex> update_session(session, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_session(%Scope{} = scope, %Session{} = session, attrs) do
+    true = session.account_id == scope.active_account.id
+
+    with {:ok, session = %Session{}} <-
+           session
+           |> Session.changeset(attrs, scope)
+           |> Repo.update() do
+      broadcast(scope, {:updated, session})
+      {:ok, session}
+    end
+  end
+
+  @doc """
+  Deletes a session.
+
+  ## Examples
+
+      iex> delete_session(session)
+      {:ok, %Session{}}
+
+      iex> delete_session(session)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_session(%Scope{} = scope, %Session{} = session) do
+    true = session.account_id == scope.active_account.id
+
+    with {:ok, session = %Session{}} <-
+           Repo.delete(session) do
+      broadcast(scope, {:deleted, session})
+      {:ok, session}
+    end
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking session changes.
+
+  ## Examples
+
+      iex> change_session(session)
+      %Ecto.Changeset{data: %Session{}}
+
+  """
+  def change_session(%Scope{} = scope, %Session{} = session, attrs \\ %{}) do
+    true = session.account_id == scope.active_account.id
+
+    Session.changeset(session, attrs, scope)
+  end
+end
