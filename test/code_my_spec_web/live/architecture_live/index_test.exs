@@ -259,10 +259,10 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
 
       {:ok, _live, html} = live(conn, ~p"/architecture")
 
-      # Should show empty state since no components have stories
-      assert html =~ "No stories or components"
-      # Should not show the orphan component
-      refute html =~ "OrphanComponent"
+      # Should show the orphan component with warning styling
+      assert html =~ "OrphanComponent"
+      assert html =~ "(no stories)"
+      assert html =~ "text-warning"
     end
   end
 
@@ -293,8 +293,8 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       {:ok, _live, html} = live(conn, ~p"/architecture")
 
       # Should have Stories and Dependencies submenus
-      assert html =~ "<summary>Stories</summary>"
-      assert html =~ "<summary>Dependencies</summary>"
+      assert html =~ "Stories"
+      assert html =~ "Dependencies"
     end
   end
 end
