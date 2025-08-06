@@ -6,6 +6,7 @@ defmodule CodeMySpec.Rules do
   alias CodeMySpec.Rules.Rule
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Rules.RulesRepository
+  alias CodeMySpec.Rules.RulesSeeder
 
   @doc """
   Subscribes to scoped notifications about any rule changes.
@@ -114,6 +115,28 @@ defmodule CodeMySpec.Rules do
       {:ok, rule}
     end
   end
+
+  @doc """
+  Finds matching rules based on component type and session type.
+
+  ## Examples
+
+      iex> find_matching_rules(scope, "context", "coding")
+      [%Rule{}, ...]
+
+  """
+  defdelegate find_matching_rules(scope, component_type, session_type), to: RulesRepository
+
+  @doc """
+  Seeds base rules for an account from markdown files.
+
+  ## Examples
+
+      iex> seed_account_rules(scope)
+      {:ok, [%Rule{}, ...]}
+
+  """
+  defdelegate seed_account_rules(scope), to: RulesSeeder
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking rule changes.

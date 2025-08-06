@@ -9,7 +9,7 @@ defmodule CodeMySpec.Rules.RulesSeeder do
     session_type: String.t()
   }
 
-  @rules_directory "docs/rules"
+  @rules_directory "lib/code_my_spec/rules/content"
 
   def seed_account_rules(%Scope{} = scope) do
     with {:ok, rule_data_list} <- load_rules_from_directory(@rules_directory) do
