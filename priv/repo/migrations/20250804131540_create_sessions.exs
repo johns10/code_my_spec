@@ -11,7 +11,7 @@ defmodule CodeMySpec.Repo.Migrations.CreateSessions do
       add :interactions, :map
       add :project_id, references(:projects, on_delete: :nothing)
       add :account_id, references(:accounts, on_delete: :nothing)
-      add :context_id, references(:contexts, on_delete: :nothing)
+      add :context_id, references(:components, on_delete: :nothing)
 
       timestamps(type: :utc_datetime)
     end
