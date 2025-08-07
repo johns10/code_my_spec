@@ -26,7 +26,7 @@ existing_app =
 
 if !existing_app do
   # Insert new OAuth application
-  {1, [mcp_app]} =
+  {1, [_mcp_app]} =
     CodeMySpec.Repo.insert_all(
       "oauth_applications",
       [
