@@ -1,5 +1,5 @@
 defmodule CodeMySpec.Sessions.Session do
-  alias Decimal.Context
+  alias CodeMySpec.Components.Component
   alias CodeMySpec.Projects.Project
   alias CodeMySpec.Accounts.Account
   alias CodeMySpec.Sessions.Interaction
@@ -16,7 +16,7 @@ defmodule CodeMySpec.Sessions.Session do
 
     belongs_to :project, Project
     belongs_to :account, Account
-    belongs_to :context, Context
+    belongs_to :context, Component
 
     embeds_many :interactions, Interaction
 

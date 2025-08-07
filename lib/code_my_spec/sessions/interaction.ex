@@ -18,6 +18,7 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   def changeset(interaction \\ %__MODULE__{}, attrs) do
     interaction
+    |> cast(attrs, [])
     |> cast_embed(:command, required: true)
     |> cast_embed(:result)
     |> put_completed_at()
