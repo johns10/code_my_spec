@@ -10,10 +10,11 @@ defmodule CodeMySpec.SessionsFixtures do
   def session_fixture(scope, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
-        environment_id: "some environment_id",
+        agent: :claude_code,
+        environment: :local,
         state: %{},
-        status: "some status",
-        type: :design
+        status: :active,
+        type: :context_design
       })
 
     {:ok, session} = CodeMySpec.Sessions.create_session(scope, attrs)

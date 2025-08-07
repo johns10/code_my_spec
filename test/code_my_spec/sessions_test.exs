@@ -9,7 +9,7 @@ defmodule CodeMySpec.SessionsTest do
     import CodeMySpec.UsersFixtures, only: [full_scope_fixture: 0]
     import CodeMySpec.SessionsFixtures
 
-    @invalid_attrs %{status: nil, type: nil, state: nil, environment_id: nil}
+    @invalid_attrs %{status: nil, type: nil, state: nil, agent: nil, environment: nil}
 
     test "list_sessions/1 returns all scoped sessions" do
       scope = full_scope_fixture()
@@ -30,19 +30,21 @@ defmodule CodeMySpec.SessionsTest do
 
     test "create_session/2 with valid data creates a session" do
       valid_attrs = %{
-        status: "some status",
-        type: :design,
+        status: :active,
+        type: :context_design,
         state: %{},
-        environment_id: "some environment_id"
+        agent: :claude_code,
+        environment: :local
       }
 
       scope = full_scope_fixture()
 
       assert {:ok, %Session{} = session} = Sessions.create_session(scope, valid_attrs)
-      assert session.status == "some status"
-      assert session.type == :design
+      assert session.status == :active
+      assert session.type == :context_design
       assert session.state == %{}
-      assert session.environment_id == "some environment_id"
+      assert session.agent == :claude_code
+      assert session.environment == :local
       assert session.account_id == scope.active_account.id
     end
 
@@ -56,17 +58,19 @@ defmodule CodeMySpec.SessionsTest do
       session = session_fixture(scope)
 
       update_attrs = %{
-        status: "some updated status",
-        type: :coding,
+        status: :complete,
+        type: :context_design,
         state: %{},
-        environment_id: "some updated environment_id"
+        agent: :claude_code,
+        environment: :vscode
       }
 
       assert {:ok, %Session{} = session} = Sessions.update_session(scope, session, update_attrs)
-      assert session.status == "some updated status"
-      assert session.type == :coding
+      assert session.status == :complete
+      assert session.type == :context_design
       assert session.state == %{}
-      assert session.environment_id == "some updated environment_id"
+      assert session.agent == :claude_code
+      assert session.environment == :vscode
     end
 
     test "update_session/3 with invalid scope raises" do
