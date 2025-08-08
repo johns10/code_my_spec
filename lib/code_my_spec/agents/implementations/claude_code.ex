@@ -2,8 +2,7 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
   @moduledoc """
   Claude Code CLI integration implementation of AgentBehaviour.
 
-  Orchestrates configuration merging, command building, and streaming execution
-  for the Claude Code CLI tool.
+  Builds claude CLI commands with proper configuration for client execution.
   """
 
   alias CodeMySpec.Agents.{Agent, AgentType}
@@ -11,29 +10,17 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
   @behaviour CodeMySpec.Agents.AgentBehaviour
 
   @impl true
-  def execute(%Agent{} = agent, prompt, stream_handler) do
-    with merged_config <- merge_configs(agent),
-         command_args <- build_command(prompt, merged_config),
-         cli_adapter <- get_cli_adapter() do
-      case cli_adapter.run(command_args, stream_handler) do
-        {:ok, :completed} ->
-          {:ok, %{status: :completed}}
-
-        {:error, reason, _details} ->
-          {:error, reason}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
+  def build_command(%Agent{} = agent, prompt) do
+    merged_config = merge_configs(agent)
+    command_args = build_command_args(prompt, merged_config)
+    {:ok, command_args}
   end
 
   defp merge_configs(%Agent{config: agent_config, agent_type: %AgentType{config: type_config}}) do
     Map.merge(type_config, agent_config)
   end
 
-  @spec build_command(any(), any()) :: [...]
-  def build_command(prompt, config) do
+  defp build_command_args(prompt, config) do
     base_cmd = ["claude", "--output-format", "stream-json", "--print", prompt]
     cli_args = build_cli_args(config)
     base_cmd ++ cli_args
@@ -63,12 +50,4 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
   end
 
   defp format_cli_arg(_), do: []
-
-  defp get_cli_adapter do
-    Application.get_env(
-      :code_my_spec,
-      :claude_cli_adapter,
-      CodeMySpec.Agents.Implementations.ClaudeCode.CLIAdapter
-    )
-  end
 end

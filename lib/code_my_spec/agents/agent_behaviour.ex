@@ -8,16 +8,15 @@ defmodule CodeMySpec.Agents.AgentBehaviour do
   alias CodeMySpec.Agents.Agent
 
   @doc """
-  Execute an agent with the given prompt and configuration.
-  Streams output chunks to the provided handler function.
+  Build a command for the agent with the given prompt and configuration.
+  Returns the command that the client should execute.
   """
-  @callback execute(Agent.t(), prompt(), stream_handler()) ::
-              {:ok, execution_result()} | {:error, execution_error()}
+  @callback build_command(Agent.t(), prompt()) ::
+              {:ok, command()} | {:error, execution_error()}
 
   @type prompt() :: String.t()
-  @type stream_handler() :: (any() -> :ok)
+  @type command() :: [String.t()]
   @type config() :: map()
-  @type execution_result() :: map()
   @type execution_error() :: atom()
   @type validation_error() :: String.t()
 end
