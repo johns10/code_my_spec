@@ -6,7 +6,6 @@ defmodule CodeMySpec.Agents.AgentType do
           name: String.t(),
           prompt: String.t(),
           description: String.t(),
-          implementation: String.t() | nil,
           config: map(),
           additional_tools: list()
         }

@@ -5,19 +5,15 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
   Builds claude CLI commands with proper configuration for client execution.
   """
 
-  alias CodeMySpec.Agents.{Agent, AgentType}
+  alias CodeMySpec.Agents.Agent
 
   @behaviour CodeMySpec.Agents.AgentBehaviour
 
   @impl true
   def build_command(%Agent{} = agent, prompt) do
-    merged_config = merge_configs(agent)
+    merged_config = CodeMySpec.Agents.merge_configs(agent)
     command_args = build_command_args(prompt, merged_config)
     {:ok, command_args}
-  end
-
-  defp merge_configs(%Agent{config: agent_config, agent_type: %AgentType{config: type_config}}) do
-    Map.merge(type_config, agent_config)
   end
 
   defp build_command_args(prompt, config) do

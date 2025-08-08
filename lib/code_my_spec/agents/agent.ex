@@ -7,24 +7,22 @@ defmodule CodeMySpec.Agents.Agent do
           id: term(),
           name: String.t(),
           agent_type: AgentType.t(),
-          config: map(),
-          inserted_at: NaiveDateTime.t(),
-          updated_at: NaiveDateTime.t()
+          implementation: atom(),
+          config: map()
         }
 
   embedded_schema do
     field :name, :string
     embeds_one :agent_type, AgentType
+    field :implementation, Ecto.Enum, values: [:claude_code]
     field :config, :map, default: %{}
-
-    timestamps()
   end
 
   @doc false
   def changeset(%__MODULE__{} = agent, attrs) do
     agent
-    |> cast(attrs, [:name, :config])
+    |> cast(attrs, [:name, :implementation, :config])
     |> cast_embed(:agent_type, required: true)
-    |> validate_required([:name, :agent_type])
+    |> validate_required([:name, :agent_type, :implementation])
   end
 end

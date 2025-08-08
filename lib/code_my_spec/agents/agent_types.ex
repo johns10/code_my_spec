@@ -1,7 +1,7 @@
 defmodule CodeMySpec.Agents.AgentTypes do
   alias CodeMySpec.Agents.AgentType
 
-  @type agent_type() :: :unit_coder
+  @type agent_type() :: :unit_coder | :context_designer
 
   @spec get(agent_type()) :: {:ok, AgentType.t()} | {:error, :unknown_type}
   def get(agent_type) do
@@ -17,7 +17,24 @@ defmodule CodeMySpec.Agents.AgentTypes do
       description: "A coding assistant specialized in writing individual components.",
       prompt:
         "You are an expert software developer assistant. Help with coding tasks, debugging, and implementation.",
-      implementation: nil,
+      config: %{},
+      additional_tools: []
+    }
+  end
+
+  defp get_agent_type(:context_designer) do
+    %AgentType{
+      name: "context_designer",
+      description: "Designs Phoenix contexts with proper architecture.",
+      prompt: """
+      You are a Phoenix context design expert. Generate comprehensive context designs that follow Phoenix conventions and best practices.
+
+      Focus on:
+      - Clean boundaries and responsibilities
+      - Proper schema relationships
+      - Public API design
+      - Testing strategies
+      """,
       config: %{},
       additional_tools: []
     }
@@ -27,7 +44,7 @@ defmodule CodeMySpec.Agents.AgentTypes do
 
   @spec list() :: [agent_type()]
   def list do
-    [:unit_coder]
+    [:unit_coder, :context_designer]
   end
 
   @spec exists?(agent_type()) :: boolean()
