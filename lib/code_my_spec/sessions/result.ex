@@ -6,6 +6,18 @@ defmodule CodeMySpec.Sessions.Result do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: binary() | nil,
+          status: :ok | :error | :warning | nil,
+          data: map(),
+          code: integer() | nil,
+          error_message: String.t() | nil,
+          stdout: String.t() | nil,
+          stderr: String.t() | nil,
+          duration_ms: integer() | nil,
+          timestamp: DateTime.t() | nil
+        }
+
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :status, Ecto.Enum, values: [:ok, :error, :warning]

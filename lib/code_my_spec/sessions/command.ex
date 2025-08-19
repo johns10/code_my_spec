@@ -6,6 +6,13 @@ defmodule CodeMySpec.Sessions.Command do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: binary() | nil,
+          module: String.t() | nil,
+          command: String.t() | nil,
+          timestamp: DateTime.t() | nil
+        }
+
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :module, :string

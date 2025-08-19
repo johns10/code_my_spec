@@ -9,6 +9,13 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   alias CodeMySpec.Sessions.{Command, Result}
 
+  @type t :: %__MODULE__{
+          id: binary() | nil,
+          command: Command.t() | nil,
+          result: Result.t() | nil,
+          completed_at: DateTime.t() | nil
+        }
+
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     embeds_one :command, Command
