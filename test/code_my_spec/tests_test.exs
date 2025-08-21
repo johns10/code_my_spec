@@ -185,13 +185,13 @@ defmodule CodeMySpec.TestsTest do
 
       # Verify test results structure
       assert length(test_run.results) == 5
-      
+
       failed = Tests.failed_tests(test_run)
       passed = Tests.passed_tests(test_run)
-      
+
       assert length(failed) == 2
       assert length(passed) == 3
-      
+
       # Verify failed test structure
       failing_test = Enum.find(failed, &(&1.title == "test fails"))
       assert %TestResult{} = failing_test
@@ -202,7 +202,7 @@ defmodule CodeMySpec.TestsTest do
       assert failing_test.error.line == 16
       assert failing_test.error.message == "Test failed"
 
-      # Verify passed test structure  
+      # Verify passed test structure
       passing_test = Enum.find(passed, &(&1.title == "test adds"))
       assert %TestResult{} = passing_test
       assert passing_test.full_title == "Elixir.TestProjectTest: test adds"
@@ -211,6 +211,38 @@ defmodule CodeMySpec.TestsTest do
 
       # Verify success logic
       assert Tests.success?(test_run) == false
+    end
+
+    @tag timeout: 120_000
+    test "runs tests with --trace flag" do
+      # Clone the test project (suppress output)
+      {_output, 0} =
+        System.cmd("git", [
+          "clone",
+          "--quiet",
+          "https://github.com/johns10/test_project.git",
+          @test_project_dir
+        ])
+
+      # Change to project directory and install dependencies (suppress output)
+      {_output, 0} = System.cmd("mix", ["deps.get", "--quiet"], cd: @test_project_dir)
+
+      # Run tests with trace flag
+      assert {:ok, %TestRun{} = test_run} =
+               Tests.run_tests(@test_project_dir, trace: true, timeout: 60_000)
+
+      # Verify trace flag is in command
+      assert test_run.command == "mix test --formatter ExUnitJsonFormatter --trace"
+      assert String.contains?(test_run.raw_output, "test_project")
+
+      # Should still get proper results even with trace
+      assert test_run.execution_status == :failure
+      assert test_run.exit_code == 2
+      assert %TestStats{} = test_run.stats
+      assert test_run.stats.tests == 5
+      assert test_run.stats.passes == 3
+      assert test_run.stats.failures == 2
+      assert length(test_run.results) == 5
     end
   end
 end
