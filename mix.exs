@@ -71,7 +71,8 @@ defmodule CodeMySpec.MixProject do
       {:yaml_elixir, "~> 2.11"},
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:faker, "~> 0.18", only: :test}
+      {:faker, "~> 0.18", only: :test},
+      {:exunit_formatter_json, "~> 0.1.0"},
     ]
   end
 
