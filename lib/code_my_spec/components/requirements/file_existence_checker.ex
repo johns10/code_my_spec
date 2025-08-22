@@ -1,21 +1,26 @@
 defmodule CodeMySpec.Components.Requirements.FileExistenceChecker do
   @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
+  alias CodeMySpec.Components.Requirements.Requirement
 
-  def check(%{name: :design_file}, %{design_exists: true}),
-    do: {:satisfied, %{status: "Design file exists"}}
-
-  def check(%{name: :design_file}, %{design_exists: false}),
-    do: {:not_satisfied, %{status: "Design file missing"}}
-
-  def check(%{name: :implementation_file}, %{code_exists: true}),
-    do: {:satisfied, %{status: "Implementation file exists"}}
-
-  def check(%{name: :implementation_file}, %{code_exists: false}),
-    do: {:not_satisfied, %{status: "Implementation file missing"}}
-
-  def check(%{name: :test_file}, %{test_exists: true}),
-    do: {:satisfied, %{status: "Test file exists"}}
-
-  def check(%{name: :test_file}, %{test_exists: false}),
-    do: {:not_satisfied, %{status: "Test file missing"}}
+  def check(%Requirement{} = requirement, component_status) do
+    case {Requirement.name_atom(requirement), component_status} do
+      {:design_file, %{design_exists: true}} ->
+        {:satisfied, %{status: "Design file exists"}}
+      
+      {:design_file, %{design_exists: false}} ->
+        {:not_satisfied, %{status: "Design file missing"}}
+      
+      {:implementation_file, %{code_exists: true}} ->
+        {:satisfied, %{status: "Implementation file exists"}}
+      
+      {:implementation_file, %{code_exists: false}} ->
+        {:not_satisfied, %{status: "Implementation file missing"}}
+      
+      {:test_file, %{test_exists: true}} ->
+        {:satisfied, %{status: "Test file exists"}}
+      
+      {:test_file, %{test_exists: false}} ->
+        {:not_satisfied, %{status: "Test file missing"}}
+    end
+  end
 end

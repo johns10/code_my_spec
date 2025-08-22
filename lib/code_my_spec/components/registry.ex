@@ -18,71 +18,48 @@ defmodule CodeMySpec.Components.Registry do
           | :other
 
   @type type_definition :: %{
-          requirements: [requirement_definition()],
+          requirements: [requirement_spec()],
           display_name: String.t(),
           description: String.t(),
           icon: String.t() | nil,
           color: String.t() | nil
         }
 
-  @type requirement_definition :: %{
+  @type requirement_spec :: %{
           name: atom(),
-          type: requirement_type(),
-          description: String.t(),
-          checker_module: module()
+          checker: module(),
+          satisfied_by: module() | nil
         }
 
-  @type requirement_type :: :file_existence | :test_status | :cross_component | :manual_review
 
-  @type requirement_check :: %{
-          requirement: requirement_definition(),
-          satisfied: boolean(),
-          details: map()
-        }
-
-  @type requirement_status :: %{
-          component: Component.t(),
-          requirements: [requirement_check()],
-          overall_satisfied: boolean()
-        }
-
-  @type component_status :: %{
-          component: Component.t(),
-          design_exists: boolean(),
-          code_exists: boolean(),
-          test_exists: boolean(),
-          test_status: :passing | :failing | :none_available | :not_run,
-          missing_files: [String.t()],
-          approvals: [map()]
-        }
 
   @default_requirements [
     %{
       name: :design_file,
-      type: :file_existence,
-      description: "Component design documentation exists",
-      checker_module: CodeMySpec.Components.Requirements.FileExistenceChecker
+      checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+      satisfied_by: CodeMySpec.ContextDesignSessions
     },
     %{
       name: :implementation_file,
-      type: :file_existence,
-      description: "Component implementation file exists",
-      checker_module: CodeMySpec.Components.Requirements.FileExistenceChecker
+      checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+      satisfied_by: nil
     },
     %{
       name: :test_file,
-      type: :file_existence,
-      description: "Component test file exists",
-      checker_module: CodeMySpec.Components.Requirements.FileExistenceChecker
+      checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+      satisfied_by: nil
     },
     %{
       name: :tests_passing,
-      type: :test_status,
-      description: "Component tests are passing",
-      checker_module: CodeMySpec.Components.Requirements.TestStatusChecker
+      checker: CodeMySpec.Components.Requirements.TestStatusChecker,
+      satisfied_by: nil
+    },
+    %{
+      name: :dependencies_satisfied,
+      checker: CodeMySpec.Components.Requirements.DependencyChecker,
+      satisfied_by: nil
     }
   ]
-
 
   @type_definitions %{
     genserver: %{
@@ -110,15 +87,18 @@ defmodule CodeMySpec.Components.Registry do
       requirements: [
         %{
           name: :design_file,
-          type: :file_existence,
-          description: "Schema design documentation exists",
-          checker_module: CodeMySpec.Components.Requirements.FileExistenceChecker
+          checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+          satisfied_by: CodeMySpec.ContextDesignSessions
         },
         %{
           name: :implementation_file,
-          type: :file_existence,
-          description: "Schema implementation file exists",
-          checker_module: CodeMySpec.Components.Requirements.FileExistenceChecker
+          checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+          satisfied_by: nil
+        },
+        %{
+          name: :dependencies_satisfied,
+          checker: CodeMySpec.Components.Requirements.DependencyChecker,
+          satisfied_by: nil
         }
       ],
       display_name: "Schema",
@@ -164,33 +144,19 @@ defmodule CodeMySpec.Components.Registry do
     end
   end
 
-  @spec get_requirements_for_type(component_type()) :: [requirement_definition()]
+  @spec get_requirements_for_type(component_type()) :: [requirement_spec()]
   def get_requirements_for_type(component_type) do
     get_type(component_type).requirements
   end
 
-  @spec check_requirements_satisfied(Component.t(), component_status()) :: requirement_status()
-  def check_requirements_satisfied(%Component{type: type} = component, component_status) do
+  @spec requirements_satisfied?(Component.t(), map()) :: boolean()
+  def requirements_satisfied?(%Component{type: type}, component_status) do
     requirements = get_requirements_for_type(type)
-
-    requirement_checks =
-      Enum.map(requirements, &check_single_requirement(&1, component_status))
-
-    %{
-      component: component,
-      requirements: requirement_checks,
-      overall_satisfied: Enum.all?(requirement_checks, & &1.satisfied)
-    }
-  end
-
-  defp check_single_requirement(req_def, component_status) do
-    checker = req_def.checker_module
-    result = checker.check(req_def, component_status)
-
-    %{
-      requirement: req_def,
-      satisfied: result.satisfied,
-      details: result.details
-    }
+    
+    Enum.all?(requirements, fn req_spec ->
+      checker = req_spec.checker
+      result = checker.check(req_spec, component_status)
+      result.satisfied
+    end)
   end
 end
