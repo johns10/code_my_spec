@@ -8,6 +8,8 @@ defmodule CodeMySpec.Components.Component do
 
   alias CodeMySpec.Components.Dependency
   alias CodeMySpec.Projects.Project
+  alias CodeMySpec.Components.Requirements.Requirement
+  alias CodeMySpec.Components.ComponentStatus
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -23,6 +25,8 @@ defmodule CodeMySpec.Components.Component do
           dependencies: [t()] | Ecto.Association.NotLoaded.t(),
           dependents: [t()] | Ecto.Association.NotLoaded.t(),
           stories: [CodeMySpec.Stories.Story.t()] | Ecto.Association.NotLoaded.t(),
+          requirements: [Requirement.t()] | Ecto.Association.NotLoaded.t(),
+          component_status: ComponentStatus.t() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -54,6 +58,9 @@ defmodule CodeMySpec.Components.Component do
     has_many :dependencies, through: [:outgoing_dependencies, :target_component]
     has_many :dependents, through: [:incoming_dependencies, :source_component]
     has_many :stories, CodeMySpec.Stories.Story
+    has_many :requirements, Requirement
+
+    embeds_one :component_status, ComponentStatus
 
     timestamps(type: :utc_datetime)
   end
