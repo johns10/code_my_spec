@@ -70,9 +70,12 @@ defmodule CodeMySpec.MixProject do
       {:earmark, "~> 1.4"},
       {:yaml_elixir, "~> 2.11"},
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
+      # {:exunit_formatter_json, "~> 0.1.0"},
+      {:exunit_json_formatter,
+       git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:faker, "~> 0.18", only: :test},
-      {:exunit_formatter_json, "~> 0.1.0"},
+      {:dir_walker, "~> 0.0.8"}
     ]
   end
 

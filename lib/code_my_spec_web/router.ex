@@ -69,10 +69,18 @@ defmodule CodeMySpecWeb.Router do
       server: CodeMySpec.MCPServers.ComponentsServer
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", CodeMySpecWeb do
-  #   pipe_through :api
-  # end
+  # API routes
+  scope "/api", CodeMySpecWeb do
+    pipe_through [:api, :require_oauth_token]
+
+    resources "/sessions", SessionsController, except: [:edit, :new, :update, :delete] do
+      get "/next-command", SessionsController, :next_command
+      post "/submit-result/:interaction_id", SessionsController, :submit_result
+    end
+
+    post "/project-coordinator/sync-requirements", ProjectCoordinatorController, :sync_requirements
+    get "/project-coordinator/next-actions", ProjectCoordinatorController, :next_actions
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:code_my_spec, :dev_routes) do

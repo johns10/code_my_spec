@@ -33,12 +33,18 @@ defmodule CodeMySpec.Components.ComponentRepository do
     |> Repo.insert()
   end
 
-  @spec update_component(Scope.t(), Component.t(), map()) ::
+  @spec update_component(Scope.t(), Component.t(), map(), list()) ::
           {:ok, Component.t()} | {:error, Ecto.Changeset.t()}
-  def update_component(%Scope{} = scope, %Component{} = component, attrs) do
-    component
-    |> Component.changeset(attrs, scope)
-    |> Repo.update()
+  def update_component(%Scope{} = scope, %Component{} = component, attrs, opts \\ []) do
+    if Keyword.get(opts, :persist, true) do
+      component
+      |> Component.changeset(attrs, scope)
+      |> Repo.update()
+    else
+      component
+      |> Component.changeset(attrs, scope)
+      |> Ecto.Changeset.apply_action(:update)
+    end
   end
 
   @spec delete_component(Scope.t(), Component.t()) ::

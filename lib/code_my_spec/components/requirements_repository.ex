@@ -17,88 +17,42 @@ defmodule CodeMySpec.Components.RequirementsRepository do
           details: map()
         }
 
-  @spec create_requirement(Scope.t(), Component.t(), requirement_attrs()) ::
+  @spec create_requirement(Scope.t(), Component.t(), requirement_attrs(), keyword()) ::
           {:ok, Requirement.t()} | {:error, Ecto.Changeset.t()}
-  def create_requirement(%Scope{}, %Component{} = component, attrs) do
-    %Requirement{}
-    |> Requirement.changeset(attrs)
-    |> Ecto.Changeset.put_assoc(:component, component)
-    |> Repo.insert()
-  end
+  def create_requirement(%Scope{}, %Component{} = component, attrs, opts \\ []) do
+    changeset =
+      %Requirement{}
+      |> Requirement.changeset(attrs)
+      |> Ecto.Changeset.put_assoc(:component, component)
 
-  @spec get_requirement(Scope.t(), integer()) :: Requirement.t() | nil
-  def get_requirement(%Scope{active_project_id: project_id}, requirement_id) do
-    Requirement
-    |> join(:inner, [r], c in assoc(r, :component))
-    |> where([r, c], r.id == ^requirement_id and c.project_id == ^project_id)
-    |> Repo.one()
+    if Keyword.get(opts, :persist, true) do
+      Repo.insert(changeset)
+    else
+      Ecto.Changeset.apply_action(changeset, :insert)
+    end
   end
 
   @spec update_requirement(Scope.t(), Requirement.t(), requirement_attrs()) ::
           {:ok, Requirement.t()} | {:error, Ecto.Changeset.t()}
   def update_requirement(%Scope{}, %Requirement{} = requirement, attrs) do
     requirement
-    |> Requirement.changeset(attrs)
+    |> Requirement.update_changeset(attrs)
     |> Repo.update()
   end
 
-  @spec delete_requirement(Scope.t(), Requirement.t()) ::
-          {:ok, Requirement.t()} | {:error, Ecto.Changeset.t()}
-  def delete_requirement(%Scope{}, %Requirement{} = requirement) do
-    Repo.delete(requirement)
-  end
-
-  @spec list_requirements_for_component(Scope.t(), integer()) :: [Requirement.t()]
-  def list_requirements_for_component(%Scope{active_project_id: project_id}, component_id) do
-    Requirement
-    |> join(:inner, [r], c in assoc(r, :component))
-    |> where([r, c], r.component_id == ^component_id and c.project_id == ^project_id)
-    |> Repo.all()
-  end
-
-  @spec by_satisfied_status(Ecto.Query.t(), boolean()) :: Ecto.Query.t()
-  def by_satisfied_status(query, satisfied) do
-    where(query, [r], r.satisfied == ^satisfied)
-  end
-
-  @spec by_requirement_name(Ecto.Query.t(), atom()) :: Ecto.Query.t()
-  def by_requirement_name(query, requirement_name) do
-    name_string = Atom.to_string(requirement_name)
-    where(query, [r], r.name == ^name_string)
-  end
-
-  @spec recreate_component_requirements(Scope.t(), Component.t(), [Requirement.t()]) ::
-          {:ok, [Requirement.t()]}
-  def recreate_component_requirements(%Scope{} = scope, %Component{} = component, requirements) do
-    Repo.transaction(fn ->
-      # Delete existing requirements for the component
+  @spec clear_requirements(Scope.t(), Component.t(), list()) :: Component.t()
+  def clear_requirements(%Scope{}, %Component{} = component, opts) do
+    if Keyword.get(opts, :persist, false) do
       Requirement
       |> where([r], r.component_id == ^component.id)
       |> Repo.delete_all()
-
-      # Insert new requirements
-      Enum.map(requirements, fn req_attrs ->
-        case create_requirement(scope, component, req_attrs) do
-          {:ok, requirement} -> requirement
-          {:error, _changeset} -> nil
-        end
-      end)
-      |> Enum.filter(&(&1 != nil))
-    end)
-    |> case do
-      {:ok, requirements} -> {:ok, requirements}
-      {:error, _} -> {:ok, []}
     end
-  end
 
-  @spec clear_project_requirements(Scope.t()) :: :ok
-  def clear_project_requirements(%Scope{active_project_id: project_id}) do
-    Requirement
-    |> join(:inner, [r], c in assoc(r, :component))
-    |> where([r, c], c.project_id == ^project_id)
-    |> Repo.delete_all()
-
-    :ok
+    component
+    |> Map.put(:dependencies, [])
+    |> Map.put(:dependents, [])
+    |> Map.put(:outgoing_dependencies, [])
+    |> Map.put(:incoming_dependencies, [])
   end
 
   @spec components_with_unsatisfied_requirements(Scope.t()) :: [Component.t()]

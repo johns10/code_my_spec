@@ -5,7 +5,7 @@ defmodule CodeMySpec.Components.Registry do
   display properties, workflow rules, and validation logic.
   """
 
-  alias CodeMySpec.Components.Component
+  alias CodeMySpec.Components.Requirements.Requirement
 
   @type component_type ::
           :genserver
@@ -18,22 +18,19 @@ defmodule CodeMySpec.Components.Registry do
           | :other
 
   @type type_definition :: %{
-          requirements: [requirement_spec()],
+          requirements: [Requirement.requirement_spec()],
           display_name: String.t(),
           description: String.t(),
           icon: String.t() | nil,
           color: String.t() | nil
         }
 
-  @type requirement_spec :: %{
-          name: atom(),
-          checker: module(),
-          satisfied_by: module() | nil
-        }
-
-
-
   @default_requirements [
+    %{
+      name: :dependencies_satisfied,
+      checker: CodeMySpec.Components.Requirements.DependencyChecker,
+      satisfied_by: nil
+    },
     %{
       name: :design_file,
       checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
@@ -52,11 +49,6 @@ defmodule CodeMySpec.Components.Registry do
     %{
       name: :tests_passing,
       checker: CodeMySpec.Components.Requirements.TestStatusChecker,
-      satisfied_by: nil
-    },
-    %{
-      name: :dependencies_satisfied,
-      checker: CodeMySpec.Components.Requirements.DependencyChecker,
       satisfied_by: nil
     }
   ]
@@ -144,19 +136,8 @@ defmodule CodeMySpec.Components.Registry do
     end
   end
 
-  @spec get_requirements_for_type(component_type()) :: [requirement_spec()]
+  @spec get_requirements_for_type(component_type()) :: [Requirement.requirement_spec()]
   def get_requirements_for_type(component_type) do
     get_type(component_type).requirements
-  end
-
-  @spec requirements_satisfied?(Component.t(), map()) :: boolean()
-  def requirements_satisfied?(%Component{type: type}, component_status) do
-    requirements = get_requirements_for_type(type)
-    
-    Enum.all?(requirements, fn req_spec ->
-      checker = req_spec.checker
-      result = checker.check(req_spec, component_status)
-      result.satisfied
-    end)
   end
 end

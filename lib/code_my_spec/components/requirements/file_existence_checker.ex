@@ -1,26 +1,50 @@
 defmodule CodeMySpec.Components.Requirements.FileExistenceChecker do
   @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
-  alias CodeMySpec.Components.Requirements.Requirement
+  alias CodeMySpec.Components.Component
 
-  def check(%Requirement{} = requirement, component_status) do
-    case {Requirement.name_atom(requirement), component_status} do
+  def check(%{name: name} = requirement_spec, %Component{component_status: component_status}) do
+    {satisfied, details} = case {name, component_status} do
       {:design_file, %{design_exists: true}} ->
-        {:satisfied, %{status: "Design file exists"}}
+        {true, %{status: "Design file exists"}}
       
       {:design_file, %{design_exists: false}} ->
-        {:not_satisfied, %{status: "Design file missing"}}
+        {false, %{reason: "Design file missing"}}
       
       {:implementation_file, %{code_exists: true}} ->
-        {:satisfied, %{status: "Implementation file exists"}}
+        {true, %{status: "Implementation file exists"}}
       
       {:implementation_file, %{code_exists: false}} ->
-        {:not_satisfied, %{status: "Implementation file missing"}}
+        {false, %{reason: "Implementation file missing"}}
       
       {:test_file, %{test_exists: true}} ->
-        {:satisfied, %{status: "Test file exists"}}
+        {true, %{status: "Test file exists"}}
       
       {:test_file, %{test_exists: false}} ->
-        {:not_satisfied, %{status: "Test file missing"}}
+        {false, %{reason: "Test file missing"}}
+      
+      # Handle case where component_status is nil (shouldn't happen but defensive)
+      {_, nil} ->
+        {false, %{reason: "Component status not available"}}
+        
+      # Handle case where component_status doesn't match expected structure
+      {_, _} ->
+        {false, %{reason: "Invalid component status structure"}}
     end
+
+    %{
+      name: Atom.to_string(requirement_spec.name),
+      type: :file_existence,
+      description: generate_description(requirement_spec.name),
+      checker_module: Atom.to_string(requirement_spec.checker),
+      satisfied_by: requirement_spec.satisfied_by && Atom.to_string(requirement_spec.satisfied_by),
+      satisfied: satisfied,
+      checked_at: DateTime.utc_now(),
+      details: details
+    }
   end
+
+  defp generate_description(:design_file), do: "Component design documentation exists"
+  defp generate_description(:implementation_file), do: "Component implementation file exists"
+  defp generate_description(:test_file), do: "Component test file exists"
+  defp generate_description(name), do: "File requirement #{name} is satisfied"
 end

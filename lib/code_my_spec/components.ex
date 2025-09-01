@@ -3,8 +3,16 @@ defmodule CodeMySpec.Components do
   Manages component definitions, metadata, type classification, and inter-component dependencies for architectural design.
   """
 
-  alias CodeMySpec.Components.{Component, ComponentRepository, DependencyRepository}
+  alias CodeMySpec.Components.{
+    Component,
+    ComponentRepository,
+    DependencyRepository,
+    Registry,
+    RequirementsRepository
+  }
+
   alias CodeMySpec.Users.Scope
+  require Logger
 
   @doc """
   Subscribes to scoped notifications about any component changes.
@@ -67,12 +75,12 @@ defmodule CodeMySpec.Components do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_component(%Scope{} = scope, %Component{} = component, attrs) do
+  def update_component(%Scope{} = scope, %Component{} = component, attrs, opts \\ []) do
     true = component.project_id == scope.active_project.id
 
     with {:ok, component = %Component{}} <-
-           ComponentRepository.update_component(scope, component, attrs) do
-      broadcast(scope, {:updated, component})
+           ComponentRepository.update_component(scope, component, attrs, opts) do
+      if Keyword.get(opts, :broadcast, true), do: broadcast(scope, {:updated, component})
       {:ok, component}
     end
   end
@@ -113,6 +121,28 @@ defmodule CodeMySpec.Components do
     Component.changeset(component, attrs, scope)
   end
 
+  def check_requirements(component, opts) do
+    include_types = Keyword.get(opts, :include, [])
+    exclude_types = Keyword.get(opts, :exclude, [])
+
+    Registry.get_requirements_for_type(component.type)
+    |> Enum.filter(fn %{name: name} ->
+      exclude = length(exclude_types) > 0 and name in exclude_types
+
+      include =
+        (length(include_types) > 0 and name in include_types) or length(include_types) == 0
+
+      include && !exclude
+    end)
+    |> Enum.map(fn requirement_spec ->
+      checker = requirement_spec.checker
+      checker.check(requirement_spec, component)
+    end)
+  end
+
+  defdelegate clear_requirements(scope, component, opts \\ []), to: RequirementsRepository
+  defdelegate create_requirement(scope, component, attrs, opts \\ []), to: RequirementsRepository
+  defdelegate components_with_unsatisfied_requirements(scope), to: RequirementsRepository
   defdelegate list_dependencies(scope), to: DependencyRepository
   defdelegate get_dependency!(scope, id), to: DependencyRepository
   defdelegate create_dependency(scope, attrs), to: DependencyRepository

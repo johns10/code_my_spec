@@ -13,4 +13,9 @@ defmodule CodeMySpec.Tests.TestError do
     field :line, :integer
     field :message, :string
   end
+
+  def changeset(test_error \\ %__MODULE__{}, attrs) do
+    test_error
+    |> Ecto.Changeset.cast(attrs, [:file, :line, :message])
+  end
 end

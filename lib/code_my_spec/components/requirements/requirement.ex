@@ -14,6 +14,12 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
           | :manual_review
           | :dependencies_satisfied
 
+  @type requirement_spec :: %{
+          name: atom(),
+          checker: module(),
+          satisfied_by: module() | nil
+        }
+
   @type t :: %__MODULE__{
           name: atom(),
           type: requirement_type(),
@@ -89,9 +95,27 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
   defp generate_description(name), do: "Requirement #{name} is satisfied"
 
   @doc """
-  Changeset for updating requirement satisfaction status.
+  Changeset for creating a new requirement.
   """
   def changeset(requirement, attrs) do
+    requirement
+    |> cast(attrs, [
+      :name,
+      :type,
+      :description,
+      :checker_module,
+      :satisfied_by,
+      :satisfied,
+      :checked_at,
+      :details
+    ])
+    |> validate_required([:name, :type, :description, :checker_module, :satisfied])
+  end
+
+  @doc """
+  Changeset for updating requirement satisfaction status.
+  """
+  def update_changeset(requirement, attrs) do
     requirement
     |> cast(attrs, [:satisfied, :checked_at, :details])
     |> validate_required([:satisfied])
