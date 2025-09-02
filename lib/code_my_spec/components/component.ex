@@ -19,7 +19,10 @@ defmodule CodeMySpec.Components.Component do
           description: String.t() | nil,
           priority: integer() | nil,
           project_id: integer(),
+          parent_component_id: integer() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t(),
+          parent_component: t() | Ecto.Association.NotLoaded.t() | nil,
+          child_components: [t()] | Ecto.Association.NotLoaded.t(),
           outgoing_dependencies: [Dependency.t()] | Ecto.Association.NotLoaded.t(),
           incoming_dependencies: [Dependency.t()] | Ecto.Association.NotLoaded.t(),
           dependencies: [t()] | Ecto.Association.NotLoaded.t(),
@@ -51,7 +54,9 @@ defmodule CodeMySpec.Components.Component do
     field :priority, :integer
 
     belongs_to :project, Project
+    belongs_to :parent_component, __MODULE__
 
+    has_many :child_components, __MODULE__, foreign_key: :parent_component_id
     has_many :outgoing_dependencies, Dependency, foreign_key: :source_component_id
     has_many :incoming_dependencies, Dependency, foreign_key: :target_component_id
 
@@ -67,16 +72,32 @@ defmodule CodeMySpec.Components.Component do
 
   def changeset(component, attrs, %CodeMySpec.Users.Scope{} = scope) do
     component
-    |> cast(attrs, [:name, :type, :module_name, :description, :priority])
+    |> cast(attrs, [:name, :type, :module_name, :description, :priority, :parent_component_id])
     |> validate_required([:name, :type, :module_name])
     |> validate_length(:name, min: 1, max: 255)
     |> validate_length(:module_name, min: 1, max: 255)
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
       message: "must be a valid Elixir module name"
     )
+    |> validate_no_self_parent()
     |> put_scope_associations(scope)
     |> unique_constraint([:name, :project_id])
     |> unique_constraint([:module_name, :project_id])
+    |> foreign_key_constraint(:parent_component_id)
+  end
+
+  @spec validate_no_self_parent(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  defp validate_no_self_parent(changeset) do
+    component_id = get_field(changeset, :id)
+    parent_id = get_field(changeset, :parent_component_id)
+
+    case {component_id, parent_id} do
+      {id, id} when not is_nil(id) ->
+        add_error(changeset, :parent_component_id, "cannot be its own parent")
+
+      _ ->
+        changeset
+    end
   end
 
   @spec put_scope_associations(Ecto.Changeset.t(), CodeMySpec.Users.Scope.t()) ::
