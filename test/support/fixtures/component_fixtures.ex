@@ -18,7 +18,7 @@ defmodule CodeMySpec.ComponentsFixtures do
       Enum.into(attrs, %{
         name: "TestComponent#{unique_id}",
         type: :context,
-        module_name: "MyApp.TestComponent#{unique_id}",
+        module_name: "TestComponent#{unique_id}",
         description: "A test component"
       })
 
@@ -37,7 +37,7 @@ defmodule CodeMySpec.ComponentsFixtures do
         %{
           name: "ParentComponent#{unique_id}",
           type: :context,
-          module_name: "MyApp.ParentComponent#{unique_id}"
+          module_name: "ParentComponent#{unique_id}"
         },
         attrs
       )
@@ -45,7 +45,7 @@ defmodule CodeMySpec.ComponentsFixtures do
     child_attrs = %{
       name: "ChildComponent#{unique_id}",
       type: :schema,
-      module_name: "MyApp.ChildComponent#{unique_id}"
+      module_name: "ChildComponent#{unique_id}"
     }
 
     {:ok, parent} = Components.create_component(scope, parent_attrs)
@@ -70,7 +70,7 @@ defmodule CodeMySpec.ComponentsFixtures do
       Enum.into(attrs, %{
         name: "TestGenServer",
         type: :genserver,
-        module_name: "MyApp.TestGenServer",
+        module_name: "TestGenServer",
         description: "A test GenServer"
       })
 
@@ -85,7 +85,7 @@ defmodule CodeMySpec.ComponentsFixtures do
       Enum.into(attrs, %{
         name: "TestSchema",
         type: :schema,
-        module_name: "MyApp.TestSchema",
+        module_name: "TestSchema",
         description: "A test schema"
       })
 
@@ -100,7 +100,7 @@ defmodule CodeMySpec.ComponentsFixtures do
       Enum.into(attrs, %{
         name: "TestRepository",
         type: :repository,
-        module_name: "MyApp.TestRepository",
+        module_name: "TestRepository",
         description: "A test repository"
       })
 

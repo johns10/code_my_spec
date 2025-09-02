@@ -58,6 +58,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
     Component
     |> where([c], c.project_id == ^project_id)
     |> preload([
+      :project,
       :dependencies,
       :dependents,
       :outgoing_dependencies,

@@ -114,7 +114,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   end
 
   defp map_expected_files(component) do
-    module_path = module_to_path(component.module_name)
+    full_module_name = "#{component.project.module_name}.#{component.module_name}"
+    module_path = module_to_path(full_module_name)
 
     %{
       design_file: "docs/design/#{module_path}.md",

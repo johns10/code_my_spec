@@ -16,9 +16,10 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         %Component{
           id: 1,
           name: "Users",
-          module_name: "MyApp.Users",
+          module_name: "Users",
           type: :context,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         }
       ]
@@ -51,9 +52,10 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         %Component{
           id: 1,
           name: "Users",
-          module_name: "MyApp.Users",
+          module_name: "Users",
           type: :context,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         }
       ]
@@ -85,9 +87,10 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         %Component{
           id: 1,
           name: "Users",
-          module_name: "MyApp.Users",
+          module_name: "Users",
           type: :context,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         }
       ]
@@ -131,17 +134,19 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         %Component{
           id: 1,
           name: "Users",
-          module_name: "MyApp.Users",
+          module_name: "Users",
           type: :context,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         },
         %Component{
           id: 2,
           name: "Posts",
-          module_name: "MyApp.Posts",
+          module_name: "Posts",
           type: :context,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         }
       ]
@@ -185,9 +190,10 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         %Component{
           id: 1,
           name: "Users",
-          module_name: "MyApp.Users",
+          module_name: "Users",
           type: :context,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         }
       ]
@@ -232,9 +238,10 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         %Component{
           id: 1,
           name: "UserProfile",
-          module_name: "MyApp.Accounts.UserProfile",
+          module_name: "Accounts.UserProfile",
           type: :schema,
           project_id: scope.active_project.id,
+          project: scope.active_project,
           dependencies: []
         }
       ]
@@ -267,7 +274,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       {_parent, _child} =
         ComponentsFixtures.component_with_dependencies_fixture(scope, %{
           name: "UserContext",
-          module_name: "MyApp.UserContext"
+          module_name: "UserContext"
         })
 
       # Use the proper Components context function that preloads dependencies

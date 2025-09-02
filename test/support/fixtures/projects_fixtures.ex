@@ -11,6 +11,7 @@ defmodule CodeMySpec.ProjectsFixtures do
     attrs =
       Enum.into(attrs, %{
         code_repo: "some code_repo",
+        module_name: "MyApp",
         docs_repo: "some docs_repo",
         name: "some name",
         setup_error: "some setup_error",
