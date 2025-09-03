@@ -7,6 +7,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
   alias CodeMySpec.Components.{Component, ComponentStatus, DependencyTree, HierarchicalTree}
   alias CodeMySpec.Components
+  alias CodeMySpec.Components.{Registry, Requirements.Requirement}
   alias CodeMySpec.Tests.TestResult
   alias CodeMySpec.Users.Scope
   require Logger
@@ -25,6 +26,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     |> DependencyTree.build()
     |> HierarchicalTree.build()
     |> Enum.map(&check_dependency_requirements(&1, scope, opts))
+    |> Enum.sort(&(&1.priority <= &2.priority))
   end
 
   defp analyze_local_component_status(component, file_list, failing_tests, scope, opts) do
@@ -90,7 +92,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     dependency_requirements =
       Components.check_requirements(
         component,
-        include: @dependency_checks
+        include: @dependency_checks ++ @hierarchy_checks
       )
       |> Enum.map(fn requirement_attrs ->
         case Components.create_requirement(
@@ -113,7 +115,10 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
       |> Enum.filter(&(&1 != nil))
 
     # Merge dependency requirements with existing requirements
-    all_requirements = (component.requirements || []) ++ dependency_requirements
+    all_requirements =
+      ((component.requirements || []) ++ dependency_requirements)
+      |> sort_requirements_by_registry_order(component.type)
+
     %{component | requirements: all_requirements}
   end
 
@@ -150,5 +155,25 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
       result.error.file == expected_test_file
     end)
     |> Enum.map(& &1.full_title)
+  end
+
+  @doc """
+  Sorts requirements according to their order in the registry type definition.
+  """
+  @spec sort_requirements_by_registry_order([Requirement.t()], Component.component_type()) ::
+          [Requirement.t()]
+  def sort_requirements_by_registry_order(requirements, component_type) do
+    registry_requirements = Registry.get_requirements_for_type(component_type)
+
+    requirement_order =
+      registry_requirements
+      |> Enum.with_index()
+      |> Enum.into(%{}, fn {req_spec, index} -> {req_spec.name, index} end)
+
+    requirements
+    |> Enum.sort_by(fn requirement ->
+      requirement_name = String.to_existing_atom(requirement.name)
+      Map.get(requirement_order, requirement_name, 999)
+    end)
   end
 end
