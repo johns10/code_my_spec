@@ -58,7 +58,10 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
   end
 
   defp apply_action(socket, :new, _params) do
-    component = %Component{project_id: socket.assigns.current_scope.active_project.id}
+    component = %Component{
+      project_id: socket.assigns.current_scope.active_project.id,
+      account_id: socket.assigns.current_scope.active_account.id
+    }
 
     socket
     |> assign(:page_title, "New Component")

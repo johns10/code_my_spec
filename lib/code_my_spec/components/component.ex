@@ -10,6 +10,7 @@ defmodule CodeMySpec.Components.Component do
   alias CodeMySpec.Projects.Project
   alias CodeMySpec.Components.Requirements.Requirement
   alias CodeMySpec.Components.ComponentStatus
+  alias CodeMySpec.Accounts.Account
 
   @type t :: %__MODULE__{
           id: integer(),
@@ -18,8 +19,10 @@ defmodule CodeMySpec.Components.Component do
           module_name: String.t(),
           description: String.t() | nil,
           priority: integer() | nil,
+          account_id: integer(),
           project_id: integer(),
           parent_component_id: integer() | nil,
+          account: Account.t() | Ecto.Association.NotLoaded.t(),
           project: Project.t() | Ecto.Association.NotLoaded.t(),
           parent_component: t() | Ecto.Association.NotLoaded.t() | nil,
           child_components: [t()] | Ecto.Association.NotLoaded.t(),
@@ -33,6 +36,16 @@ defmodule CodeMySpec.Components.Component do
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
+
+  @type component_type ::
+          :genserver
+          | :context
+          | :coordination_context
+          | :schema
+          | :repository
+          | :task
+          | :registry
+          | :other
 
   schema "components" do
     field :name, :string
@@ -53,6 +66,7 @@ defmodule CodeMySpec.Components.Component do
     field :description, :string
     field :priority, :integer
 
+    belongs_to :account, Account
     belongs_to :project, Project
     belongs_to :parent_component, __MODULE__
 
@@ -102,8 +116,12 @@ defmodule CodeMySpec.Components.Component do
 
   @spec put_scope_associations(Ecto.Changeset.t(), CodeMySpec.Users.Scope.t()) ::
           Ecto.Changeset.t()
-  defp put_scope_associations(changeset, %{active_project: %{id: project_id}}) do
+  defp put_scope_associations(changeset, %{
+         active_account: %{id: account_id},
+         active_project: %{id: project_id}
+       }) do
     changeset
+    |> put_change(:account_id, account_id)
     |> put_change(:project_id, project_id)
   end
 end
