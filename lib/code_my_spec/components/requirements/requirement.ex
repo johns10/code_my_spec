@@ -13,6 +13,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
           | :cross_component
           | :manual_review
           | :dependencies_satisfied
+          | :hierarchy
 
   @type requirement_spec :: %{
           name: atom(),
@@ -40,7 +41,8 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
         :test_status,
         :cross_component,
         :manual_review,
-        :dependencies_satisfied
+        :dependencies_satisfied,
+        :hierarchy
       ]
 
     field :description, :string

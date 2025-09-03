@@ -5,11 +5,14 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   with ComponentStatus embedded and nested dependency trees.
   """
 
-  alias CodeMySpec.Components.{Component, ComponentStatus, DependencyTree}
+  alias CodeMySpec.Components.{Component, ComponentStatus, DependencyTree, HierarchicalTree}
   alias CodeMySpec.Components
   alias CodeMySpec.Tests.TestResult
   alias CodeMySpec.Users.Scope
   require Logger
+
+  @dependency_checks [:dependencies_satisfied]
+  @hierarchy_checks [:children_designs]
 
   @spec analyze_components([Component.t()], [String.t()], [TestResult.t()], keyword()) ::
           [Component.t()]
@@ -20,6 +23,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     |> Enum.map(&analyze_local_component_status(&1, file_list, failures, scope, opts))
     |> Enum.map(&check_local_requirements(&1, scope, opts))
     |> DependencyTree.build()
+    |> HierarchicalTree.build()
     |> Enum.map(&check_dependency_requirements(&1, scope, opts))
   end
 
@@ -57,7 +61,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     requirements =
       Components.check_requirements(
         component,
-        exclude: [:dependencies_satisfied]
+        exclude: @hierarchy_checks ++ @dependency_checks
       )
       |> Enum.map(fn requirement_attrs ->
         case Components.create_requirement(
@@ -86,7 +90,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     dependency_requirements =
       Components.check_requirements(
         component,
-        include: [:dependencies_satisfied]
+        include: @dependency_checks
       )
       |> Enum.map(fn requirement_attrs ->
         case Components.create_requirement(

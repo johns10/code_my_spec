@@ -25,32 +25,49 @@ defmodule CodeMySpec.Components.Registry do
           color: String.t() | nil
         }
 
+  @child_designs %{
+    name: :children_designs,
+    checker: CodeMySpec.Components.Requirements.HierarchicalChecker,
+    satisfied_by: nil
+  }
+
+  @dependencies %{
+    name: :dependencies_satisfied,
+    checker: CodeMySpec.Components.Requirements.DependencyChecker,
+    satisfied_by: nil
+  }
+
+  @design_file %{
+    name: :design_file,
+    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    satisfied_by: CodeMySpec.ContextDesignSessions
+  }
+
+  @implementation_file %{
+    name: :implementation_file,
+    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    satisfied_by: nil
+  }
+
+  @test_file %{
+    name: :test_file,
+    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    satisfied_by: nil
+  }
+
+  @tests_passing %{
+    name: :tests_passing,
+    checker: CodeMySpec.Components.Requirements.TestStatusChecker,
+    satisfied_by: nil
+  }
+
   @default_requirements [
-    %{
-      name: :dependencies_satisfied,
-      checker: CodeMySpec.Components.Requirements.DependencyChecker,
-      satisfied_by: nil
-    },
-    %{
-      name: :design_file,
-      checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-      satisfied_by: CodeMySpec.ContextDesignSessions
-    },
-    %{
-      name: :implementation_file,
-      checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-      satisfied_by: nil
-    },
-    %{
-      name: :test_file,
-      checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-      satisfied_by: nil
-    },
-    %{
-      name: :tests_passing,
-      checker: CodeMySpec.Components.Requirements.TestStatusChecker,
-      satisfied_by: nil
-    }
+    @design_file,
+    @child_designs,
+    @dependencies,
+    @implementation_file,
+    @test_file,
+    @tests_passing
   ]
 
   @type_definitions %{
@@ -62,7 +79,14 @@ defmodule CodeMySpec.Components.Registry do
       color: "green"
     },
     context: %{
-      requirements: @default_requirements,
+      requirements: [
+        @design_file,
+        @child_designs,
+        @dependencies,
+        @implementation_file,
+        @test_file,
+        @tests_passing
+      ],
       display_name: "Context",
       description: "Application domain boundary providing public API",
       icon: "squares-2x2",
@@ -77,21 +101,9 @@ defmodule CodeMySpec.Components.Registry do
     },
     schema: %{
       requirements: [
-        %{
-          name: :design_file,
-          checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-          satisfied_by: CodeMySpec.ContextDesignSessions
-        },
-        %{
-          name: :implementation_file,
-          checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-          satisfied_by: nil
-        },
-        %{
-          name: :dependencies_satisfied,
-          checker: CodeMySpec.Components.Requirements.DependencyChecker,
-          satisfied_by: nil
-        }
+        @design_file,
+        @implementation_file,
+        @dependencies
       ],
       display_name: "Schema",
       description: "Data structure definition with validation rules",

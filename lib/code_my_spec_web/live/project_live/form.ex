@@ -15,6 +15,7 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
 
       <.form for={@form} id="project-form" phx-change="validate" phx-submit="save">
         <.input field={@form[:name]} type="text" label="Name" />
+        <.input field={@form[:module_name]} type="text" label="Module Name" />
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:code_repo]} type="text" label="Code repo" />
         <.input field={@form[:docs_repo]} type="text" label="Docs repo" />
