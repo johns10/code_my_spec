@@ -40,7 +40,7 @@ defmodule CodeMySpecWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
+    <header class="navbar bg-base-100 shadow-sm">
       <div class="flex-1">
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
           <img src={~p"/images/logo.svg"} width="36" />
@@ -48,31 +48,26 @@ defmodule CodeMySpecWeb.Layouts do
         </a>
       </div>
       <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <.link href={~p"/accounts"} class="btn btn-ghost">Accounts</.link>
-          </li>
-          <li>
-            <.link href={~p"/projects"} class="btn btn-ghost">Projects</.link>
-          </li>
-          <li>
-            <.link href={~p"/stories"} class="btn btn-ghost">Stories</.link>
-          </li>
-          <li>
-            <.link href={~p"/components"} class="btn btn-ghost">Components</.link>
-          </li>
-          <li>
-            <.link href={~p"/architecture"} class="btn btn-ghost">Architecture</.link>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
+        <div class="flex items-center space-x-2">
+          <ul class="menu menu-horizontal px-1">
+            <li><.link href={~p"/accounts"} class="btn btn-ghost">Accounts</.link></li>
+            <li><.link href={~p"/projects"} class="btn btn-ghost">Projects</.link></li>
+            <li><.link href={~p"/stories"} class="btn btn-ghost">Stories</.link></li>
+            <li>
+              <details>
+                <summary>Components</summary>
+                <ul class="bg-base-100 rounded-t-none p-2">
+                  <li><.link href={~p"/components"} class="text-sm">Components</.link></li>
+                  <li><.link href={~p"/components/scheduler"} class="text-sm">Scheduler</.link></li>
+                </ul>
+              </details>
+            </li>
+            <li>
+              <.link href={~p"/architecture"} class="btn btn-ghost">Architecture</.link>
+            </li>
+          </ul>
+          <.theme_toggle />
+        </div>
       </div>
     </header>
 

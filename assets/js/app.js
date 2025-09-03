@@ -24,6 +24,10 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/code_my_spec"
 import topbar from "../vendor/topbar"
+import Sortable from "../vendor/Sortable.min.js"
+
+// Make Sortable available globally for colocated hooks
+window.Sortable = Sortable
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
