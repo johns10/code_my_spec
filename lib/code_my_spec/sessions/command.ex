@@ -5,6 +5,7 @@ defmodule CodeMySpec.Sessions.Command do
 
   use Ecto.Schema
   import Ecto.Changeset
+  alias CodeMySpec.Sessions.CommandModuleType
 
   @type t :: %__MODULE__{
           id: binary() | nil,
@@ -15,7 +16,7 @@ defmodule CodeMySpec.Sessions.Command do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
-    field :module, :string
+    field :module, CommandModuleType
     field :command, :string
     field :timestamp, :utc_datetime
   end

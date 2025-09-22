@@ -131,6 +131,7 @@ defmodule CodeMySpecWeb.Router do
       live "/stories/:id/edit", StoryLive.Form, :edit
 
       live "/components", ComponentLive.Index, :index
+      live "/components/scheduler", ComponentLive.Scheduler, :index
       live "/components/new", ComponentLive.Form, :new
       live "/components/:id/edit", ComponentLive.Form, :edit
 

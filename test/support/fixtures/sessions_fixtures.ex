@@ -14,7 +14,7 @@ defmodule CodeMySpec.SessionsFixtures do
         environment: :local,
         state: %{},
         status: :active,
-        type: :context_design
+        type: CodeMySpec.ContextDesignSessions
       })
 
     {:ok, session} = CodeMySpec.Sessions.create_session(scope, attrs)

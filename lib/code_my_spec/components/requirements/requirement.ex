@@ -69,10 +69,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
       type: infer_type_from_name(requirement_spec.name),
       description: generate_description(requirement_spec.name),
       checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by:
-        if(requirement_spec.satisfied_by,
-          do: Atom.to_string(requirement_spec.satisfied_by)
-        ),
+      satisfied_by: requirement_spec.satisfied_by,
       satisfied: check_result.satisfied,
       checked_at: DateTime.utc_now(),
       details: check_result.details
@@ -132,15 +129,6 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
   Returns the checker module for requirement validation.
   """
   def checker_module(%__MODULE__{checker_module: module_string}) do
-    String.to_existing_atom("Elixir." <> module_string)
-  end
-
-  @doc """
-  Returns the satisfied_by module if present.
-  """
-  def satisfied_by_module(%__MODULE__{satisfied_by: nil}), do: nil
-
-  def satisfied_by_module(%__MODULE__{satisfied_by: module_string}) do
     String.to_existing_atom("Elixir." <> module_string)
   end
 end

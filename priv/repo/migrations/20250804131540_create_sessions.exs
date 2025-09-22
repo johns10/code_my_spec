@@ -11,13 +11,13 @@ defmodule CodeMySpec.Repo.Migrations.CreateSessions do
       add :interactions, :map
       add :project_id, references(:projects, on_delete: :nothing)
       add :account_id, references(:accounts, on_delete: :nothing)
-      add :context_id, references(:components, on_delete: :nothing)
+      add :component_id, references(:components, on_delete: :nothing)
 
       timestamps(type: :utc_datetime)
     end
 
     create index(:sessions, [:project_id])
     create index(:sessions, [:account_id])
-    create index(:sessions, [:context_id])
+    create index(:sessions, [:component_id])
   end
 end

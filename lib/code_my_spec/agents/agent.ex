@@ -13,16 +13,18 @@ defmodule CodeMySpec.Agents.Agent do
 
   embedded_schema do
     field :name, :string
-    embeds_one :agent_type, AgentType
+    embeds_one :agent_type, AgentType, on_replace: :update
     field :implementation, Ecto.Enum, values: [:claude_code]
     field :config, :map, default: %{}
   end
 
   @doc false
   def changeset(%__MODULE__{} = agent, attrs) do
+    agent_type = Map.get(attrs, :agent_type, %AgentType{})
+
     agent
     |> cast(attrs, [:name, :implementation, :config])
-    |> cast_embed(:agent_type, required: true)
+    |> put_embed(:agent_type, agent_type)
     |> validate_required([:name, :agent_type, :implementation])
   end
 end

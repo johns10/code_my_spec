@@ -19,11 +19,11 @@ defmodule CodeMySpec.Components.Requirements.TestStatusChecker do
 
         {:tests_passing, %{test_status: :not_run}} ->
           {false, %{reason: "Tests have not been run"}}
-        
+
         # Handle case where component_status is nil (shouldn't happen but defensive)
         {_, nil} ->
           {false, %{reason: "Component status not available"}}
-          
+
         # Handle case where component_status doesn't match expected structure
         {_, _} ->
           {false, %{reason: "Invalid component status structure"}}
@@ -34,8 +34,7 @@ defmodule CodeMySpec.Components.Requirements.TestStatusChecker do
       type: :test_status,
       description: generate_description(requirement_spec.name),
       checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by:
-        requirement_spec.satisfied_by && Atom.to_string(requirement_spec.satisfied_by),
+      satisfied_by: requirement_spec.satisfied_by,
       satisfied: satisfied,
       checked_at: DateTime.utc_now(),
       details: details

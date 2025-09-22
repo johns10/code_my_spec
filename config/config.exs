@@ -80,7 +80,8 @@ config :code_my_spec, ExOauth2Provider,
   access_token: CodeMySpec.Oauth.AccessToken,
   application: CodeMySpec.Oauth.Application,
   access_grant: CodeMySpec.Oauth.AccessGrant,
-  resource_owner: CodeMySpec.Users.User
+  resource_owner: CodeMySpec.Users.User,
+  use_refresh_token: true
 
 config :mime, :types, %{
   "text/event-stream" => ["sse"]

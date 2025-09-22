@@ -7,6 +7,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
   alias CodeMySpec.Components.{Component, ComponentStatus, DependencyTree, HierarchicalTree}
   alias CodeMySpec.Components
+  alias CodeMySpec.Utils
   alias CodeMySpec.Components.{Registry, Requirements.Requirement}
   alias CodeMySpec.Tests.TestResult
   alias CodeMySpec.Users.Scope
@@ -17,6 +18,9 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
   @spec analyze_components([Component.t()], [String.t()], [TestResult.t()], keyword()) ::
           [Component.t()]
+  @spec analyze_components([CodeMySpec.Components.Component.t()], [binary()], [
+          CodeMySpec.Tests.TestResult.t()
+        ]) :: [CodeMySpec.Components.Component.t()]
   def analyze_components(components, file_list, failures, opts \\ []) do
     scope = Keyword.get(opts, :scope, %Scope{})
 
@@ -31,7 +35,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
   defp analyze_local_component_status(component, file_list, failing_tests, scope, opts) do
     # Compute ComponentStatus from file system analysis
-    expected_files = map_expected_files(component)
+    expected_files = Utils.component_files(component, component.project)
     actual_files = check_file_existence(expected_files, file_list)
     relevant_failing_tests = filter_failing_tests(expected_files, failing_tests)
 
@@ -120,25 +124,6 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
       |> sort_requirements_by_registry_order(component.type)
 
     %{component | requirements: all_requirements}
-  end
-
-  defp map_expected_files(component) do
-    full_module_name = "#{component.project.module_name}.#{component.module_name}"
-    module_path = module_to_path(full_module_name)
-
-    %{
-      design_file: "docs/design/#{module_path}.md",
-      code_file: "lib/#{module_path}.ex",
-      test_file: "test/#{module_path}_test.exs"
-    }
-  end
-
-  defp module_to_path(module_name) do
-    module_name
-    |> String.replace_prefix("", "")
-    |> Macro.underscore()
-    |> String.replace(".", "/")
-    |> String.downcase()
   end
 
   defp check_file_existence(expected_files, file_list) do

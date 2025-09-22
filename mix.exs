@@ -68,7 +68,6 @@ defmodule CodeMySpec.MixProject do
       {:briefly, "~> 0.5.1"},
       {:ex_oauth2_provider, "~> 0.5.7"},
       {:earmark, "~> 1.4"},
-      {:yaml_elixir, "~> 2.11"},
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
       # {:exunit_formatter_json, "~> 0.1.0"},
       {:exunit_json_formatter,

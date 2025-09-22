@@ -6,16 +6,7 @@ defmodule CodeMySpec.Components.Registry do
   """
 
   alias CodeMySpec.Components.Requirements.Requirement
-
-  @type component_type ::
-          :genserver
-          | :context
-          | :coordination_context
-          | :schema
-          | :repository
-          | :task
-          | :registry
-          | :other
+  alias CodeMySpec.Components.Component
 
   @type type_definition :: %{
           requirements: [Requirement.requirement_spec()],
@@ -40,7 +31,7 @@ defmodule CodeMySpec.Components.Registry do
   @design_file %{
     name: :design_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-    satisfied_by: CodeMySpec.ContextDesignSessions
+    satisfied_by: "ContextDesignSessions"
   }
 
   @implementation_file %{
@@ -140,7 +131,7 @@ defmodule CodeMySpec.Components.Registry do
     }
   }
 
-  @spec get_type(component_type()) :: type_definition()
+  @spec get_type(Component.component_type()) :: type_definition()
   def get_type(component_type) do
     case Map.get(@type_definitions, component_type) do
       nil -> raise "Unknown component type: #{component_type}"
@@ -148,7 +139,7 @@ defmodule CodeMySpec.Components.Registry do
     end
   end
 
-  @spec get_requirements_for_type(component_type()) :: [Requirement.requirement_spec()]
+  @spec get_requirements_for_type(Component.component_type()) :: [Requirement.requirement_spec()]
   def get_requirements_for_type(component_type) do
     get_type(component_type).requirements
   end

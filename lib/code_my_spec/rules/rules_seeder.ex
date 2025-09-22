@@ -3,13 +3,13 @@ defmodule CodeMySpec.Rules.RulesSeeder do
   alias CodeMySpec.Users.Scope
 
   @type rule_data :: %{
-    name: String.t(),
-    content: String.t(),
-    component_type: String.t(),
-    session_type: String.t()
-  }
+          name: String.t(),
+          content: String.t(),
+          component_type: String.t(),
+          session_type: String.t()
+        }
 
-  @rules_directory "lib/code_my_spec/rules/content"
+  @rules_directory "docs/rules"
 
   def seed_account_rules(%Scope{} = scope) do
     with {:ok, rule_data_list} <- load_rules_from_directory(@rules_directory) do

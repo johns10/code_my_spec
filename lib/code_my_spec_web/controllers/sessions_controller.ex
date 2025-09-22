@@ -1,0 +1,84 @@
+defmodule CodeMySpecWeb.SessionsController do
+  use CodeMySpecWeb, :controller
+
+  alias CodeMySpec.Sessions
+
+  action_fallback CodeMySpecWeb.FallbackController
+
+  def show(conn, %{"id" => id}) do
+    scope = conn.assigns.current_scope
+
+    case Sessions.get_session(scope, id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> send_resp(404, "Not Found")
+
+      session ->
+        render(conn, :show, session: session)
+    end
+  end
+
+  def create(conn, %{"session" => session_params}) do
+    scope = conn.assigns.current_scope
+
+    with {:ok, session} <- Sessions.create_session(scope, session_params) do
+      conn
+      |> put_status(:created)
+      |> put_resp_header("location", ~p"/api/sessions/#{session}")
+      |> render(:show, session: session)
+    end
+  end
+
+  def next_command(conn, %{"sessions_id" => session_id}) do
+    scope = conn.assigns.current_scope
+
+    with {:ok, %{id: interaction_id, command: command}} <-
+           Sessions.next_command(scope, session_id) do
+      render(conn, :command, %{
+        interaction_id: interaction_id,
+        command: command.command,
+        status: "ok"
+      })
+    else
+      {:error, :session_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Session not found"})
+
+      {:error, :interaction_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Interaction not found"})
+
+      {:error, :session_complete} ->
+        render(conn, :command, %{
+          interaction_id: nil,
+          command: nil,
+          status: "complete"
+        })
+    end
+  end
+
+  def submit_result(conn, %{
+        "sessions_id" => session_id,
+        "interaction_id" => interaction_id,
+        "result" => result
+      }) do
+    scope = conn.assigns.current_scope
+
+    with {:ok, session} <- Sessions.handle_result(scope, session_id, interaction_id, result) do
+      render(conn, :show, session: session)
+    else
+      {:error, :session_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Session not found"})
+
+      {:error, :interaction_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Interaction not found"})
+    end
+  end
+end

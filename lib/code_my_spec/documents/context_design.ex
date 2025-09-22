@@ -18,12 +18,10 @@ defmodule CodeMySpec.Documents.ContextDesign do
     embeds_many :components, ComponentRef, primary_key: false do
       field :module_name, :string
       field :description, :string
+      field :table, :map
     end
 
-    embeds_many :dependencies, DependencyRef, primary_key: false do
-      field :module_name, :string
-      field :description, :string
-    end
+    field :dependencies, {:array, :string}
 
     field :other_sections, :map
   end
@@ -37,17 +35,18 @@ defmodule CodeMySpec.Documents.ContextDesign do
       :public_api,
       :state_management_strategy,
       :execution_flow,
-      :other_sections
+      :other_sections,
+      :dependencies
     ])
     |> validate_required([:purpose])
     |> cast_embed(:components, with: &component_ref_changeset/2)
-    |> cast_embed(:dependencies, with: &dependency_ref_changeset/2)
+    |> validate_dependencies()
     |> maybe_validate_component_existence(scope)
   end
 
   defp component_ref_changeset(component_ref, attrs) do
     component_ref
-    |> cast(attrs, [:module_name, :description])
+    |> cast(attrs, [:module_name, :description, :table])
     |> validate_required([:module_name, :description])
     |> validate_length(:module_name, min: 1, max: 255)
     |> validate_length(:description, min: 1, max: 500)
@@ -56,15 +55,19 @@ defmodule CodeMySpec.Documents.ContextDesign do
     )
   end
 
-  defp dependency_ref_changeset(dependency_ref, attrs) do
-    dependency_ref
-    |> cast(attrs, [:module_name, :description])
-    |> validate_required([:module_name, :description])
-    |> validate_length(:module_name, min: 1, max: 255)
-    |> validate_length(:description, min: 1, max: 500)
-    |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
-      message: "must be a valid Elixir module name"
-    )
+  defp validate_dependencies(changeset) do
+    dependencies = get_field(changeset, :dependencies) || []
+
+    invalid_dependencies =
+      Enum.reject(dependencies, fn dep ->
+        is_binary(dep) and Regex.match?(~r/^[A-Z][a-zA-Z0-9_.]*$/, dep)
+      end)
+
+    if Enum.empty?(invalid_dependencies) do
+      changeset
+    else
+      add_error(changeset, :dependencies, "invalid module names: #{Enum.join(invalid_dependencies, ", ")}")
+    end
   end
 
   defp maybe_validate_component_existence(changeset, nil), do: changeset
@@ -105,6 +108,9 @@ defmodule CodeMySpec.Documents.ContextDesign do
     case String.split(dependency_string, ":", parts: 2) do
       [module_name, description] ->
         {:ok, %{module_name: String.trim(module_name), description: String.trim(description)}}
+
+      [module_name] ->
+        {:ok, %{module_name: String.trim(module_name), description: ""}}
 
       _ ->
         {:error, :invalid_format}

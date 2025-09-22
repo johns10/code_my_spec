@@ -8,6 +8,7 @@ defmodule CodeMySpec.UsersFixtures do
   import CodeMySpec.AccountsFixtures
   import CodeMySpec.ProjectsFixtures
 
+  alias CodeMySpec.UserPreferences
   alias CodeMySpec.Users
   alias CodeMySpec.Users.Scope
 
@@ -71,6 +72,17 @@ defmodule CodeMySpec.UsersFixtures do
     account = account_fixture()
     project = user_scope_fixture(user, account) |> project_fixture()
     user_scope_fixture(user, account, project)
+  end
+
+  def full_preferences_fixture() do
+    scope = full_scope_fixture()
+
+    UserPreferences.create_user_preferences(scope, %{
+      active_account_id: scope.active_account.id,
+      active_project_id: scope.active_project.id
+    })
+
+    scope
   end
 
   def set_password(user) do

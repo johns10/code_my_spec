@@ -1,169 +1,229 @@
 defmodule CodeMySpec.Documents.ContextDesignParser do
   @moduledoc """
-  Parses markdown content into ContextDesign changeset attributes.
-  Uses Earmark to parse markdown structure and yaml_elixir for YAML blocks.
+  Parses markdown content into ContextDesign changeset attributes using Earmark.
   """
 
-  @known_sections [
-    "purpose",
-    "entity ownership", 
-    "scope integration",
-    "public api",
-    "state management strategy",
-    "components",
-    "dependencies", 
-    "execution flow"
-  ]
-
   def from_markdown(markdown_content) do
-    with sections <- extract_sections_from_markdown(markdown_content),
-         sections <- parse_known_sections(sections),
-         {:ok, sections} <- parse_yaml_sections(sections) do
-      {:ok, build_changeset_attrs(sections)}
-    else
-      {:error, reason} -> {:error, reason}
+    case Earmark.Parser.as_ast(markdown_content) do
+      {:ok, ast, _} ->
+        sections = parse_ast(ast)
+        {:ok, build_changeset_attrs(sections)}
+
+      {:error, _} = error ->
+        error
     end
   end
 
-  defp extract_sections_from_markdown(content) do
-    # Split by ## headers to get all sections including Purpose
-    parts = String.split(content, ~r/\n## /)
-    
-    case parts do
-      [first_part | section_parts] ->
-        # Parse all sections from the split parts
-        all_sections = section_parts
-        |> Enum.map(&parse_section/1)
-        |> Map.new()
-        
-        # If there's no explicit Purpose section, extract from first part
-        if Map.has_key?(all_sections, "purpose") do
-          all_sections
-        else
-          purpose = extract_purpose_from_first_part(first_part)
-          Map.put(all_sections, "purpose", purpose)
-        end
-      
-      [] -> %{}
+  defp parse_ast(ast) do
+    sections = group_sections(ast)
+
+    %{
+      purpose: extract_text(sections["purpose"] || []),
+      entity_ownership: extract_text(sections["entity ownership"] || []),
+      scope_integration: extract_text(sections["scope integration"] || []),
+      public_api: extract_text(sections["public api"] || []),
+      state_management_strategy: extract_text(sections["state management strategy"] || []),
+      execution_flow: extract_text(sections["execution flow"] || []),
+      components: parse_components(sections["components"] || []),
+      dependencies: parse_dependencies(sections["dependencies"] || []),
+      other_sections: build_other_sections(sections)
+    }
+  end
+
+  defp group_sections(ast) do
+    {sections, current} =
+      ast
+      |> Enum.reduce({%{}, nil}, fn
+        {"h1", [], [_title], %{}}, {sections, current} ->
+          # Skip H1, finalize previous section if any
+          updated_sections = if current, do: finalize_section(sections, current), else: sections
+          {updated_sections, nil}
+
+        {"h2", [], [title], %{}}, {sections, current} ->
+          key = String.downcase(String.trim(title))
+          updated_sections = if current, do: finalize_section(sections, current), else: sections
+          {updated_sections, {key, []}}
+
+        _element, {sections, nil} ->
+          {sections, nil}
+
+        element, {sections, {key, content}} ->
+          {sections, {key, [element | content]}}
+      end)
+
+    # Finalize the last section
+    if current, do: finalize_section(sections, current), else: sections
+  end
+
+  defp finalize_section(sections, {key, content}) do
+    Map.put(sections, key, Enum.reverse(content))
+  end
+
+  defp parse_components(ast) do
+    ast
+    |> group_by_h3()
+    |> Enum.map(fn {module_name, content} ->
+      {table, description} = extract_table_and_text(content)
+      %{module_name: module_name, table: table, description: description}
+    end)
+  end
+
+  defp parse_dependencies(ast) do
+    extract_list_items(ast)
+  end
+
+  defp group_by_h3(ast) do
+    ast
+    |> Enum.reduce({[], nil}, fn
+      {"h3", [], [title], %{}}, {components, current} ->
+        module_name = String.trim(title)
+        new_components = if current, do: [current | components], else: components
+        {new_components, {module_name, []}}
+
+      _element, {components, nil} ->
+        {components, nil}
+
+      element, {components, {name, content}} ->
+        {components, {name, [element | content]}}
+    end)
+    |> case do
+      {components, nil} -> Enum.reverse(components)
+      {components, current} -> Enum.reverse([current | components])
+    end
+    |> Enum.map(fn {name, content} -> {name, Enum.reverse(content)} end)
+  end
+
+  defp extract_table_and_text(ast) do
+    table = Enum.find(ast, &match?({"table", _, _, _}, &1))
+    text_elements = Enum.reject(ast, &match?({"table", _, _, _}, &1))
+
+    table_data = if table, do: parse_table_to_map(table), else: nil
+    description = extract_text(text_elements)
+
+    {table_data, description}
+  end
+
+  defp parse_table_to_map({"table", [], table_parts, %{}}) do
+    # Extract thead and tbody from table structure
+    headers = extract_headers(table_parts)
+    data_rows = extract_data_rows(table_parts)
+
+    case data_rows do
+      [single_row] ->
+        # Single data row - return as map
+        Enum.zip(headers, single_row) |> Map.new()
+
+      multiple_rows when length(multiple_rows) > 1 ->
+        # Multiple data rows - return as list of maps
+        multiple_rows
+        |> Enum.map(fn row ->
+          Enum.zip(headers, row) |> Map.new()
+        end)
+
+      [] ->
+        %{}
     end
   end
 
-  defp extract_purpose_from_first_part(first_part) do
-    # Skip the title line and get remaining content as purpose
-    lines = String.split(first_part, "\n")
-    case lines do
-      [_title | purpose_lines] ->
-        purpose_lines
-        |> Enum.join("\n")
-        |> String.trim()
-      [] -> ""
-    end
-  end
+  defp extract_headers(table_parts) do
+    case Enum.find(table_parts, &match?({"thead", _, _, _}, &1)) do
+      {"thead", [], [{"tr", [], cells, %{}}], %{}} ->
+        Enum.map(cells, fn
+          {"th", _attrs, content, %{}} -> extract_text(content) |> String.trim()
+        end)
 
-  defp parse_section(section_text) do
-    case String.split(section_text, "\n", parts: 2) do
-      [header, content] ->
-        key = String.downcase(String.trim(header))
-        {key, String.trim(content)}
-      [header] ->
-        key = String.downcase(String.trim(header))
-        {key, ""}
-    end
-  end
-
-  defp parse_known_sections(sections) do
-    known = Map.take(sections, @known_sections)
-    unknown = Map.drop(sections, @known_sections)
-    
-    Map.put(known, :other_sections, unknown)
-  end
-
-  defp parse_yaml_sections(sections) do
-    with {:ok, components} <- parse_components_yaml(Map.get(sections, "components", "")),
-         {:ok, dependencies} <- parse_dependencies_yaml(Map.get(sections, "dependencies", "")) do
-      {:ok, sections
-      |> Map.put(:parsed_components, components)
-      |> Map.put(:parsed_dependencies, dependencies)}
-    else
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp parse_components_yaml(text) do
-    case parse_yaml_section(text) do
-      {:ok, result} -> {:ok, result}
-      {:error, reason} -> {:error, "Components section error: #{reason}"}
-    end
-  end
-
-  defp parse_dependencies_yaml(text) do
-    case parse_yaml_section(text) do
-      {:ok, result} -> {:ok, result}
-      {:error, reason} -> {:error, "Dependencies section error: #{reason}"}
-    end
-  end
-
-  defp parse_yaml_section(""), do: {:ok, []}
-  defp parse_yaml_section(text) do
-    case YamlElixir.read_from_string(text) do
-      {:ok, yaml_data} -> normalize_yaml_items(yaml_data)
-      {:error, reason} -> {:error, "YAML parsing failed: #{inspect(reason)}"}
-    end
-  end
-
-  defp normalize_yaml_items(yaml_list) when is_list(yaml_list) do
-    results = Enum.map(yaml_list, &normalize_yaml_item/1)
-    
-    case Enum.find(results, &match?({:error, _}, &1)) do
-      {:error, reason} -> {:error, reason}
-      nil -> 
-        valid_items = Enum.map(results, fn {:ok, item} -> item end)
-        {:ok, valid_items}
-    end
-  end
-  defp normalize_yaml_items(_), do: {:error, "Expected a YAML list"}
-
-  defp normalize_yaml_item(item) when is_map(item) do
-    # YAML structure: %{"RuleSchema" => %{"module_name" => "...", "description" => "..."}}
-    case Map.to_list(item) do
-      [{name, properties}] when is_map(properties) ->
-        # Extract properties from nested map
-        module_name = Map.get(properties, "module_name", name)
-        description = Map.get(properties, "description")
-        
-        cond do
-          is_nil(description) or String.trim(description) == "" ->
-            {:error, "description is required for item: #{name}"}
-          String.trim(module_name) == "" ->
-            {:error, "module_name is required for item: #{name}"}
-          true ->
-            result = %{module_name: module_name, description: description}
-            
-            # Add extra fields as atoms (excluding module_name, description)
-            extra_fields = properties
-            |> Map.drop(["module_name", "description"])
-            |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
-            
-            {:ok, Map.merge(result, extra_fields)}
-        end
-        
       _ ->
-        {:error, "Expected YAML item to have format 'Name: {properties}', got: #{inspect(item)}"}
+        []
     end
   end
-  defp normalize_yaml_item(item), do: {:error, "Expected YAML item to be a map, got: #{inspect(item)}"}
+
+  defp extract_data_rows(table_parts) do
+    case Enum.find(table_parts, &match?({"tbody", _, _, _}, &1)) do
+      {"tbody", [], rows, %{}} ->
+        Enum.map(rows, fn {"tr", [], cells, %{}} ->
+          Enum.map(cells, fn
+            {"td", _attrs, content, %{}} -> extract_text(content) |> String.trim()
+          end)
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  defp extract_list_items(ast) do
+    ast
+    |> Enum.flat_map(fn
+      {"ul", [], items, %{}} -> extract_li_content(items)
+      {"ol", [], items, %{}} -> extract_li_content(items)
+      _ -> []
+    end)
+  end
+
+  defp extract_li_content(items) do
+    Enum.map(items, fn
+      {"li", [], content, %{}} -> extract_text(content)
+      _ -> ""
+    end)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp extract_text(ast) when is_list(ast) do
+    ast
+    |> Enum.map_join(" ", &extract_text/1)
+    |> String.trim()
+  end
+
+  defp extract_text(text) when is_binary(text), do: text
+  defp extract_text({"ol", [], items, %{}}), do: format_ordered_list(items)
+  defp extract_text({"ul", [], items, %{}}), do: format_unordered_list(items)
+  defp extract_text({_tag, _attrs, content, %{}}), do: extract_text(content)
+  defp extract_text(_), do: ""
+
+  defp format_ordered_list(items) do
+    items
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n", fn {{"li", [], content, %{}}, index} ->
+      "#{index}. #{extract_text(content)}"
+    end)
+  end
+
+  defp format_unordered_list(items) do
+    items
+    |> Enum.map_join("\n", fn {"li", [], content, %{}} ->
+      "- #{extract_text(content)}"
+    end)
+  end
+
+  defp build_other_sections(sections) do
+    known_keys = [
+      "purpose",
+      "entity ownership",
+      "scope integration",
+      "public api",
+      "state management strategy",
+      "execution flow",
+      "components",
+      "dependencies"
+    ]
+
+    sections
+    |> Map.drop(known_keys)
+    |> Enum.map(fn {key, content} -> {key, extract_text(content)} end)
+    |> Map.new()
+  end
 
   defp build_changeset_attrs(sections) do
     %{
-      purpose: Map.get(sections, "purpose", ""),
-      entity_ownership: Map.get(sections, "entity ownership", ""),
-      scope_integration: Map.get(sections, "scope integration", ""),
-      public_api: Map.get(sections, "public api", ""),
-      state_management_strategy: Map.get(sections, "state management strategy", ""),
-      execution_flow: Map.get(sections, "execution flow", ""),
-      components: Map.get(sections, :parsed_components, []),
-      dependencies: Map.get(sections, :parsed_dependencies, []),
-      other_sections: Map.get(sections, :other_sections, %{})
+      purpose: sections.purpose,
+      entity_ownership: sections.entity_ownership,
+      scope_integration: sections.scope_integration,
+      public_api: sections.public_api,
+      state_management_strategy: sections.state_management_strategy,
+      execution_flow: sections.execution_flow,
+      components: sections.components,
+      dependencies: sections.dependencies,
+      other_sections: sections.other_sections
     }
   end
 end

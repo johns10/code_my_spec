@@ -26,20 +26,16 @@ defmodule CodeMySpec.DocumentsTest do
       Test data stored in memory for fast access.
 
       ## Components
-      - TestSchema:
-          module_name: Test.Schema
-          description: Database schema for test entities
-      - TestRepo:
-          module_name: Test.Repository
-          description: Repository for test data operations
+
+      ### Test.Schema
+      Database schema for test entities
+
+      ### Test.Repository
+      Repository for test data operations
 
       ## Dependencies
-      - TestScope:
-          module_name: Test.Scope
-          description: Scoping mechanism for tests
-      - Ecto:
-          module_name: Ecto
-          description: Database abstraction layer
+      - Test.Scope
+      - Ecto
 
       ## Execution Flow
       1. Validate test scope
@@ -55,7 +51,9 @@ defmodule CodeMySpec.DocumentsTest do
       assert document.scope_integration == "Uses test scopes for isolation."
       assert document.public_api == "Standard CRUD operations for test entities."
       assert document.state_management_strategy == "Test data stored in memory for fast access."
-      assert document.execution_flow == "1. Validate test scope\n2. Execute test operations\n3. Return test results"
+
+      assert document.execution_flow ==
+               "1. Validate test scope\n2. Execute test operations\n3. Return test results"
 
       # Test components
       assert length(document.components) == 2
@@ -69,13 +67,8 @@ defmodule CodeMySpec.DocumentsTest do
 
       # Test dependencies
       assert length(document.dependencies) == 2
-      [test_scope, ecto] = document.dependencies
-
-      assert test_scope.module_name == "Test.Scope"
-      assert test_scope.description == "Scoping mechanism for tests"
-
-      assert ecto.module_name == "Ecto"
-      assert ecto.description == "Database abstraction layer"
+      assert "Test.Scope" in document.dependencies
+      assert "Ecto" in document.dependencies
 
       # Test other sections
       assert is_map(document.other_sections)
@@ -86,7 +79,8 @@ defmodule CodeMySpec.DocumentsTest do
       # Bad Context
 
       ## Components
-      - BadComponent: {}
+
+      ### BadComponent
       """
 
       {:error, changeset} = Documents.create_document(markdown, :context_design)
@@ -103,14 +97,12 @@ defmodule CodeMySpec.DocumentsTest do
       Test purpose.
 
       ## Components
-      - TestComponent:
-          module_name: Test.Component
-          description: A test component
+
+      ### Test.Component
+      A test component
 
       ## Dependencies
-      - TestDep:
-          module_name: Test.Dependency
-          description: A test dependency
+      - Test.Dependency
       """
 
       {:ok, document} = Documents.create_document(markdown, ContextDesign)
@@ -130,6 +122,48 @@ defmodule CodeMySpec.DocumentsTest do
       {:error, changeset} = Documents.create_document("invalid", :context_design)
 
       assert %Ecto.Changeset{valid?: false} = changeset
+    end
+
+    test "parses component type from table in description" do
+      markdown = """
+      # Test Context
+
+      ## Purpose
+      Test purpose.
+
+      ## Components
+
+      ### Test.Schema
+      | field | value  |
+      |-------|--------|
+      | type  | schema |
+
+      Database schema for test entities
+
+      ### Test.Repository
+      | field | value      |
+      |-------|------------|
+      | type  | repository |
+
+      Repository for test data operations
+
+      ## Dependencies
+      - Test.Dependency
+      """
+
+      {:ok, document} = Documents.create_document(markdown, :context_design)
+
+      assert %ContextDesign{} = document
+      assert length(document.components) == 2
+      [test_schema, test_repo] = document.components
+
+      assert test_schema.module_name == "Test.Schema"
+      assert test_schema.table == %{"field" => "type", "value" => "schema"}
+      assert test_schema.description == "Database schema for test entities"
+
+      assert test_repo.module_name == "Test.Repository"
+      assert test_repo.table == %{"field" => "type", "value" => "repository"}
+      assert test_repo.description == "Repository for test data operations"
     end
   end
 

@@ -4,9 +4,10 @@ defmodule CodeMySpec.Sessions do
   """
 
   import Ecto.Query, warn: false
+  alias CodeMySpec.Sessions.SessionsRepository
   alias CodeMySpec.Repo
 
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.Sessions.{Session, Interaction, ResultHandler, Orchestrator}
   alias CodeMySpec.Users.Scope
 
   @doc """
@@ -44,23 +45,8 @@ defmodule CodeMySpec.Sessions do
     Repo.all_by(Session, account_id: scope.active_account.id)
   end
 
-  @doc """
-  Gets a single session.
-
-  Raises `Ecto.NoResultsError` if the Session does not exist.
-
-  ## Examples
-
-      iex> get_session!(123)
-      %Session{}
-
-      iex> get_session!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_session!(%Scope{} = scope, id) do
-    Repo.get_by!(Session, id: id, account_id: scope.active_account.id)
-  end
+  defdelegate get_session!(scope, id), to: SessionsRepository
+  defdelegate get_session(scope, id), to: SessionsRepository
 
   @doc """
   Creates a session.
@@ -143,5 +129,21 @@ defmodule CodeMySpec.Sessions do
     true = session.account_id == scope.active_account.id
 
     Session.changeset(session, attrs, scope)
+  end
+
+  def handle_result(%Scope{} = scope, session_id, interaction_id, result) do
+    with {:ok, %Session{} = session} <-
+           ResultHandler.handle_result(scope, session_id, interaction_id, result) do
+      broadcast(scope, {:updated, session})
+      {:ok, session}
+    end
+  end
+
+  def next_command(%Scope{} = scope, session_id) do
+    with {:ok, %Interaction{} = interaction, %Session{} = session} <-
+           Orchestrator.next_command(scope, session_id) do
+      broadcast(scope, {:updated, session})
+      {:ok, interaction}
+    end
   end
 end

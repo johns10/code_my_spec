@@ -6,17 +6,35 @@ defmodule CodeMySpec.Sessions.Session do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          type: CodeMySpec.ContextDesignSessions | nil,
+          agent: :claude_code | nil,
+          environment: :local | :vscode | nil,
+          status: :active | :complete | :failed | nil,
+          state: map() | nil,
+          project_id: integer() | nil,
+          project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
+          account_id: integer() | nil,
+          account: Account.t() | Ecto.Association.NotLoaded.t() | nil,
+          component_id: integer() | nil,
+          component: Component.t() | Ecto.Association.NotLoaded.t() | nil,
+          interactions: [Interaction.t()],
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
   schema "sessions" do
-    field :type, Ecto.Enum, values: [:context_design]
+    field :type, CodeMySpec.Sessions.SessionType
     field :agent, Ecto.Enum, values: [:claude_code]
     field :environment, Ecto.Enum, values: [:local, :vscode]
-    field :status, Ecto.Enum, values: [:active, :complete, :failed]
+    field :status, Ecto.Enum, values: [:active, :complete, :failed], default: :active
 
     field :state, :map
 
     belongs_to :project, Project
     belongs_to :account, Account
-    belongs_to :context, Component
+    belongs_to :component, Component
 
     embeds_many :interactions, Interaction
 
@@ -26,29 +44,26 @@ defmodule CodeMySpec.Sessions.Session do
   @doc false
   def changeset(session, attrs, user_scope) do
     session
-    |> cast(attrs, [:type, :agent, :environment, :status, :state])
-    |> validate_required([:type, :status])
+    |> cast(attrs, [:type, :agent, :environment, :status, :state, :component_id])
+    |> validate_required([:type])
     |> cast_embed(:interactions)
     |> put_change(:account_id, user_scope.active_account.id)
     |> put_change(:project_id, user_scope.active_project.id)
   end
 
-  def add_interaction(session, command) do
-    interaction = Interaction.new_with_command(command)
-    %{session | interactions: [interaction | session.interactions]}
-  end
-
-  def complete_interaction(session, interaction_id, result) do
+  def complete_interaction_changeset(session, interaction_id, result_attrs) do
     interactions =
-      Enum.map(session.interactions, fn interaction ->
-        if interaction.id == interaction_id do
-          Interaction.complete_with_result(interaction, result)
-        else
+      Enum.map(session.interactions, fn
+        %{id: ^interaction_id} = interaction ->
+          Interaction.changeset(interaction, %{result: result_attrs})
+
+        interaction ->
           interaction
-        end
       end)
 
-    %{session | interactions: interactions}
+    session
+    |> change()
+    |> Ecto.Changeset.put_embed(:interactions, interactions)
   end
 
   def get_pending_interactions(session) do
@@ -57,5 +72,10 @@ defmodule CodeMySpec.Sessions.Session do
 
   def get_completed_interactions(session) do
     Enum.filter(session.interactions, &Interaction.completed?/1)
+  end
+
+  def add_interaction_changeset(session, %Interaction{} = interaction) do
+    change(session)
+    |> put_embed(:interactions, session.interactions ++ [interaction])
   end
 end

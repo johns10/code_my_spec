@@ -18,8 +18,9 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
+    field :step_name, :string
     embeds_one :command, Command
-    embeds_one :result, Result
+    embeds_one :result, Result, on_replace: :update
     field :completed_at, :utc_datetime
   end
 
@@ -40,14 +41,11 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   def new_with_command(command) do
     %__MODULE__{
+      id: Ecto.UUID.generate(),
       command: command,
       result: nil,
       completed_at: nil
     }
-  end
-
-  def complete_with_result(interaction, result) do
-    %{interaction | result: result, completed_at: DateTime.utc_now()}
   end
 
   def pending?(interaction) do

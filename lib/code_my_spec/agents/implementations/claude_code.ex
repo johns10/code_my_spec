@@ -17,7 +17,7 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
   end
 
   defp build_command_args(prompt, config) do
-    base_cmd = ["claude", "--output-format", "stream-json", "--print", prompt]
+    base_cmd = ["claude", prompt]
     cli_args = build_cli_args(config)
     base_cmd ++ cli_args
   end

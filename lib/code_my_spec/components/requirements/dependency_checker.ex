@@ -43,8 +43,7 @@ defmodule CodeMySpec.Components.Requirements.DependencyChecker do
       type: :dependencies_satisfied,
       description: generate_description(requirement_spec.name),
       checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by:
-        requirement_spec.satisfied_by && Atom.to_string(requirement_spec.satisfied_by),
+      satisfied_by: requirement_spec.satisfied_by,
       satisfied: satisfied,
       checked_at: DateTime.utc_now(),
       details: details
