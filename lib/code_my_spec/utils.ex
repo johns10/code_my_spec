@@ -6,6 +6,7 @@ defmodule CodeMySpec.Utils do
         %Component{module_name: component_module_name},
         %Project{module_name: project_module_name}
       ) do
+    component_module_name = String.replace(component_module_name, "#{project_module_name}.", "")
     full_module_name = "#{project_module_name}.#{component_module_name}"
     module_path = module_to_path(full_module_name)
 

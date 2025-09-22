@@ -1,5 +1,5 @@
 defmodule CodeMySpec.Sessions.Orchestrator do
-  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction, Command}
+  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction}
 
   def next_command(scope, session_id) do
     with {:ok, %Session{type: session_module} = session} <- get_session(scope, session_id),
@@ -10,7 +10,6 @@ defmodule CodeMySpec.Sessions.Orchestrator do
          {:ok, updated_session} <- SessionsRepository.add_interaction(scope, session, interaction) do
       {:ok, interaction, updated_session}
     end
-    |> IO.inspect()
   end
 
   def get_session(scope, session_id) do

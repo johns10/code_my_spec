@@ -23,6 +23,7 @@ defmodule CodeMySpecWeb.ProjectCoordinatorJSON do
       component_status: render_component_status(component.component_status),
       requirements: render_requirements(component.requirements),
       dependencies: render_dependencies(component.dependencies),
+      child_components: render_child_components(component.child_components),
       inserted_at: component.inserted_at,
       updated_at: component.updated_at
     }
@@ -69,4 +70,12 @@ defmodule CodeMySpecWeb.ProjectCoordinatorJSON do
   end
 
   defp render_dependencies(_), do: []
+
+  defp render_child_components(nil), do: []
+
+  defp render_child_components(child_components) when is_list(child_components) do
+    Enum.map(child_components, &component_data/1)
+  end
+
+  defp render_child_components(_), do: []
 end
