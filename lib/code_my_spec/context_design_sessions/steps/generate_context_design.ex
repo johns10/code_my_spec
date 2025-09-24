@@ -11,8 +11,8 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
          {:ok, agent} <-
            Agents.create_agent(:context_designer, "context-design-generator", :claude_code),
          {:ok, command} <- Agents.build_command(agent, prompt) do
-      command_string = Enum.join(command, " ")
-      {:ok, Command.new(__MODULE__, command_string)}
+      [command_string, pipe] = command
+      {:ok, Command.new(__MODULE__, command_string, pipe)}
     end
   end
 
@@ -21,7 +21,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   end
 
   defp get_design_rules(scope) do
-    case Rules.find_matching_rules(scope, "context", "context_design") do
+    case Rules.find_matching_rules(scope, "context", "design") do
       rules when is_list(rules) -> {:ok, rules}
       error -> error
     end
@@ -29,18 +29,21 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
 
   defp build_design_prompt(project, context, rules) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
+    %{design_file: design_file_path} = Utils.component_files(context, project)
 
     prompt = """
     "Generate a Phoenix context design for the following:
 
     Project: #{project.name}
-    Description: #{project.description || "No description provided"}
-
-    Context: #{context.name}
+    Project Description: #{project.description}
+    Context Name: #{context.name}
+    Context Description: #{context.description || "No description provided"}
     Type: #{context.type}
 
     Design Rules:
-    #{rules_text}"
+    #{rules_text}
+
+    Please write the design documentation to: #{design_file_path}"
     """
 
     {:ok, prompt}

@@ -9,7 +9,7 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
         sections = parse_ast(ast)
         {:ok, build_changeset_attrs(sections)}
 
-      {:error, _} = error ->
+      {:error, _, _} = error ->
         error
     end
   end

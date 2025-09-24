@@ -9,8 +9,6 @@ defmodule CodeMySpec.ContextDesignSessions do
 
   alias CodeMySpec.ContextDesignSessions.Orchestrator
 
-  @type session_id :: String.t()
-
   defdelegate get_next_interaction(step_module_atom), to: Orchestrator
   defdelegate steps(), to: Orchestrator
 end
