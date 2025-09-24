@@ -37,7 +37,7 @@ defmodule CodeMySpecWeb.SessionsController do
            Sessions.next_command(scope, session_id) do
       render(conn, :command, %{
         interaction_id: interaction_id,
-        command: command.command,
+        command: command,
         status: "ok"
       })
     else

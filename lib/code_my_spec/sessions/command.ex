@@ -11,6 +11,7 @@ defmodule CodeMySpec.Sessions.Command do
           id: binary() | nil,
           module: String.t() | nil,
           command: String.t() | nil,
+          pipe: String.t() | nil,
           timestamp: DateTime.t() | nil
         }
 
@@ -18,13 +19,14 @@ defmodule CodeMySpec.Sessions.Command do
   embedded_schema do
     field :module, CommandModuleType
     field :command, :string
+    field :pipe, :string
     field :timestamp, :utc_datetime
   end
 
   def changeset(command \\ %__MODULE__{}, attrs) do
     command
-    |> cast(attrs, [:module, :command])
-    |> validate_required([:module, :command])
+    |> cast(attrs, [:module, :command, :pipe])
+    |> validate_required([:module, :command, :pipe])
     |> put_timestamp()
   end
 
@@ -35,10 +37,11 @@ defmodule CodeMySpec.Sessions.Command do
     end
   end
 
-  def new(module, command \\ %{}) do
+  def new(module, command \\ %{}, pipe \\ nil) do
     %__MODULE__{
       module: module,
       command: command,
+      pipe: pipe,
       timestamp: DateTime.utc_now()
     }
   end

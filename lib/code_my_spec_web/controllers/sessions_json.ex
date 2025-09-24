@@ -18,10 +18,14 @@ defmodule CodeMySpecWeb.SessionsJSON do
   @doc """
   Renders a command for execution.
   """
-  def command(%{interaction_id: interaction_id, command: command_data, status: status}) do
+  def command(%{
+        interaction_id: interaction_id,
+        command: command_data,
+        status: status
+      }) do
     %{
       interaction_id: interaction_id,
-      command: command_data,
+      command: render_command(command_data),
       status: status
     }
   end
@@ -58,9 +62,9 @@ defmodule CodeMySpecWeb.SessionsJSON do
 
   defp render_command(command) do
     %{
-      id: command.id,
       module: command.module,
       command: command.command,
+      pipe: command.pipe,
       timestamp: command.timestamp
     }
   end
