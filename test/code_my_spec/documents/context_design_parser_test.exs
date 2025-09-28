@@ -21,19 +21,18 @@ defmodule CodeMySpec.Documents.ContextDesignParserTest do
       assert is_list(result.components)
       assert length(result.components) > 0
 
-      # Check first component
-      first_component = List.first(result.components)
-      assert first_component.module_name =~ "Rule"
-      assert first_component.description != ""
+      # Check components are parsed as structured objects
+      component_names = Enum.map(result.components, & &1.module_name)
+      assert "CodeMySpec.Rules.Rule" in component_names
+      assert "CodeMySpec.Rules.RuleRepository" in component_names
 
       assert is_list(result.dependencies)
       assert length(result.dependencies) > 0
 
-      # Check dependencies include expected modules
-      dependency_modules = Enum.map(result.dependencies, & &1.module_name)
-      assert "CodeMySpec.Users.Scope" in dependency_modules
-      assert "Ecto" in dependency_modules
-      assert "Phoenix.PubSub" in dependency_modules
+      # Check dependencies are simple module names
+      assert "CodeMySpec.Users.Scope" in result.dependencies
+      assert "Ecto" in result.dependencies
+      assert "Phoenix.PubSub" in result.dependencies
 
       # Check other sections are captured
       assert is_map(result.other_sections)
@@ -62,68 +61,64 @@ defmodule CodeMySpec.Documents.ContextDesignParserTest do
       assert result.dependencies == []
     end
 
-    test "parses components with YAML format" do
+    test "parses components with H3 sections" do
       markdown = """
       # Test Context
 
       ## Components
-      - RuleSchema:
-          module_name: CodeMySpec.Rules.Rule
-          description: Database schema for rules
-          type: schema
-      - RuleRepository:
-          description: Standard CRUD operations
-      - SimpleComponent:
-          description: Simple component with minimal setup
+
+      ### CodeMySpec.Rules.Rule
+
+      | field | value  |
+      | ----- | ------ |
+      | type  | schema |
+
+      Database schema for rules
+
+      ### RuleRepository
+
+      Standard CRUD operations
+
+      ### SimpleComponent
+
+      Simple component with minimal setup
       """
 
       {:ok, result} = ContextDesignParser.from_markdown(markdown)
 
       assert length(result.components) == 3
 
-      [yaml_component, desc_only_component, simple_component] = result.components
+      [rule_schema, rule_repo, simple_component] = result.components
 
-      assert yaml_component.module_name == "CodeMySpec.Rules.Rule"
-      assert yaml_component.description == "Database schema for rules"
-      assert Map.get(yaml_component, :type) == "schema"
+      assert rule_schema.module_name == "CodeMySpec.Rules.Rule"
+      assert rule_schema.table == %{"field" => "type", "value" => "schema"}
+      assert rule_schema.description == "Database schema for rules"
 
-      assert desc_only_component.module_name == "RuleRepository"
-      assert desc_only_component.description == "Standard CRUD operations"
+      assert rule_repo.module_name == "RuleRepository"
+      assert rule_repo.description == "Standard CRUD operations"
 
       assert simple_component.module_name == "SimpleComponent"
       assert simple_component.description == "Simple component with minimal setup"
     end
 
-    test "parses dependencies with YAML format" do
+    test "parses dependencies as simple module names" do
       markdown = """
       # Test Context
 
       ## Dependencies
-      - Scope:
-          module_name: CodeMySpec.Users.Scope
-          description: Account-level scoping and access control
-          version: "~> 1.0"
-      - Ecto:
-          description: Database persistence
-      - Phoenix.PubSub:
-          description: Message broadcasting for real-time updates
+      - CodeMySpec.Users.Scope
+      - CodeMySpec.Projects
+      - Phoenix.PubSub
+      - Ecto
       """
 
       {:ok, result} = ContextDesignParser.from_markdown(markdown)
 
-      assert length(result.dependencies) == 3
-
-      [yaml_dep, desc_only_dep, simple_dep] = result.dependencies
-
-      assert yaml_dep.module_name == "CodeMySpec.Users.Scope"
-      assert yaml_dep.description == "Account-level scoping and access control"
-      assert Map.get(yaml_dep, :version) == "~> 1.0"
-
-      assert desc_only_dep.module_name == "Ecto"
-      assert desc_only_dep.description == "Database persistence"
-
-      assert simple_dep.module_name == "Phoenix.PubSub"
-      assert simple_dep.description == "Message broadcasting for real-time updates"
+      assert length(result.dependencies) == 4
+      assert "CodeMySpec.Users.Scope" in result.dependencies
+      assert "CodeMySpec.Projects" in result.dependencies
+      assert "Phoenix.PubSub" in result.dependencies
+      assert "Ecto" in result.dependencies
     end
 
     test "captures unknown sections in other_sections" do
@@ -149,36 +144,50 @@ defmodule CodeMySpec.Documents.ContextDesignParserTest do
       assert result.other_sections["another unknown section"] =~ "custom content"
     end
 
-    test "returns error when components lack required description" do
+    test "parses components without tables" do
       markdown = """
       # Test Context
 
       ## Components
-      - BadComponent: {}
-      - GoodComponent:
-          description: This one has a description
+
+      ### SimpleComponent
+
+      Just a description
+
+      ### AnotherComponent
+
+      Another simple component
       """
 
-      {:error, reason} = ContextDesignParser.from_markdown(markdown)
+      {:ok, result} = ContextDesignParser.from_markdown(markdown)
 
-      assert reason =~ "Components section error"
-      assert reason =~ "description is required for item: BadComponent"
+      assert length(result.components) == 2
+
+      [simple, another] = result.components
+
+      assert simple.module_name == "SimpleComponent"
+      assert simple.description == "Just a description"
+      assert simple.table == nil
+
+      assert another.module_name == "AnotherComponent"
+      assert another.description == "Another simple component"
+      assert another.table == nil
     end
 
-    test "returns error when dependencies lack required description" do
+    test "parses simple dependencies" do
       markdown = """
       # Test Context
 
       ## Dependencies
-      - BadDep: {}
-      - GoodDep:
-          description: This dependency is properly described
+      - SomeDep
+      - AnotherDep
       """
 
-      {:error, reason} = ContextDesignParser.from_markdown(markdown)
+      {:ok, result} = ContextDesignParser.from_markdown(markdown)
 
-      assert reason =~ "Dependencies section error"
-      assert reason =~ "description is required for item: BadDep"
+      assert length(result.dependencies) == 2
+      assert "SomeDep" in result.dependencies
+      assert "AnotherDep" in result.dependencies
     end
   end
 end

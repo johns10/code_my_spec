@@ -64,29 +64,43 @@ Manages dynamic rule composition and storage for generating context-aware design
 - String concatenation with separator handling
 
 ## Components
-- RuleSchema:
-    module_name: CodeMySpec.Rules.Rule
-    description: Database schema for rules with account_id, component_type, session_type, content
-- RuleRepository:
-    module_name: CodeMySpec.Rules.RuleRepository
-    description: Standard CRUD operations and rule matcher queries
-- RuleComposer:
-    module_name: CodeMySpec.Rules.RuleComposer
-    description: Takes a list of rules and returns a composed rule string
-- RuleSeeder:
-    module_name: CodeMySpec.Rules.RuleSeeder
-    description: Seeds rules from markdown files during account creation
+
+### CodeMySpec.Rules.Rule
+
+| field | value  |
+| ----- | ------ |
+| type  | schema |
+
+Database schema for rules with account_id, component_type, session_type, content
+
+
+### CodeMySpec.Rules.RuleRepository
+
+| field | value      |
+| ----- | ---------- |
+| type  | repository |
+
+Standard CRUD operations and rule matcher queries
+### CodeMySpec.Rules.RuleComposer
+
+| field | value |
+| ----- | ----- |
+| type  | other |
+
+Takes a list of rules and returns a composed rule string
+
+### CodeMySpec.Rules.RuleSeeder
+
+| field | value |
+| ----- | ----- |
+| type  | other |
+
+Seeds rules from markdown files during account creation
 
 ## Dependencies
-- Scope:
-    module_name: CodeMySpec.Users.Scope
-    description: Account-level scoping and access control
-- Ecto:
-    module_name: Ecto
-    description: Database persistence and query building
-- PubSub:
-    module_name: Phoenix.PubSub
-    description: Rule change notifications within scope
+- CodeMySpec.Users.Scope
+- Ecto
+- Phoenix.PubSub
 
 ## Execution Flow
 1. **Scope Validation**: Verify user scope and account access permissions

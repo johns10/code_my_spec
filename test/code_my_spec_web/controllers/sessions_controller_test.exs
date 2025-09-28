@@ -2,8 +2,14 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
   use CodeMySpecWeb.ConnCase
 
   import CodeMySpec.{UsersFixtures, SessionsFixtures, ComponentsFixtures}
+  import Mox
 
   setup %{conn: conn} do
+    # Configure application to use mock for local environment
+    Application.put_env(:code_my_spec, :local_environment, CodeMySpec.MockEnvironment)
+
+    # Use stub environment that automatically records
+    stub_with(CodeMySpec.MockEnvironment, CodeMySpec.Support.RecordingEnvironment)
     scope = full_preferences_fixture()
     oauth_app = create_oauth_application()
 

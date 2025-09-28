@@ -11,15 +11,21 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
 
   @impl true
   def build_command(%Agent{} = agent, prompt) do
+    build_command(agent, prompt, %{})
+  end
+
+  @impl true
+  def build_command(%Agent{} = agent, prompt, opts) do
     merged_config = CodeMySpec.Agents.merge_configs(agent)
-    command_args = build_command_args(prompt, merged_config)
+    final_config = Map.merge(merged_config, opts)
+    command_args = build_command_args(prompt, final_config)
     {:ok, command_args}
   end
 
   defp build_command_args(prompt, config) do
-    base_cmd = ["claude", prompt]
+    base_cmd = ["claude"]
     cli_args = build_cli_args(config)
-    base_cmd ++ cli_args
+    base_cmd ++ cli_args ++ [prompt]
   end
 
   defp build_cli_args(config) do
@@ -44,6 +50,10 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
     tools_str = Enum.join(tools, ",")
     ["--allowedTools", tools_str]
   end
+
+  defp format_cli_arg({"resume", value}) when is_binary(value), do: ["--resume", value]
+  defp format_cli_arg({"continue", true}), do: ["--continue"]
+  defp format_cli_arg({"continue", false}), do: []
 
   defp format_cli_arg(_), do: []
 end

@@ -1,0 +1,28 @@
+{
+  "echo goodbye world": {
+    "command": [
+      "echo",
+      "goodbye world"
+    ],
+    "exit_code": 0,
+    "output": "goodbye world\n",
+    "recorded_at": "2025-09-27T18:18:05.006296Z"
+  },
+  "echo hello world": {
+    "command": [
+      "echo",
+      "hello world"
+    ],
+    "exit_code": 0,
+    "output": "hello world\n",
+    "recorded_at": "2025-09-27T18:18:04.992596Z"
+  },
+  "pwd": {
+    "command": [
+      "pwd"
+    ],
+    "output": "/Users/johndavenport/Documents/github/code_my_spec\n",
+    "exit_code": 0,
+    "recorded_at": "2025-09-27T18:18:05.013953Z"
+  }
+}

@@ -8,7 +8,7 @@ defmodule CodeMySpec.Sessions.Result do
 
   @type t :: %__MODULE__{
           id: binary() | nil,
-          status: :ok | :error | :warning | nil,
+          status: :ok | :pending | :error | :warning | nil,
           data: map(),
           code: integer() | nil,
           error_message: String.t() | nil,
@@ -65,7 +65,13 @@ defmodule CodeMySpec.Sessions.Result do
   end
 
   def error(error_message, opts \\ []) do
-    %__MODULE__{
+    error_attrs(error_message, opts)
+    |> changeset()
+    |> apply_action!(:insert)
+  end
+
+  def error_attrs(error_message, opts \\ []) do
+    %{
       status: :error,
       error_message: error_message,
       data: opts[:data] || %{},

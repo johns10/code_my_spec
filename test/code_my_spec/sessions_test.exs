@@ -1,4 +1,5 @@
 defmodule CodeMySpec.SessionsTest do
+  alias CodeMySpec.ContextDesignSessions
   use CodeMySpec.DataCase
 
   alias CodeMySpec.Sessions
@@ -24,14 +25,18 @@ defmodule CodeMySpec.SessionsTest do
       scope = full_scope_fixture()
       session = session_fixture(scope)
       other_scope = full_scope_fixture()
-      assert Sessions.get_session!(scope, session.id) == session
+      reloaded_session = Sessions.get_session!(scope, session.id)
+      assert session.id == reloaded_session.id
+      assert session.status == reloaded_session.status
+      assert session.type == reloaded_session.type
+      assert session.state == reloaded_session.state
       assert_raise Ecto.NoResultsError, fn -> Sessions.get_session!(other_scope, session.id) end
     end
 
     test "create_session/2 with valid data creates a session" do
       valid_attrs = %{
         status: :active,
-        type: :context_design,
+        type: ContextDesignSessions,
         state: %{},
         agent: :claude_code,
         environment: :local
@@ -41,7 +46,7 @@ defmodule CodeMySpec.SessionsTest do
 
       assert {:ok, %Session{} = session} = Sessions.create_session(scope, valid_attrs)
       assert session.status == :active
-      assert session.type == :context_design
+      assert session.type == ContextDesignSessions
       assert session.state == %{}
       assert session.agent == :claude_code
       assert session.environment == :local
@@ -59,7 +64,7 @@ defmodule CodeMySpec.SessionsTest do
 
       update_attrs = %{
         status: :complete,
-        type: :context_design,
+        type: ContextDesignSessions,
         state: %{},
         agent: :claude_code,
         environment: :vscode
@@ -67,7 +72,7 @@ defmodule CodeMySpec.SessionsTest do
 
       assert {:ok, %Session{} = session} = Sessions.update_session(scope, session, update_attrs)
       assert session.status == :complete
-      assert session.type == :context_design
+      assert session.type == ContextDesignSessions
       assert session.state == %{}
       assert session.agent == :claude_code
       assert session.environment == :vscode
@@ -87,7 +92,11 @@ defmodule CodeMySpec.SessionsTest do
       scope = full_scope_fixture()
       session = session_fixture(scope)
       assert {:error, %Ecto.Changeset{}} = Sessions.update_session(scope, session, @invalid_attrs)
-      assert session == Sessions.get_session!(scope, session.id)
+      reloaded_session = Sessions.get_session!(scope, session.id)
+      assert session.id == reloaded_session.id
+      assert session.status == reloaded_session.status
+      assert session.type == reloaded_session.type
+      assert session.state == reloaded_session.state
     end
 
     test "delete_session/2 deletes the session" do

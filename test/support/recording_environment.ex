@@ -1,22 +1,19 @@
-defmodule CodeMySpec.Environments.Local do
+defmodule CodeMySpec.Support.RecordingEnvironment do
+  @moduledoc """
+  Environment implementation that automatically records CLI commands.
+  Used with stub_with to provide automatic recording without explicit expectations.
+  """
+
+  alias CodeMySpec.Support.CLIRecorder
+
   @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
 
-  def environment_setup_command(%{
-        repo_url: repo_url,
-        branch_name: branch_name,
-        working_dir: working_dir
-      }) do
-    project_name = extract_project_name(repo_url)
-
-    """
-    cd #{working_dir} && \
-    git clone #{repo_url} #{project_name} && \
-    cd #{project_name} && \
-    git switch -C #{branch_name} && \
-    mix deps.get
-    """
+  @impl true
+  def environment_setup_command(%{branch_name: branch_name, working_dir: working_dir}) do
+    "git -C #{working_dir} switch -C #{branch_name}"
   end
 
+  @impl true
   def docs_environment_teardown_command(%{
         context_name: context_name,
         working_dir: working_dir,
@@ -31,18 +28,17 @@ defmodule CodeMySpec.Environments.Local do
     """
   end
 
+  @impl true
   def cmd(command, args, opts) do
-    case System.cmd(command, args, opts) do
-      {output, 0} -> {:ok, clean_terminal_output(output)}
-      {output, exit_code} -> {:error, :process_failed, {exit_code, clean_terminal_output(output)}}
-    end
-  end
+    full_command = [command | args]
 
-  defp extract_project_name(repo_url) do
-    repo_url
-    |> String.split("/")
-    |> List.last()
-    |> String.replace(".git", "")
+    case CLIRecorder.with_recording(full_command, opts) do
+      {:ok, output} ->
+        {:ok, clean_terminal_output(output)}
+
+      {:error, :process_failed, {exit_code, output}} ->
+        {:error, :process_failed, {exit_code, clean_terminal_output(output)}}
+    end
   end
 
   defp clean_terminal_output(output) do

@@ -3,8 +3,8 @@ defmodule CodeMySpec.Documents do
   Context for managing document creation from markdown content.
   """
 
-  alias CodeMySpec.Documents.ContextDesign
-  alias CodeMySpec.Documents.ContextDesignParser
+  alias CodeMySpec.Documents.{ComponentDesign, ContextDesign}
+  alias CodeMySpec.Documents.{ComponentDesignParser, ContextDesignParser}
 
   @doc """
   Creates a document from markdown content based on the document type.
@@ -38,7 +38,8 @@ defmodule CodeMySpec.Documents do
   """
   def supported_types do
     [
-      :context_design
+      :context_design,
+      :component_design
     ]
   end
 
@@ -46,6 +47,8 @@ defmodule CodeMySpec.Documents do
   Gets the document module for a given type.
   """
   def get_document_module(:context_design), do: {:ok, ContextDesign}
+  def get_document_module(:repository), do: {:ok, ComponentDesign}
+  def get_document_module(:component_design), do: {:ok, ComponentDesign}
 
   def get_document_module(module) when is_atom(module) do
     if Code.ensure_loaded?(module) do
@@ -62,6 +65,9 @@ defmodule CodeMySpec.Documents do
       :context_design ->
         {:ok, ContextDesign}
 
+      :component_design ->
+        {:ok, ComponentDesign}
+
       module when is_atom(module) ->
         if Code.ensure_loaded?(module) do
           {:ok, module}
@@ -72,11 +78,13 @@ defmodule CodeMySpec.Documents do
   end
 
   defp get_parser_for_type(ContextDesign), do: {:ok, ContextDesignParser}
+  defp get_parser_for_type(ComponentDesign), do: {:ok, ComponentDesignParser}
 
   defp get_parser_for_type(module),
     do: {:error, "No parser available for document type: #{inspect(module)}"}
 
   defp create_empty_document(ContextDesign), do: %ContextDesign{}
+  defp create_empty_document(ComponentDesign), do: %ComponentDesign{}
 
   defp apply_changeset(%Ecto.Changeset{valid?: true} = changeset) do
     # For embedded schemas, we just return the changes as a struct

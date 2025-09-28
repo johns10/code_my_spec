@@ -2,7 +2,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.{Rules, Agents}
+  alias CodeMySpec.{Rules, Agents, Utils}
   alias CodeMySpec.Sessions.Session
 
   def get_command(scope, %Session{project: project, component: component}) do

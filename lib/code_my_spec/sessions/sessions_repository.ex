@@ -21,13 +21,13 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   """
   def get_session!(%Scope{} = scope, id) do
     Session
-    |> preload([:project, :component])
+    |> preload([:project, :component, [component: :parent_component]])
     |> Repo.get_by!(id: id, account_id: scope.active_account.id)
   end
 
   def get_session(%Scope{} = scope, id) do
     Session
-    |> preload([:project, :component])
+    |> preload([:project, :component, [component: :parent_component]])
     |> Repo.get_by(id: id, account_id: scope.active_account.id)
   end
 
@@ -48,6 +48,17 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
     with {:ok, session = %Session{}} <-
            session
            |> Session.add_interaction_changeset(interaction_attrs)
+           |> Repo.update() do
+      {:ok, session}
+    end
+  end
+
+  def update_result(%Scope{} = scope, %Session{} = session, interaction_id, result_attrs) do
+    true = session.account_id == scope.active_account.id
+
+    with {:ok, session = %Session{}} <-
+           session
+           |> Session.update_result_changeset(interaction_id, result_attrs)
            |> Repo.update() do
       {:ok, session}
     end

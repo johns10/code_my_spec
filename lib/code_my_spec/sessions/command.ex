@@ -20,7 +20,7 @@ defmodule CodeMySpec.Sessions.Command do
     field :module, CommandModuleType
     field :command, :string
     field :pipe, :string
-    field :timestamp, :utc_datetime
+    field :timestamp, :utc_datetime_usec
   end
 
   def changeset(command \\ %__MODULE__{}, attrs) do

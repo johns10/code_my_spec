@@ -72,6 +72,69 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
     extract_list_items(ast)
   end
 
+
+  defp extract_list_items(ast) do
+    ast
+    |> Enum.flat_map(fn
+      {"ul", [], items, %{}} -> extract_li_content(items)
+      {"ol", [], items, %{}} -> extract_li_content(items)
+      _ -> []
+    end)
+  end
+
+  defp extract_li_content(items) do
+    Enum.map(items, fn
+      {"li", [], content, %{}} -> extract_text(content)
+      _ -> ""
+    end)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp extract_text(ast) when is_list(ast) do
+    ast
+    |> Enum.map_join(" ", &extract_text/1)
+    |> String.trim()
+  end
+
+  defp extract_text(text) when is_binary(text), do: text
+  defp extract_text({"ol", [], items, %{}}), do: format_ordered_list(items)
+  defp extract_text({"ul", [], items, %{}}), do: format_unordered_list(items)
+  defp extract_text({_tag, _attrs, content, %{}}), do: extract_text(content)
+  defp extract_text(_), do: ""
+
+  defp format_ordered_list(items) do
+    items
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n", fn {{"li", [], content, %{}}, index} ->
+      "#{index}. #{extract_text(content)}"
+    end)
+  end
+
+  defp format_unordered_list(items) do
+    items
+    |> Enum.map_join("\n", fn {"li", [], content, %{}} ->
+      "- #{extract_text(content)}"
+    end)
+  end
+
+  defp build_other_sections(sections) do
+    known_keys = [
+      "purpose",
+      "entity ownership",
+      "scope integration",
+      "public api",
+      "state management strategy",
+      "execution flow",
+      "components",
+      "dependencies"
+    ]
+
+    sections
+    |> Map.drop(known_keys)
+    |> Enum.map(fn {key, content} -> {key, extract_text(content)} end)
+    |> Map.new()
+  end
+
   defp group_by_h3(ast) do
     ast
     |> Enum.reduce({[], nil}, fn
@@ -149,68 +212,6 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
       _ ->
         []
     end
-  end
-
-  defp extract_list_items(ast) do
-    ast
-    |> Enum.flat_map(fn
-      {"ul", [], items, %{}} -> extract_li_content(items)
-      {"ol", [], items, %{}} -> extract_li_content(items)
-      _ -> []
-    end)
-  end
-
-  defp extract_li_content(items) do
-    Enum.map(items, fn
-      {"li", [], content, %{}} -> extract_text(content)
-      _ -> ""
-    end)
-    |> Enum.reject(&(&1 == ""))
-  end
-
-  defp extract_text(ast) when is_list(ast) do
-    ast
-    |> Enum.map_join(" ", &extract_text/1)
-    |> String.trim()
-  end
-
-  defp extract_text(text) when is_binary(text), do: text
-  defp extract_text({"ol", [], items, %{}}), do: format_ordered_list(items)
-  defp extract_text({"ul", [], items, %{}}), do: format_unordered_list(items)
-  defp extract_text({_tag, _attrs, content, %{}}), do: extract_text(content)
-  defp extract_text(_), do: ""
-
-  defp format_ordered_list(items) do
-    items
-    |> Enum.with_index(1)
-    |> Enum.map_join("\n", fn {{"li", [], content, %{}}, index} ->
-      "#{index}. #{extract_text(content)}"
-    end)
-  end
-
-  defp format_unordered_list(items) do
-    items
-    |> Enum.map_join("\n", fn {"li", [], content, %{}} ->
-      "- #{extract_text(content)}"
-    end)
-  end
-
-  defp build_other_sections(sections) do
-    known_keys = [
-      "purpose",
-      "entity ownership",
-      "scope integration",
-      "public api",
-      "state management strategy",
-      "execution flow",
-      "components",
-      "dependencies"
-    ]
-
-    sections
-    |> Map.drop(known_keys)
-    |> Enum.map(fn {key, content} -> {key, extract_text(content)} end)
-    |> Map.new()
   end
 
   defp build_changeset_attrs(sections) do

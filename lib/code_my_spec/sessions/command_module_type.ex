@@ -6,7 +6,14 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
     CodeMySpec.ContextDesignSessions.Steps.Initialize,
     CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign,
     CodeMySpec.ContextDesignSessions.Steps.ValidateDesign,
-    CodeMySpec.ContextDesignSessions.Steps.Finalize
+    CodeMySpec.ContextDesignSessions.Steps.Finalize,
+    CodeMySpec.ComponentDesignSessions.Steps.Initialize,
+    CodeMySpec.ComponentDesignSessions.Steps.ReadContextDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.ReadComponentDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.Finalize
   ]
 
   def type, do: :string

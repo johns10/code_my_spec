@@ -146,4 +146,12 @@ defmodule CodeMySpec.Sessions do
       {:ok, interaction}
     end
   end
+
+  def update_result(%Scope{} = scope, %Session{} = session, interaction_id, result_attrs) do
+    with {:ok, %Session{} = session} <-
+           SessionsRepository.update_result(scope, session, interaction_id, result_attrs) do
+      broadcast(scope, {:updated, session})
+      {:ok, session}
+    end
+  end
 end

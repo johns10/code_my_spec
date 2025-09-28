@@ -28,10 +28,16 @@ defmodule CodeMySpec.Components.Registry do
     satisfied_by: nil
   }
 
-  @design_file %{
+  @context_design_file %{
     name: :design_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
     satisfied_by: "ContextDesignSessions"
+  }
+
+  @design_file %{
+    name: :design_file,
+    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    satisfied_by: "ComponentDesignSessions"
   }
 
   @implementation_file %{
@@ -71,7 +77,7 @@ defmodule CodeMySpec.Components.Registry do
     },
     context: %{
       requirements: [
-        @design_file,
+        @context_design_file,
         @child_designs,
         @dependencies,
         @implementation_file,
@@ -84,7 +90,14 @@ defmodule CodeMySpec.Components.Registry do
       color: "purple"
     },
     coordination_context: %{
-      requirements: @default_requirements,
+      requirements: [
+        @context_design_file,
+        @child_designs,
+        @dependencies,
+        @implementation_file,
+        @test_file,
+        @tests_passing
+      ],
       display_name: "Coordination Context",
       description: "Context that coordinates between multiple domains",
       icon: "arrow-path",

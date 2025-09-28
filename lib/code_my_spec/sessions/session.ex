@@ -66,6 +66,21 @@ defmodule CodeMySpec.Sessions.Session do
     |> Ecto.Changeset.put_embed(:interactions, interactions)
   end
 
+  def update_result_changeset(session, interaction_id, result_attrs) do
+    interactions =
+      Enum.map(session.interactions, fn
+        %{id: ^interaction_id} = interaction ->
+          Interaction.changeset(interaction, %{result: result_attrs})
+
+        interaction ->
+          interaction
+      end)
+
+    session
+    |> change()
+    |> Ecto.Changeset.put_embed(:interactions, interactions)
+  end
+
   def get_pending_interactions(session) do
     Enum.filter(session.interactions, &Interaction.pending?/1)
   end

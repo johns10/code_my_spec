@@ -34,8 +34,8 @@ defmodule CodeMySpec.DocumentsTest do
       Repository for test data operations
 
       ## Dependencies
-      - Test.Scope
-      - Ecto
+      - CodeMySpec.Users.Scope
+      - CodeMySpec.Projects
 
       ## Execution Flow
       1. Validate test scope
@@ -67,8 +67,8 @@ defmodule CodeMySpec.DocumentsTest do
 
       # Test dependencies
       assert length(document.dependencies) == 2
-      assert "Test.Scope" in document.dependencies
-      assert "Ecto" in document.dependencies
+      assert "CodeMySpec.Users.Scope" in document.dependencies
+      assert "CodeMySpec.Projects" in document.dependencies
 
       # Test other sections
       assert is_map(document.other_sections)

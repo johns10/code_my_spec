@@ -20,4 +20,6 @@ defmodule CodeMySpec.Environments.VSCode do
     git -C #{working_dir} merge #{branch_name}
     """
   end
+
+  def cmd(_command, _args, _opts), do: {"not_impl", 1}
 end

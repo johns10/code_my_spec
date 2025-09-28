@@ -1,9 +1,9 @@
 defmodule CodeMySpec.Sessions.SessionType do
   use Ecto.Type
 
-  @type t :: CodeMySpec.ContextDesignSessions
+  @type t :: CodeMySpec.ContextDesignSessions | CodeMySpec.ComponentDesignSessions
 
-  @valid_types [CodeMySpec.ContextDesignSessions]
+  @valid_types [CodeMySpec.ContextDesignSessions, CodeMySpec.ComponentDesignSessions]
 
   @spec type() :: :string
   def type, do: :string
@@ -15,7 +15,7 @@ defmodule CodeMySpec.Sessions.SessionType do
   end
 
   def cast(string) when is_binary(string) do
-    Keyword.get(mapper(), String.to_atom(string))
+    Map.get(mapper(), string)
     |> cast
   end
 
@@ -30,7 +30,8 @@ defmodule CodeMySpec.Sessions.SessionType do
 
   def mapper() do
     Enum.map(@valid_types, fn type ->
-      {type |> Atom.to_string() |> String.split(".") |> List.last() |> String.to_atom(), type}
+      {type |> Atom.to_string() |> String.split(".") |> List.last(), type}
     end)
+    |> Enum.into(%{})
   end
 end

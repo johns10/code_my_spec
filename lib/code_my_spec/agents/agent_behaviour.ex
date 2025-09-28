@@ -14,9 +14,13 @@ defmodule CodeMySpec.Agents.AgentBehaviour do
   @callback build_command(Agent.t(), prompt()) ::
               {:ok, command()} | {:error, execution_error()}
 
+  @callback build_command(Agent.t(), prompt(), opts()) ::
+              {:ok, command()} | {:error, execution_error()}
+
   @type prompt() :: String.t()
   @type command() :: [String.t()]
   @type config() :: map()
+  @type opts() :: map()
   @type execution_error() :: atom()
   @type validation_error() :: String.t()
 end
