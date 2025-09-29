@@ -8,7 +8,7 @@ defmodule CodeMySpec.Sessions.Session do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          type: CodeMySpec.ContextDesignSessions | nil,
+          type: CodeMySpec.ContextDesignSessions | CodeMySpec.ComponentDesignSessions | nil,
           agent: :claude_code | nil,
           environment: :local | :vscode | nil,
           status: :active | :complete | :failed | nil,
@@ -51,7 +51,9 @@ defmodule CodeMySpec.Sessions.Session do
     |> put_change(:project_id, user_scope.active_project.id)
   end
 
-  def complete_interaction_changeset(session, interaction_id, result_attrs) do
+  def complete_interaction_changeset(session, session_attrs, interaction_id, result) do
+    result_attrs = Map.from_struct(result)
+
     interactions =
       Enum.map(session.interactions, fn
         %{id: ^interaction_id} = interaction ->
@@ -62,23 +64,8 @@ defmodule CodeMySpec.Sessions.Session do
       end)
 
     session
-    |> change()
-    |> Ecto.Changeset.put_embed(:interactions, interactions)
-  end
-
-  def update_result_changeset(session, interaction_id, result_attrs) do
-    interactions =
-      Enum.map(session.interactions, fn
-        %{id: ^interaction_id} = interaction ->
-          Interaction.changeset(interaction, %{result: result_attrs})
-
-        interaction ->
-          interaction
-      end)
-
-    session
-    |> change()
-    |> Ecto.Changeset.put_embed(:interactions, interactions)
+    |> cast(session_attrs, [:type, :agent, :environment, :status, :state, :component_id])
+    |> put_embed(:interactions, interactions)
   end
 
   def get_pending_interactions(session) do

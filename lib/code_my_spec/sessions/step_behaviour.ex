@@ -3,13 +3,13 @@ defmodule CodeMySpec.Sessions.StepBehaviour do
   Behaviour for workflow step modules in session orchestration.
   Each step can generate commands and process their results.
   """
-  alias CodeMySpec.Sessions.Command
+  alias CodeMySpec.Sessions.{Command, Interaction}
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Sessions.Session
 
   @callback get_command(scope :: Scope.t(), session :: Session.t()) ::
               {:ok, Command.t()} | {:error, String.t()}
 
-  @callback handle_result(scope :: Scope.t(), session :: Session.t(), result :: map()) ::
-              {:ok, Session.t()} | {:error, String.t(), Session.t()}
+  @callback handle_result(scope :: Scope.t(), session :: Session.t(), interaction :: Interaction.t()) ::
+              {:ok, session_updates :: map(), updated_interaction :: Interaction.t()} | {:error, String.t()}
 end

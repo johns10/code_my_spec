@@ -32,6 +32,12 @@ defmodule CodeMySpec.Sessions.Interaction do
     |> put_completed_at()
   end
 
+  def add_result_to_interaction_changeset(interaction, result) do
+    interaction
+    |> change()
+    |> put_embed(:result, result)
+  end
+
   defp put_completed_at(changeset) do
     case get_field(changeset, :created_at) do
       nil -> put_change(changeset, :completed_at, DateTime.utc_now())

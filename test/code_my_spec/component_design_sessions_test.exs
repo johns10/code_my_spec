@@ -167,8 +167,8 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         assert finalize_interaction.command.module ==
                  CodeMySpec.ComponentDesignSessions.Steps.Finalize
 
-        {:ok, finalize_output} =
-          CodeMySpec.Environments.cmd(:local, "echo", ["Component design finalized"], [])
+        [cmd | args] = String.split(validate_interaction.command.command, " ")
+        {:ok, finalize_output} = CodeMySpec.Environments.cmd(:local, cmd, args, opts)
 
         finalize_result = %{status: :ok, stdout: finalize_output, stderr: "", exit_code: 0}
 

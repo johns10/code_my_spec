@@ -3,9 +3,11 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.Initialize do
 
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Environments
+  alias CodeMySpec.Sessions.Session
   alias CodeMySpec.ComponentDesignSessions.Utils
 
-  def get_command(_scope, %{environment: environment, project: project} = session) do
+  @impl true
+  def get_command(_scope, %Session{environment: environment, project: project} = session) do
     attrs = %{
       branch_name: Utils.branch_name(session),
       repo_url: project.code_repo,
@@ -17,7 +19,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.Initialize do
     {:ok, Command.new(__MODULE__, command_string)}
   end
 
-  def handle_result(_scope, session, _interaction) do
-    {:ok, session}
+  @impl true
+  def handle_result(_scope, _session, interaction) do
+    {:ok, %{}, interaction}
   end
 end

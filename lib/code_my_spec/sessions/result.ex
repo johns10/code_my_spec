@@ -53,6 +53,17 @@ defmodule CodeMySpec.Sessions.Result do
     end
   end
 
+  def pending(data \\ %{}, opts \\ []) do
+    %__MODULE__{
+      status: :pending,
+      data: data,
+      stdout: opts[:stdout],
+      code: opts[:code] || 0,
+      duration_ms: opts[:duration_ms],
+      timestamp: DateTime.utc_now()
+    }
+  end
+
   def success(data \\ %{}, opts \\ []) do
     %__MODULE__{
       status: :ok,
@@ -65,13 +76,7 @@ defmodule CodeMySpec.Sessions.Result do
   end
 
   def error(error_message, opts \\ []) do
-    error_attrs(error_message, opts)
-    |> changeset()
-    |> apply_action!(:insert)
-  end
-
-  def error_attrs(error_message, opts \\ []) do
-    %{
+    %__MODULE__{
       status: :error,
       error_message: error_message,
       data: opts[:data] || %{},

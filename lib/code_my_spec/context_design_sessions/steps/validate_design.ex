@@ -13,7 +13,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
   def handle_result(scope, session, interaction) do
     with {:ok, document} <- Documents.create_document(interaction.result.stdout, :context_design),
          {:ok, _components} <- create_components(scope, session, document) do
-      {:ok, session}
+      {:ok, %{}, interaction}
     else
       error -> error
     end

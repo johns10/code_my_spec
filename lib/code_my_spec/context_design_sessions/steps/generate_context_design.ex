@@ -16,8 +16,8 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
     end
   end
 
-  def handle_result(_scope, session, _result) do
-    {:ok, session}
+  def handle_result(_scope, _session, interaction) do
+    {:ok, %{}, interaction}
   end
 
   defp get_design_rules(scope) do

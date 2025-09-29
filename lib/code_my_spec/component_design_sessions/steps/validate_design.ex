@@ -2,35 +2,56 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.{Documents, Sessions}
-  alias CodeMySpec.Sessions.{Command, Result}
+  alias CodeMySpec.Sessions.{Command}
+  require Logger
 
   def get_command(_scope, %{component: component, project: project}) do
     %{design_file: design_file_path} = CodeMySpec.Utils.component_files(component, project)
     {:ok, Command.new(__MODULE__, "cat #{design_file_path}")}
   end
 
-  def handle_result(scope, session, interaction) do
+  def handle_result(scope, session, %{result: result, command: command} = interaction) do
     with {:ok, component_design} <- get_component_design(interaction),
          updated_state <- Map.put(session.state || %{}, :component_design, component_design),
-         {:ok, updated_session} <-
-           Sessions.update_session(scope, session, %{state: updated_state}),
          document_type <- determine_document_type(session.component),
          {:ok, _document} <- Documents.create_document(component_design, document_type, scope) do
-      {:ok, updated_session}
+      {:ok, %{state: updated_state}, interaction}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         error_message = format_changeset_errors(changeset)
 
-        error_result =
-          Result.error_attrs("Component design validation failed", stderr: error_message)
+        attrs = %{
+          status: :error,
+          error_message: error_message,
+          duration_ms: DateTime.diff(DateTime.utc_now(), command.timestamp)
+        }
 
-        Sessions.update_result(scope, session, interaction.id, error_result)
+        case Sessions.update_result(scope, result, attrs) do
+          {:ok, result} ->
+            {:ok, %{}, %{interaction | result: result}}
+
+          {:error, changeset} ->
+            Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
+            {:ok, %{}, interaction}
+        end
 
       {:error, reason} ->
-        error_result =
-          Result.error_attrs("Component design validation failed: #{inspect(reason)}")
+        error_message = "Component design validation failed: #{inspect(reason)}"
 
-        Sessions.update_result(scope, session, interaction.id, error_result)
+        attrs = %{
+          status: :error,
+          error_message: error_message,
+          duration_ms: DateTime.diff(DateTime.utc_now(), command.timestamp)
+        }
+
+        case Sessions.update_result(scope, result, attrs) do
+          {:ok, result} ->
+            {:ok, %{}, %{interaction | result: result}}
+
+          {:error, changeset} ->
+            Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
+            {:ok, %{}, interaction}
+        end
     end
   end
 

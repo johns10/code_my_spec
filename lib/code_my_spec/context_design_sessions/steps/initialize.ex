@@ -16,7 +16,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.Initialize do
     {:ok, Command.new(__MODULE__, command_string)}
   end
 
-  def handle_result(_scope, session, _interaction) do
-    {:ok, session}
+  def handle_result(_scope, _session, interaction) do
+    {:ok, %{}, interaction}
   end
 end

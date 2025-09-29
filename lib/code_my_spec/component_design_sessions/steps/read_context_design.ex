@@ -1,7 +1,6 @@
 defmodule CodeMySpec.ComponentDesignSessions.Steps.ReadContextDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.Sessions
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Utils
 
@@ -11,9 +10,9 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReadContextDesign do
     {:ok, Command.new(__MODULE__, "cat #{design_file_path}")}
   end
 
-  def handle_result(scope, session, interaction) do
+  def handle_result(_scope, session, interaction) do
     context_design = interaction.result.stdout
     updated_state = Map.put(session.state || %{}, :context_design, context_design)
-    Sessions.update_session(scope, session, %{state: updated_state})
+    {:ok, %{state: updated_state}, interaction}
   end
 end

@@ -4,6 +4,7 @@ defmodule CodeMySpec.Sessions do
   """
 
   import Ecto.Query, warn: false
+  alias CodeMySpec.Sessions.Result
   alias CodeMySpec.Sessions.SessionsRepository
   alias CodeMySpec.Repo
 
@@ -94,6 +95,28 @@ defmodule CodeMySpec.Sessions do
     end
   end
 
+  def complete_session_interaction(
+        %Scope{} = scope,
+        %Session{} = session,
+        session_attrs,
+        interaction_id,
+        %Result{} = result
+      ) do
+    true = session.account_id == scope.active_account.id
+
+    with {:ok, session = %Session{}} <-
+           SessionsRepository.complete_session_interaction(
+             scope,
+             session,
+             session_attrs,
+             interaction_id,
+             result
+           ) do
+      broadcast(scope, {:updated, session})
+      {:ok, session}
+    end
+  end
+
   @doc """
   Deletes a session.
 
@@ -147,11 +170,25 @@ defmodule CodeMySpec.Sessions do
     end
   end
 
-  def update_result(%Scope{} = scope, %Session{} = session, interaction_id, result_attrs) do
-    with {:ok, %Session{} = session} <-
-           SessionsRepository.update_result(scope, session, interaction_id, result_attrs) do
-      broadcast(scope, {:updated, session})
-      {:ok, session}
-    end
+  def create_result(%Scope{} = _scope, result_attrs) do
+    result_attrs
+    |> Result.changeset()
+    |> Ecto.Changeset.apply_action(:insert)
+  end
+
+  def update_result(%Scope{} = _scope, %Result{} = result, result_attrs) do
+    result
+    |> Result.changeset(result_attrs)
+    |> Ecto.Changeset.apply_action(:update)
+  end
+
+  def add_result_to_interaction(
+        %Scope{} = _scope,
+        %Interaction{} = interaction,
+        %Result{} = result
+      ) do
+    interaction
+    |> Interaction.add_result_to_interaction_changeset(result)
+    |> Ecto.Changeset.apply_action(:update)
   end
 end
