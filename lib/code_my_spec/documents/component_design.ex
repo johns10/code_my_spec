@@ -17,7 +17,6 @@ defmodule CodeMySpec.Documents.ComponentDesign do
   def changeset(component_design, attrs, _scope \\ nil) do
     component_design
     |> cast(attrs, [:purpose, :public_api, :execution_flow, :other_sections])
-    |> validate_required([:purpose])
+    |> validate_required([:purpose, :public_api, :execution_flow])
   end
-
 end
