@@ -10,29 +10,28 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
     {:ok, Command.new(__MODULE__, "cat #{design_file_path}")}
   end
 
-  def handle_result(scope, session, %{result: result, command: command} = interaction) do
-    with {:ok, component_design} <- get_component_design(interaction),
+  def handle_result(scope, session, result) do
+    with {:ok, component_design} <- get_component_design(result),
          updated_state <- Map.put(session.state || %{}, :component_design, component_design),
          document_type <- determine_document_type(session.component),
          {:ok, _document} <- Documents.create_document(component_design, document_type, scope) do
-      {:ok, %{state: updated_state}, interaction}
+      {:ok, %{state: updated_state}, result}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         error_message = format_changeset_errors(changeset)
 
         attrs = %{
           status: :error,
-          error_message: error_message,
-          duration_ms: DateTime.diff(DateTime.utc_now(), command.timestamp)
+          error_message: error_message
         }
 
         case Sessions.update_result(scope, result, attrs) do
-          {:ok, result} ->
-            {:ok, %{}, %{interaction | result: result}}
+          {:ok, updated_result} ->
+            {:ok, %{}, updated_result}
 
           {:error, changeset} ->
             Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
-            {:ok, %{}, interaction}
+            {:ok, %{}, result}
         end
 
       {:error, reason} ->
@@ -40,22 +39,21 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
 
         attrs = %{
           status: :error,
-          error_message: error_message,
-          duration_ms: DateTime.diff(DateTime.utc_now(), command.timestamp)
+          error_message: error_message
         }
 
         case Sessions.update_result(scope, result, attrs) do
-          {:ok, result} ->
-            {:ok, %{}, %{interaction | result: result}}
+          {:ok, updated_result} ->
+            {:ok, %{}, updated_result}
 
           {:error, changeset} ->
             Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
-            {:ok, %{}, interaction}
+            {:ok, %{}, result}
         end
     end
   end
 
-  defp get_component_design(%{result: %{stdout: component_design}})
+  defp get_component_design(%{stdout: component_design})
        when is_binary(component_design) do
     if String.trim(component_design) == "" do
       {:error, "component design is empty"}

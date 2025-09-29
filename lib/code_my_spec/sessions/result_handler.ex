@@ -6,17 +6,15 @@ defmodule CodeMySpec.Sessions.ResultHandler do
     with {:ok, session} <- get_session(scope, session_id),
          {:ok, result} <- Sessions.create_result(scope, result_attrs),
          {:ok, interaction} <- find_interaction(session, interaction_id),
-         {:ok, updated_interaction} <-
-           Sessions.add_result_to_interaction(scope, interaction, result),
-         {:ok, session_attrs, final_interaction} <-
-           interaction.command.module.handle_result(scope, session, updated_interaction),
+         {:ok, session_attrs, final_result} <-
+           interaction.command.module.handle_result(scope, session, result),
          {:ok, final_session} <-
            Sessions.complete_session_interaction(
              scope,
              session,
              session_attrs,
              interaction_id,
-             final_interaction.result
+             final_result
            ) do
       {:ok, final_session}
     end

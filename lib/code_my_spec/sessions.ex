@@ -181,14 +181,4 @@ defmodule CodeMySpec.Sessions do
     |> Result.changeset(result_attrs)
     |> Ecto.Changeset.apply_action(:update)
   end
-
-  def add_result_to_interaction(
-        %Scope{} = _scope,
-        %Interaction{} = interaction,
-        %Result{} = result
-      ) do
-    interaction
-    |> Interaction.add_result_to_interaction_changeset(result)
-    |> Ecto.Changeset.apply_action(:update)
-  end
 end

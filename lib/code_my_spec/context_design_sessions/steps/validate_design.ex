@@ -10,10 +10,10 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
     {:ok, Command.new(__MODULE__, "cat #{design_file_path}")}
   end
 
-  def handle_result(scope, session, interaction) do
-    with {:ok, document} <- Documents.create_document(interaction.result.stdout, :context_design),
+  def handle_result(scope, session, result) do
+    with {:ok, document} <- Documents.create_document(result.stdout, :context_design),
          {:ok, _components} <- create_components(scope, session, document) do
-      {:ok, %{}, interaction}
+      {:ok, %{}, result}
     else
       error -> error
     end

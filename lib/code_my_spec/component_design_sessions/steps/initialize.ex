@@ -20,7 +20,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.Initialize do
   end
 
   @impl true
-  def handle_result(_scope, _session, interaction) do
-    {:ok, %{}, interaction}
+  def handle_result(_scope, _session, result) do
+    {:ok, %{}, result}
   end
 end
