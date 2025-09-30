@@ -4,6 +4,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.{Rules, Agents, Utils}
   alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.Documents.{ComponentDesign, DocumentSpecProjector}
 
   def get_command(scope, %Session{project: project, component: component, state: state}) do
     with {:ok, rules} <- get_design_rules(scope, component),
@@ -21,9 +22,11 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   end
 
   defp get_design_rules(scope, component) do
-    component_type = component.type || "other"
+    component_type = component.type
 
-    case Rules.find_matching_rules(scope, Atom.to_string(component_type), "design") do
+    scope
+    |> Rules.find_matching_rules(Atom.to_string(component_type), "design")
+    |> case do
       rules when is_list(rules) -> {:ok, rules}
       error -> error
     end
@@ -32,25 +35,29 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   defp build_design_prompt(project, component, rules, state) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
     context_design = get_context_design(state)
+    document_spec = DocumentSpecProjector.project_spec(ComponentDesign)
     %{design_file: design_file_path} = Utils.component_files(component, project)
 
-    prompt = """
-    Generate a Phoenix component design for the following:
+    prompt =
+      """
+      Generate a Phoenix component design for the following:
 
-    Project: #{project.name}
-    Project Description: #{project.description}
-    Component Name: #{component.name}
-    Component Description: #{component.description || "No description provided"}
-    Type: #{component.type}
+      Project: #{project.name}
+      Project Description: #{project.description}
+      Component Name: #{component.name}
+      Component Description: #{component.description || "No description provided"}
+      Type: #{component.type}
+      File Name: #{design_file_path}
 
-    Parent Context Design:
-    #{context_design}
+      Parent Context Design:
+      #{context_design}
 
-    Design Rules:
-    #{rules_text}
+      Design Rules:
+      #{rules_text}
 
-    Please write the design documentation to: #{design_file_path}
-    """
+      Document Specifications:
+      #{document_spec}
+      """
 
     {:ok, prompt}
   end

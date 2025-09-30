@@ -24,7 +24,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign do
   @impl true
   def handle_result(_scope, session, result) do
     revised_design = result.stdout
-    updated_state = Map.put(session.state || %{}, :component_design, revised_design)
+    updated_state = Map.put(session.state || %{}, "component_design", revised_design)
     {:ok, %{state: updated_state}, result}
   end
 

@@ -7,6 +7,15 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
   alias CodeMySpec.{Sessions, Components}
   alias CodeMySpec.ComponentDesignSessions
 
+  alias CodeMySpec.ComponentDesignSessions.Steps.{
+    Finalize,
+    GenerateComponentDesign,
+    Initialize,
+    ReadContextDesign,
+    ReviseDesign,
+    ValidateDesign
+  }
+
   @test_repo_url "https://github.com/johns10/test_phoenix_project.git"
 
   describe "component design session workflow" do
@@ -39,10 +48,10 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
       # Create test component to design (PostService)
       {:ok, post_service} =
         Components.create_component(scope, %{
-          name: "PostRepository",
+          name: "BlogRepository",
           type: :repository,
-          module_name: "TestPhoenixProject.Blog.PostRepository",
-          description: "Repository for post persistence",
+          module_name: "TestPhoenixProject.Blog.BlogRepository",
+          description: "Repository for blog persistence",
           parent_component_id: blog_context.id
         })
 
@@ -72,108 +81,71 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
             component_id: post_service.id
           })
 
-        # Step 1: Initialize
-        {:ok, initialize_interaction} = Sessions.next_command(scope, session.id)
-        opts = [cd: "test_phoenix_project"]
-
-        assert initialize_interaction.command.module ==
-                 CodeMySpec.ComponentDesignSessions.Steps.Initialize
-
-        [cmd | args] = String.split(initialize_interaction.command.command, " ")
-        {:ok, initialize_output} = CodeMySpec.Environments.cmd(:local, cmd, args, opts)
-        initialize_result = %{status: :ok, stdout: initialize_output, stderr: "", exit_code: 0}
-
-        {:ok, session} =
-          Sessions.handle_result(scope, session.id, initialize_interaction.id, initialize_result)
-
+        {_, _, session} = execute_step(scope, session.id, Initialize)
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
-
-        # Step 2: Read Context Design
-        {:ok, read_context_interaction} = Sessions.next_command(scope, session.id)
-
-        assert read_context_interaction.command.module ==
-                 CodeMySpec.ComponentDesignSessions.Steps.ReadContextDesign
-
-        [cmd | args] = String.split(read_context_interaction.command.command, " ")
-        {:ok, context_design_content} = CodeMySpec.Environments.cmd(:local, cmd, args, opts)
-
-        read_context_result = %{
-          status: :ok,
-          stdout: context_design_content,
-          stderr: "",
-          exit_code: 0
-        }
-
-        {:ok, session} =
-          Sessions.handle_result(
-            scope,
-            session.id,
-            read_context_interaction.id,
-            read_context_result
-          )
-
-        assert String.starts_with?(session.state.context_design, "# Blog Context")
+        {_, _, session} = execute_step(scope, session.id, ReadContextDesign)
+        assert String.starts_with?(session.state["context_design"], "# Blog Context")
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
 
-        # Step 3: Generate Component Design
-        {:ok, generate_interaction} = Sessions.next_command(scope, session.id)
-
-        assert generate_interaction.command.module ==
-                 CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign
-
-        {:ok, claude_output} =
-          CodeMySpec.Environments.cmd(
-            :local,
-            "echo",
-            ["Generated component design for PostRepository"],
-            []
+        {_, _, session} =
+          execute_step(
+            scope,
+            session.id,
+            GenerateComponentDesign,
+            mock_output: "Generated component design for BlogRepository"
           )
 
-        generate_result = %{status: :ok, stdout: claude_output, stderr: "", exit_code: 0}
+        # Create the design file that would have been created by Claude
+        design_file =
+          Path.join([
+            "test_phoenix_project",
+            "docs",
+            "design",
+            "test_phoenix_project",
+            "blog",
+            "blog_repository.md"
+          ])
 
-        {:ok, session} =
-          Sessions.handle_result(scope, session.id, generate_interaction.id, generate_result)
+        File.mkdir_p!(Path.dirname(design_file))
+        File.write!(design_file, invalid_blog_repository_content())
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{interactions: [_, _, %Interaction{}]}}
 
         # Step 4: Validate Design
-        {:ok, validate_interaction} = Sessions.next_command(scope, session.id)
-
-        assert validate_interaction.command.module ==
-                 CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign
-
-        [cmd | args] = String.split(validate_interaction.command.command, " ")
-        {:ok, component_validation_content} = CodeMySpec.Environments.cmd(:local, cmd, args, opts)
-
-        validate_result = %{
-          status: :ok,
-          stdout: component_validation_content,
-          stderr: "",
-          exit_code: 0
-        }
-
-        {:ok, session} =
-          Sessions.handle_result(scope, session.id, validate_interaction.id, validate_result)
+        {_, _, session} =
+          execute_step(scope, session.id, ValidateDesign,
+            mock_output: invalid_blog_repository_content()
+          )
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, _, _, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{
+                           interactions: [_, _, _, %Interaction{result: %{status: :error}}]
+                         }}
 
-        # Step 5: Finalize (assuming validation passes)
-        {:ok, finalize_interaction} = Sessions.next_command(scope, session.id)
+        # Step 5: Revise Design
+        {_, _, session} =
+          execute_step(scope, session.id, ReviseDesign,
+            mock_output: "Revised component design for BlogRepository"
+          )
 
-        assert finalize_interaction.command.module ==
-                 CodeMySpec.ComponentDesignSessions.Steps.Finalize
+        assert_received {:updated,
+                         %CodeMySpec.Sessions.Session{interactions: [_, _, _, _, %Interaction{}]}}
 
-        [cmd | args] = String.split(validate_interaction.command.command, " ")
-        {:ok, finalize_output} = CodeMySpec.Environments.cmd(:local, cmd, args, opts)
+        # Step 6: Revalidate Design
+        {_, _, session} =
+          execute_step(scope, session.id, ValidateDesign, mock_output: blog_repository_content())
 
-        finalize_result = %{status: :ok, stdout: finalize_output, stderr: "", exit_code: 0}
+        assert_received {:updated,
+                         %CodeMySpec.Sessions.Session{
+                           interactions: [_, _, _, _, _, %Interaction{result: %{status: :ok}}]
+                         }}
 
-        {:ok, session} =
-          Sessions.handle_result(scope, session.id, finalize_interaction.id, finalize_result)
+        # Step 6: Finalize (assuming validation passes)
+        {_finalize_interaction, _finalize_result, session} =
+          execute_step(scope, session.id, Finalize, mock_output: "Finalized design successfully")
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{interactions: [_, _, _, _, %Interaction{}]}}
@@ -186,6 +158,28 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         assert is_binary(session.state["component_design"])
       end
     end
+  end
+
+  # Helper function to execute a session step with common pattern
+  defp execute_step(scope, session_id, expected_module, opts \\ []) do
+    cd_opts = Keyword.get(opts, :cd_opts, cd: "test_phoenix_project")
+    mock_output = Keyword.get(opts, :mock_output)
+
+    {:ok, interaction} = Sessions.next_command(scope, session_id)
+    assert interaction.command.module == expected_module
+
+    result =
+      if mock_output do
+        %{status: :ok, stdout: mock_output, stderr: "", exit_code: 0}
+      else
+        {:ok, output} =
+          CodeMySpec.Environments.cmd(:local, "sh", ["-c", interaction.command.command], cd_opts)
+
+        %{status: :ok, stdout: output, stderr: "", exit_code: 0}
+      end
+
+    {:ok, updated_session} = Sessions.handle_result(scope, session_id, interaction.id, result)
+    {interaction, result, updated_session}
   end
 
   # Helper function to setup test project (only clone if needed)
@@ -208,5 +202,43 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
     unless File.exists?(Path.join(project_dir, "deps")) do
       System.cmd("mix", ["deps.get"], cd: project_dir)
     end
+  end
+
+  defp invalid_blog_repository_content() do
+    """
+    # BlogRepository Component Design
+
+    ## Purpose
+    Repository for managing blog persistence in the blog context.
+
+    ## Interface
+    - get_blog/1
+    - create_blog/1
+    - update_blog/2
+    - delete_blog/1
+
+    ## Implementation Notes
+    Generated component design for BlogRepository
+    """
+  end
+
+  defp blog_repository_content() do
+    """
+    # BlogRepository Component Design
+
+    ## Purpose
+    Repository for managing blog persistence in the blog context.
+
+    ## Public API
+    - get_blog/1
+    - create_blog/1
+    - update_blog/2
+    - delete_blog/1
+
+    ## Execution Flow
+    1. Receive scoped request
+    2. Execute database operation with user filtering
+    3. Return result or error
+    """
   end
 end

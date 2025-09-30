@@ -11,45 +11,23 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
   end
 
   def handle_result(scope, session, result) do
-    with {:ok, component_design} <- get_component_design(result),
-         updated_state <- Map.put(session.state || %{}, :component_design, component_design),
-         document_type <- determine_document_type(session.component),
-         {:ok, _document} <- Documents.create_document(component_design, document_type, scope) do
-      {:ok, %{state: updated_state}, result}
-    else
-      {:error, %Ecto.Changeset{} = changeset} ->
-        error_message = format_changeset_errors(changeset)
+    case get_component_design(result) do
+      {:ok, component_design} ->
+        updated_state = Map.put(session.state || %{}, "component_design", component_design)
 
-        attrs = %{
-          status: :error,
-          error_message: error_message
-        }
+        case create_document(component_design, session.component, scope) do
+          {:ok, _document} ->
+            {:ok, %{state: updated_state}, result}
 
-        case Sessions.update_result(scope, result, attrs) do
-          {:ok, updated_result} ->
-            {:ok, %{}, updated_result}
-
-          {:error, changeset} ->
-            Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
-            {:ok, %{}, result}
+          {:error, error} ->
+            updated_result = update_result_with_error(scope, result, error)
+            {:ok, %{state: updated_state}, updated_result}
         end
 
       {:error, reason} ->
-        error_message = "Component design validation failed: #{inspect(reason)}"
-
-        attrs = %{
-          status: :error,
-          error_message: error_message
-        }
-
-        case Sessions.update_result(scope, result, attrs) do
-          {:ok, updated_result} ->
-            {:ok, %{}, updated_result}
-
-          {:error, changeset} ->
-            Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
-            {:ok, %{}, result}
-        end
+        error = "Component design validation failed: #{inspect(reason)}"
+        updated_result = update_result_with_error(scope, result, error)
+        {:ok, %{}, updated_result}
     end
   end
 
@@ -73,6 +51,31 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
       _ -> :component_design
     end
   end
+
+  defp create_document(component_design, component, scope) do
+    document_type = determine_document_type(component)
+    Documents.create_document(component_design, document_type, scope)
+  end
+
+  defp update_result_with_error(scope, result, error) do
+    error_message = format_error(error)
+    attrs = %{status: :error, error_message: error_message}
+
+    case Sessions.update_result(scope, result, attrs) do
+      {:ok, updated_result} ->
+        updated_result
+
+      {:error, changeset} ->
+        Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
+        result
+    end
+  end
+
+  defp format_error(%Ecto.Changeset{} = changeset) do
+    format_changeset_errors(changeset)
+  end
+
+  defp format_error(error) when is_binary(error), do: error
 
   defp format_changeset_errors(%Ecto.Changeset{errors: errors}) do
     errors

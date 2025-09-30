@@ -12,7 +12,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReadContextDesign do
 
   def handle_result(_scope, session, result) do
     context_design = result.stdout
-    updated_state = Map.put(session.state || %{}, :context_design, context_design)
+    updated_state = Map.put(session.state || %{}, "context_design", context_design)
     {:ok, %{state: updated_state}, result}
   end
 end
