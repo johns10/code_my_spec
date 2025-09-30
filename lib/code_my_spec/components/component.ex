@@ -95,7 +95,6 @@ defmodule CodeMySpec.Components.Component do
     )
     |> validate_no_self_parent()
     |> put_scope_associations(scope)
-    |> unique_constraint([:name, :project_id])
     |> unique_constraint([:module_name, :project_id])
     |> foreign_key_constraint(:parent_component_id)
   end

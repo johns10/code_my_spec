@@ -12,7 +12,6 @@ defmodule CodeMySpec.Repo.Migrations.CreateComponents do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:components, [:name, :project_id])
     create unique_index(:components, [:module_name, :project_id])
     create index(:components, [:project_id])
     create index(:components, [:type])
