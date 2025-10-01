@@ -19,13 +19,14 @@ defmodule CodeMySpec.Environments.Local do
 
   def docs_environment_teardown_command(%{
         context_name: context_name,
+        context_type: context_type,
         working_dir: working_dir,
         design_file_name: design_file_name,
         branch_name: branch_name
       }) do
     """
     git -C #{working_dir} add #{design_file_name} && \
-    git -C #{working_dir} commit -m "created context design for #{context_name}" && \
+    git -C #{working_dir} commit -m "created #{context_type} design for #{context_name}" && \
     git -C #{working_dir} switch main && \
     git -C #{working_dir} merge #{branch_name}
     """

@@ -41,7 +41,6 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
     prompt =
       """
       Generate a Phoenix component design for the following.
-      Write the document to #{design_file_path}.
 
       Project: #{project.name}
       Project Description: #{project.description}
@@ -57,6 +56,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
 
       Document Specifications:
       #{document_spec}
+
+      Write the document to #{design_file_path}.
       """
 
     {:ok, prompt}

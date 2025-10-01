@@ -21,7 +21,8 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.Finalize do
       branch_name: ContextDesignSessions.Utils.branch_name(session),
       design_file_name: design_file_name,
       working_dir: "docs",
-      context_name: component.name
+      context_name: component.name,
+      context_type: component.type
     }
 
     command_string = Environments.docs_environment_teardown_command(environment, attrs)

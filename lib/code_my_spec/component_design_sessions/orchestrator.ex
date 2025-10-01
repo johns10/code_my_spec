@@ -27,27 +27,25 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
     get_next_step(status, module)
   end
 
-  defp extract_status(%Interaction{result: nil}), do: :pending
-  defp extract_status(%Interaction{result: %Result{status: :ok}}), do: :success
-  defp extract_status(%Interaction{result: %Result{status: :error}}), do: :error
+  defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
-  defp get_next_step(:success, Steps.Initialize), do: {:ok, Steps.ReadContextDesign}
+  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.ReadContextDesign}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  defp get_next_step(:success, Steps.ReadContextDesign), do: {:ok, Steps.GenerateComponentDesign}
+  defp get_next_step(:ok, Steps.ReadContextDesign), do: {:ok, Steps.GenerateComponentDesign}
   defp get_next_step(_, Steps.ReadContextDesign), do: {:ok, Steps.ReadContextDesign}
 
-  defp get_next_step(:success, Steps.GenerateComponentDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(:ok, Steps.GenerateComponentDesign), do: {:ok, Steps.ValidateDesign}
   defp get_next_step(_, Steps.GenerateComponentDesign), do: {:ok, Steps.GenerateComponentDesign}
 
-  defp get_next_step(:success, Steps.ValidateDesign), do: {:ok, Steps.Finalize}
+  defp get_next_step(:ok, Steps.ValidateDesign), do: {:ok, Steps.Finalize}
   defp get_next_step(:error, Steps.ValidateDesign), do: {:ok, Steps.ReviseDesign}
   defp get_next_step(_, Steps.ValidateDesign), do: {:ok, Steps.ValidateDesign}
 
-  defp get_next_step(:success, Steps.ReviseDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(:ok, Steps.ReviseDesign), do: {:ok, Steps.ValidateDesign}
   defp get_next_step(_, Steps.ReviseDesign), do: {:ok, Steps.ReviseDesign}
 
-  defp get_next_step(:success, Steps.Finalize), do: {:error, :session_complete}
+  defp get_next_step(:ok, Steps.Finalize), do: {:error, :session_complete}
 
   defp get_next_step(_status, module) when module not in @step_modules,
     do: {:error, :invalid_interaction}
