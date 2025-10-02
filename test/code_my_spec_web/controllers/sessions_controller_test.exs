@@ -186,9 +186,7 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
 
     test "returns error for non-existent interaction", %{conn: conn, session: session} do
       conn =
-        post(conn, ~p"/api/sessions/#{session.id}/submit-result/99999",
-          result: %{status: "success"}
-        )
+        post(conn, ~p"/api/sessions/#{session.id}/submit-result/99999", result: %{status: "ok"})
 
       assert response(conn, 404)
     end

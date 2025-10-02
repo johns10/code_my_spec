@@ -7,7 +7,8 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.Finalize do
 
   def get_command(
         _scope,
-        %{environment: environment, component: component, project: project} = session
+        %{environment: environment, component: component, project: project} = session,
+        _opts \\ []
       ) do
     %{design_file: design_file} = CodeMySpec.Utils.component_files(component, project)
 
@@ -29,7 +30,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.Finalize do
     {:ok, Command.new(__MODULE__, command_string)}
   end
 
-  def handle_result(_scope, _session, result) do
+  def handle_result(_scope, _session, result, _opts \\ []) do
     {:ok, %{}, result}
   end
 end

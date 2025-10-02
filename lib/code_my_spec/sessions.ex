@@ -154,17 +154,17 @@ defmodule CodeMySpec.Sessions do
     Session.changeset(session, attrs, scope)
   end
 
-  def handle_result(%Scope{} = scope, session_id, interaction_id, result) do
+  def handle_result(%Scope{} = scope, session_id, interaction_id, result, opts \\ []) do
     with {:ok, %Session{} = session} <-
-           ResultHandler.handle_result(scope, session_id, interaction_id, result) do
+           ResultHandler.handle_result(scope, session_id, interaction_id, result, opts) do
       broadcast(scope, {:updated, session})
       {:ok, session}
     end
   end
 
-  def next_command(%Scope{} = scope, session_id) do
+  def next_command(%Scope{} = scope, session_id, opts \\ []) do
     with {:ok, %Interaction{} = interaction, %Session{} = session} <-
-           Orchestrator.next_command(scope, session_id) do
+           Orchestrator.next_command(scope, session_id, opts) do
       broadcast(scope, {:updated, session})
       {:ok, interaction}
     end

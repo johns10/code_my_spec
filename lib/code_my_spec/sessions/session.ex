@@ -8,7 +8,12 @@ defmodule CodeMySpec.Sessions.Session do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          type: CodeMySpec.ContextDesignSessions | CodeMySpec.ComponentDesignSessions | nil,
+          type:
+            CodeMySpec.ContextDesignSessions
+            | CodeMySpec.ComponentDesignSessions
+            | CodeMySpec.ComponentCodingSessions
+            | CodeMySpec.IntegrationSessions
+            | nil,
           agent: :claude_code | nil,
           environment: :local | :vscode | nil,
           status: :active | :complete | :failed | nil,

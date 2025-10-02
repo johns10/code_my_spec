@@ -2,6 +2,7 @@ defmodule CodeMySpec.Tests.TestResult do
   alias CodeMySpec.Tests.TestError
   use Ecto.Schema
 
+  @derive Jason.Encoder
   @type result_status :: :passed | :failed
   @type t :: %__MODULE__{
           title: String.t(),

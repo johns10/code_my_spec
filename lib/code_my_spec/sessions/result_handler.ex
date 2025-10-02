@@ -2,12 +2,12 @@ defmodule CodeMySpec.Sessions.ResultHandler do
   alias CodeMySpec.Sessions
   alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction}
 
-  def handle_result(scope, session_id, interaction_id, result_attrs) do
+  def handle_result(scope, session_id, interaction_id, result_attrs, opts \\ []) do
     with {:ok, session} <- get_session(scope, session_id),
          {:ok, result} <- Sessions.create_result(scope, result_attrs),
          {:ok, interaction} <- find_interaction(session, interaction_id),
          {:ok, session_attrs, final_result} <-
-           interaction.command.module.handle_result(scope, session, result),
+           interaction.command.module.handle_result(scope, session, result, opts),
          {:ok, final_session} <-
            Sessions.complete_session_interaction(
              scope,

@@ -6,7 +6,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   alias CodeMySpec.Sessions.Session
   alias CodeMySpec.Documents.{ComponentDesign, DocumentSpecProjector}
 
-  def get_command(scope, %Session{project: project, component: component, state: state}) do
+  def get_command(scope, %Session{project: project, component: component, state: state}, _opts \\ []) do
     with {:ok, rules} <- get_design_rules(scope, component),
          {:ok, prompt} <- build_design_prompt(project, component, rules, state),
          {:ok, agent} <-
@@ -17,7 +17,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
     end
   end
 
-  def handle_result(_scope, _session, result) do
+  def handle_result(_scope, _session, result, _opts \\ []) do
     {:ok, %{}, result}
   end
 

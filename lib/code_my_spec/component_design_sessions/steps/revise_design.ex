@@ -5,7 +5,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign do
   alias CodeMySpec.Sessions.Command
 
   @impl true
-  def get_command(scope, session) do
+  def get_command(scope, session, _opts \\ []) do
     with {:ok, component_design} <- get_component_design_from_state(session.state),
          {:ok, validation_errors} <-
            get_validation_errors_from_previous_interaction(scope, session),
@@ -22,7 +22,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign do
   end
 
   @impl true
-  def handle_result(_scope, session, result) do
+  def handle_result(_scope, session, result, _opts \\ []) do
     revised_design = result.stdout
     updated_state = Map.put(session.state || %{}, "component_design", revised_design)
     {:ok, %{state: updated_state}, result}

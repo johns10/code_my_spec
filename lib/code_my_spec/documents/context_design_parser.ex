@@ -20,7 +20,7 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
     %{
       purpose: extract_text(sections["purpose"] || []),
       entity_ownership: extract_text(sections["entity ownership"] || []),
-      scope_integration: extract_text(sections["scope integration"] || []),
+      scope_integration: extract_text(sections["access patterns"] || []),
       public_api: extract_text(sections["public api"] || []),
       state_management_strategy: extract_text(sections["state management strategy"] || []),
       execution_flow: extract_text(sections["execution flow"] || []),
@@ -121,7 +121,7 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
     known_keys = [
       "purpose",
       "entity ownership",
-      "scope integration",
+      "access patterns",
       "public api",
       "state management strategy",
       "execution flow",

@@ -4,40 +4,47 @@ defmodule CodeMySpec.ContextDesignSessions.Orchestrator do
   All state lives in the Session record and its embedded Interactions.
   """
 
-  alias CodeMySpec.Sessions.{Interaction, Command}
+  alias CodeMySpec.Sessions.{Interaction, Result}
+  alias CodeMySpec.ContextDesignSessions.Steps
 
   @step_modules [
-    CodeMySpec.ContextDesignSessions.Steps.Initialize,
-    CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign,
-    CodeMySpec.ContextDesignSessions.Steps.ValidateDesign,
-    CodeMySpec.ContextDesignSessions.Steps.Finalize
+    Steps.Initialize,
+    Steps.GenerateContextDesign,
+    Steps.ValidateDesign,
+    Steps.ReviseDesign,
+    Steps.Finalize
   ]
 
   def steps(), do: @step_modules
 
   def get_next_interaction(nil), do: {:ok, hd(@step_modules)}
 
-  def get_next_interaction(%Interaction{command: %Command{module: last_interaction_module}}) do
-    if last_interaction_module in @step_modules do
-      get_next_interaction(last_interaction_module, @step_modules)
-    else
-      {:error, :invalid_interaction}
-    end
+  def get_next_interaction(%Interaction{} = interaction) do
+    status = extract_status(interaction)
+    module = interaction.command.module
+
+    get_next_step(status, module)
   end
 
-  def get_next_interaction(this, [that, next | _tail]) when this == that do
-    {:ok, next}
-  end
+  defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
-  def get_next_interaction(this, [that, next]) when this == that do
-    {:ok, next}
-  end
+  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateContextDesign}
+  defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  def get_next_interaction(last, [last]) do
-    {:error, :session_complete}
-  end
+  defp get_next_step(:ok, Steps.GenerateContextDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(_, Steps.GenerateContextDesign), do: {:ok, Steps.GenerateContextDesign}
 
-  def get_next_interaction(last, [_ | tail]) do
-    get_next_interaction(last, tail)
-  end
+  defp get_next_step(:ok, Steps.ValidateDesign), do: {:ok, Steps.Finalize}
+  defp get_next_step(:error, Steps.ValidateDesign), do: {:ok, Steps.ReviseDesign}
+  defp get_next_step(_, Steps.ValidateDesign), do: {:ok, Steps.ValidateDesign}
+
+  defp get_next_step(:ok, Steps.ReviseDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(_, Steps.ReviseDesign), do: {:ok, Steps.ReviseDesign}
+
+  defp get_next_step(:ok, Steps.Finalize), do: {:error, :session_complete}
+
+  defp get_next_step(_status, module) when module not in @step_modules,
+    do: {:error, :invalid_interaction}
+
+  defp get_next_step(_status, _module), do: {:error, :invalid_state}
 end

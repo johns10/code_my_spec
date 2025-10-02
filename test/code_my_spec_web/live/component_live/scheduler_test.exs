@@ -26,7 +26,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       component_fixture(scope, %{
         name: "No Priority Component",
         priority: nil,
-        type: :schema
+        type: :context
       })
 
     %{
@@ -198,7 +198,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       new_component =
         component_fixture(scope, %{
           name: "New Test Component",
-          type: :repository,
+          type: :context,
           priority: 10
         })
 

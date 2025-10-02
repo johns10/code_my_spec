@@ -3,6 +3,7 @@ defmodule CodeMySpec.Tests.TestRun do
   alias CodeMySpec.Tests.TestResult
   use Ecto.Schema
 
+  @derive Jason.Encoder
   @type execution_status :: :success | :failure | :timeout | :error
   @type t :: %__MODULE__{
           project_path: String.t(),
