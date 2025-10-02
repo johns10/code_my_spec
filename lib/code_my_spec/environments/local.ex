@@ -32,10 +32,25 @@ defmodule CodeMySpec.Environments.Local do
     """
   end
 
+  def code_environment_teardown_command(%{
+        context_name: context_name,
+        working_dir: working_dir,
+        code_file_name: code_file_name,
+        test_file_name: test_file_name,
+        branch_name: branch_name
+      }) do
+    """
+    git -C #{working_dir} add #{code_file_name} #{test_file_name} && \
+    git -C #{working_dir} commit -m "implemented #{context_name}" && \
+    git -C #{working_dir} push -u origin #{branch_name} && \
+    gh pr create --title "Implement #{context_name}" --body "Automated implementation of #{context_name} component"
+    """
+  end
+
   def cmd(command, args, opts) do
     case System.cmd(command, args, opts) do
-      {output, 0} -> {:ok, clean_terminal_output(output)}
-      {output, exit_code} -> {:error, :process_failed, {exit_code, clean_terminal_output(output)}}
+      {output, 0} -> {clean_terminal_output(output), 0}
+      {output, exit_code} -> {clean_terminal_output(output), exit_code}
     end
   end
 

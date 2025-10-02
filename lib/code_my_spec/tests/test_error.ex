@@ -1,6 +1,7 @@
 defmodule CodeMySpec.Tests.TestError do
   use Ecto.Schema
 
+  @derive Jason.Encoder
   @type t :: %__MODULE__{
           file: String.t() | nil,
           line: non_neg_integer() | nil,

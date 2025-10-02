@@ -15,25 +15,25 @@ defmodule CodeMySpec.EnvironmentsTest do
   test "cmd with CLI recorder using cassette" do
     use_cassette "test_multiple_commands" do
       # First command executes and records
-      assert {:ok, output1} = CodeMySpec.Environments.cmd(:local, "echo", ["hello world"], [])
+      assert {output1, 0} = CodeMySpec.Environments.cmd(:local, "echo", ["hello world"], [])
       assert String.trim(output1) == "hello world"
 
       # Second different command executes and records
-      assert {:ok, output2} = CodeMySpec.Environments.cmd(:local, "echo", ["goodbye world"], [])
+      assert {output2, 0} = CodeMySpec.Environments.cmd(:local, "echo", ["goodbye world"], [])
       assert String.trim(output2) == "goodbye world"
 
       # Third command executes and records
-      assert {:ok, output3} = CodeMySpec.Environments.cmd(:local, "pwd", [], [])
+      assert {output3, 0} = CodeMySpec.Environments.cmd(:local, "pwd", [], [])
       assert String.contains?(output3, "/")
 
       # Replay all commands from the same fixture
-      assert {:ok, replay1} = CodeMySpec.Environments.cmd(:local, "echo", ["hello world"], [])
+      assert {replay1, 0} = CodeMySpec.Environments.cmd(:local, "echo", ["hello world"], [])
       assert String.trim(replay1) == "hello world"
 
-      assert {:ok, replay2} = CodeMySpec.Environments.cmd(:local, "echo", ["goodbye world"], [])
+      assert {replay2, 0} = CodeMySpec.Environments.cmd(:local, "echo", ["goodbye world"], [])
       assert String.trim(replay2) == "goodbye world"
 
-      assert {:ok, replay3} = CodeMySpec.Environments.cmd(:local, "pwd", [], [])
+      assert {replay3, 0} = CodeMySpec.Environments.cmd(:local, "pwd", [], [])
       assert String.contains?(replay3, "/")
     end
   end

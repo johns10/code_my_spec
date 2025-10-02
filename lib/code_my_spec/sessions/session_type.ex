@@ -1,9 +1,18 @@
 defmodule CodeMySpec.Sessions.SessionType do
   use Ecto.Type
 
-  @type t :: CodeMySpec.ContextDesignSessions | CodeMySpec.ComponentDesignSessions
+  @type t ::
+          CodeMySpec.ContextDesignSessions
+          | CodeMySpec.ComponentDesignSessions
+          | CodeMySpec.ComponentCodingSessions
+          | CodeMySpec.IntegrationSessions
 
-  @valid_types [CodeMySpec.ContextDesignSessions, CodeMySpec.ComponentDesignSessions]
+  @valid_types [
+    CodeMySpec.ContextDesignSessions,
+    CodeMySpec.ComponentDesignSessions,
+    CodeMySpec.ComponentCodingSessions,
+    CodeMySpec.IntegrationSessions
+  ]
 
   @spec type() :: :string
   def type, do: :string

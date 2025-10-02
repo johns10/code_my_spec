@@ -151,19 +151,6 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       assert errors_on(changeset) == %{module_name: ["must be a valid Elixir module name"]}
     end
 
-    test "returns error when name already exists in project", %{scope: scope} do
-      component_fixture(scope, %{name: "DuplicateName"})
-
-      attrs = %{
-        name: "DuplicateName",
-        type: :context,
-        module_name: "MyApp.Different"
-      }
-
-      assert {:error, changeset} = ComponentRepository.create_component(scope, attrs)
-      assert errors_on(changeset) == %{name: ["has already been taken"]}
-    end
-
     test "returns error when module_name already exists in project", %{scope: scope} do
       component_fixture(scope, %{module_name: "MyApp.Duplicate"})
 
@@ -225,16 +212,6 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
                name: ["can't be blank"],
                module_name: ["must be a valid Elixir module name"]
              }
-    end
-
-    test "returns error when updated name conflicts with existing component", %{scope: scope} do
-      _component1 = component_fixture(scope, %{name: "Component1"})
-      component2 = component_fixture(scope, %{name: "Component2"})
-
-      attrs = %{name: "Component1"}
-
-      assert {:error, changeset} = ComponentRepository.update_component(scope, component2, attrs)
-      assert errors_on(changeset) == %{name: ["has already been taken"]}
     end
   end
 

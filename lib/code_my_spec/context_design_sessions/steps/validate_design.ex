@@ -1,21 +1,30 @@
 defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
+  require Logger
 
   alias CodeMySpec.Documents
   alias CodeMySpec.Sessions.Command
+  alias CodeMySpec.Sessions
   alias CodeMySpec.Utils
 
-  def get_command(_scope, %{component: component, project: project}) do
+  def get_command(_scope, %{component: component, project: project}, _opts \\ []) do
     %{design_file: design_file_path} = Utils.component_files(component, project)
     {:ok, Command.new(__MODULE__, "cat #{design_file_path}")}
   end
 
-  def handle_result(scope, session, result) do
+  def handle_result(scope, session, result, _opts \\ []) do
+    updated_state = Map.put(session.state || %{}, "component_design", result.stdout)
+
     with {:ok, document} <- Documents.create_document(result.stdout, :context_design),
          {:ok, _components} <- create_components(scope, session, document) do
       {:ok, %{}, result}
     else
-      error -> error
+      {:error, error} ->
+        updated_result = update_result_with_error(scope, result, error)
+        {:ok, %{state: updated_state}, updated_result}
+
+      error ->
+        error
     end
   end
 
@@ -23,27 +32,22 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
     project_module_name = scope.active_project.module_name
     filtered_deps = filter_project_dependencies(dependencies, project_module_name)
 
-    components
-    |> Enum.reduce_while([], fn component_ref, acc ->
-      type = extract_type_from_table(component_ref.table)
+    created_components =
+      Enum.map(components, fn component_ref ->
+        type = extract_type_from_table(component_ref.table)
 
-      component_attrs = %{
-        name: component_ref.module_name |> String.split(".") |> List.last(),
-        module_name: component_ref.module_name,
-        description: component_ref.description,
-        parent_component_id: session.component.id,
-        type: type
-      }
+        component_attrs = %{
+          name: component_ref.module_name |> String.split(".") |> List.last(),
+          module_name: component_ref.module_name,
+          description: component_ref.description,
+          parent_component_id: session.component.id,
+          type: type
+        }
 
-      case CodeMySpec.Components.create_component(scope, component_attrs) do
-        {:ok, component} -> {:cont, [component | acc]}
-        {:error, _changeset} = error -> {:halt, error}
-      end
-    end)
-    |> case do
-      {:error, _} = error -> error
-      components -> create_dependencies(scope, components, filtered_deps)
-    end
+        CodeMySpec.Components.upsert_component(scope, component_attrs)
+      end)
+
+    create_dependencies(scope, created_components, filtered_deps)
   end
 
   defp filter_project_dependencies(dependencies, project_module_name) do
@@ -102,4 +106,25 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
         :other
     end
   end
+
+  defp update_result_with_error(scope, result, error) do
+    error_message = format_error(error)
+    IO.inspect(error_message, label: :error_message)
+    attrs = %{status: :error, error_message: error_message}
+
+    case Sessions.update_result(scope, result, attrs) do
+      {:ok, updated_result} ->
+        updated_result
+
+      {:error, changeset} ->
+        Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
+        result
+    end
+  end
+
+  defp format_error(%Ecto.Changeset{} = changeset) do
+    Utils.changeset_error_to_string(changeset)
+  end
+
+  defp format_error(error) when is_binary(error), do: error
 end

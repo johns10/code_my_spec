@@ -5,6 +5,9 @@ defmodule CodeMySpec.Documents.ContextDesign do
 
   use Ecto.Schema
   import Ecto.Changeset
+  alias CodeMySpec.Documents.FieldDescriptionRegistry
+
+  @behaviour CodeMySpec.Documents.DocumentBehaviour
 
   @primary_key false
   embedded_schema do
@@ -49,7 +52,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
     |> cast(attrs, [:module_name, :description, :table])
     |> validate_required([:module_name, :description])
     |> validate_length(:module_name, min: 1, max: 255)
-    |> validate_length(:description, min: 1, max: 500)
+    |> validate_length(:description, min: 1, max: 1500)
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
       message: "must be a valid Elixir module name"
     )
@@ -66,7 +69,11 @@ defmodule CodeMySpec.Documents.ContextDesign do
     if Enum.empty?(invalid_dependencies) do
       changeset
     else
-      add_error(changeset, :dependencies, "invalid module names: #{Enum.join(invalid_dependencies, ", ")}")
+      add_error(
+        changeset,
+        :dependencies,
+        "invalid module names: #{Enum.join(invalid_dependencies, ", ")}"
+      )
     end
   end
 
@@ -115,5 +122,28 @@ defmodule CodeMySpec.Documents.ContextDesign do
       _ ->
         {:error, :invalid_format}
     end
+  end
+
+  def required_fields(),
+    do: [:purpose, :entity_ownership, :scope_integration, :public_api, :components]
+
+  def overview,
+    do: """
+    Phoenix Contexts are the interface layer between your web application and domain logic.
+    Each context groups related functionality and encapsulates access to data and business logic.
+    Components within a context handle specific responsibilities and are orchestrated by the context module.
+    """
+
+  def field_descriptions do
+    %{
+      purpose: FieldDescriptionRegistry.context_purpose(),
+      entity_ownership: FieldDescriptionRegistry.entity_ownership(),
+      scope_integration: FieldDescriptionRegistry.access_patterns(),
+      public_api: FieldDescriptionRegistry.public_api(),
+      state_management_strategy: FieldDescriptionRegistry.state_management_strategy(),
+      execution_flow: FieldDescriptionRegistry.execution_flow(),
+      components: FieldDescriptionRegistry.components(),
+      dependencies: FieldDescriptionRegistry.dependencies()
+    }
   end
 end

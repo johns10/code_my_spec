@@ -43,7 +43,7 @@ defmodule CodeMySpec.Components.Registry do
   @implementation_file %{
     name: :implementation_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-    satisfied_by: nil
+    satisfied_by: "ComponentCodingSessions"
   }
 
   @test_file %{

@@ -5,12 +5,12 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
   alias CodeMySpec.Sessions.{Command}
   require Logger
 
-  def get_command(_scope, %{component: component, project: project}) do
+  def get_command(_scope, %{component: component, project: project}, _opts \\ []) do
     %{design_file: design_file_path} = CodeMySpec.Utils.component_files(component, project)
     {:ok, Command.new(__MODULE__, "cat #{design_file_path}")}
   end
 
-  def handle_result(scope, session, result) do
+  def handle_result(scope, session, result, _opts \\ []) do
     case get_component_design(result) do
       {:ok, component_design} ->
         updated_state = Map.put(session.state || %{}, "component_design", component_design)

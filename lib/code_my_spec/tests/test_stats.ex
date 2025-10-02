@@ -1,6 +1,7 @@
 defmodule CodeMySpec.Tests.TestStats do
   use Ecto.Schema
 
+  @derive Jason.Encoder
   @type t :: %__MODULE__{
           duration_ms: non_neg_integer(),
           load_time_ms: non_neg_integer() | nil,
@@ -31,7 +32,7 @@ defmodule CodeMySpec.Tests.TestStats do
   def changeset(test_stats \\ %__MODULE__{}, attrs) do
     test_stats
     |> Ecto.Changeset.cast(attrs, [
-      :duration_ms, :load_time_ms, :passes, :failures, 
+      :duration_ms, :load_time_ms, :passes, :failures,
       :pending, :invalid, :tests, :suites, :started_at, :finished_at
     ])
     |> map_json_fields(attrs)

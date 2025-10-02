@@ -22,6 +22,13 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     |> Repo.all()
   end
 
+  def list_component_stories(%Scope{} = scope, component_id) do
+    from(s in Story,
+      where: s.component_id == ^component_id and s.account_id == ^scope.active_account.id
+    )
+    |> Repo.all()
+  end
+
   def get_story(%Scope{} = scope, id) do
     Repo.get_by(Story, id: id, account_id: scope.active_account.id)
   end

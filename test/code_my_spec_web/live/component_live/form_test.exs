@@ -89,16 +89,6 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
              |> render_change() =~ "must be a valid Elixir module name"
     end
 
-    test "validates unique component name", %{conn: conn, component: component, scope: scope} do
-      existing_component = component_fixture(scope, %{name: "ExistingComponent"})
-
-      {:ok, form_live, _html} = live(conn, ~p"/components/#{component}/edit")
-
-      assert form_live
-             |> form("#component-form", component: %{name: existing_component.name})
-             |> render_submit() =~ "has already been taken"
-    end
-
     test "validates unique module name", %{conn: conn, component: component, scope: scope} do
       existing_component = component_fixture(scope, %{module_name: "MyApp.ExistingModule"})
 

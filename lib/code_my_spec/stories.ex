@@ -41,6 +41,7 @@ defmodule CodeMySpec.Stories do
   defdelegate list_stories(scope), to: StoriesRepository
   defdelegate list_project_stories(scope), to: StoriesRepository
   defdelegate list_unsatisfied_stories(scope), to: StoriesRepository
+  defdelegate list_component_stories(scope, component_id), to: StoriesRepository
 
   @doc """
   Gets a single story.

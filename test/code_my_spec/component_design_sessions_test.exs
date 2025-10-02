@@ -172,10 +172,10 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
       if mock_output do
         %{status: :ok, stdout: mock_output, stderr: "", exit_code: 0}
       else
-        {:ok, output} =
+        {output, code} =
           CodeMySpec.Environments.cmd(:local, "sh", ["-c", interaction.command.command], cd_opts)
 
-        %{status: :ok, stdout: output, stderr: "", exit_code: 0}
+        %{status: :ok, stdout: output, stderr: "", exit_code: code}
       end
 
     {:ok, updated_session} = Sessions.handle_result(scope, session_id, interaction.id, result)

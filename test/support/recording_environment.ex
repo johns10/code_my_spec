@@ -29,15 +29,28 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
+  def code_environment_teardown_command(%{
+        context_name: context_name,
+        working_dir: working_dir,
+        code_file_name: code_file_name,
+        test_file_name: test_file_name
+      }) do
+    """
+    git -C #{working_dir} add #{code_file_name} #{test_file_name} && \
+    git -C #{working_dir} commit -m "implemented #{context_name}"
+    """
+  end
+
+  @impl true
   def cmd(command, args, opts) do
     full_command = [command | args]
 
     case CLIRecorder.with_recording(full_command, opts) do
       {:ok, output} ->
-        {:ok, clean_terminal_output(output)}
+        {clean_terminal_output(output), 0}
 
       {:error, :process_failed, {exit_code, output}} ->
-        {:error, :process_failed, {exit_code, clean_terminal_output(output)}}
+        {clean_terminal_output(output), exit_code}
     end
   end
 

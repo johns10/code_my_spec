@@ -33,6 +33,21 @@ defmodule CodeMySpec.Components.ComponentRepository do
     |> Repo.insert()
   end
 
+  @spec upsert_component(Scope.t(), map()) :: Component.t()
+  def upsert_component(%Scope{} = scope, attrs) do
+    %Component{}
+    |> Component.changeset(attrs, scope)
+    |> Repo.insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:module_name, :project_id],
+      returning: true
+    )
+    |> case do
+      {:ok, component} -> component
+      {:error, _changeset} = error -> error
+    end
+  end
+
   @spec update_component(Scope.t(), Component.t(), map(), list()) ::
           {:ok, Component.t()} | {:error, Ecto.Changeset.t()}
   def update_component(%Scope{} = scope, %Component{} = component, attrs, opts \\ []) do
@@ -51,6 +66,23 @@ defmodule CodeMySpec.Components.ComponentRepository do
           {:ok, Component.t()} | {:error, Ecto.Changeset.t()}
   def delete_component(%Scope{}, %Component{} = component) do
     Repo.delete(component)
+  end
+
+  @spec list_contexts_with_dependencies(Scope.t()) :: [Component.t()]
+  def list_contexts_with_dependencies(%Scope{active_project_id: project_id}) do
+    Component
+    |> where([c], c.project_id == ^project_id)
+    |> where([c], c.type == :context)
+    |> or_where([c], c.type == :coordination_context)
+    |> preload([
+      :project,
+      :dependencies,
+      :dependents,
+      :outgoing_dependencies,
+      :incoming_dependencies,
+      :stories
+    ])
+    |> Repo.all()
   end
 
   @spec list_components_with_dependencies(Scope.t()) :: [Component.t()]

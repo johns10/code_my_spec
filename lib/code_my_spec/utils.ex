@@ -24,4 +24,42 @@ defmodule CodeMySpec.Utils do
     |> String.replace(".", "/")
     |> String.downcase()
   end
+
+  def changeset_error_to_string(%Ecto.Changeset{} = changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> flatten_errors()
+    |> Enum.map(fn {field, message} -> "#{field}: #{message}" end)
+    |> Enum.join(", ")
+  end
+
+  defp flatten_errors(errors, prefix \\ nil) do
+    Enum.flat_map(errors, fn {field, value} ->
+      field_name = if prefix, do: "#{prefix}.#{field}", else: field
+
+      cond do
+        is_list(value) and Enum.all?(value, &is_map/1) ->
+          # embeds_many: list of maps with errors
+          value
+          |> Enum.with_index()
+          |> Enum.flat_map(fn {item_errors, index} ->
+            flatten_errors(item_errors, "#{field_name}[#{index}]")
+          end)
+
+        is_list(value) ->
+          # list of error messages
+          Enum.map(value, fn msg -> {field_name, msg} end)
+
+        is_map(value) ->
+          # nested map of errors
+          flatten_errors(value, field_name)
+
+        true ->
+          [{field_name, value}]
+      end
+    end)
+  end
 end

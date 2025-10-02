@@ -100,7 +100,7 @@ defmodule CodeMySpecWeb.ComponentLive.Scheduler do
     end
 
     components =
-      Components.list_components_with_dependencies(socket.assigns.current_scope)
+      Components.list_contexts_with_dependencies(socket.assigns.current_scope)
       |> Enum.sort_by(&scheduler_sort_key/1)
 
     {:ok,
