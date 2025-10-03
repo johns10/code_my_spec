@@ -28,7 +28,6 @@ defmodule CodeMySpecWeb.SessionsController do
       |> put_resp_header("location", ~p"/api/sessions/#{session}")
       |> render(:show, session: session)
     end
-    |> IO.inspect()
   end
 
   def next_command(conn, %{"sessions_id" => session_id}) do

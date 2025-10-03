@@ -3,22 +3,31 @@ defmodule CodeMySpec.Documents do
   Context for managing document creation from markdown content.
   """
 
-  alias CodeMySpec.Documents.{ComponentDesign, ContextDesign}
-  alias CodeMySpec.Documents.{ComponentDesignParser, ContextDesignParser}
+  alias CodeMySpec.Documents.{ComponentDesign, ContextDesign, SchemaComponentDesign}
+
+  # Central mapping from component type to document module
+  @component_type_to_document %{
+    context: ContextDesign,
+    coordination_context: ContextDesign,
+    schema: SchemaComponentDesign
+  }
+
+  @default_document_module ComponentDesign
 
   @doc """
-  Creates a document from markdown content based on the document type.
+  Creates a document from markdown content based on the component type.
 
   ## Parameters
   - `markdown_content` - The markdown string to parse
-  - `type` - Document type atom (`:context_design`) or module name
+  - `component_type` - Component type atom (`:context`, `:schema`, etc)
   - `scope` - Optional scope for validation (default: nil)
 
   Returns `{:ok, document}` on success or `{:error, changeset}` on failure.
   """
-  def create_document(markdown_content, type, scope \\ nil) do
-    with {:ok, document_module} <- resolve_document_type(type),
-         {:ok, parser_module} <- get_parser_for_type(document_module),
+  def create_component_document(markdown_content, component_type, scope \\ nil) do
+    document_module = get_document_module_for_component_type(component_type)
+
+    with {:ok, parser_module} <- get_parser_for_type(document_module),
          {:ok, attrs} <- parser_module.from_markdown(markdown_content),
          empty_document <- create_empty_document(document_module),
          changeset <- document_module.changeset(empty_document, attrs, scope),
@@ -34,57 +43,31 @@ defmodule CodeMySpec.Documents do
   end
 
   @doc """
-  Lists all supported document types.
+  Determines the appropriate document module for a component type.
+  This is the central source of truth for component type → document type mapping.
   """
-  def supported_types do
-    [
-      :context_design,
-      :component_design
-    ]
+  def get_document_module_for_component_type(component_type) when is_atom(component_type) do
+    Map.get(@component_type_to_document, component_type, @default_document_module)
   end
 
-  @doc """
-  Gets the document module for a given type.
-  """
-  def get_document_module(:context_design), do: {:ok, ContextDesign}
-  def get_document_module(:repository), do: {:ok, ComponentDesign}
-  def get_document_module(:component_design), do: {:ok, ComponentDesign}
+  defp get_parser_for_type(document_module) do
+    # Convention: parser module is document module name + "Parser"
+    # e.g., CodeMySpec.Documents.ContextDesign -> CodeMySpec.Documents.ContextDesignParser
+    module_parts = Module.split(document_module)
+    [last_part | reversed_parent_parts] = Enum.reverse(module_parts)
+    parent_parts = Enum.reverse(reversed_parent_parts)
+    parser_module_name = Module.concat(parent_parts ++ [last_part <> "Parser"])
 
-  def get_document_module(module) when is_atom(module) do
-    if Code.ensure_loaded?(module) do
-      {:ok, module}
+    if Code.ensure_loaded?(parser_module_name) do
+      {:ok, parser_module_name}
     else
-      {:error, "Unknown document module: #{inspect(module)}"}
+      {:error, "No parser available for document type: #{inspect(document_module)}"}
     end
   end
 
-  def get_document_module(type), do: {:error, "Invalid document type: #{inspect(type)}"}
-
-  defp resolve_document_type(type) when is_atom(type) do
-    case type do
-      :context_design ->
-        {:ok, ContextDesign}
-
-      :component_design ->
-        {:ok, ComponentDesign}
-
-      module when is_atom(module) ->
-        if Code.ensure_loaded?(module) do
-          {:ok, module}
-        else
-          {:error, "Unknown document module: #{inspect(module)}"}
-        end
-    end
+  defp create_empty_document(document_module) do
+    struct(document_module)
   end
-
-  defp get_parser_for_type(ContextDesign), do: {:ok, ContextDesignParser}
-  defp get_parser_for_type(ComponentDesign), do: {:ok, ComponentDesignParser}
-
-  defp get_parser_for_type(module),
-    do: {:error, "No parser available for document type: #{inspect(module)}"}
-
-  defp create_empty_document(ContextDesign), do: %ContextDesign{}
-  defp create_empty_document(ComponentDesign), do: %ComponentDesign{}
 
   defp apply_changeset(%Ecto.Changeset{valid?: true} = changeset) do
     # For embedded schemas, we just return the changes as a struct

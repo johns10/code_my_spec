@@ -13,7 +13,7 @@ defmodule CodeMySpec.Documents.ContextDesignParserTest do
 
       assert result.purpose =~ "Manages dynamic rule composition"
       assert result.entity_ownership =~ "Rule entities with content"
-      assert result.scope_integration =~ "Primary Scope"
+      assert result.access_patterns =~ "Primary Scope"
       assert result.public_api =~ "@spec list_rules"
       assert result.state_management_strategy =~ "Rules stored in database"
       assert result.execution_flow =~ "Scope Validation"

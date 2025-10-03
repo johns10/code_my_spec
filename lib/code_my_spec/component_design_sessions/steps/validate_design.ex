@@ -44,17 +44,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
     {:error, "component_design not found in last interaction"}
   end
 
-  defp determine_document_type(component) do
-    case component.type do
-      :context -> :context_design
-      :coordination_context -> :context_design
-      _ -> :component_design
-    end
-  end
-
   defp create_document(component_design, component, scope) do
-    document_type = determine_document_type(component)
-    Documents.create_document(component_design, document_type, scope)
+    Documents.create_component_document(component_design, component.type, scope)
   end
 
   defp update_result_with_error(scope, result, error) do

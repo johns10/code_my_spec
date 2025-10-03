@@ -20,7 +20,7 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
     %{
       purpose: extract_text(sections["purpose"] || []),
       entity_ownership: extract_text(sections["entity ownership"] || []),
-      scope_integration: extract_text(sections["access patterns"] || []),
+      access_patterns: extract_text(sections["access patterns"] || []),
       public_api: extract_text(sections["public api"] || []),
       state_management_strategy: extract_text(sections["state management strategy"] || []),
       execution_flow: extract_text(sections["execution flow"] || []),
@@ -71,7 +71,6 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
   defp parse_dependencies(ast) do
     extract_list_items(ast)
   end
-
 
   defp extract_list_items(ast) do
     ast
@@ -218,7 +217,7 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
     %{
       purpose: sections.purpose,
       entity_ownership: sections.entity_ownership,
-      scope_integration: sections.scope_integration,
+      access_patterns: sections.access_patterns,
       public_api: sections.public_api,
       state_management_strategy: sections.state_management_strategy,
       execution_flow: sections.execution_flow,

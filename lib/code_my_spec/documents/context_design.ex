@@ -13,7 +13,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
   embedded_schema do
     field :purpose, :string
     field :entity_ownership, :string
-    field :scope_integration, :string
+    field :access_patterns, :string
     field :public_api, :string
     field :state_management_strategy, :string
     field :execution_flow, :string
@@ -34,7 +34,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
     |> cast(attrs, [
       :purpose,
       :entity_ownership,
-      :scope_integration,
+      :access_patterns,
       :public_api,
       :state_management_strategy,
       :execution_flow,
@@ -59,7 +59,10 @@ defmodule CodeMySpec.Documents.ContextDesign do
       if String.contains?(module_name, ".") do
         []
       else
-        [module_name: "must be fully qualified with parent context (e.g., Components.Component or Sessions.Session)"]
+        [
+          module_name:
+            "must be fully qualified with parent context (e.g., Components.Component or Sessions.Session)"
+        ]
       end
     end)
     |> validate_length(:description, min: 1, max: 1500)
@@ -132,7 +135,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
   end
 
   def required_fields(),
-    do: [:purpose, :entity_ownership, :scope_integration, :public_api, :components]
+    do: [:purpose, :entity_ownership, :scoaccess_patternspe_integration, :public_api, :components]
 
   def overview,
     do: """
@@ -145,7 +148,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
     %{
       purpose: FieldDescriptionRegistry.context_purpose(),
       entity_ownership: FieldDescriptionRegistry.entity_ownership(),
-      scope_integration: FieldDescriptionRegistry.access_patterns(),
+      access_patterns: FieldDescriptionRegistry.access_patterns(),
       public_api: FieldDescriptionRegistry.public_api(),
       state_management_strategy: FieldDescriptionRegistry.state_management_strategy(),
       execution_flow: FieldDescriptionRegistry.execution_flow(),

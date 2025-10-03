@@ -15,7 +15,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
   def handle_result(scope, session, result, _opts \\ []) do
     updated_state = Map.put(session.state || %{}, "component_design", result.stdout)
 
-    with {:ok, document} <- Documents.create_document(result.stdout, :context_design),
+    with {:ok, document} <- Documents.create_component_document(result.stdout, :context),
          {:ok, _components} <- create_components(scope, session, document) do
       {:ok, %{}, result}
     else
@@ -109,7 +109,6 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
 
   defp update_result_with_error(scope, result, error) do
     error_message = format_error(error)
-    IO.inspect(error_message, label: :error_message)
     attrs = %{status: :error, error_message: error_message}
 
     case Sessions.update_result(scope, result, attrs) do

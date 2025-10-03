@@ -16,7 +16,7 @@ defmodule CodeMySpec.DocumentsTest do
       ## Entity Ownership
       Test entities and their relationships.
 
-      ## Scope Integration
+      ## Access Patterns
       Uses test scopes for isolation.
 
       ## Public API
@@ -43,12 +43,12 @@ defmodule CodeMySpec.DocumentsTest do
       3. Return test results
       """
 
-      {:ok, document} = Documents.create_document(markdown, :context_design)
+      {:ok, document} = Documents.create_component_document(markdown, :context)
 
       assert %ContextDesign{} = document
       assert document.purpose == "This is a test context for managing test data."
       assert document.entity_ownership == "Test entities and their relationships."
-      assert document.scope_integration == "Uses test scopes for isolation."
+      assert document.access_patterns == "Uses test scopes for isolation."
       assert document.public_api == "Standard CRUD operations for test entities."
       assert document.state_management_strategy == "Test data stored in memory for fast access."
 
@@ -83,7 +83,7 @@ defmodule CodeMySpec.DocumentsTest do
       ### BadComponent
       """
 
-      {:error, changeset} = Documents.create_document(markdown, :context_design)
+      {:error, changeset} = Documents.create_component_document(markdown, :context)
 
       assert %Ecto.Changeset{valid?: false} = changeset
       assert changeset.errors != []
@@ -105,21 +105,14 @@ defmodule CodeMySpec.DocumentsTest do
       - Test.Dependency
       """
 
-      {:ok, document} = Documents.create_document(markdown, ContextDesign)
+      {:ok, document} = Documents.create_component_document(markdown, :context)
 
       assert %ContextDesign{} = document
       assert document.purpose == "Test purpose."
     end
 
-    test "returns error for unknown document type" do
-      {:error, changeset} = Documents.create_document("# Test", :unknown_type)
-
-      assert %Ecto.Changeset{valid?: false} = changeset
-      assert {:document, {"Unknown document module: :unknown_type", []}} in changeset.errors
-    end
-
     test "returns error for malformed markdown" do
-      {:error, changeset} = Documents.create_document("invalid", :context_design)
+      {:error, changeset} = Documents.create_component_document("invalid", :context)
 
       assert %Ecto.Changeset{valid?: false} = changeset
     end
@@ -151,7 +144,7 @@ defmodule CodeMySpec.DocumentsTest do
       - Test.Dependency
       """
 
-      {:ok, document} = Documents.create_document(markdown, :context_design)
+      {:ok, document} = Documents.create_component_document(markdown, :context)
 
       assert %ContextDesign{} = document
       assert length(document.components) == 2
@@ -164,30 +157,6 @@ defmodule CodeMySpec.DocumentsTest do
       assert test_repo.module_name == "Test.Repository"
       assert test_repo.table == %{"field" => "type", "value" => "repository"}
       assert test_repo.description == "Repository for test data operations"
-    end
-  end
-
-  describe "supported_types/0" do
-    test "returns list of supported document types" do
-      types = Documents.supported_types()
-      assert :context_design in types
-    end
-  end
-
-  describe "get_document_module/1" do
-    test "returns context design module for atom" do
-      {:ok, module} = Documents.get_document_module(:context_design)
-      assert module == ContextDesign
-    end
-
-    test "returns module if already a valid module" do
-      {:ok, module} = Documents.get_document_module(ContextDesign)
-      assert module == ContextDesign
-    end
-
-    test "returns error for unknown type" do
-      {:error, reason} = Documents.get_document_module(:unknown)
-      assert reason =~ "Unknown document module"
     end
   end
 end

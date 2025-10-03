@@ -4,9 +4,14 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.{Rules, Agents, Utils}
   alias CodeMySpec.Sessions.Session
-  alias CodeMySpec.Documents.{ComponentDesign, DocumentSpecProjector}
+  alias CodeMySpec.Documents
+  alias CodeMySpec.Documents.DocumentSpecProjector
 
-  def get_command(scope, %Session{project: project, component: component, state: state}, _opts \\ []) do
+  def get_command(
+        scope,
+        %Session{project: project, component: component, state: state},
+        _opts \\ []
+      ) do
     with {:ok, rules} <- get_design_rules(scope, component),
          {:ok, prompt} <- build_design_prompt(project, component, rules, state),
          {:ok, agent} <-
@@ -35,7 +40,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   defp build_design_prompt(project, component, rules, state) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
     context_design = get_context_design(state)
-    document_spec = DocumentSpecProjector.project_spec(ComponentDesign)
+    document_module = Documents.get_document_module_for_component_type(component.type)
+    document_spec = DocumentSpecProjector.project_spec(document_module)
     %{design_file: design_file_path} = Utils.component_files(component, project)
 
     prompt =
