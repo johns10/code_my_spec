@@ -46,4 +46,9 @@ defmodule CodeMySpec.Rules.RulesRepository do
 
     Rule.changeset(rule, attrs, scope)
   end
+
+  def delete_all_rules(%Scope{} = scope) do
+    from(r in Rule, where: r.account_id == ^scope.active_account.id)
+    |> Repo.delete_all()
+  end
 end

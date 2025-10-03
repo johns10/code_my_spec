@@ -41,6 +41,10 @@ defmodule Mix.Tasks.SeedRules do
     numeric_account_id = String.to_integer(account_id)
     scope = %Scope{active_account: %CodeMySpec.Accounts.Account{id: numeric_account_id}}
 
+    # Delete existing rules
+    {count, _} = CodeMySpec.Rules.delete_all_rules(scope)
+    Mix.shell().info("Deleted #{count} existing rules")
+
     case RulesSeeder.seed_account_rules(scope) do
       {:ok, rules} ->
         Mix.shell().info("✓ Successfully seeded #{length(rules)} rules")

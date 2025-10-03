@@ -148,4 +148,15 @@ defmodule CodeMySpec.Rules do
 
   """
   defdelegate change_rule(scope, rule, attrs \\ %{}), to: RulesRepository
+
+  @doc """
+  Deletes all rules for an account.
+
+  ## Examples
+
+      iex> delete_all_rules(scope)
+      {5, nil}
+
+  """
+  defdelegate delete_all_rules(scope), to: RulesRepository
 end
