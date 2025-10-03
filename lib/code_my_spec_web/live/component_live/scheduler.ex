@@ -130,7 +130,7 @@ defmodule CodeMySpecWeb.ComponentLive.Scheduler do
 
     # Refresh the list to show updated priorities
     components =
-      Components.list_components_with_dependencies(scope)
+      Components.list_contexts_with_dependencies(scope)
       |> Enum.sort_by(&scheduler_sort_key/1)
 
     {:noreply,
@@ -143,7 +143,7 @@ defmodule CodeMySpecWeb.ComponentLive.Scheduler do
   def handle_info({type, %Component{}}, socket)
       when type in [:created, :updated, :deleted] do
     components =
-      Components.list_components_with_dependencies(socket.assigns.current_scope)
+      Components.list_contexts_with_dependencies(socket.assigns.current_scope)
       |> Enum.sort_by(&scheduler_sort_key/1)
 
     {:noreply,

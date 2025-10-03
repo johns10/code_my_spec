@@ -63,7 +63,7 @@ defmodule CodeMySpec.MixProject do
       {:bandit, "~> 1.5"},
       {:mox, "~> 1.2"},
       {:paper_trail, "~> 1.1"},
-      {:hermes_mcp, "~> 0.13"},
+      {:hermes_mcp, "~> 0.14"},
       {:oban, "~> 2.19.4"},
       {:briefly, "~> 0.5.1"},
       {:ex_oauth2_provider, "~> 0.5.7"},

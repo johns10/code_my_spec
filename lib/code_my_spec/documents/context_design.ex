@@ -52,10 +52,17 @@ defmodule CodeMySpec.Documents.ContextDesign do
     |> cast(attrs, [:module_name, :description, :table])
     |> validate_required([:module_name, :description])
     |> validate_length(:module_name, min: 1, max: 255)
-    |> validate_length(:description, min: 1, max: 1500)
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
       message: "must be a valid Elixir module name"
     )
+    |> validate_change(:module_name, fn :module_name, module_name ->
+      if String.contains?(module_name, ".") do
+        []
+      else
+        [module_name: "must be fully qualified with parent context (e.g., Components.Component or Sessions.Session)"]
+      end
+    end)
+    |> validate_length(:description, min: 1, max: 1500)
   end
 
   defp validate_dependencies(changeset) do

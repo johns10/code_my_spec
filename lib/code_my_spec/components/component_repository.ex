@@ -68,6 +68,14 @@ defmodule CodeMySpec.Components.ComponentRepository do
     Repo.delete(component)
   end
 
+  @spec list_contexts(Scope.t()) :: [Component.t()]
+  def list_contexts(%Scope{active_project_id: project_id}) do
+    Component
+    |> where([c], c.project_id == ^project_id)
+    |> where([c], c.type == :context or c.type == :coordination_context)
+    |> Repo.all()
+  end
+
   @spec list_contexts_with_dependencies(Scope.t()) :: [Component.t()]
   def list_contexts_with_dependencies(%Scope{active_project_id: project_id}) do
     Component
