@@ -25,6 +25,13 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
         <.input field={@form[:module_name]} type="text" label="Module Name" />
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:priority]} type="number" label="Priority" />
+        <.input
+          field={@form[:parent_component_id]}
+          type="select"
+          label="Parent Component"
+          prompt="Choose a parent component (optional)"
+          options={Enum.map(@contexts, &{&1.name, &1.id})}
+        />
         <footer>
           <.button phx-disable-with="Saving...">Save Component</.button>
           <.button navigate={return_path(@current_scope, @return_to, @component)}>Cancel</.button>
@@ -47,10 +54,12 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     component = Components.get_component!(socket.assigns.current_scope, id)
+    contexts = Components.list_contexts(socket.assigns.current_scope)
 
     socket
     |> assign(:page_title, "Edit Component")
     |> assign(:component, component)
+    |> assign(:contexts, contexts)
     |> assign(
       :form,
       to_form(Components.change_component(socket.assigns.current_scope, component))
@@ -63,9 +72,12 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
       account_id: socket.assigns.current_scope.active_account.id
     }
 
+    contexts = Components.list_contexts(socket.assigns.current_scope)
+
     socket
     |> assign(:page_title, "New Component")
     |> assign(:component, component)
+    |> assign(:contexts, contexts)
     |> assign(
       :form,
       to_form(Components.change_component(socket.assigns.current_scope, component))
