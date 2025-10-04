@@ -7,8 +7,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
   cycling between RunTests and FixTestFailures.
   """
 
-  alias CodeMySpec.Sessions.Result
-  alias CodeMySpec.Sessions.Interaction
+  alias CodeMySpec.Sessions.{Result, Interaction, Utils, Session}
 
   alias CodeMySpec.ComponentCodingSessions.Steps.{
     Initialize,
@@ -37,12 +36,17 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
   @spec get_next_interaction(nil) :: {:ok, module()}
   def get_next_interaction(nil), do: {:ok, Initialize}
 
-  @spec get_next_interaction(Interaction.t()) ::
-          {:ok, module()} | {:error, :session_complete | :invalid_interaction | :invalid_state}
-  def get_next_interaction(%Interaction{} = interaction) do
-    status = extract_status(interaction)
-    module = interaction.command.module
-    route(module, status)
+  def get_next_interaction(%Session{} = session) do
+    with %Interaction{} = interaction <- Utils.find_last_completed_interaction(session) do
+      status = extract_status(interaction)
+      module = interaction.command.module
+      IO.inspect(status)
+      IO.inspect(module)
+
+      route(module, status)
+    else
+      nil -> {:ok, hd(@steps)}
+    end
   end
 
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status

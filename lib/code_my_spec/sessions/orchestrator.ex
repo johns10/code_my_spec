@@ -3,9 +3,10 @@ defmodule CodeMySpec.Sessions.Orchestrator do
 
   def next_command(scope, session_id, opts \\ []) do
     with {:ok, %Session{type: session_module} = session} <- get_session(scope, session_id),
-         last_interaction <- find_last_completed_interaction(scope, session),
-         {:ok, next_interaction_module} <- session_module.get_next_interaction(last_interaction),
-         {:ok, command} <- next_interaction_module.get_command(scope, session, opts),
+         :ok <- validate_session_status(session),
+         {:ok, next_interaction_module} <- session_module.get_next_interaction(session),
+         {:ok, command} <-
+           next_interaction_module.get_command(scope, session, opts),
          interaction <- Interaction.new_with_command(command),
          {:ok, updated_session} <- SessionsRepository.add_interaction(scope, session, interaction) do
       {:ok, interaction, updated_session}
@@ -19,15 +20,7 @@ defmodule CodeMySpec.Sessions.Orchestrator do
     end
   end
 
-  def find_last_completed_interaction(_scope, %Session{status: :complete}),
-    do: {:error, :complete}
-
-  def find_last_completed_interaction(_scope, %Session{status: :failed}), do: {:error, :failed}
-
-  def find_last_completed_interaction(_scope, %Session{interactions: interactions}) do
-    interactions
-    |> Enum.filter(&Interaction.completed?/1)
-    |> Enum.sort_by(& &1.command.timestamp, {:desc, DateTime})
-    |> List.first()
-  end
+  defp validate_session_status(%Session{status: :complete}), do: {:error, :complete}
+  defp validate_session_status(%Session{status: :failed}), do: {:error, :failed}
+  defp validate_session_status(%Session{}), do: :ok
 end

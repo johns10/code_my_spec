@@ -4,7 +4,7 @@ defmodule CodeMySpec.ContextDesignSessions.Orchestrator do
   All state lives in the Session record and its embedded Interactions.
   """
 
-  alias CodeMySpec.Sessions.{Interaction, Result}
+  alias CodeMySpec.Sessions.{Interaction, Result, Utils, Session}
   alias CodeMySpec.ContextDesignSessions.Steps
 
   @step_modules [
@@ -17,13 +17,15 @@ defmodule CodeMySpec.ContextDesignSessions.Orchestrator do
 
   def steps(), do: @step_modules
 
-  def get_next_interaction(nil), do: {:ok, hd(@step_modules)}
+  def get_next_interaction(%Session{} = session) do
+    with %Interaction{} = interaction <- Utils.find_last_completed_interaction(session) do
+      status = extract_status(interaction)
+      module = interaction.command.module
 
-  def get_next_interaction(%Interaction{} = interaction) do
-    status = extract_status(interaction)
-    module = interaction.command.module
-
-    get_next_step(status, module)
+      get_next_step(status, module)
+    else
+      nil -> {:ok, hd(@step_modules)}
+    end
   end
 
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status
