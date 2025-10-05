@@ -1,50 +1,46 @@
 defmodule CodeMySpec.Documents.DocumentSpecProjector do
   @moduledoc """
-  Projects document behaviour implementations into markdown specifications.
+  Projects document definitions from Documents.Registry into markdown specifications
+  for AI-generated design documents.
   """
+
+  alias CodeMySpec.Documents.Registry, as: DocumentRegistry
 
   @doc """
-  Generates a markdown specification for a document module.
+  Generates a markdown specification for a component type.
   """
-  def project_spec(document_module) do
-    module_name = module_name(document_module)
-    overview = document_module.overview()
-    required_fields = document_module.required_fields()
-    field_descriptions = document_module.field_descriptions()
-
-    all_fields = Map.keys(field_descriptions)
-    optional_fields = all_fields -- required_fields
+  def project_spec(component_type) do
+    definition = DocumentRegistry.get_definition(component_type)
+    type_name = format_type_name(component_type)
 
     """
-    # #{module_name}
+    # #{type_name}
 
-    #{overview}
+    #{definition.overview}
 
     ## Required Sections
 
-    #{format_fields(required_fields, field_descriptions)}
+    #{format_sections(definition.required_sections, definition.section_descriptions)}
 
     ## Optional Sections
 
-    #{format_optional_sections(optional_fields, field_descriptions)}
+    #{format_optional_sections(definition.optional_sections, definition.section_descriptions)}
     """
   end
 
-  defp module_name(module) do
-    module
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
+  defp format_type_name(component_type) do
+    component_type
+    |> Atom.to_string()
     |> String.split("_")
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
   end
 
-  defp format_fields(fields, descriptions) do
-    fields
-    |> Enum.map(fn field ->
-      description = Map.get(descriptions, field, "No description available")
-      "### #{format_field_name(field)}\n\n#{description}"
+  defp format_sections(sections, descriptions) do
+    sections
+    |> Enum.map(fn section ->
+      description = Map.get(descriptions, section, "No description available")
+      "### #{format_section_name(section)}\n\n#{description}"
     end)
     |> Enum.join("\n\n")
   end
@@ -53,14 +49,13 @@ defmodule CodeMySpec.Documents.DocumentSpecProjector do
     "None"
   end
 
-  defp format_optional_sections(fields, descriptions) do
-    format_fields(fields, descriptions)
+  defp format_optional_sections(sections, descriptions) do
+    format_sections(sections, descriptions)
   end
 
-  defp format_field_name(field) do
-    field
-    |> Atom.to_string()
-    |> String.split("_")
+  defp format_section_name(section) do
+    section
+    |> String.split(" ")
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
   end

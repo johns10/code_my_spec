@@ -15,7 +15,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
       {:ok, component_design} ->
         updated_state = Map.put(session.state || %{}, "component_design", component_design)
 
-        case create_document(component_design, session.component, scope) do
+        case create_document(component_design, session.component) do
           {:ok, _document} ->
             {:ok, %{state: updated_state}, result}
 
@@ -44,8 +44,11 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
     {:error, "component_design not found in last interaction"}
   end
 
-  defp create_document(component_design, component, scope) do
-    Documents.create_component_document(component_design, component.type, scope)
+  defp create_document(component_design, component) do
+    doc_def = CodeMySpec.Documents.Registry.get_definition(component.type)
+    required_sections = doc_def.required_sections
+
+    Documents.create_dynamic_document(component_design, required_sections, type: component.type)
   end
 
   defp update_result_with_error(scope, result, error) do
@@ -62,17 +65,5 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
     end
   end
 
-  defp format_error(%Ecto.Changeset{} = changeset) do
-    format_changeset_errors(changeset)
-  end
-
   defp format_error(error) when is_binary(error), do: error
-
-  defp format_changeset_errors(%Ecto.Changeset{errors: errors}) do
-    errors
-    |> Enum.map(fn {field, {message, _opts}} ->
-      "#{field}: #{message}"
-    end)
-    |> Enum.join(", ")
-  end
 end

@@ -5,7 +5,7 @@ defmodule CodeMySpec.DocumentsTest do
   alias CodeMySpec.Documents
   alias CodeMySpec.Documents.ContextDesign
 
-  describe "create_document/3" do
+  describe "create_context_document/2" do
     test "creates a valid context design document from markdown" do
       markdown = """
       # Test Context
@@ -28,9 +28,17 @@ defmodule CodeMySpec.DocumentsTest do
       ## Components
 
       ### Test.Schema
+      | field | value  |
+      |-------|--------|
+      | type  | schema |
+
       Database schema for test entities
 
       ### Test.Repository
+      | field | value      |
+      |-------|------------|
+      | type  | repository |
+
       Repository for test data operations
 
       ## Dependencies
@@ -43,7 +51,7 @@ defmodule CodeMySpec.DocumentsTest do
       3. Return test results
       """
 
-      {:ok, document} = Documents.create_component_document(markdown, :context)
+      {:ok, document} = Documents.create_context_document(markdown)
 
       assert %ContextDesign{} = document
       assert document.purpose == "This is a test context for managing test data."
@@ -69,94 +77,130 @@ defmodule CodeMySpec.DocumentsTest do
       assert length(document.dependencies) == 2
       assert "CodeMySpec.Users.Scope" in document.dependencies
       assert "CodeMySpec.Projects" in document.dependencies
-
-      # Test other sections
-      assert is_map(document.other_sections)
     end
 
-    test "returns error for invalid markdown" do
+    test "returns error for missing required sections" do
       markdown = """
       # Bad Context
 
       ## Components
 
       ### BadComponent
+      Description here
       """
 
-      {:error, changeset} = Documents.create_component_document(markdown, :context)
+      {:error, changeset} = Documents.create_context_document(markdown)
 
       assert %Ecto.Changeset{valid?: false} = changeset
       assert changeset.errors != []
     end
 
-    test "supports module name as type" do
-      markdown = """
-      # Test Context
-
-      ## Purpose
-      Test purpose.
-
-      ## Components
-
-      ### Test.Component
-      A test component
-
-      ## Dependencies
-      - Test.Dependency
-      """
-
-      {:ok, document} = Documents.create_component_document(markdown, :context)
-
-      assert %ContextDesign{} = document
-      assert document.purpose == "Test purpose."
-    end
-
     test "returns error for malformed markdown" do
-      {:error, changeset} = Documents.create_component_document("invalid", :context)
+      {:error, changeset} = Documents.create_context_document("invalid")
 
       assert %Ecto.Changeset{valid?: false} = changeset
     end
+  end
 
-    test "parses component type from table in description" do
+  describe "create_dynamic_document/3" do
+    test "creates a valid schema document from markdown" do
       markdown = """
-      # Test Context
+      # User Schema
 
       ## Purpose
-      Test purpose.
+      Represents user account entities with authentication credentials.
 
-      ## Components
-
-      ### Test.Schema
-      | field | value  |
-      |-------|--------|
-      | type  | schema |
-
-      Database schema for test entities
-
-      ### Test.Repository
-      | field | value      |
-      |-------|------------|
-      | type  | repository |
-
-      Repository for test data operations
-
-      ## Dependencies
-      - Test.Dependency
+      ## Fields
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | email | string | Yes | User email address |
+      | name | string | Yes | User full name |
       """
 
-      {:ok, document} = Documents.create_component_document(markdown, :context)
+      {:ok, document} = Documents.create_dynamic_document(markdown, ["purpose", "fields"], type: :schema)
 
-      assert %ContextDesign{} = document
-      assert length(document.components) == 2
-      [test_schema, test_repo] = document.components
+      assert document.type == :schema
+      assert document.sections["purpose"] == "Represents user account entities with authentication credentials."
+      assert String.contains?(document.sections["fields"], "email")
+      assert String.contains?(document.sections["fields"], "string")
+    end
 
-      assert test_schema.module_name == "Test.Schema"
-      assert test_schema.table == %{"field" => "type", "value" => "schema"}
-      assert test_schema.description == "Database schema for test entities"
+    test "creates a document with only required sections" do
+      markdown = """
+      # Component
 
-      assert test_repo.module_name == "Test.Repository"
-      assert test_repo.table == %{"field" => "type", "value" => "repository"}
-      assert test_repo.description == "Repository for test data operations"
+      ## Purpose
+      Does something useful.
+
+      ## Public API
+      Functions for doing things.
+
+      ## Execution Flow
+      Step by step process.
+      """
+
+      {:ok, document} = Documents.create_dynamic_document(
+        markdown,
+        ["purpose", "public api", "execution flow"],
+        type: :genserver
+      )
+
+      assert document.type == :genserver
+      assert document.sections["purpose"] == "Does something useful."
+      assert document.sections["public api"] == "Functions for doing things."
+      assert document.sections["execution flow"] == "Step by step process."
+    end
+
+    test "returns error for missing required sections" do
+      markdown = """
+      # Incomplete
+
+      ## Purpose
+      Only has purpose.
+      """
+
+      {:error, error} = Documents.create_dynamic_document(markdown, ["purpose", "fields"])
+
+      assert error == "Missing required sections: fields"
+    end
+
+    test "captures optional sections" do
+      markdown = """
+      # Schema
+
+      ## Purpose
+      Test schema.
+
+      ## Fields
+      Field list.
+
+      ## Associations
+      Has many things.
+
+      ## Custom Section
+      Extra content.
+      """
+
+      {:ok, document} = Documents.create_dynamic_document(markdown, ["purpose", "fields"])
+
+      assert document.sections["purpose"] == "Test schema."
+      assert document.sections["fields"] == "Field list."
+      assert document.sections["associations"] == "Has many things."
+      assert document.sections["custom section"] == "Extra content."
+    end
+
+    test "works without type option" do
+      markdown = """
+      # Document
+
+      ## Purpose
+      Just testing.
+      """
+
+      {:ok, document} = Documents.create_dynamic_document(markdown, ["purpose"])
+
+      refute Map.has_key?(document, :type)
+      assert document.sections["purpose"] == "Just testing."
     end
   end
 end

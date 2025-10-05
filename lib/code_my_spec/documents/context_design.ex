@@ -5,9 +5,6 @@ defmodule CodeMySpec.Documents.ContextDesign do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias CodeMySpec.Documents.FieldDescriptionRegistry
-
-  @behaviour CodeMySpec.Documents.DocumentBehaviour
 
   @primary_key false
   embedded_schema do
@@ -29,7 +26,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
     field :other_sections, :map
   end
 
-  def changeset(context_design, attrs, scope \\ nil) do
+  def changeset(context_design, attrs) do
     context_design
     |> cast(attrs, [
       :purpose,
@@ -44,7 +41,6 @@ defmodule CodeMySpec.Documents.ContextDesign do
     |> validate_required([:purpose])
     |> cast_embed(:components, with: &component_ref_changeset/2)
     |> validate_dependencies()
-    |> maybe_validate_component_existence(scope)
   end
 
   defp component_ref_changeset(component_ref, attrs) do
@@ -87,27 +83,6 @@ defmodule CodeMySpec.Documents.ContextDesign do
     end
   end
 
-  defp maybe_validate_component_existence(changeset, nil), do: changeset
-
-  defp maybe_validate_component_existence(changeset, scope) do
-    components = get_field(changeset, :components) || []
-
-    invalid_components =
-      Enum.reject(components, fn component ->
-        case CodeMySpec.Components.get_component_by_module_name(scope, component.module_name) do
-          %CodeMySpec.Components.Component{} -> true
-          nil -> false
-        end
-      end)
-
-    if Enum.empty?(invalid_components) do
-      changeset
-    else
-      module_names = Enum.map(invalid_components, & &1.module_name)
-      add_error(changeset, :components, "components not found: #{Enum.join(module_names, ", ")}")
-    end
-  end
-
   def parse_component_string(component_string) do
     case String.split(component_string, ":", parts: 2) do
       [module_name, description] ->
@@ -135,25 +110,5 @@ defmodule CodeMySpec.Documents.ContextDesign do
   end
 
   def required_fields(),
-    do: [:purpose, :entity_ownership, :scoaccess_patternspe_integration, :public_api, :components]
-
-  def overview,
-    do: """
-    Phoenix Contexts are the interface layer between your web application and domain logic.
-    Each context groups related functionality and encapsulates access to data and business logic.
-    Components within a context handle specific responsibilities and are orchestrated by the context module.
-    """
-
-  def field_descriptions do
-    %{
-      purpose: FieldDescriptionRegistry.context_purpose(),
-      entity_ownership: FieldDescriptionRegistry.entity_ownership(),
-      access_patterns: FieldDescriptionRegistry.access_patterns(),
-      public_api: FieldDescriptionRegistry.public_api(),
-      state_management_strategy: FieldDescriptionRegistry.state_management_strategy(),
-      execution_flow: FieldDescriptionRegistry.execution_flow(),
-      components: FieldDescriptionRegistry.components(),
-      dependencies: FieldDescriptionRegistry.dependencies()
-    }
-  end
+    do: [:purpose, :entity_ownership, :scope_integration, :public_api, :components]
 end

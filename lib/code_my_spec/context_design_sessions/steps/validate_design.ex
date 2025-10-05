@@ -15,7 +15,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
   def handle_result(scope, session, result, _opts \\ []) do
     updated_state = Map.put(session.state || %{}, "component_design", result.stdout)
 
-    with {:ok, document} <- Documents.create_component_document(result.stdout, :context),
+    with {:ok, document} <- Documents.create_context_document(result.stdout),
          {:ok, _components} <- create_components(scope, session, document) do
       {:ok, %{}, result}
     else

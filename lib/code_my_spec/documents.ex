@@ -3,74 +3,70 @@ defmodule CodeMySpec.Documents do
   Context for managing document creation from markdown content.
   """
 
-  alias CodeMySpec.Documents.{ComponentDesign, ContextDesign, SchemaComponentDesign}
-
-  # Central mapping from component type to document module
-  @component_type_to_document %{
-    context: ContextDesign,
-    coordination_context: ContextDesign,
-    schema: SchemaComponentDesign
-  }
-
-  @default_document_module ComponentDesign
+  alias CodeMySpec.Documents.{ContextDesign, ContextDesignParser, MarkdownParser}
 
   @doc """
-  Creates a document from markdown content based on the component type.
+  Creates a context design document with full Ecto validation.
 
   ## Parameters
   - `markdown_content` - The markdown string to parse
-  - `component_type` - Component type atom (`:context`, `:schema`, etc)
-  - `scope` - Optional scope for validation (default: nil)
+  - `scope` - Scope for validating component references
 
-  Returns `{:ok, document}` on success or `{:error, changeset}` on failure.
+  Returns `{:ok, %ContextDesign{}}` on success or `{:error, changeset}` on failure.
   """
-  def create_component_document(markdown_content, component_type, scope \\ nil) do
-    document_module = get_document_module_for_component_type(component_type)
-
-    with {:ok, parser_module} <- get_parser_for_type(document_module),
-         {:ok, attrs} <- parser_module.from_markdown(markdown_content),
-         empty_document <- create_empty_document(document_module),
-         changeset <- document_module.changeset(empty_document, attrs, scope),
+  def create_context_document(markdown_content) do
+    with {:ok, attrs} <- ContextDesignParser.from_markdown(markdown_content),
+         changeset <- ContextDesign.changeset(%ContextDesign{}, attrs),
          {:ok, document} <- apply_changeset(changeset) do
       {:ok, document}
     else
-      {:error, reason} when is_binary(reason) ->
-        {:error, create_error_changeset(reason)}
-
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
+
+      {:error, reason, _warnings} ->
+        {:error, create_error_changeset(reason)}
     end
   end
 
   @doc """
-  Determines the appropriate document module for a component type.
-  This is the central source of truth for component type → document type mapping.
+  Creates a document by validating sections against provided requirements.
+
+  ## Parameters
+  - `markdown_content` - The markdown string to parse
+  - `required_sections` - List of required section names (e.g., ["purpose", "fields"])
+  - `opts` - Optional keyword list
+    - `:type` - Component type atom to include in result (default: nil)
+
+  Returns `{:ok, document}` with sections map or `{:error, reason}` on failure.
   """
-  def get_document_module_for_component_type(component_type) when is_atom(component_type) do
-    Map.get(@component_type_to_document, component_type, @default_document_module)
-  end
+  def create_dynamic_document(markdown_content, required_sections, opts \\ []) do
+    with {:ok, sections} <- MarkdownParser.parse(markdown_content),
+         :ok <- validate_required_sections(sections, required_sections) do
+      document = %{sections: sections}
 
-  defp get_parser_for_type(document_module) do
-    # Convention: parser module is document module name + "Parser"
-    # e.g., CodeMySpec.Documents.ContextDesign -> CodeMySpec.Documents.ContextDesignParser
-    module_parts = Module.split(document_module)
-    [last_part | reversed_parent_parts] = Enum.reverse(module_parts)
-    parent_parts = Enum.reverse(reversed_parent_parts)
-    parser_module_name = Module.concat(parent_parts ++ [last_part <> "Parser"])
+      document =
+        case Keyword.get(opts, :type) do
+          nil -> document
+          type -> Map.put(document, :type, type)
+        end
 
-    if Code.ensure_loaded?(parser_module_name) do
-      {:ok, parser_module_name}
-    else
-      {:error, "No parser available for document type: #{inspect(document_module)}"}
+      {:ok, document}
     end
   end
 
-  defp create_empty_document(document_module) do
-    struct(document_module)
+  defp validate_required_sections(sections, required_sections) do
+    missing =
+      required_sections
+      |> Enum.reject(fn section -> Map.has_key?(sections, section) end)
+
+    if Enum.empty?(missing) do
+      :ok
+    else
+      {:error, "Missing required sections: #{Enum.join(missing, ", ")}"}
+    end
   end
 
   defp apply_changeset(%Ecto.Changeset{valid?: true} = changeset) do
-    # For embedded schemas, we just return the changes as a struct
     data = Ecto.Changeset.apply_changes(changeset)
     {:ok, data}
   end
