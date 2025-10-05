@@ -132,10 +132,7 @@ defmodule CodeMySpec.Git.URLParserTest do
 
     test "handles URLs with www subdomain" do
       www_url = "https://www.github.com/owner/repo.git"
-      # This might be :unsupported_provider or :github depending on implementation
-      # Adjust based on actual behavior
-      result = URLParser.provider(www_url)
-      assert match?({:ok, _} | {:error, _}, result)
+      assert {:error, :unsupported_provider} = URLParser.provider(www_url)
     end
 
     test "handles very long repository paths" do
@@ -147,16 +144,12 @@ defmodule CodeMySpec.Git.URLParserTest do
 
     test "handles URLs with port numbers" do
       url_with_port = "https://github.com:443/owner/repo.git"
-      result = URLParser.provider(url_with_port)
-      # Should either work or return invalid_url, depending on implementation
-      assert match?({:ok, :github} | {:error, :invalid_url}, result)
+      assert {:ok, :github} = URLParser.provider(url_with_port)
     end
 
     test "handles whitespace in URL" do
       url_with_spaces = "  https://github.com/owner/repo.git  "
-      # Should either trim and succeed or fail with invalid_url
-      result = URLParser.provider(url_with_spaces)
-      assert match?({:ok, :github} | {:error, :invalid_url}, result)
+      assert {:error, :invalid_url} = URLParser.provider(url_with_spaces)
     end
   end
 
@@ -235,23 +228,18 @@ defmodule CodeMySpec.Git.URLParserTest do
   describe "inject_token/2 - token validation" do
     test "handles empty token string" do
       expected = "https://@github.com/owner/repo.git"
-
-      result = URLParser.inject_token(github_https_url(), "")
-      # Implementation may reject empty tokens or allow them
-      assert match?({:ok, ^expected} | {:error, _}, result)
+      assert {:ok, ^expected} = URLParser.inject_token(github_https_url(), "")
     end
 
     test "handles nil token" do
-      result = URLParser.inject_token(github_https_url(), nil)
-      # Implementation should handle nil token gracefully
-      assert match?({:ok, _} | {:error, _}, result)
+      expected = "https://github.com/owner/repo.git"
+      assert {:ok, ^expected} = URLParser.inject_token(github_https_url(), nil)
     end
 
     test "handles token with special characters" do
       special_token = "token-with-special!@#$%^&*()chars"
-      result = URLParser.inject_token(github_https_url(), special_token)
-      # Should properly URL encode or reject
-      assert match?({:ok, _} | {:error, _}, result)
+      {:ok, result} = URLParser.inject_token(github_https_url(), special_token)
+      assert String.contains?(result, special_token)
     end
   end
 
@@ -260,18 +248,16 @@ defmodule CodeMySpec.Git.URLParserTest do
   # ============================================================================
 
   describe "inject_token/2 - edge cases" do
-    test "handles URL that already contains credentials" do
+    test "replaces existing credentials in URL" do
       url_with_creds = "https://old_token@github.com/owner/repo.git"
-      result = URLParser.inject_token(url_with_creds, github_token())
-      # Should either replace old token or return error
-      assert match?({:ok, _} | {:error, _}, result)
+      expected = "https://#{github_token()}@github.com/owner/repo.git"
+      assert {:ok, ^expected} = URLParser.inject_token(url_with_creds, github_token())
     end
 
-    test "handles URL that contains username but no password" do
+    test "replaces existing username in URL" do
       url_with_user = "https://username@github.com/owner/repo.git"
-      result = URLParser.inject_token(url_with_user, github_token())
-      # Should either replace or add token
-      assert match?({:ok, _} | {:error, _}, result)
+      expected = "https://#{github_token()}@github.com/owner/repo.git"
+      assert {:ok, ^expected} = URLParser.inject_token(url_with_user, github_token())
     end
 
     test "handles URL with trailing slash" do
@@ -281,38 +267,24 @@ defmodule CodeMySpec.Git.URLParserTest do
       assert String.contains?(url, github_token())
     end
 
-    test "handles URL with query parameters" do
+    test "preserves query parameters" do
       url_with_params = "https://github.com/owner/repo.git?ref=main"
-      result = URLParser.inject_token(url_with_params, github_token())
-      # Should preserve query params
-      case result do
-        {:ok, url} ->
-          assert String.contains?(url, github_token())
-          assert String.contains?(url, "?ref=main")
-
-        {:error, _} ->
-          :ok
-      end
+      {:ok, result} = URLParser.inject_token(url_with_params, github_token())
+      assert String.contains?(result, github_token())
+      assert String.contains?(result, "?ref=main")
     end
 
-    test "handles URL with fragment" do
+    test "preserves URL fragments" do
       url_with_fragment = "https://github.com/owner/repo.git#readme"
-      result = URLParser.inject_token(url_with_fragment, github_token())
-
-      case result do
-        {:ok, url} ->
-          assert String.contains?(url, github_token())
-          assert String.contains?(url, "#readme")
-
-        {:error, _} ->
-          :ok
-      end
+      {:ok, result} = URLParser.inject_token(url_with_fragment, github_token())
+      assert String.contains?(result, github_token())
+      assert String.contains?(result, "#readme")
     end
 
     test "handles very long tokens" do
       long_token = String.duplicate("a", 1000)
-      result = URLParser.inject_token(github_https_url(), long_token)
-      assert match?({:ok, _} | {:error, _}, result)
+      {:ok, result} = URLParser.inject_token(github_https_url(), long_token)
+      assert String.contains?(result, long_token)
     end
   end
 
@@ -337,13 +309,12 @@ defmodule CodeMySpec.Git.URLParserTest do
       assert String.contains?(authenticated_url, "@gitlab.com")
     end
 
-    test "unsupported provider cannot have token injected" do
+    test "unsupported provider can still have token injected" do
       url = unknown_provider_url()
       assert {:error, :unsupported_provider} = URLParser.provider(url)
-      # inject_token might still work since it doesn't check provider
-      result = URLParser.inject_token(url, "some_token")
-      # Could succeed with token injection even if provider unsupported
-      assert match?({:ok, _} | {:error, _}, result)
+      # inject_token works regardless of provider
+      {:ok, authenticated_url} = URLParser.inject_token(url, "some_token")
+      assert String.contains?(authenticated_url, "some_token@")
     end
   end
 
