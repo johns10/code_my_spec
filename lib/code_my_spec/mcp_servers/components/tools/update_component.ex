@@ -22,6 +22,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponent do
 
     field :module_name, :string
     field :description, :string
+    field :parent_component_id, :integer
   end
 
   @impl true

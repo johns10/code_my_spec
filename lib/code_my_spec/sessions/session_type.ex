@@ -4,12 +4,14 @@ defmodule CodeMySpec.Sessions.SessionType do
   @type t ::
           CodeMySpec.ContextDesignSessions
           | CodeMySpec.ComponentDesignSessions
+          | CodeMySpec.ComponentTestSessions
           | CodeMySpec.ComponentCodingSessions
           | CodeMySpec.IntegrationSessions
 
   @valid_types [
     CodeMySpec.ContextDesignSessions,
     CodeMySpec.ComponentDesignSessions,
+    CodeMySpec.ComponentTestSessions,
     CodeMySpec.ComponentCodingSessions,
     CodeMySpec.IntegrationSessions
   ]

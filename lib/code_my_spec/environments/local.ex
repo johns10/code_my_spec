@@ -32,6 +32,20 @@ defmodule CodeMySpec.Environments.Local do
     """
   end
 
+  def test_environment_teardown_command(%{
+        context_name: context_name,
+        working_dir: working_dir,
+        test_file_name: test_file_name,
+        branch_name: branch_name
+      }) do
+    """
+    git -C #{working_dir} add #{test_file_name} && \
+    git -C #{working_dir} commit -m "generated tests for #{context_name}" && \
+    git -C #{working_dir} push -u origin #{branch_name} && \
+    gh pr create --title "Add tests for #{context_name}" --body "Automated test generation for #{context_name} component"
+    """
+  end
+
   def code_environment_teardown_command(%{
         context_name: context_name,
         working_dir: working_dir,

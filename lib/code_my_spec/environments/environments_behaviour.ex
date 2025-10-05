@@ -8,6 +8,7 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
 
   @callback environment_setup_command(attrs :: map()) :: String.t()
   @callback docs_environment_teardown_command(attrs :: map()) :: String.t()
+  @callback test_environment_teardown_command(attrs :: map()) :: String.t()
   @callback code_environment_teardown_command(attrs :: map()) :: String.t()
   @callback cmd(command :: String.t(), args :: [String.t()], opts :: Keyword.t()) ::
               {String.t(), non_neg_integer()}

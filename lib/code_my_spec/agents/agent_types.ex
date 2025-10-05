@@ -1,7 +1,7 @@
 defmodule CodeMySpec.Agents.AgentTypes do
   alias CodeMySpec.Agents.AgentType
 
-  @type agent_type() :: :unit_coder | :context_designer | :component_designer
+  @type agent_type() :: :unit_coder | :context_designer | :component_designer | :test_writer
 
   @spec get(agent_type()) :: {:ok, AgentType.t()} | {:error, :unknown_type}
   def get(agent_type) do
@@ -59,11 +59,31 @@ defmodule CodeMySpec.Agents.AgentTypes do
     }
   end
 
+  defp get_agent_type(:test_writer) do
+    %AgentType{
+      name: "test_writer",
+      description: "Writes tests and fixtures for Phoenix components.",
+      prompt: """
+      You are a Phoenix test writer. Generate comprehensive tests and fixtures for components.
+
+      Focus on:
+      - Testing all public API functions
+      - Testing edge cases and error conditions
+      - Creating reusable fixture functions
+      - Following test organization patterns
+      - Testing proper scoping and access patterns
+      - Clear, maintainable test code
+      """,
+      config: %{},
+      additional_tools: []
+    }
+  end
+
   defp get_agent_type(_), do: nil
 
   @spec list() :: [agent_type()]
   def list do
-    [:unit_coder, :context_designer]
+    [:unit_coder, :context_designer, :component_designer, :test_writer]
   end
 
   @spec exists?(agent_type()) :: boolean()

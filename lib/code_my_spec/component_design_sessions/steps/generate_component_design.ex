@@ -36,11 +36,13 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
     end
   end
 
-  defp build_design_prompt(project, component, rules, state) do
+  defp build_design_prompt(project, component, rules, _state) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
-    context_design = get_context_design(state)
     document_spec = DocumentSpecProjector.project_spec(component.type)
     %{design_file: design_file_path} = Utils.component_files(component, project)
+
+    parent_component = component.parent_component
+    %{design_file: parent_design_file_path} = Utils.component_files(parent_component, project)
 
     prompt =
       """
@@ -52,8 +54,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
       Component Description: #{component.description || "No description provided"}
       Type: #{component.type}
 
-      Parent Context Design:
-      #{context_design}
+      Parent Context Design File: #{parent_design_file_path}
 
       Design Rules:
       #{rules_text}
@@ -66,9 +67,4 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
 
     {:ok, prompt}
   end
-
-  defp get_context_design(%{"context_design" => context_design}) when is_binary(context_design),
-    do: context_design
-
-  defp get_context_design(_state), do: "No context design available"
 end

@@ -1,17 +1,15 @@
-defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
+defmodule CodeMySpec.ComponentTestSessions.Orchestrator do
   @moduledoc """
-  Stateless orchestrator for component design session workflows.
+  Stateless orchestrator for component test session workflows.
   All state lives in the Session record and its embedded Interactions.
   """
 
   alias CodeMySpec.Sessions.{Interaction, Result, Utils, Session}
-  alias CodeMySpec.ComponentDesignSessions.Steps
+  alias CodeMySpec.ComponentTestSessions.Steps
 
   @step_modules [
     Steps.Initialize,
-    Steps.GenerateComponentDesign,
-    Steps.ValidateDesign,
-    Steps.ReviseDesign,
+    Steps.GenerateTestsAndFixtures,
     Steps.Finalize
   ]
 
@@ -30,18 +28,11 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
 
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
-  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateComponentDesign}
+  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateTestsAndFixtures}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  defp get_next_step(:ok, Steps.GenerateComponentDesign), do: {:ok, Steps.ValidateDesign}
-  defp get_next_step(_, Steps.GenerateComponentDesign), do: {:ok, Steps.GenerateComponentDesign}
-
-  defp get_next_step(:ok, Steps.ValidateDesign), do: {:ok, Steps.Finalize}
-  defp get_next_step(:error, Steps.ValidateDesign), do: {:ok, Steps.ReviseDesign}
-  defp get_next_step(_, Steps.ValidateDesign), do: {:ok, Steps.ValidateDesign}
-
-  defp get_next_step(:ok, Steps.ReviseDesign), do: {:ok, Steps.ValidateDesign}
-  defp get_next_step(_, Steps.ReviseDesign), do: {:ok, Steps.ReviseDesign}
+  defp get_next_step(:ok, Steps.GenerateTestsAndFixtures), do: {:ok, Steps.Finalize}
+  defp get_next_step(_, Steps.GenerateTestsAndFixtures), do: {:ok, Steps.GenerateTestsAndFixtures}
 
   defp get_next_step(:ok, Steps.Finalize), do: {:error, :session_complete}
 

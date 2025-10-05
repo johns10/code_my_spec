@@ -9,19 +9,18 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
     CodeMySpec.ContextDesignSessions.Steps.ReviseDesign,
     CodeMySpec.ContextDesignSessions.Steps.Finalize,
     CodeMySpec.ComponentDesignSessions.Steps.Initialize,
-    CodeMySpec.ComponentDesignSessions.Steps.ReadContextDesign,
     CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign,
-    CodeMySpec.ComponentDesignSessions.Steps.ReadComponentDesign,
     CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign,
     CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign,
     CodeMySpec.ComponentDesignSessions.Steps.Finalize,
     CodeMySpec.ComponentCodingSessions.Steps.Initialize,
-    CodeMySpec.ComponentCodingSessions.Steps.ReadComponentDesign,
-    CodeMySpec.ComponentCodingSessions.Steps.GenerateTests,
     CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation,
     CodeMySpec.ComponentCodingSessions.Steps.RunTests,
     CodeMySpec.ComponentCodingSessions.Steps.FixTestFailures,
-    CodeMySpec.ComponentCodingSessions.Steps.Finalize
+    CodeMySpec.ComponentCodingSessions.Steps.Finalize,
+    CodeMySpec.ComponentTestSessions.Steps.Initialize,
+    CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures,
+    CodeMySpec.ComponentTestSessions.Steps.Finalize
   ]
 
   def type, do: :string

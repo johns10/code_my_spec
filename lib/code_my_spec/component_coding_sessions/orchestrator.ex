@@ -2,39 +2,27 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
   @moduledoc """
   Stateless orchestrator for component coding session workflows.
 
-  Determines the next step in the test-driven development workflow based on
+  Determines the next step in the implementation workflow based on
   the current interaction's result and module. Handles test failure loops by
   cycling between RunTests and FixTestFailures.
   """
 
   alias CodeMySpec.Sessions.{Result, Interaction, Utils, Session}
-
-  alias CodeMySpec.ComponentCodingSessions.Steps.{
-    Initialize,
-    ReadComponentDesign,
-    GenerateTests,
-    GenerateImplementation,
-    RunTests,
-    FixTestFailures,
-    Finalize
-  }
+  alias CodeMySpec.ComponentCodingSessions.Steps
 
   @steps [
-    Initialize,
-    ReadComponentDesign,
-    AnalyzeAndGenerateFixtures,
-    GenerateTests,
-    GenerateImplementation,
-    RunTests,
-    FixTestFailures,
-    Finalize
+    Steps.Initialize,
+    Steps.GenerateImplementation,
+    Steps.RunTests,
+    Steps.FixTestFailures,
+    Steps.Finalize
   ]
 
   @spec steps() :: [module()]
   def steps, do: @steps
 
   @spec get_next_interaction(nil) :: {:ok, module()}
-  def get_next_interaction(nil), do: {:ok, Initialize}
+  def get_next_interaction(nil), do: {:ok, Steps.Initialize}
 
   def get_next_interaction(%Session{} = session) do
     with %Interaction{} = interaction <- Utils.find_last_completed_interaction(session) do
@@ -49,25 +37,20 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
 
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
-  defp route(Initialize, :ok), do: {:ok, ReadComponentDesign}
-  defp route(Initialize, _), do: {:ok, Initialize}
+  defp route(Steps.Initialize, :ok), do: {:ok, Steps.GenerateImplementation}
+  defp route(Steps.Initialize, _), do: {:ok, Steps.Initialize}
 
-  defp route(ReadComponentDesign, :ok), do: {:ok, GenerateTests}
-  defp route(ReadComponentDesign, _), do: {:ok, ReadComponentDesign}
+  defp route(Steps.GenerateImplementation, :ok), do: {:ok, Steps.RunTests}
+  defp route(Steps.GenerateImplementation, _), do: {:ok, Steps.GenerateImplementation}
 
-  defp route(GenerateTests, :ok), do: {:ok, GenerateImplementation}
-  defp route(GenerateTests, _), do: {:ok, GenerateTests}
+  defp route(Steps.RunTests, :ok), do: {:ok, Steps.Finalize}
+  defp route(Steps.RunTests, :error), do: {:ok, Steps.FixTestFailures}
+  defp route(Steps.RunTests, _), do: {:ok, Steps.RunTests}
 
-  defp route(GenerateImplementation, :ok), do: {:ok, RunTests}
-  defp route(GenerateImplementation, _), do: {:ok, GenerateImplementation}
+  defp route(Steps.FixTestFailures, :ok), do: {:ok, Steps.RunTests}
+  defp route(Steps.FixTestFailures, _), do: {:ok, Steps.FixTestFailures}
 
-  defp route(RunTests, :ok), do: {:ok, Finalize}
-  defp route(RunTests, :error), do: {:ok, FixTestFailures}
-
-  defp route(FixTestFailures, :ok), do: {:ok, RunTests}
-  defp route(FixTestFailures, _), do: {:ok, FixTestFailures}
-
-  defp route(Finalize, :ok), do: {:error, :session_complete}
+  defp route(Steps.Finalize, :ok), do: {:error, :session_complete}
 
   defp route(step, _status) when step in @steps, do: {:error, :invalid_state}
   defp route(_step, _status), do: {:error, :invalid_interaction}

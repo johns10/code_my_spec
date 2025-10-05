@@ -22,7 +22,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponents do
                  description:
                    "Must be one of: context (domain contexts that own entities), :coordination_context (orchestrate workflows across domain context)"},
               module_name: {:required, :string},
-              description: :string
+              description: :string,
+              parent_component_id: :integer
             }}},
           required: true
   end

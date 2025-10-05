@@ -49,7 +49,7 @@ defmodule CodeMySpec.Components.Registry do
   @test_file %{
     name: :test_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-    satisfied_by: nil
+    satisfied_by: "ComponentTestSessions"
   }
 
   @tests_passing %{
@@ -61,8 +61,8 @@ defmodule CodeMySpec.Components.Registry do
   @default_requirements [
     @design_file,
     @child_designs,
-    @implementation_file,
     @test_file,
+    @implementation_file,
     @tests_passing
   ]
 
@@ -79,8 +79,8 @@ defmodule CodeMySpec.Components.Registry do
         @context_design_file,
         @child_designs,
         @dependencies,
-        @implementation_file,
         @test_file,
+        @implementation_file,
         @tests_passing
       ],
       display_name: "Context",
@@ -93,8 +93,8 @@ defmodule CodeMySpec.Components.Registry do
         @context_design_file,
         @child_designs,
         @dependencies,
-        @implementation_file,
         @test_file,
+        @implementation_file,
         @tests_passing
       ],
       display_name: "Coordination Context",

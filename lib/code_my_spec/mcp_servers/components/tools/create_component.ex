@@ -18,6 +18,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponent do
 
     field :module_name, :string, required: true
     field :description, :string, required: false
+    field :parent_component_id, :integer, required: false
   end
 
   @impl true

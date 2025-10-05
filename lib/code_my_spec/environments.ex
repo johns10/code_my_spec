@@ -7,6 +7,10 @@ defmodule CodeMySpec.Environments do
     get_impl(environment).docs_environment_teardown_command(attrs)
   end
 
+  def test_environment_teardown_command(environment, attrs) do
+    get_impl(environment).test_environment_teardown_command(attrs)
+  end
+
   def code_environment_teardown_command(environment, attrs) do
     get_impl(environment).code_environment_teardown_command(attrs)
   end
