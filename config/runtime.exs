@@ -1,5 +1,4 @@
 import Config
-
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -20,7 +19,21 @@ if System.get_env("PHX_SERVER") do
   config :code_my_spec, CodeMySpecWeb.Endpoint, server: true
 end
 
+# Configure OAuth providers for development
+if config_env() == :dev do
+  config :code_my_spec,
+    github_client_id: System.get_env("GITHUB_CLIENT_ID"),
+    github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+    oauth_base_url: System.get_env("OAUTH_BASE_URL") || "http://localhost:4000"
+end
+
 if config_env() == :prod do
+  # Configure OAuth providers for production
+  config :code_my_spec,
+    github_client_id: System.get_env("GITHUB_CLIENT_ID"),
+    github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+    oauth_base_url: System.get_env("OAUTH_BASE_URL")
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

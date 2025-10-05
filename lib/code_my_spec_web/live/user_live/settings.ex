@@ -4,6 +4,7 @@ defmodule CodeMySpecWeb.UserLive.Settings do
   on_mount {CodeMySpecWeb.UserAuth, :require_sudo_mode}
 
   alias CodeMySpec.Users
+  alias CodeMySpec.Integrations
 
   def render(assigns) do
     ~H"""
@@ -61,6 +62,43 @@ defmodule CodeMySpecWeb.UserLive.Settings do
           Save Password
         </.button>
       </.form>
+
+      <div class="divider" />
+
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold">Connected Services</h3>
+
+        <div class="border rounded-lg p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <div>
+              <div class="font-medium">GitHub</div>
+              <%= if @github_connected do %>
+                <div class="text-sm text-green-600">Connected</div>
+              <% else %>
+                <div class="text-sm text-gray-500">Not connected</div>
+              <% end %>
+            </div>
+          </div>
+
+          <%= if @github_connected do %>
+            <.link
+              href={~p"/auth/github"}
+              method="delete"
+              data-confirm="Are you sure you want to disconnect GitHub?"
+              class="btn btn-sm btn-outline btn-error"
+            >
+              Disconnect
+            </.link>
+          <% else %>
+            <.link href={~p"/auth/github"} class="btn btn-sm btn-primary">
+              Connect GitHub
+            </.link>
+          <% end %>
+        </div>
+      </div>
     </Layouts.app>
     """
   end
@@ -80,8 +118,11 @@ defmodule CodeMySpecWeb.UserLive.Settings do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
+    scope = socket.assigns.current_scope
     email_changeset = Users.change_user_email(user, %{}, validate_unique: false)
     password_changeset = Users.change_user_password(user, %{}, hash_password: false)
+
+    github_connected = Integrations.connected?(scope, :github)
 
     socket =
       socket
@@ -89,6 +130,7 @@ defmodule CodeMySpecWeb.UserLive.Settings do
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:trigger_submit, false)
+      |> assign(:github_connected, github_connected)
 
     {:ok, socket}
   end

@@ -45,6 +45,7 @@ defmodule CodeMySpec.Components.Component do
           | :repository
           | :task
           | :registry
+          | :behaviour
           | :other
 
   schema "components" do
@@ -59,6 +60,7 @@ defmodule CodeMySpec.Components.Component do
         :repository,
         :task,
         :registry,
+        :behaviour,
         :other
       ]
 

@@ -75,7 +75,9 @@ defmodule CodeMySpec.MixProject do
        git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:faker, "~> 0.18", only: :test},
-      {:dir_walker, "~> 0.0.8"}
+      {:dir_walker, "~> 0.0.8"},
+      {:assent, "~> 0.3.1"},
+      {:cloak_ecto, "~> 1.3.0"}
     ]
   end
 

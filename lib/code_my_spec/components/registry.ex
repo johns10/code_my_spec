@@ -61,7 +61,6 @@ defmodule CodeMySpec.Components.Registry do
   @default_requirements [
     @design_file,
     @child_designs,
-    @dependencies,
     @implementation_file,
     @test_file,
     @tests_passing
@@ -106,8 +105,7 @@ defmodule CodeMySpec.Components.Registry do
     schema: %{
       requirements: [
         @design_file,
-        @implementation_file,
-        @dependencies
+        @implementation_file
       ],
       display_name: "Schema",
       description: "Data structure definition with validation rules",
@@ -132,6 +130,16 @@ defmodule CodeMySpec.Components.Registry do
       requirements: @default_requirements,
       display_name: "Registry",
       description: "Process registry for dynamic process lookup",
+      icon: "book-open",
+      color: "teal"
+    },
+    behaviour: %{
+      requirements: [
+        @design_file,
+        @implementation_file
+      ],
+      display_name: "Behaviour",
+      description: "Behaviour that defines callbacks for other modules",
       icon: "book-open",
       color: "teal"
     },

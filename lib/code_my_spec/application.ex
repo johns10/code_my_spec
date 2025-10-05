@@ -10,6 +10,7 @@ defmodule CodeMySpec.Application do
     children =
       [
         CodeMySpecWeb.Telemetry,
+        CodeMySpec.Vault,
         CodeMySpec.Repo,
         {DNSCluster, query: Application.get_env(:code_my_spec, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: CodeMySpec.PubSub},

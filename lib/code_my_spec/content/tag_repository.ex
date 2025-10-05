@@ -41,7 +41,7 @@ defmodule CodeMySpec.Content.TagRepository do
 
   @spec list_tags(scope()) :: [Tag.t()]
   def list_tags(%Scope{} = scope) do
-    Tag
+    from(t in Tag)
     |> by_account_and_project(scope)
     |> order_by([t], asc: t.name)
     |> Repo.all()
@@ -49,7 +49,7 @@ defmodule CodeMySpec.Content.TagRepository do
 
   @spec get_tag_by_slug(scope(), String.t()) :: Tag.t() | nil
   def get_tag_by_slug(%Scope{} = scope, slug) do
-    Tag
+    from(t in Tag)
     |> by_account_and_project(scope)
     |> by_slug(slug)
     |> Repo.one()
@@ -57,7 +57,7 @@ defmodule CodeMySpec.Content.TagRepository do
 
   @spec get_tag_by_slug!(scope(), String.t()) :: Tag.t()
   def get_tag_by_slug!(%Scope{} = scope, slug) do
-    Tag
+    from(t in Tag)
     |> by_account_and_project(scope)
     |> by_slug(slug)
     |> Repo.one!()
