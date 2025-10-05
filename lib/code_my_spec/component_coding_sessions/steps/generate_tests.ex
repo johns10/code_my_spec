@@ -65,10 +65,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateTests do
       3. Read those useful fixture files
       4. Determine what new fixtures are needed based on the component design
       5. Generate new fixture files following observed patterns
-      6. Write comprehensive test files that leverage the fixtures
-      7. Follow TDD principles to define the component's contract
-      8. Cover all public API functions specified in the component design
-      9. Write concise, obvious, easy to read tests
+      #{generate_test_instructions(component)}
 
       Coding Rules:
       #{rules_text}
@@ -83,4 +80,14 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateTests do
     %{test_file: test_file_path} = Utils.component_files(component, project)
     [test_file_path]
   end
+
+  defp generate_test_instructions(%{type: type}) when type in [:schema], do: ""
+
+  defp generate_test_instructions(_),
+    do: """
+    6. Write comprehensive test files that leverage the fixtures
+    7. Follow TDD principles to define the component's contract
+    8. Cover all public API functions specified in the component design
+    9. Write concise, obvious, easy to read tests
+    """
 end

@@ -40,8 +40,6 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
     with %Interaction{} = interaction <- Utils.find_last_completed_interaction(session) do
       status = extract_status(interaction)
       module = interaction.command.module
-      IO.inspect(status)
-      IO.inspect(module)
 
       route(module, status)
     else

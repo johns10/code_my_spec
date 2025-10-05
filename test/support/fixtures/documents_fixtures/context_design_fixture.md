@@ -8,11 +8,8 @@ Manages dynamic rule composition and storage for generating context-aware design
 - Rule composition logic for generating final rule strings
 - Rule matching based on component types and session types
 
-## Scope Integration
-### Accepted Scopes
+## Access Patterns
 - **Primary Scope**: CodeMySpec.Users.Scope with active_account_id for account-level rules
-
-### Access Patterns
 - All rules filtered by scope.active_account_id for account isolation
 - Scope struct contains user, active_account with their IDs
 - Rule seeding occurs during account creation to populate base rules from markdown
