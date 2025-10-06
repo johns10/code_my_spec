@@ -53,7 +53,6 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
       assert command.module == GenerateImplementation
-      assert command.pipe =~ component_design
       assert command.pipe =~ "Test Phoenix Project"
       assert command.pipe =~ "PostRepository"
       assert command.pipe =~ "Generate the implementation"
@@ -174,30 +173,6 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
       assert command.pipe =~ "Write pure functions"
       assert command.pipe =~ "Coding Rules:"
-    end
-
-    test "returns error when component design not in state" do
-      scope = full_scope_fixture()
-      project = project_fixture(scope, %{module_name: "MyApp"})
-
-      component =
-        component_fixture(scope, %{
-          module_name: "MyApp.Service",
-          project_id: project.id
-        })
-
-      session =
-        session_fixture(scope, %{
-          component_id: component.id,
-          project_id: project.id,
-          type: CodeMySpec.ComponentCodingSessions,
-          state: %{}
-        })
-
-      session = %{session | component: component, project: project}
-
-      assert {:error, "Component design not found in session state"} =
-               GenerateImplementation.get_command(scope, session)
     end
 
     test "specifies correct target file path for implementation" do

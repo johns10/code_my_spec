@@ -20,6 +20,8 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
     CodeMySpec.ComponentCodingSessions.Steps.Finalize,
     CodeMySpec.ComponentTestSessions.Steps.Initialize,
     CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures,
+    CodeMySpec.ComponentTestSessions.Steps.RunTests,
+    CodeMySpec.ComponentTestSessions.Steps.FixCompilationErrors,
     CodeMySpec.ComponentTestSessions.Steps.Finalize
   ]
 

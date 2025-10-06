@@ -11,7 +11,6 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
     Finalize,
     GenerateComponentDesign,
     Initialize,
-    ReadContextDesign,
     ReviseDesign,
     ValidateDesign
   }
@@ -83,11 +82,6 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         {_, _, session} = execute_step(scope, session.id, Initialize)
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
-        {_, _, session} = execute_step(scope, session.id, ReadContextDesign)
-        assert String.starts_with?(session.state["context_design"], "# Blog Context")
-
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
 
         {_, _, session} =
           execute_step(
@@ -112,7 +106,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         File.write!(design_file, invalid_blog_repository_content())
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, _, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
 
         # Step 4: Validate Design
         {_, _, session} =
@@ -122,7 +116,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, _, %Interaction{result: %{status: :error}}]
+                           interactions: [_, _, %Interaction{result: %{status: :error}}]
                          }}
 
         # Step 5: Revise Design
@@ -132,7 +126,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
           )
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, _, _, _, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [_, _, _, %Interaction{}]}}
 
         # Step 6: Revalidate Design
         {_, _, session} =
@@ -140,7 +134,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, _, _, _, %Interaction{result: %{status: :ok}}]
+                           interactions: [_, _, _, _, %Interaction{result: %{status: :ok}}]
                          }}
 
         # Step 6: Finalize (assuming validation passes)

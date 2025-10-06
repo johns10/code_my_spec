@@ -12,6 +12,16 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
     setup do
       scope = full_scope_fixture()
 
+      # Update project to match the test repo module name
+      {:ok, updated_project} =
+        CodeMySpec.Projects.update_project(
+          scope,
+          scope.active_project,
+          %{module_name: "TestPhoenixProject"}
+        )
+
+      scope = %{scope | active_project: updated_project}
+
       # Create test components matching the docs structure
       {:ok, blog_context} =
         Components.create_component(scope, %{
@@ -70,6 +80,11 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
     test "syncs project requirements with real test project", %{scope: scope} do
       temp_dir = System.tmp_dir!()
       project_dir = Path.join(temp_dir, "test_phoenix_project")
+
+      # Clean up any existing directory from previous test runs
+      if File.exists?(project_dir) do
+        File.rm_rf!(project_dir)
+      end
 
       # Clone repositories
       System.cmd("git", [

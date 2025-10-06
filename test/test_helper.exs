@@ -1,4 +1,4 @@
-ExUnit.start(exclude: [:integration])
+ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(CodeMySpec.Repo, :manual)
 
 # Define mock for environments in tests

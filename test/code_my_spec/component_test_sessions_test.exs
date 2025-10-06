@@ -1,23 +1,23 @@
-defmodule CodeMySpec.ComponentCodingSessionsTest do
+defmodule CodeMySpec.ComponentTestSessionsTest do
   alias CodeMySpec.Sessions.Interaction
   use CodeMySpec.DataCase
   import Mox
   import CodeMySpec.Support.CLIRecorder
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
   alias CodeMySpec.{Sessions, Components}
-  alias CodeMySpec.ComponentCodingSessions
+  alias CodeMySpec.ComponentTestSessions
 
-  alias CodeMySpec.ComponentCodingSessions.Steps.{
+  alias CodeMySpec.ComponentTestSessions.Steps.{
     Finalize,
-    FixTestFailures,
-    GenerateImplementation,
+    FixCompilationErrors,
+    GenerateTestsAndFixtures,
     Initialize,
     RunTests
   }
 
   @test_repo_url "https://github.com/johns10/test_phoenix_project.git"
 
-  describe "component coding session workflow" do
+  describe "component test session workflow with undefined module error" do
     setup do
       # Configure application to use mock for local environment
       Application.put_env(:code_my_spec, :local_environment, CodeMySpec.MockEnvironment)
@@ -44,24 +44,24 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
           description: "Blog context for managing posts"
         })
 
-      # Create test component to implement (BlogRepository)
-      {:ok, blog_repository} =
+      # Create test component to test (PostCache)
+      {:ok, post_cache} =
         Components.create_component(scope, %{
-          name: "BlogRepository",
-          type: :repository,
-          module_name: "TestPhoenixProject.Blog.BlogRepository",
-          description: "Repository for blog persistence",
+          name: "PostCache",
+          type: :genserver,
+          module_name: "TestPhoenixProject.Blog.PostCache",
+          description: "GenServer for caching posts",
           parent_component_id: blog_context.id
         })
 
-      %{scope: scope, blog_context: blog_context, blog_repository: blog_repository}
+      %{scope: scope, blog_context: blog_context, post_cache: post_cache}
     end
 
     @tag timeout: 300_000
     # @tag :integration
-    test "executes complete component coding workflow", %{
+    test "executes complete component test workflow with undefined module fix", %{
       scope: scope,
-      blog_repository: blog_repository
+      post_cache: post_cache
     } do
       project_dir = "test_phoenix_project"
 
@@ -70,39 +70,39 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
       CodeMySpec.Sessions.subscribe_sessions(scope)
 
       # Use CLI recorder for the session
-      use_cassette "component_coding_workflow" do
-        # Create component coding session
+      use_cassette "component_test_workflow_compilation_error" do
+        # Create component test session
         {:ok, session} =
           Sessions.create_session(scope, %{
-            type: ComponentCodingSessions,
+            type: ComponentTestSessions,
             agent: :claude_code,
             environment: :local,
-            component_id: blog_repository.id
+            component_id: post_cache.id
           })
 
         # Step 1: Initialize
         {_, _, session} = execute_step(scope, session.id, Initialize)
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
 
-        # Step 4: Generate Implementation
+        # Step 2: Generate Tests and Fixtures
         {_, _, session} =
           execute_step(
             scope,
             session.id,
-            GenerateImplementation,
-            mock_output: "Generated implementation for BlogRepository"
+            GenerateTestsAndFixtures,
+            mock_output: "Generated tests and fixtures for PostCache"
           )
 
-        # Write the actual files that would have been generated
-        write_implementation_files(project_dir)
+        # Write the test files with undefined module error
+        write_test_files_with_undefined_module(project_dir)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
 
-        # Step 5: Run Tests (with failures) - real test execution
+        # Step 3: Run Tests (with runtime error from undefined module) - real test execution
         {_, result, session} = execute_step(scope, session.id, RunTests, seed: 1)
 
-        # Verify we got a failure
+        # Verify we got a test failure (undefined module causes runtime error)
         assert result.status == :error
         assert result.data.stats.tests == 1
         assert result.data.stats.failures == 1
@@ -112,19 +112,21 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
                            interactions: [_, _, %Interaction{result: %{status: :error}}]
                          }}
 
-        # Step 6: Fix Test Failures
+        # Step 4: Fix Compilation Errors (which fixes the undefined module)
         {_, _, session} =
-          execute_step(scope, session.id, FixTestFailures, mock_output: "Fixed test failures")
+          execute_step(scope, session.id, FixCompilationErrors,
+            mock_output: "Fixed undefined module error"
+          )
 
-        # Actually fix the test file
-        fix_test_file(project_dir)
+        # Actually fix the undefined module error
+        fix_undefined_module(project_dir)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
                            interactions: [_, _, _, %Interaction{}]
                          }}
 
-        # Step 7: Run Tests Again (passing) - real test execution
+        # Step 5: Run Tests Again (passing) - real test execution
         {_, result, session} = execute_step(scope, session.id, RunTests, seed: 2)
 
         # Verify tests now pass
@@ -137,7 +139,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
                            interactions: [_, _, _, _, %Interaction{result: %{status: :ok}}]
                          }}
 
-        # Step 8: Finalize
+        # Step 6: Finalize
         {_finalize_interaction, _finalize_result, session} =
           execute_step(scope, session.id, Finalize)
 
@@ -204,33 +206,25 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
     end
   end
 
-  # Write implementation and test files to the test project
-  defp write_implementation_files(project_dir) do
+  # Write test files with undefined module error to the test project
+  defp write_test_files_with_undefined_module(project_dir) do
     # Read fixtures
-    impl_content = File.read!("test/fixtures/component_coding/blog_repository._ex")
-    test_content = File.read!("test/fixtures/component_coding/blog_repository_test._ex")
+    test_content = File.read!("test/fixtures/component_test/post_cache_test._ex")
 
-    # Write implementation file
-    impl_path =
-      Path.join([project_dir, "lib", "test_phoenix_project", "blog", "blog_repository.ex"])
-
-    File.mkdir_p!(Path.dirname(impl_path))
-    File.write!(impl_path, impl_content)
-
-    # Write test file
+    # Write test file with undefined module error
     test_path =
-      Path.join([project_dir, "test", "test_phoenix_project", "blog", "blog_repository_test.exs"])
+      Path.join([project_dir, "test", "test_phoenix_project", "blog", "post_cache_test.exs"])
 
     File.mkdir_p!(Path.dirname(test_path))
     File.write!(test_path, test_content)
   end
 
-  # Fix the test file by replacing with the passing version
-  defp fix_test_file(project_dir) do
-    fixed_content = File.read!("test/fixtures/component_coding/blog_repository_test_fixed._ex")
+  # Fix the undefined module error by replacing with the fixed version
+  defp fix_undefined_module(project_dir) do
+    fixed_content = File.read!("test/fixtures/component_test/post_cache_test_fixed._ex")
 
     test_path =
-      Path.join([project_dir, "test", "test_phoenix_project", "blog", "blog_repository_test.exs"])
+      Path.join([project_dir, "test", "test_phoenix_project", "blog", "post_cache_test.exs"])
 
     File.write!(test_path, fixed_content)
   end

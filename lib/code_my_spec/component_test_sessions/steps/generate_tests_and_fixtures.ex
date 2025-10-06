@@ -41,8 +41,14 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     %{design_file: design_file_path, test_file: test_file_path} =
       Utils.component_files(component, project)
 
-    parent_component = component.parent_component
-    %{design_file: parent_design_file_path} = Utils.component_files(parent_component, project)
+    parent_design_file_path =
+      if component.parent_component do
+        parent_component = component.parent_component
+        %{design_file: parent_design_file_path} = Utils.component_files(parent_component, project)
+        parent_design_file_path
+      else
+        "no parent design"
+      end
 
     prompt =
       """

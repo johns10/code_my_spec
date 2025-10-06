@@ -10,6 +10,8 @@ defmodule CodeMySpec.ComponentTestSessions.Orchestrator do
   @step_modules [
     Steps.Initialize,
     Steps.GenerateTestsAndFixtures,
+    Steps.RunTests,
+    Steps.FixCompilationErrors,
     Steps.Finalize
   ]
 
@@ -31,8 +33,15 @@ defmodule CodeMySpec.ComponentTestSessions.Orchestrator do
   defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateTestsAndFixtures}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  defp get_next_step(:ok, Steps.GenerateTestsAndFixtures), do: {:ok, Steps.Finalize}
+  defp get_next_step(:ok, Steps.GenerateTestsAndFixtures), do: {:ok, Steps.RunTests}
   defp get_next_step(_, Steps.GenerateTestsAndFixtures), do: {:ok, Steps.GenerateTestsAndFixtures}
+
+  defp get_next_step(:ok, Steps.RunTests), do: {:ok, Steps.Finalize}
+  defp get_next_step(:error, Steps.RunTests), do: {:ok, Steps.FixCompilationErrors}
+  defp get_next_step(_, Steps.RunTests), do: {:ok, Steps.RunTests}
+
+  defp get_next_step(:ok, Steps.FixCompilationErrors), do: {:ok, Steps.RunTests}
+  defp get_next_step(_, Steps.FixCompilationErrors), do: {:ok, Steps.FixCompilationErrors}
 
   defp get_next_step(:ok, Steps.Finalize), do: {:error, :session_complete}
 
