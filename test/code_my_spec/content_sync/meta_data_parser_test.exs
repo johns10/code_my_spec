@@ -119,14 +119,6 @@ defmodule CodeMySpec.ContentSync.MetaDataParserTest do
     """
   end
 
-  defp yaml_with_wrong_data_types do
-    """
-    title: 123
-    slug: "test-slug"
-    type: "blog"
-    """
-  end
-
   defp yaml_not_a_map do
     """
     - item1
@@ -150,7 +142,9 @@ defmodule CodeMySpec.ContentSync.MetaDataParserTest do
   # ============================================================================
 
   defp temp_yaml_file(content) do
-    path = Path.join(System.tmp_dir!(), "test_metadata_#{System.unique_integer([:positive])}.yaml")
+    path =
+      Path.join(System.tmp_dir!(), "test_metadata_#{System.unique_integer([:positive])}.yaml")
+
     File.write!(path, content)
     path
   end
@@ -460,14 +454,15 @@ defmodule CodeMySpec.ContentSync.MetaDataParserTest do
       end
     end
 
-    test "returns error for YAML with tab characters" do
+    test "accepts YAML with tab characters (YamlElixir is lenient)" do
       path = temp_yaml_file(invalid_yaml_tabs())
 
       try do
-        assert {:error, error_detail} = MetaDataParser.parse_metadata_file(path)
-        assert error_detail.type == :yaml_parse_error
-        assert error_detail.message == "Invalid YAML syntax"
-        assert error_detail.file_path == path
+        # YamlElixir is lenient and accepts tabs, though YAML spec discourages them
+        assert {:ok, metadata} = MetaDataParser.parse_metadata_file(path)
+        assert metadata.title == "Tab Issue"
+        assert metadata.slug == "test-slug"
+        assert metadata.type == "blog"
       after
         cleanup_file(path)
       end

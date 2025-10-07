@@ -30,6 +30,23 @@ defmodule CodeMySpecWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    # Public content routes
+    live_session :public_content,
+      on_mount: [{CodeMySpecWeb.UserAuth, :mount_current_scope}] do
+      live "/blog/:slug", ContentLive.Public, :blog
+      live "/pages/:slug", ContentLive.Public, :page
+      live "/landing/:slug", ContentLive.Public, :landing
+    end
+  end
+
+  # Protected content routes (require authentication)
+  scope "/private", CodeMySpecWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live "/blog/:slug", ContentLive.Public, :private_blog
+    live "/pages/:slug", ContentLive.Public, :private_page
+    live "/landing/:slug", ContentLive.Public, :private_landing
   end
 
   # OAuth2 routes
@@ -139,6 +156,9 @@ defmodule CodeMySpecWeb.Router do
       live "/rules/new", RuleLive.Form, :new
       live "/rules/:id", RuleLive.Show, :show
       live "/rules/:id/edit", RuleLive.Form, :edit
+
+      live "/content", ContentLive.Index, :index
+      live "/content/:id", ContentLive.Show, :show
 
       live "/architecture", ArchitectureLive.Index, :index
     end

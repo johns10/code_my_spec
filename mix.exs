@@ -68,6 +68,7 @@ defmodule CodeMySpec.MixProject do
       {:briefly, "~> 0.5.1"},
       {:ex_oauth2_provider, "~> 0.5.7"},
       {:earmark, "~> 1.4"},
+      {:floki, "~> 0.38"},
       {:yaml_elixir, "~> 2.11"},
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
       # {:exunit_formatter_json, "~> 0.1.0"},
@@ -78,7 +79,8 @@ defmodule CodeMySpec.MixProject do
       {:dir_walker, "~> 0.0.8"},
       {:assent, "~> 0.3.1"},
       {:cloak_ecto, "~> 1.3.0"},
-      {:git_cli, "~> 0.3.0"}
+      {:git_cli, "~> 0.3.0"},
+      {:file_system, "~> 1.0"}
     ]
   end
 

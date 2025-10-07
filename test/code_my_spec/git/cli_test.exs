@@ -1,5 +1,5 @@
 defmodule CodeMySpec.Git.CLITest do
-  use CodeMySpec.DataCase, async: false
+  use CodeMySpec.DataCase
 
   import CodeMySpec.{UsersFixtures, IntegrationsFixtures}
 
@@ -15,7 +15,7 @@ defmodule CodeMySpec.Git.CLITest do
   defp gitlab_repo_url, do: "https://gitlab.com/test-owner/test-repo.git"
   defp bitbucket_repo_url, do: "https://bitbucket.org/test-owner/test-repo.git"
 
-  defp github_token, do: "ghp_test_token_#{:rand.uniform(100000)}"
+  defp github_token, do: "ghp_test_token_#{:rand.uniform(100_000)}"
 
   defp temp_clone_path do
     base_path = System.tmp_dir!()

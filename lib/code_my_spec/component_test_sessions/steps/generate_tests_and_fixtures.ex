@@ -53,6 +53,8 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     prompt =
       """
       Generate comprehensive tests and fixtures for the following Phoenix component.
+      The component doesn't exist yet.
+      You are to write the tests before we implement the module, TDD style.
 
       Project: #{project.name}
       Project Description: #{project.description}

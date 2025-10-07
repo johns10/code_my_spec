@@ -5,9 +5,9 @@
       "-c",
       "git -C test add test_phoenix_project/blog/post_cache_test.exs && git -C test commit -m \"generated tests for PostCache\" && git -C test push -u origin component-test-session-for-postcache && gh pr create --title \"Add tests for PostCache\" --body \"Automated test generation for PostCache component\"\n"
     ],
-    "output": "[component-test-session-for-postcache a70a2b4] generated tests for PostCache\n 1 file changed, 9 insertions(+)\n create mode 100644 test/test_phoenix_project/blog/post_cache_test.exs\nremote: \nremote: Create a pull request for 'component-test-session-for-postcache' on GitHub by visiting:        \nremote:      https://github.com/johns10/test_phoenix_project/pull/new/component-test-session-for-postcache        \nremote: \nTo https://github.com/johns10/test_phoenix_project.git\n * [new branch]      component-test-session-for-postcache -> component-test-session-for-postcache\nbranch 'component-test-session-for-postcache' set up to track 'origin/component-test-session-for-postcache'.\nWarning: 3 uncommitted changes\nhttps://github.com/johns10/test_phoenix_project/pull/1\n",
-    "exit_code": 0,
-    "recorded_at": "2025-10-05T16:27:03.625413Z"
+    "output": "[component-test-session-for-postcache b86c949] generated tests for PostCache\n 1 file changed, 9 insertions(+)\n create mode 100644 test/test_phoenix_project/blog/post_cache_test.exs\nTo https://github.com/johns10/test_phoenix_project.git\n ! [rejected]        component-test-session-for-postcache -> component-test-session-for-postcache (non-fast-forward)\nerror: failed to push some refs to 'https://github.com/johns10/test_phoenix_project.git'\nhint: Updates were rejected because the tip of your current branch is behind\nhint: its remote counterpart. If you want to integrate the remote changes,\nhint: use 'git pull' before pushing again.\nhint: See the 'Note about fast-forwards' in 'git push --help' for details.\n",
+    "exit_code": 1,
+    "recorded_at": "2025-10-06T04:47:48.645538Z"
   },
   "sh -c git -C test switch -C component-test-session-for-postcache": {
     "command": [
@@ -16,8 +16,8 @@
       "git -C test switch -C component-test-session-for-postcache"
     ],
     "exit_code": 0,
-    "output": "Reset branch 'component-test-session-for-postcache'\n",
-    "recorded_at": "2025-10-05T16:26:59.230679Z"
+    "output": "Reset branch 'component-test-session-for-postcache'\nYour branch is behind 'origin/component-test-session-for-postcache' by 1 commit, and can be fast-forwarded.\n  (use \"git pull\" to update your local branch)\n",
+    "recorded_at": "2025-10-06T04:47:20.296278Z"
   },
   "sh -c mix test test/test_phoenix_project/blog/post_cache_test.exs --formatter ExUnitJsonFormatter --seed 1": {
     "command": [
@@ -25,9 +25,9 @@
       "-c",
       "mix test test/test_phoenix_project/blog/post_cache_test.exs --formatter ExUnitJsonFormatter --seed 1"
     ],
-    "exit_code": 2,
-    "output": "    warning: redefining module TestPhoenixProject.Blog.BlogRepository (current version loaded from _build/test/lib/test_phoenix_project/ebin/Elixir.TestPhoenixProject.Blog.BlogRepository.beam)\n    │\n  1 │ defmodule TestPhoenixProject.Blog.BlogRepository do\n    │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    │\n    └─ lib/test_phoenix_project/blog/blog_repository.ex:1: TestPhoenixProject.Blog.BlogRepository (module)\n\n    warning: TestPhoenixProject.Blog.PostCach.start_link/1 is undefined (module TestPhoenixProject.Blog.PostCach is not available or is yet to be defined)\n    │\n  8 │     {:ok, cache} = PostCach.start_link([])\n    │                             ~\n    │\n    └─ test/test_phoenix_project/blog/post_cache_test.exs:8:29: TestPhoenixProject.Blog.PostCacheTest.\"test cache stores posts correctly\"/1\n\n    warning: TestPhoenixProject.Blog.PostCach.put/3 is undefined (module TestPhoenixProject.Blog.PostCach is not available or is yet to be defined)\n    │\n  9 │     assert :ok = PostCach.put(cache, \"key1\", \"value1\")\n    │                           ~\n    │\n    └─ test/test_phoenix_project/blog/post_cache_test.exs:9:27: TestPhoenixProject.Blog.PostCacheTest.\"test cache stores posts correctly\"/1\n\n    warning: TestPhoenixProject.Blog.PostCach.get/2 is undefined (module TestPhoenixProject.Blog.PostCach is not available or is yet to be defined)\n    │\n 10 │     assert \"value1\" == PostCach.get(cache, \"key1\")\n    │                                 ~\n    │\n    └─ test/test_phoenix_project/blog/post_cache_test.exs:10:33: TestPhoenixProject.Blog.PostCacheTest.\"test cache stores posts correctly\"/1\n\n{\"tests\":[],\"stats\":{\"tests\":1,\"suites\":1,\"start\":\"2025-10-05T16:27:00.228060\",\"pending\":0,\"passes\":0,\"invalid\":0,\"failures\":1,\"end\":\"2025-10-05T16:27:00.314139\",\"duration\":89.725},\"pending\":[],\"failures\":[{\"title\":\"test cache stores posts correctly\",\"fullTitle\":\"TestPhoenixProject.Blog.PostCacheTest: test cache stores posts correctly\",\"err\":{\"message\":\"** (UndefinedFunctionError) function TestPhoenixProject.Blog.PostCach.start_link/1 is undefined (module TestPhoenixProject.Blog.PostCach is not available)code: {:ok, cache} = PostCach.start_link([])\\nstacktrace:       TestPhoenixProject.Blog.PostCach.start_link([])\\n       test/test_phoenix_project/blog/post_cache_test.exs:8: (test)\\n\",\"line\":7,\"file\":\"test/test_phoenix_project/blog/post_cache_test.exs\"}}]}\n",
-    "recorded_at": "2025-10-05T16:27:00.330642Z"
+    "exit_code": 1,
+    "output": "    warning: redefining module TestPhoenixProject.Blog.BlogRepository (current version loaded from _build/test/lib/test_phoenix_project/ebin/Elixir.TestPhoenixProject.Blog.BlogRepository.beam)\n    │\n  1 │ defmodule TestPhoenixProject.Blog.BlogRepository do\n    │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    │\n    └─ lib/test_phoenix_project/blog/blog_repository.ex:1: TestPhoenixProject.Blog.BlogRepository (module)\n\n    error: undefined variable \"asdf\"\n    │\n  1 │ asdf\n    │ ^^^^\n    │\n    └─ test/test_phoenix_project/blog/post_cache_test.exs:1:1\n\n\n== Compilation error in file test/test_phoenix_project/blog/post_cache_test.exs ==\n** (CompileError) test/test_phoenix_project/blog/post_cache_test.exs: cannot compile file (errors have been logged)\n\n",
+    "recorded_at": "2025-10-06T04:47:21.337134Z"
   },
   "sh -c mix test test/test_phoenix_project/blog/post_cache_test.exs --formatter ExUnitJsonFormatter --seed 2": {
     "command": [
@@ -35,8 +35,8 @@
       "-c",
       "mix test test/test_phoenix_project/blog/post_cache_test.exs --formatter ExUnitJsonFormatter --seed 2"
     ],
-    "exit_code": 0,
-    "output": "    warning: redefining module TestPhoenixProject.Blog.BlogRepository (current version loaded from _build/test/lib/test_phoenix_project/ebin/Elixir.TestPhoenixProject.Blog.BlogRepository.beam)\n    │\n  1 │ defmodule TestPhoenixProject.Blog.BlogRepository do\n    │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    │\n    └─ lib/test_phoenix_project/blog/blog_repository.ex:1: TestPhoenixProject.Blog.BlogRepository (module)\n\n    warning: unused alias PostCache\n    │\n  4 │   alias TestPhoenixProject.Blog.PostCache\n    │   ~\n    │\n    └─ test/test_phoenix_project/blog/post_cache_test.exs:4:3\n\n{\"tests\":[{\"title\":\"test cache stores posts correctly\",\"fullTitle\":\"TestPhoenixProject.Blog.PostCacheTest: test cache stores posts correctly\"}],\"stats\":{\"tests\":1,\"suites\":1,\"start\":\"2025-10-05T16:27:01.294794\",\"pending\":0,\"passes\":1,\"invalid\":0,\"failures\":0,\"end\":\"2025-10-05T16:27:01.317610\",\"duration\":25.298},\"pending\":[],\"failures\":[]}\n",
-    "recorded_at": "2025-10-05T16:27:01.336115Z"
+    "exit_code": 2,
+    "output": "    warning: redefining module TestPhoenixProject.Blog.BlogRepository (current version loaded from _build/test/lib/test_phoenix_project/ebin/Elixir.TestPhoenixProject.Blog.BlogRepository.beam)\n    │\n  1 │ defmodule TestPhoenixProject.Blog.BlogRepository do\n    │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    │\n    └─ lib/test_phoenix_project/blog/blog_repository.ex:1: TestPhoenixProject.Blog.BlogRepository (module)\n\n    warning: unused alias PostCache\n    │\n  4 │   alias TestPhoenixProject.Blog.PostCache\n    │   ~\n    │\n    └─ test/test_phoenix_project/blog/post_cache_test.exs:4:3\n\n{\"tests\":[],\"stats\":{\"tests\":1,\"suites\":1,\"start\":\"2025-10-06T04:47:33.326686\",\"pending\":0,\"passes\":0,\"invalid\":0,\"failures\":1,\"end\":\"2025-10-06T04:47:33.341660\",\"duration\":18.144},\"pending\":[],\"failures\":[{\"title\":\"test cache stores posts correctly\",\"fullTitle\":\"TestPhoenixProject.Blog.PostCacheTest: test cache stores posts correctly\",\"err\":{\"message\":\"Expected truthy, got false\\ncode: assert false\\nstacktrace:       test/test_phoenix_project/blog/post_cache_test.exs:7: (test)\\n\",\"line\":6,\"file\":\"test/test_phoenix_project/blog/post_cache_test.exs\"}}]}\n",
+    "recorded_at": "2025-10-06T04:47:33.357373Z"
   }
 }

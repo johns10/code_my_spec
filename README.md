@@ -16,3 +16,8 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
   * Docs: https://hexdocs.pm/phoenix
   * Forum: https://elixirforum.com/c/phoenix-forum
   * Source: https://github.com/phoenixframework/phoenix
+
+## Rambo gets fucked
+
+Whenever you pull the project from scratch, rambo gets fucked and ngrok won't work.
+You have to go to `deps/rambo/priv` and rename rambo-mac to rambo.

@@ -1,12 +1,1 @@
-defmodule TestPhoenixProject.Blog.PostCacheTest do
-  use ExUnit.Case, async: true
-
-  # This references an undefined module (typo in alias)
-  alias TestPhoenixProject.Blog.PostCach  # Missing 'e' at the end
-
-  test "cache stores posts correctly" do
-    {:ok, cache} = PostCach.start_link([])
-    assert :ok = PostCach.put(cache, "key1", "value1")
-    assert "value1" == PostCach.get(cache, "key1")
-  end
-end
+asdf

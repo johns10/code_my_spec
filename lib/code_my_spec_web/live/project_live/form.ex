@@ -19,6 +19,7 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:code_repo]} type="text" label="Code repo" />
         <.input field={@form[:docs_repo]} type="text" label="Docs repo" />
+        <.input field={@form[:content_repo]} type="text" label="Content repo" />
         <footer>
           <.button phx-disable-with="Saving...">Save Project</.button>
           <.button navigate={return_path(@current_scope, @return_to, @project)}>Cancel</.button>

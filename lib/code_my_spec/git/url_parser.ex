@@ -76,8 +76,6 @@ defmodule CodeMySpec.Git.URLParser do
     {:ok, normalized_host}
   end
 
-  defp extract_host(_), do: {:error, :invalid_url}
-
   defp map_host_to_provider("github.com"), do: {:ok, :github}
   defp map_host_to_provider("gitlab.com"), do: {:ok, :gitlab}
   defp map_host_to_provider(_), do: {:error, :unsupported_provider}

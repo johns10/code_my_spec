@@ -5,6 +5,7 @@ defmodule CodeMySpec.Content.Content do
   @type t :: %__MODULE__{
           id: integer() | nil,
           slug: String.t(),
+          title: String.t() | nil,
           content_type: :blog | :page | :landing,
           raw_content: String.t(),
           processed_content: String.t() | nil,
@@ -27,6 +28,7 @@ defmodule CodeMySpec.Content.Content do
 
   schema "contents" do
     field :slug, :string
+    field :title, :string
     field :content_type, Ecto.Enum, values: [:blog, :page, :landing]
     field :raw_content, :string
     field :processed_content, :string
@@ -61,6 +63,7 @@ defmodule CodeMySpec.Content.Content do
     content
     |> cast(attrs, [
       :slug,
+      :title,
       :content_type,
       :raw_content,
       :processed_content,

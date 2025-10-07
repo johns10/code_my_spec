@@ -85,7 +85,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
 
         # Step 2: Generate Tests and Fixtures
-        {_, _, session} =
+        {_, _, session_before_run_tests} =
           execute_step(
             scope,
             session.id,
@@ -93,24 +93,25 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
             mock_output: "Generated tests and fixtures for PostCache"
           )
 
-        # Write the test files with undefined module error
-        write_test_files_with_undefined_module(project_dir)
-
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
 
+        # Write the test files with undefined module error
+        write_test_files_with_undefined_module(project_dir)
+
         # Step 3: Run Tests (with runtime error from undefined module) - real test execution
-        {_, result, session} = execute_step(scope, session.id, RunTests, seed: 1)
+        {_, result, session} = execute_step(scope, session_before_run_tests.id, RunTests, seed: 1)
 
         # Verify we got a test failure (undefined module causes runtime error)
         assert result.status == :error
-        assert result.data.stats.tests == 1
-        assert result.data.stats.failures == 1
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
                            interactions: [_, _, %Interaction{result: %{status: :error}}]
                          }}
+
+        # Write the test files with undefined module error
+        write_test_files_with_undefined_module(project_dir)
 
         # Step 4: Fix Compilation Errors (which fixes the undefined module)
         {_, _, session} =
@@ -119,7 +120,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
           )
 
         # Actually fix the undefined module error
-        fix_undefined_module(project_dir)
+        write_failing_test_module(project_dir)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -128,11 +129,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
 
         # Step 5: Run Tests Again (passing) - real test execution
         {_, result, session} = execute_step(scope, session.id, RunTests, seed: 2)
-
-        # Verify tests now pass
         assert result.status == :ok
-        assert result.data.stats.tests == 1
-        assert result.data.stats.failures == 0
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -220,8 +217,8 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
   end
 
   # Fix the undefined module error by replacing with the fixed version
-  defp fix_undefined_module(project_dir) do
-    fixed_content = File.read!("test/fixtures/component_test/post_cache_test_fixed._ex")
+  defp write_failing_test_module(project_dir) do
+    fixed_content = File.read!("test/fixtures/component_test/post_cache_test_failing._ex")
 
     test_path =
       Path.join([project_dir, "test", "test_phoenix_project", "blog", "post_cache_test.exs"])

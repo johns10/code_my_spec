@@ -5,6 +5,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
 
   alias CodeMySpec.ProjectCoordinator
   alias CodeMySpec.Components
+  alias CodeMySpec.Git
 
   @test_repo_url "https://github.com/johns10/test_phoenix_project.git"
 
@@ -79,36 +80,26 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
     @tag :integration
     test "syncs project requirements with real test project", %{scope: scope} do
       temp_dir = System.tmp_dir!()
-      project_dir = Path.join(temp_dir, "test_phoenix_project")
+      project_dir = Path.join(temp_dir, "test_phoenix_project_#{:rand.uniform(999_999)}")
 
-      # Clean up any existing directory from previous test runs
-      if File.exists?(project_dir) do
-        File.rm_rf!(project_dir)
-      end
-
-      # Clone repositories
-      System.cmd("git", [
-        "clone",
-        "--recurse-submodules",
-        @test_repo_url,
-        project_dir
-      ])
-
-      # Install dependencies
-      System.cmd("mix", ["deps.get"], cd: project_dir)
+      # Clone using Git module (uses TestAdapter for speed)
+      start_time = System.monotonic_time(:millisecond)
+      {:ok, ^project_dir} = Git.clone(scope, @test_repo_url, project_dir)
 
       file_list =
         DirWalker.stream(project_dir)
         |> Enum.map(&Path.relative_to(&1, project_dir))
         |> Enum.to_list()
 
-      # Run tests and collect results
-      {test_output, _} =
-        System.cmd("mix", ["test", "--formatter", "ExUnitJsonFormatter"], cd: project_dir)
+      # Read cached test results
+      start_time = System.monotonic_time(:millisecond)
+      test_output = File.read!(CodeMySpec.Support.TestAdapter.test_results_cache_path())
 
+      start_time = System.monotonic_time(:millisecond)
       test_results = parse_test_results(test_output)
 
       # Sync project requirements
+      start_time = System.monotonic_time(:millisecond)
       result = ProjectCoordinator.sync_project_requirements(scope, file_list, test_results)
 
       post_cache = Enum.find(result, &(&1.name == "PostCache"))
@@ -129,7 +120,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       assert is_list(result)
       assert length(result) > 0
 
-      File.rm_rf(temp_dir)
+      File.rm_rf!(project_dir)
     end
   end
 

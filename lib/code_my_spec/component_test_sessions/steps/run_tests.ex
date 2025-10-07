@@ -1,8 +1,34 @@
 defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
+  @moduledoc """
+  Test execution step for component test generation sessions.
+
+  ## Design
+
+  This step runs generated tests to verify they compile and execute properly.
+  Unlike coding sessions, test failures are EXPECTED in test generation sessions
+  following TDD principles - we're validating that tests are syntactically correct
+  and will fail before implementation exists.
+
+  ### Success Criteria
+  - Tests compile without errors
+  - Test runner executes successfully
+  - Test results can be parsed from JSON output
+  - Test run data validates against TestRun schema
+
+  ### Error Conditions
+  - Compilation failures
+  - Malformed test output
+  - Invalid JSON from test formatter
+  - Test runner crashes
+
+  Test failures (assertions failing) are NOT treated as errors - they're the
+  expected state for newly generated tests in a TDD workflow.
+  """
+
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.{Command}
-  alias CodeMySpec.{Sessions, Tests, Utils}
+  alias CodeMySpec.{Sessions, Utils}
   alias CodeMySpec.Tests.TestRun
   require Logger
 
@@ -19,19 +45,24 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
          {:ok, result_with_test_run} <- Sessions.update_result(scope, result, %{data: test_run}) do
       state_updates = %{"test_run" => test_run}
 
-      test_run
-      |> Map.get(:stats)
-      |> Map.get(:failures)
-      |> case do
-        0 ->
+      case test_run.stats do
+        %{failures: failures, passes: 0} when failures > 0 ->
           {:ok, state_updates, result_with_test_run}
 
-        count when count > 0 ->
-          error_message = format_test_failures(test_run)
+        %{failures: 0, passes: passes} when passes > 0 ->
+          error_message = """
+          Some tests are passing, but these tests are written against a non-existent module
+          Ensure you are not calling components of the module, or non-applicable functions
+          """
+
           updated_result = update_result_error(scope, result_with_test_run, error_message)
           {:ok, state_updates, updated_result}
       end
     else
+      {:error, "invalid JSON in stdout"} ->
+        updated_result = update_result_error(scope, result, result.stdout)
+        {:ok, %{}, updated_result}
+
       {:error, reason} ->
         error_message = "Failed to parse test results: #{inspect(reason)}"
         updated_result = update_result_error(scope, result, error_message)
@@ -105,32 +136,5 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
         Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
         result
     end
-  end
-
-  defp format_test_failures(%TestRun{failures: failures} = test_run) do
-    failure_count = length(failures)
-
-    failure_details =
-      failures
-      |> Enum.map(fn failure ->
-        error_detail =
-          case failure.error do
-            %Tests.TestError{message: message} ->
-              "Error: #{message}"
-
-            nil ->
-              "No error details available"
-          end
-
-        "#{failure.full_title}\n#{error_detail}"
-      end)
-      |> Enum.join("\n\n")
-
-    """
-    Test execution status: #{test_run.execution_status}
-    #{failure_count} test(s) failed:
-
-    #{failure_details}
-    """
   end
 end

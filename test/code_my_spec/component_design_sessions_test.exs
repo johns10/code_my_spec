@@ -63,10 +63,12 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
       scope: scope,
       post_service: post_service
     } do
-      project_dir = "test_phoenix_project"
+      project_dir = "test_repos/component_design_session_#{System.unique_integer([:positive])}"
 
-      # Setup test project (clone only if doesn't exist)
-      setup_test_project(project_dir)
+      # Setup test project using TestAdapter
+      {:ok, ^project_dir} =
+        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+
       CodeMySpec.Sessions.subscribe_sessions(scope)
 
       # Use CLI recorder for the session
@@ -94,7 +96,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         # Create the design file that would have been created by Claude
         design_file =
           Path.join([
-            "test_phoenix_project",
+            project_dir,
             "docs",
             "design",
             "test_phoenix_project",
@@ -156,7 +158,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
   # Helper function to execute a session step with common pattern
   defp execute_step(scope, session_id, expected_module, opts \\ []) do
-    cd_opts = Keyword.get(opts, :cd_opts, cd: "test_phoenix_project")
+    cd_opts = Keyword.get(opts, :cd_opts, [])
     mock_output = Keyword.get(opts, :mock_output)
 
     {:ok, interaction} = Sessions.next_command(scope, session_id)
@@ -174,28 +176,6 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
     {:ok, updated_session} = Sessions.handle_result(scope, session_id, interaction.id, result)
     {interaction, result, updated_session}
-  end
-
-  # Helper function to setup test project (only clone if needed)
-  defp setup_test_project(project_dir) do
-    if File.exists?(project_dir) do
-      # Update existing repository
-      System.cmd("git", ["fetch", "origin"], cd: project_dir)
-      System.cmd("git", ["reset", "--hard", "origin/main"], cd: project_dir)
-    else
-      # Clone fresh copy
-      System.cmd("git", [
-        "clone",
-        "--recurse-submodules",
-        @test_repo_url,
-        project_dir
-      ])
-    end
-
-    # Ensure dependencies are up to date
-    unless File.exists?(Path.join(project_dir, "deps")) do
-      System.cmd("mix", ["deps.get"], cd: project_dir)
-    end
   end
 
   defp invalid_blog_repository_content() do

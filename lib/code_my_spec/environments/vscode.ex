@@ -1,9 +1,8 @@
 defmodule CodeMySpec.Environments.VSCode do
   @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
 
-  def environment_setup_command(%{branch_name: branch_name, working_dir: working_dir}) do
+  def environment_setup_command(%{branch_name: _branch_name, working_dir: _working_dir}) do
     """
-    git -C #{working_dir} switch -C #{branch_name}
     """
   end
 
@@ -31,17 +30,14 @@ defmodule CodeMySpec.Environments.VSCode do
   end
 
   def code_environment_teardown_command(%{
-        context_name: context_name,
+        context_name: _context_name,
         working_dir: working_dir,
         code_file_name: code_file_name,
-        test_file_name: test_file_name,
-        branch_name: branch_name
+        test_file_name: _test_file_name,
+        branch_name: _branch_name
       }) do
     """
-    git -C #{working_dir} add #{code_file_name} #{test_file_name} && \
-    git -C #{working_dir} commit -m "implemented #{context_name}" && \
-    git -C #{working_dir} push -u origin #{branch_name} && \
-    gh pr create --title "Implement #{context_name}" --body "Automated implementation of #{context_name} component"
+    git -C #{working_dir} add #{code_file_name}
     """
   end
 

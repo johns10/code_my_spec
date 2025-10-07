@@ -39,8 +39,7 @@ defmodule CodeMySpec.Git.CLI do
   """
   @spec clone(Scope.t(), repo_url(), path()) :: {:ok, path()} | {:error, error_reason()}
   def clone(%Scope{} = scope, repo_url, path) do
-    with :ok <- validate_clone_path(path),
-         {:ok, provider} <- URLParser.provider(repo_url),
+    with {:ok, provider} <- URLParser.provider(repo_url),
          {:ok, integration} <- get_integration(scope, provider),
          {:ok, authenticated_url} <- URLParser.inject_token(repo_url, integration.access_token),
          {:ok, _repository} <- Git.clone([authenticated_url, path]),
@@ -81,7 +80,8 @@ defmodule CodeMySpec.Git.CLI do
     with {:ok, original_url} <- get_remote_url(path),
          {:ok, provider} <- URLParser.provider(original_url),
          {:ok, integration} <- get_integration(scope, provider),
-         {:ok, authenticated_url} <- URLParser.inject_token(original_url, integration.access_token) do
+         {:ok, authenticated_url} <-
+           URLParser.inject_token(original_url, integration.access_token) do
       # Inject credentials, pull, then restore - always restore URL
       case set_remote_url(path, authenticated_url) do
         :ok ->
@@ -129,9 +129,7 @@ defmodule CodeMySpec.Git.CLI do
 
   defp set_remote_url(path, url) do
     File.cd!(path, fn ->
-      case System.cmd("git", ["remote", "set-url", "origin", url],
-             stderr_to_stdout: true
-           ) do
+      case System.cmd("git", ["remote", "set-url", "origin", url], stderr_to_stdout: true) do
         {_output, 0} -> :ok
         {_output, _exit_code} -> {:error, :failed_to_update_remote}
       end

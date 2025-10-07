@@ -9,6 +9,7 @@ defmodule CodeMySpec.Projects.Project do
           module_name: String.t() | nil,
           code_repo: String.t() | nil,
           docs_repo: String.t() | nil,
+          content_repo: String.t() | nil,
           setup_error: String.t() | nil,
           account_id: integer() | nil,
           status:
@@ -32,6 +33,7 @@ defmodule CodeMySpec.Projects.Project do
     field :module_name, :string
     field :code_repo, :string
     field :docs_repo, :string
+    field :content_repo, :string
     field :setup_error, :string
     field :account_id, :id
 
@@ -56,9 +58,20 @@ defmodule CodeMySpec.Projects.Project do
   @doc false
   def changeset(project, attrs, user_scope) do
     project
-    |> cast(attrs, [:name, :description, :module_name, :code_repo, :docs_repo, :status, :setup_error])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :module_name,
+      :code_repo,
+      :docs_repo,
+      :content_repo,
+      :status,
+      :setup_error
+    ])
     |> validate_required([:name])
-    |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9]*$/, message: "must be a valid Elixir module name")
+    |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9]*$/,
+      message: "must be a valid Elixir module name"
+    )
     |> put_change(:account_id, user_scope.active_account_id)
   end
 end
