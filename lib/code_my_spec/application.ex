@@ -7,6 +7,8 @@ defmodule CodeMySpec.Application do
 
   @impl true
   def start(_type, _args) do
+    env = Application.get_env(:code_my_spec, :env, :prod)
+
     children =
       [
         CodeMySpecWeb.Telemetry,
@@ -22,7 +24,7 @@ defmodule CodeMySpec.Application do
         # Start to serve requests, typically the last entry
         CodeMySpecWeb.Endpoint
       ]
-      |> children(Mix.env())
+      |> children(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

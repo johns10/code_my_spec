@@ -39,3 +39,5 @@ npm-debug.log
 
 /test_repos/
 .env
+.env.prod
+.env.uat

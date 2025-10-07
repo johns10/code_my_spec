@@ -1,5 +1,7 @@
 import Config
 
+config :code_my_spec, env: :dev
+
 # Configure your database
 config :code_my_spec, CodeMySpec.Repo,
   username: "postgres",
