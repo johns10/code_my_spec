@@ -83,7 +83,6 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       project_dir = Path.join(temp_dir, "test_phoenix_project_#{:rand.uniform(999_999)}")
 
       # Clone using Git module (uses TestAdapter for speed)
-      start_time = System.monotonic_time(:millisecond)
       {:ok, ^project_dir} = Git.clone(scope, @test_repo_url, project_dir)
 
       file_list =
@@ -92,14 +91,11 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
         |> Enum.to_list()
 
       # Read cached test results
-      start_time = System.monotonic_time(:millisecond)
       test_output = File.read!(CodeMySpec.Support.TestAdapter.test_results_cache_path())
 
-      start_time = System.monotonic_time(:millisecond)
       test_results = parse_test_results(test_output)
 
       # Sync project requirements
-      start_time = System.monotonic_time(:millisecond)
       result = ProjectCoordinator.sync_project_requirements(scope, file_list, test_results)
 
       post_cache = Enum.find(result, &(&1.name == "PostCache"))

@@ -9,24 +9,22 @@ defmodule CodeMySpec.Support.TestAdapter do
 
   @behaviour CodeMySpec.Git.Behaviour
 
-  @fixture_path "test_repos/test_phoenix_project"
-  @fixture_url "https://github.com/johns10/test_phoenix_project.git"
+  @code_repo_fixture_path "test_repos/test_phoenix_project"
+  @content_repo_fixture_path "test_repos/test_content_repo"
+  @code_fixture_url "https://github.com/johns10/test_phoenix_project.git"
+  @content_fixture_url "https://github.com/johns10/test_content_repo.git"
   @test_results_cache "test_repos/test_results_cache.json"
 
   @doc """
-  Ensures the fixture repository exists and is up to date.
+  Ensures the fixture repositories exist and are up to date.
 
-  Clones the repository if it doesn't exist, otherwise pulls latest changes.
+  Clones the repositories if they don't exist, otherwise pulls latest changes.
   Generates and caches test results if not already cached.
   This should be called once during test setup.
   """
   def ensure_fixture_fresh do
-    if File.exists?(@fixture_path) do
-      pull_fixture()
-    else
-      clone_fixture()
-    end
-
+    ensure_repo_fresh(@code_repo_fixture_path, @code_fixture_url)
+    ensure_repo_fresh(@content_repo_fixture_path, @content_fixture_url)
     generate_test_results_cache()
   end
 
@@ -38,14 +36,19 @@ defmodule CodeMySpec.Support.TestAdapter do
   @doc """
   Clones a repository by copying the fixture repo to the destination path.
 
+  Matches on the repo URL to determine which fixture to use (code vs content).
   This is much faster than actually cloning from a remote and safe for
   concurrent test execution since each test gets its own copy.
 
   Assumes ensure_fixture_fresh/0 has been called during test setup.
   """
   @impl true
-  def clone(_scope, _repo_url, dest_path) do
-    case System.cmd("cp", ["-R", @fixture_path, dest_path]) do
+  def clone(_scope, repo_url, dest_path) do
+    fixture_path = select_fixture(repo_url)
+
+    # Copy contents of fixture into dest_path (not the fixture directory itself)
+    # Using shell glob to copy all files including hidden ones
+    case System.cmd("sh", ["-c", "cp -R #{fixture_path}/. #{dest_path}/"]) do
       {_, 0} ->
         {:ok, dest_path}
 
@@ -65,11 +68,30 @@ defmodule CodeMySpec.Support.TestAdapter do
     :ok
   end
 
-  defp clone_fixture do
-    File.mkdir_p!(Path.dirname(@fixture_path))
-    IO.puts("[TestAdapter] Cloning test repository (only happens once)...")
+  defp select_fixture(repo_url) do
+    cond do
+      String.contains?(repo_url, "test_content_repo") -> @content_repo_fixture_path
+      String.contains?(repo_url, "test_phoenix_project") -> @code_repo_fixture_path
+      # Default to code repo for backward compatibility
+      true -> @code_repo_fixture_path
+    end
+  end
 
-    case System.cmd("git", ["clone", "--recurse-submodules", @fixture_url, @fixture_path],
+  defp ensure_repo_fresh(fixture_path, fixture_url) do
+    if File.exists?(fixture_path) do
+      pull_repo(fixture_path)
+    else
+      clone_repo(fixture_path, fixture_url)
+    end
+  end
+
+  defp clone_repo(fixture_path, fixture_url) do
+    File.mkdir_p!(Path.dirname(fixture_path))
+    IO.puts("[TestAdapter] Cloning #{fixture_url} (only happens once)...")
+
+    case System.cmd(
+           "git",
+           ["clone", "--recurse-submodules", fixture_url, fixture_path],
            stderr_to_stdout: true
          ) do
       {_, 0} ->
@@ -78,20 +100,22 @@ defmodule CodeMySpec.Support.TestAdapter do
       {output, code} ->
         raise """
         Failed to clone fixture repository.
+        URL: #{fixture_url}
         Exit code: #{code}
         Output: #{output}
         """
     end
   end
 
-  defp pull_fixture do
-    case System.cmd("git", ["pull"], cd: @fixture_path, stderr_to_stdout: true) do
+  defp pull_repo(fixture_path) do
+    case System.cmd("git", ["pull"], cd: fixture_path, stderr_to_stdout: true) do
       {_, 0} ->
         :ok
 
       {output, code} ->
         raise """
         Failed to pull fixture repository.
+        Path: #{fixture_path}
         Exit code: #{code}
         Output: #{output}
         """
@@ -107,7 +131,7 @@ defmodule CodeMySpec.Support.TestAdapter do
 
       # Install dependencies
       IO.puts("[TestAdapter] Installing dependencies...")
-      System.cmd("mix", ["deps.get"], cd: @fixture_path, stderr_to_stdout: true)
+      System.cmd("mix", ["deps.get"], cd: @code_repo_fixture_path, stderr_to_stdout: true)
 
       # Run tests and write JSON to file
       IO.puts("[TestAdapter] Running tests...")
@@ -115,7 +139,7 @@ defmodule CodeMySpec.Support.TestAdapter do
 
       # env inherits all vars and overrides/adds those specified
       System.cmd("mix", ["test", "--formatter", "ExUnitJsonFormatter"],
-        cd: @fixture_path,
+        cd: @code_repo_fixture_path,
         stderr_to_stdout: true,
         env: [{"EXUNIT_JSON_OUTPUT_FILE", test_results_file}]
       )
@@ -123,13 +147,13 @@ defmodule CodeMySpec.Support.TestAdapter do
       # Copy test results to cache location
       IO.puts("[TestAdapter] Caching test results...")
       File.mkdir_p!(Path.dirname(@test_results_cache))
-      File.cp!(Path.join(@fixture_path, test_results_file), @test_results_cache)
+      File.cp!(Path.join(@code_repo_fixture_path, test_results_file), @test_results_cache)
 
       # Remove deps and test results file to keep directory size down
       IO.puts("[TestAdapter] Cleaning up dependencies...")
-      File.rm_rf!(Path.join(@fixture_path, "deps"))
-      File.rm_rf!(Path.join(@fixture_path, "_build"))
-      test_results_path = Path.join(@fixture_path, test_results_file)
+      File.rm_rf!(Path.join(@code_repo_fixture_path, "deps"))
+      File.rm_rf!(Path.join(@code_repo_fixture_path, "_build"))
+      test_results_path = Path.join(@code_repo_fixture_path, test_results_file)
       File.rm!(test_results_path)
 
       IO.puts("[TestAdapter] Cache generation complete!\n")

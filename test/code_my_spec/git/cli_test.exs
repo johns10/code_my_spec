@@ -168,19 +168,15 @@ defmodule CodeMySpec.Git.CLITest do
 
   describe "clone/3 - path validation" do
     @tag :integration
-    test "returns error when clone path already exists" do
+    test "returns error when clone path is not empty" do
       {scope, _token} = scope_with_github_integration()
       clone_path = temp_clone_path()
 
       File.mkdir_p!(clone_path)
-
-      try do
-        result = CLI.clone(scope, test_repo_url(), clone_path)
-
-        assert {:error, _reason} = result
-      after
-        cleanup_path(clone_path)
-      end
+      File.write!(Path.join(clone_path, "existing_file.txt"), "content")
+      result = CLI.clone(scope, test_repo_url(), clone_path)
+      assert {:error, _reason} = result
+      cleanup_path(clone_path)
     end
 
     @tag :integration

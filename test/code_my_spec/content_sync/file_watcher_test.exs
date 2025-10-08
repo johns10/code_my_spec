@@ -78,6 +78,25 @@ defmodule CodeMySpec.ContentSync.FileWatcherTest do
     }
   end
 
+  defp eventually(func, timeout \\ 2000, interval \\ 50) do
+    deadline = System.monotonic_time(:millisecond) + timeout
+    eventually_loop(func, deadline, interval)
+  end
+
+  defp eventually_loop(func, deadline, interval) do
+    if func.() do
+      true
+    else
+      now = System.monotonic_time(:millisecond)
+      if now >= deadline do
+        false
+      else
+        :timer.sleep(interval)
+        eventually_loop(func, deadline, interval)
+      end
+    end
+  end
+
   # ============================================================================
   # start_link/1 - Successful Initialization
   # ============================================================================
@@ -745,26 +764,22 @@ defmodule CodeMySpec.ContentSync.FileWatcherTest do
 
       configure_file_watcher(enabled: true, directory: dir, scope: scope)
 
-      try do
-        {:ok, pid} = FileWatcher.start_link([])
+      {:ok, pid} = FileWatcher.start_link([])
 
-        file_path = Path.join(dir, "test.md")
-        send(pid, {:file_event, self(), {file_path, [:modified]}})
+      file_path = Path.join(dir, "test.md")
+      send(pid, {:file_event, self(), {file_path, [:modified]}})
 
-        # Wait for debounce timer to expire and trigger sync
-        :timer.sleep(1100)
+      # Poll for debounce timer to expire and be processed (max 2 seconds)
+      assert eventually(fn ->
+        Process.alive?(pid) && :sys.get_state(pid).debounce_timer == nil
+      end)
 
-        # GenServer should still be alive after processing :trigger_sync
-        assert Process.alive?(pid)
+      # GenServer should still be alive after processing :trigger_sync
+      assert Process.alive?(pid)
 
-        state = :sys.get_state(pid)
-        assert state.debounce_timer == nil
-
-        GenServer.stop(pid)
-      after
-        cleanup_directory(dir)
-        restore_original_config(original_config)
-      end
+      GenServer.stop(pid)
+      cleanup_directory(dir)
+      restore_original_config(original_config)
     end
 
     test "can be sent :trigger_sync message directly" do

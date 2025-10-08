@@ -103,14 +103,6 @@ defmodule CodeMySpec.Git.CLI do
 
   # Private Functions
 
-  defp validate_clone_path(path) do
-    cond do
-      File.exists?(path) -> {:error, :path_exists}
-      !File.exists?(Path.dirname(path)) -> {:error, :parent_directory_not_found}
-      true -> :ok
-    end
-  end
-
   defp get_integration(scope, provider) do
     case Integrations.get_integration(scope, provider) do
       {:ok, integration} -> {:ok, integration}
