@@ -43,7 +43,7 @@ defmodule CodeMySpec.Sessions do
 
   """
   def list_sessions(%Scope{} = scope) do
-    Repo.all_by(Session, account_id: scope.active_account.id)
+    Repo.all_by(Session, account_id: scope.active_account.id, user_id: scope.user.id)
   end
 
   defdelegate get_session!(scope, id), to: SessionsRepository
@@ -85,6 +85,7 @@ defmodule CodeMySpec.Sessions do
   """
   def update_session(%Scope{} = scope, %Session{} = session, attrs) do
     true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
            session
@@ -103,6 +104,7 @@ defmodule CodeMySpec.Sessions do
         %Result{} = result
       ) do
     true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
            SessionsRepository.complete_session_interaction(
@@ -131,6 +133,7 @@ defmodule CodeMySpec.Sessions do
   """
   def delete_session(%Scope{} = scope, %Session{} = session) do
     true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
            Repo.delete(session) do
@@ -150,6 +153,7 @@ defmodule CodeMySpec.Sessions do
   """
   def change_session(%Scope{} = scope, %Session{} = session, attrs \\ %{}) do
     true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
 
     Session.changeset(session, attrs, scope)
   end

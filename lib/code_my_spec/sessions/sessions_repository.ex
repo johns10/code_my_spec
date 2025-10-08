@@ -22,13 +22,13 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   def get_session!(%Scope{} = scope, id) do
     Session
     |> preload([:project, :component, [component: :parent_component]])
-    |> Repo.get_by!(id: id, account_id: scope.active_account.id)
+    |> Repo.get_by!(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
   end
 
   def get_session(%Scope{} = scope, id) do
     Session
     |> preload([:project, :component, [component: :parent_component]])
-    |> Repo.get_by(id: id, account_id: scope.active_account.id)
+    |> Repo.get_by(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
   end
 
   def complete_session_interaction(
@@ -39,6 +39,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
         result
       ) do
     true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
            session
@@ -50,6 +51,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
 
   def add_interaction(%Scope{} = scope, %Session{} = session, interaction_attrs) do
     true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
            session

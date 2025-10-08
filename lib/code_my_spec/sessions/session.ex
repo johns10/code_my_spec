@@ -2,6 +2,7 @@ defmodule CodeMySpec.Sessions.Session do
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Projects.Project
   alias CodeMySpec.Accounts.Account
+  alias CodeMySpec.Users.User
   alias CodeMySpec.Sessions.Interaction
   use Ecto.Schema
   import Ecto.Changeset
@@ -23,6 +24,8 @@ defmodule CodeMySpec.Sessions.Session do
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
           account_id: integer() | nil,
           account: Account.t() | Ecto.Association.NotLoaded.t() | nil,
+          user_id: integer() | nil,
+          user: User.t() | Ecto.Association.NotLoaded.t() | nil,
           component_id: integer() | nil,
           component: Component.t() | Ecto.Association.NotLoaded.t() | nil,
           interactions: [Interaction.t()],
@@ -40,6 +43,7 @@ defmodule CodeMySpec.Sessions.Session do
 
     belongs_to :project, Project
     belongs_to :account, Account
+    belongs_to :user, User
     belongs_to :component, Component
 
     embeds_many :interactions, Interaction
@@ -55,6 +59,7 @@ defmodule CodeMySpec.Sessions.Session do
     |> cast_embed(:interactions)
     |> put_change(:account_id, user_scope.active_account.id)
     |> put_change(:project_id, user_scope.active_project.id)
+    |> put_change(:user_id, user_scope.user.id)
   end
 
   def complete_interaction_changeset(session, session_attrs, interaction_id, result) do
