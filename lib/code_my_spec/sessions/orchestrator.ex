@@ -10,10 +10,15 @@ defmodule CodeMySpec.Sessions.Orchestrator do
            next_interaction_module.get_command(scope, session, opts),
          interaction <- Interaction.new_with_command(command),
          {:ok, updated_session} <- SessionsRepository.add_interaction(scope, session, interaction) do
-      {:ok, interaction, updated_session}
+      {:ok, updated_session}
     else
-      {%Interaction{} = pending_interaction, session} ->
-        {:ok, pending_interaction, session}
+      {%Interaction{} = _pending_interaction, session} ->
+        {:ok, session}
+
+      {:error, :session_complete} ->
+        # Mark session as complete and return it
+        {:ok, %Session{} = session} = get_session(scope, session_id)
+        SessionsRepository.complete_session(scope, session)
 
       error ->
         error
@@ -31,8 +36,12 @@ defmodule CodeMySpec.Sessions.Orchestrator do
   defp validate_session_status(%Session{status: :failed}), do: {:error, :failed}
   defp validate_session_status(%Session{}), do: :ok
 
-  defp get_pending_interaction(%Session{interactions: interactions} = session) do
-    case List.last(interactions) do
+  defp get_pending_interaction(%Session{interactions: []} = session) do
+    {nil, session}
+  end
+
+  defp get_pending_interaction(%Session{interactions: [latest | _]} = session) do
+    case latest do
       %Interaction{result: nil} = pending_interaction ->
         {pending_interaction, session}
 

@@ -15,21 +15,6 @@ defmodule CodeMySpecWeb.SessionsJSON do
     %{data: data(session)}
   end
 
-  @doc """
-  Renders a command for execution.
-  """
-  def command(%{
-        interaction_id: interaction_id,
-        command: command_data,
-        status: status
-      }) do
-    %{
-      interaction_id: interaction_id,
-      command: render_command(command_data),
-      status: status
-    }
-  end
-
   defp data(%Session{} = session) do
     %{
       id: session.id,

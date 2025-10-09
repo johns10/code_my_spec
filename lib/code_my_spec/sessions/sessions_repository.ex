@@ -57,6 +57,20 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
            session
            |> Session.add_interaction_changeset(interaction_attrs)
            |> Repo.update() do
+      # Refetch to get interactions in descending order
+      session = get_session(scope, session.id)
+      {:ok, session}
+    end
+  end
+
+  def complete_session(%Scope{} = scope, %Session{} = session) do
+    true = session.account_id == scope.active_account.id
+    true = session.user_id == scope.user.id
+
+    with {:ok, session = %Session{}} <-
+           session
+           |> Session.changeset(%{status: :complete}, scope)
+           |> Repo.update() do
       {:ok, session}
     end
   end

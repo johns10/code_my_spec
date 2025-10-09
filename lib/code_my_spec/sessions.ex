@@ -167,10 +167,10 @@ defmodule CodeMySpec.Sessions do
   end
 
   def next_command(%Scope{} = scope, session_id, opts \\ []) do
-    with {:ok, %Interaction{} = interaction, %Session{} = session} <-
+    with {:ok, %Session{} = session} <-
            Orchestrator.next_command(scope, session_id, opts) do
       broadcast(scope, {:updated, session})
-      {:ok, interaction}
+      {:ok, session}
     end
   end
 

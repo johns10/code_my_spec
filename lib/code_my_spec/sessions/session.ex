@@ -89,6 +89,6 @@ defmodule CodeMySpec.Sessions.Session do
 
   def add_interaction_changeset(session, %Interaction{} = interaction) do
     change(session)
-    |> put_embed(:interactions, session.interactions ++ [interaction])
+    |> put_embed(:interactions, [interaction | session.interactions])
   end
 end

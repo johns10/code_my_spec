@@ -33,30 +33,22 @@ defmodule CodeMySpecWeb.SessionsController do
   def next_command(conn, %{"sessions_id" => session_id}) do
     scope = conn.assigns.current_scope
 
-    with {:ok, %{id: interaction_id, command: command}} <-
-           Sessions.next_command(scope, session_id) do
-      render(conn, :command, %{
-        interaction_id: interaction_id,
-        command: command,
-        status: "ok"
-      })
-    else
+    case Sessions.next_command(scope, session_id) do
+      {:ok, session} ->
+        render(conn, :show, session: session)
+
       {:error, :session_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{status: "not_found", error: "Session not found"})
 
-      {:error, :interaction_not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{status: "not_found", error: "Interaction not found"})
+      {:error, :complete} ->
+        session = Sessions.get_session(scope, session_id)
+        render(conn, :show, session: session)
 
-      {:error, :session_complete} ->
-        render(conn, :command, %{
-          interaction_id: nil,
-          command: nil,
-          status: "complete"
-        })
+      {:error, :failed} ->
+        session = Sessions.get_session(scope, session_id)
+        render(conn, :show, session: session)
     end
   end
 
