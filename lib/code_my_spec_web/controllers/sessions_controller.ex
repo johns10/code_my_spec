@@ -5,6 +5,25 @@ defmodule CodeMySpecWeb.SessionsController do
 
   action_fallback CodeMySpecWeb.FallbackController
 
+  def index(conn, params) do
+    scope = conn.assigns.current_scope
+
+    opts =
+      case params["status"] do
+        nil ->
+          []
+
+        status when is_binary(status) ->
+          [status: [String.to_existing_atom(status)]]
+
+        statuses when is_list(statuses) ->
+          [status: Enum.map(statuses, &String.to_existing_atom/1)]
+      end
+
+    sessions = Sessions.list_sessions(scope, opts)
+    render(conn, :index, sessions: sessions)
+  end
+
   def show(conn, %{"id" => id}) do
     scope = conn.assigns.current_scope
 
@@ -71,6 +90,22 @@ defmodule CodeMySpecWeb.SessionsController do
         conn
         |> put_status(:not_found)
         |> json(%{status: "not_found", error: "Interaction not found"})
+    end
+  end
+
+  def cancel(conn, %{"id" => id}) do
+    scope = conn.assigns.current_scope
+
+    case Sessions.get_session(scope, id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Session not found"})
+
+      session ->
+        with {:ok, session} <- Sessions.update_session(scope, session, %{status: :cancelled}) do
+          render(conn, :show, session: session)
+        end
     end
   end
 end

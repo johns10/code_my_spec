@@ -8,7 +8,7 @@ defmodule CodeMySpec.Sessions do
   alias CodeMySpec.Sessions.SessionsRepository
   alias CodeMySpec.Repo
 
-  alias CodeMySpec.Sessions.{Session, Interaction, ResultHandler, Orchestrator}
+  alias CodeMySpec.Sessions.{Session, ResultHandler, Orchestrator}
   alias CodeMySpec.Users.Scope
 
   @doc """
@@ -41,9 +41,23 @@ defmodule CodeMySpec.Sessions do
       iex> list_sessions(scope)
       [%Session{}, ...]
 
+      iex> list_sessions(scope, status: [:active])
+      [%Session{}, ...]
+
+      iex> list_sessions(scope, status: [:active, :complete])
+      [%Session{}, ...]
+
   """
-  def list_sessions(%Scope{} = scope) do
-    Repo.all_by(Session, account_id: scope.active_account.id, user_id: scope.user.id)
+  def list_sessions(%Scope{} = scope, opts \\ []) do
+    status_filter = Keyword.get(opts, :status, [:active])
+
+    Session
+    |> where([s], s.account_id == ^scope.active_account.id)
+    |> where([s], s.project_id == ^scope.active_project.id)
+    |> where([s], s.user_id == ^scope.user.id)
+    |> where([s], s.status in ^status_filter)
+    |> preload([:project, :component])
+    |> Repo.all()
   end
 
   defdelegate get_session!(scope, id), to: SessionsRepository

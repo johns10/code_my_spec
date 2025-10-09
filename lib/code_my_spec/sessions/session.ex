@@ -18,7 +18,7 @@ defmodule CodeMySpec.Sessions.Session do
             | nil,
           agent: :claude_code | nil,
           environment: :local | :vscode | nil,
-          status: :active | :complete | :failed | nil,
+          status: :active | :complete | :failed | :cancelled | nil,
           state: map() | nil,
           project_id: integer() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
@@ -37,7 +37,7 @@ defmodule CodeMySpec.Sessions.Session do
     field :type, CodeMySpec.Sessions.SessionType
     field :agent, Ecto.Enum, values: [:claude_code]
     field :environment, Ecto.Enum, values: [:local, :vscode]
-    field :status, Ecto.Enum, values: [:active, :complete, :failed], default: :active
+    field :status, Ecto.Enum, values: [:active, :complete, :failed, :cancelled], default: :active
 
     field :state, :map
 

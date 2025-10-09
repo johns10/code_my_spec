@@ -24,8 +24,10 @@ defmodule CodeMySpecWeb.SessionsJSON do
       status: session.status,
       state: session.state,
       project_id: session.project_id,
+      project: render_project(session.project),
       account_id: session.account_id,
       component_id: session.component_id,
+      component: render_component(session.component),
       interactions: render_interactions(session.interactions),
       inserted_at: session.inserted_at,
       updated_at: session.updated_at
@@ -67,6 +69,30 @@ defmodule CodeMySpecWeb.SessionsJSON do
       stderr: result.stderr,
       duration_ms: result.duration_ms,
       timestamp: result.timestamp
+    }
+  end
+
+  defp render_project(%Ecto.Association.NotLoaded{}), do: nil
+  defp render_project(nil), do: nil
+
+  defp render_project(project) do
+    %{
+      id: project.id,
+      name: project.name,
+      module_name: project.module_name,
+      status: project.status
+    }
+  end
+
+  defp render_component(%Ecto.Association.NotLoaded{}), do: nil
+  defp render_component(nil), do: nil
+
+  defp render_component(component) do
+    %{
+      id: component.id,
+      name: component.name,
+      type: component.type,
+      module_name: component.module_name
     }
   end
 end

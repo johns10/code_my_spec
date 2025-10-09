@@ -95,6 +95,8 @@ defmodule CodeMySpecWeb.Router do
       post "/submit-result/:interaction_id", SessionsController, :submit_result
     end
 
+    post "/sessions/:id/cancel", SessionsController, :cancel
+
     post "/project-coordinator/sync-requirements", ProjectCoordinatorController, :sync_requirements
     get "/project-coordinator/next-actions", ProjectCoordinatorController, :next_actions
   end
