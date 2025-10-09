@@ -34,6 +34,7 @@ defmodule CodeMySpec.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # Phoenix default deps
       {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8.0-rc.4", override: true},
       {:phoenix_ecto, "~> 4.5"},
@@ -61,6 +62,16 @@ defmodule CodeMySpec.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
+
+      # Added by codemyspec
+      {:file_system, "~> 1.0"},
+      {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
+      {:exunit_json_formatter,
+       git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
+      # {:exunit_formatter_json, "~> 0.1.0"},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+
+      # Normal deps
       {:mox, "~> 1.2"},
       {:paper_trail, "~> 1.1"},
       {:hermes_mcp, "~> 0.14"},
@@ -70,17 +81,11 @@ defmodule CodeMySpec.MixProject do
       {:earmark, "~> 1.4"},
       {:floki, "~> 0.38"},
       {:yaml_elixir, "~> 2.11"},
-      {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
-      # {:exunit_formatter_json, "~> 0.1.0"},
-      {:exunit_json_formatter,
-       git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:faker, "~> 0.18", only: :test},
       {:dir_walker, "~> 0.0.8"},
       {:assent, "~> 0.3.1"},
       {:cloak_ecto, "~> 1.3.0"},
-      {:git_cli, "~> 0.3.0"},
-      {:file_system, "~> 1.0"}
+      {:git_cli, "~> 0.3.0"}
     ]
   end
 
