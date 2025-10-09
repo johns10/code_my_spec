@@ -14,7 +14,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
          {:ok, prompt} <- build_implementation_prompt(project, component, rules),
          {:ok, agent} <-
            Agents.create_agent(:unit_coder, "implementation-generator", :claude_code),
-         {:ok, command} <- Agents.build_command(agent, prompt) do
+         {:ok, command} <- Agents.build_command_string(agent, prompt) do
       [command_string, pipe] = command
       {:ok, Command.new(__MODULE__, command_string, pipe)}
     end

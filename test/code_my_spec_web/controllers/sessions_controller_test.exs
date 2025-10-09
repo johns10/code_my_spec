@@ -5,11 +5,6 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
   import Mox
 
   setup %{conn: conn} do
-    # Configure application to use mock for local environment
-    Application.put_env(:code_my_spec, :local_environment, CodeMySpec.MockEnvironment)
-
-    # Use stub environment that automatically records
-    stub_with(CodeMySpec.MockEnvironment, CodeMySpec.Support.RecordingEnvironment)
     scope = full_preferences_fixture()
     oauth_app = create_oauth_application()
 
@@ -162,6 +157,7 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
       case json_response(get_conn, 200) do
         %{"data" => %{"interactions" => [first_interaction | _]}} ->
           interaction_id = first_interaction["id"]
+
           result_params = %{
             status: "ok",
             data: %{output: "test output"},

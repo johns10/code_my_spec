@@ -30,9 +30,9 @@ defmodule CodeMySpec.Agents do
   Builds a command using the agent's implementation.
   Merges agent type config with instance config at runtime.
   """
-  def build_command(%Agent{} = agent, prompt, opts \\ %{}) do
+  def build_command_string(%Agent{} = agent, prompt, opts \\ %{}) do
     implementation = get_impl(agent)
-    implementation.build_command(agent, prompt, opts)
+    implementation.build_command_string(agent, prompt, opts)
   end
 
   @doc """

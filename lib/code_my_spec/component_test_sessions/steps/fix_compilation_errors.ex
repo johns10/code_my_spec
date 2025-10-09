@@ -10,7 +10,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.FixCompilationErrors do
          {:ok, agent} <-
            Agents.create_agent(:test_writer, "component-test-error-fixer", :claude_code),
          prompt <- build_fix_prompt(test_failures),
-         {:ok, command_args} <- Agents.build_command(agent, prompt, %{"continue" => true}) do
+         {:ok, command_args} <- Agents.build_command_string(agent, prompt, %{"continue" => true}) do
       [prompt | command] = Enum.reverse(command_args)
 
       {:ok, Command.new(__MODULE__, command |> Enum.reverse() |> Enum.join(" "), prompt)}

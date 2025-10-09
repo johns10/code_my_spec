@@ -12,7 +12,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
          {:ok, prompt} <- build_design_prompt(project, component, rules, stories),
          {:ok, agent} <-
            Agents.create_agent(:context_designer, "context-design-generator", :claude_code),
-         {:ok, command} <- Agents.build_command(agent, prompt) do
+         {:ok, command} <- Agents.build_command_string(agent, prompt) do
       [command_string, pipe] = command
       {:ok, Command.new(__MODULE__, command_string, pipe)}
     end

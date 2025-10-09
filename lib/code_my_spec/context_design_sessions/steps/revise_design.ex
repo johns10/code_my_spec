@@ -12,7 +12,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ReviseDesign do
          {:ok, agent} <-
            Agents.create_agent(:context_designer, "context-design-reviser", :claude_code),
          prompt <- build_revision_prompt(context_design, validation_errors),
-         {:ok, command_args} <- Agents.build_command(agent, prompt, %{"continue" => true}) do
+         {:ok, command_args} <- Agents.build_command_string(agent, prompt, %{"continue" => true}) do
       [prompt | command] = Enum.reverse(command_args)
 
       {:ok, Command.new(__MODULE__, command |> Enum.reverse() |> Enum.join(" "), prompt)}
