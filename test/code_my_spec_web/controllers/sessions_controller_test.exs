@@ -122,8 +122,13 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
       conn = get(conn, ~p"/api/sessions/#{session.id}/next-command")
 
       response = json_response(conn, 200)
-      assert Map.has_key?(response, "interaction_id")
-      assert Map.has_key?(response, "command")
+      assert %{"data" => data} = response
+      assert is_list(data["interactions"])
+      assert length(data["interactions"]) > 0
+
+      # Check that the first interaction has a command
+      [first_interaction | _] = data["interactions"]
+      assert Map.has_key?(first_interaction, "command")
     end
 
     test "returns completion when session is done successfully", %{conn: conn, session: session} do
@@ -155,7 +160,8 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
       get_conn = get(conn, ~p"/api/sessions/#{session.id}/next-command")
 
       case json_response(get_conn, 200) do
-        %{"interaction_id" => interaction_id} ->
+        %{"data" => %{"interactions" => [first_interaction | _]}} ->
+          interaction_id = first_interaction["id"]
           result_params = %{
             status: "ok",
             data: %{output: "test output"},

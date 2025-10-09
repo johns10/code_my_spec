@@ -1,7 +1,6 @@
 defmodule CodeMySpec.ComponentCodingSessionsTest do
   alias CodeMySpec.Sessions.Interaction
   use CodeMySpec.DataCase
-  import Mox
   import CodeMySpec.Support.CLIRecorder
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
   alias CodeMySpec.{Sessions, Components}
@@ -19,12 +18,6 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
   describe "component coding session workflow" do
     setup do
-      # Configure application to use mock for local environment
-      Application.put_env(:code_my_spec, :local_environment, CodeMySpec.MockEnvironment)
-
-      # Use stub environment that automatically records
-      stub_with(CodeMySpec.MockEnvironment, CodeMySpec.Support.RecordingEnvironment)
-
       user = user_fixture()
       account = account_fixture()
       member_fixture(user, account)
@@ -63,10 +56,12 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
       scope: scope,
       blog_repository: blog_repository
     } do
-      project_dir = "test_phoenix_project"
+      project_dir = "test_repos/component_coding_session_#{System.unique_integer([:positive])}"
 
-      # Setup test project (clone only if doesn't exist)
-      setup_test_project(project_dir)
+      # Setup test project using TestAdapter
+      {:ok, ^project_dir} =
+        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+
       CodeMySpec.Sessions.subscribe_sessions(scope)
 
       # Use CLI recorder for the session
@@ -97,19 +92,22 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
         write_implementation_files(project_dir)
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
 
-        # Step 5: Run Tests (with failures) - real test execution
-        {_, result, session} = execute_step(scope, session.id, RunTests, seed: 1)
+        # Step 5: Run Tests (with failures) - use cached test results
+        failing_test_output =
+          File.read!(CodeMySpec.Support.TestAdapter.test_results_failing_cache_path())
+
+        {_, result, session} =
+          execute_step(scope, session.id, RunTests, seed: 1, mock_output: failing_test_output)
 
         # Verify we got a failure
         assert result.status == :error
-        assert result.data.stats.tests == 1
         assert result.data.stats.failures == 1
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, %Interaction{result: %{status: :error}}]
+                           interactions: [%Interaction{result: %{status: :error}}, _, _]
                          }}
 
         # Step 6: Fix Test Failures
@@ -121,20 +119,22 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, _, %Interaction{}]
+                           interactions: [%Interaction{}, _, _, _]
                          }}
 
-        # Step 7: Run Tests Again (passing) - real test execution
-        {_, result, session} = execute_step(scope, session.id, RunTests, seed: 2)
+        # Step 7: Run Tests Again (passing) - use cached test results
+        passing_test_output = File.read!(CodeMySpec.Support.TestAdapter.test_results_cache_path())
+
+        {_, result, session} =
+          execute_step(scope, session.id, RunTests, seed: 2, mock_output: passing_test_output)
 
         # Verify tests now pass
         assert result.status == :ok
-        assert result.data.stats.tests == 1
         assert result.data.stats.failures == 0
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, _, _, %Interaction{result: %{status: :ok}}]
+                           interactions: [%Interaction{result: %{status: :ok}}, _, _, _, _]
                          }}
 
         # Step 8: Finalize
@@ -143,65 +143,43 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, _, _, _, %Interaction{}]
+                           interactions: [%Interaction{}, _, _, _, _, _]
                          }}
 
         # Session should be complete
-        assert {:error, :session_complete} = Sessions.next_command(scope, session.id)
+        assert {:ok, %{status: :complete}} = Sessions.next_command(scope, session.id)
+
+        File.rm_rf(project_dir)
       end
     end
   end
 
   # Helper function to execute a session step with common pattern
   defp execute_step(scope, session_id, expected_module, opts \\ []) do
-    cd_opts = Keyword.get(opts, :cd_opts, cd: "test_phoenix_project")
+    cd_opts = Keyword.get(opts, :cd_opts, [])
     mock_output = Keyword.get(opts, :mock_output)
 
-    {:ok, interaction} = Sessions.next_command(scope, session_id, opts)
+    {:ok, session} = Sessions.next_command(scope, session_id, opts)
+    [interaction | _] = session.interactions
     assert interaction.command.module == expected_module
 
     result =
       if mock_output do
         %{status: :ok, stdout: mock_output, stderr: "", exit_code: 0}
       else
-        {output, _code} =
+        {output, code} =
           CodeMySpec.Environments.cmd(:local, "sh", ["-c", interaction.command.command], cd_opts)
 
-        %{status: :ok, stdout: output, stderr: "", exit_code: 0}
+        %{status: :ok, stdout: output, stderr: "", exit_code: code}
       end
 
     {:ok, updated_session} =
       Sessions.handle_result(scope, session_id, interaction.id, result)
 
-    final_result =
-      updated_session
-      |> Map.get(:interactions)
-      |> List.last()
-      |> Map.get(:result)
+    [final_interaction | _] = updated_session.interactions
+    final_result = Map.get(final_interaction, :result)
 
-    {interaction, final_result, updated_session}
-  end
-
-  # Helper function to setup test project (only clone if needed)
-  defp setup_test_project(project_dir) do
-    if File.exists?(project_dir) do
-      # Update existing repository
-      System.cmd("git", ["fetch", "origin"], cd: project_dir)
-      System.cmd("git", ["reset", "--hard", "origin/main"], cd: project_dir)
-    else
-      # Clone fresh copy
-      System.cmd("git", [
-        "clone",
-        "--recurse-submodules",
-        @test_repo_url,
-        project_dir
-      ])
-    end
-
-    # Ensure dependencies are up to date
-    unless File.exists?(Path.join(project_dir, "deps")) do
-      System.cmd("mix", ["deps.get"], cd: project_dir)
-    end
+    {final_interaction, final_result, updated_session}
   end
 
   # Write implementation and test files to the test project

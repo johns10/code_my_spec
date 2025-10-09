@@ -1,16 +1,6 @@
 defmodule CodeMySpec.EnvironmentsTest do
   use ExUnit.Case
-  import Mox
   import CodeMySpec.Support.CLIRecorder
-
-  setup do
-    # Configure application to use mock for local environment
-    Application.put_env(:code_my_spec, :local_environment, CodeMySpec.MockEnvironment)
-
-    # Use stub environment that automatically records
-    stub_with(CodeMySpec.MockEnvironment, CodeMySpec.Support.RecordingEnvironment)
-    :ok
-  end
 
   test "cmd with CLI recorder using cassette" do
     use_cassette "test_multiple_commands" do

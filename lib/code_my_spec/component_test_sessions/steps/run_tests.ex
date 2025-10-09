@@ -46,7 +46,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
       state_updates = %{"test_run" => test_run}
 
       case test_run.stats do
-        %{failures: failures, passes: 0} when failures > 0 ->
+        %{failures: failures, passes: _} when failures > 0 ->
           {:ok, state_updates, result_with_test_run}
 
         %{failures: 0, passes: passes} when passes > 0 ->

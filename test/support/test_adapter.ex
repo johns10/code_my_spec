@@ -14,6 +14,7 @@ defmodule CodeMySpec.Support.TestAdapter do
   @code_fixture_url "https://github.com/johns10/test_phoenix_project.git"
   @content_fixture_url "https://github.com/johns10/test_content_repo.git"
   @test_results_cache "test_repos/test_results_cache.json"
+  @test_results_failing_cache "test_repos/test_results_failing_cache.json"
 
   @doc """
   Ensures the fixture repositories exist and are up to date.
@@ -25,13 +26,18 @@ defmodule CodeMySpec.Support.TestAdapter do
   def ensure_fixture_fresh do
     ensure_repo_fresh(@code_repo_fixture_path, @code_fixture_url)
     ensure_repo_fresh(@content_repo_fixture_path, @content_fixture_url)
-    generate_test_results_cache()
+    generate_test_results_caches()
   end
 
   @doc """
   Returns the path to the cached test results JSON file.
   """
   def test_results_cache_path, do: @test_results_cache
+
+  @doc """
+  Returns the path to the cached failing test results JSON file.
+  """
+  def test_results_failing_cache_path, do: @test_results_failing_cache
 
   @doc """
   Clones a repository by copying the fixture repo to the destination path.
@@ -122,19 +128,19 @@ defmodule CodeMySpec.Support.TestAdapter do
     end
   end
 
-  defp generate_test_results_cache do
+  defp generate_test_results_caches do
     # Only generate if cache doesn't exist
     if should_regenerate_cache?() do
       IO.puts(
-        "\n[TestAdapter] Generating test results cache (this happens once per fixture update)..."
+        "\n[TestAdapter] Generating test results caches (this happens once per fixture update)..."
       )
 
       # Install dependencies
       IO.puts("[TestAdapter] Installing dependencies...")
       System.cmd("mix", ["deps.get"], cd: @code_repo_fixture_path, stderr_to_stdout: true)
 
-      # Run tests and write JSON to file
-      IO.puts("[TestAdapter] Running tests...")
+      # Run tests and write JSON to file (passing tests)
+      IO.puts("[TestAdapter] Running passing tests...")
       test_results_file = "test_results.json"
 
       # env inherits all vars and overrides/adds those specified
@@ -145,16 +151,59 @@ defmodule CodeMySpec.Support.TestAdapter do
       )
 
       # Copy test results to cache location
-      IO.puts("[TestAdapter] Caching test results...")
+      IO.puts("[TestAdapter] Caching passing test results...")
       File.mkdir_p!(Path.dirname(@test_results_cache))
       File.cp!(Path.join(@code_repo_fixture_path, test_results_file), @test_results_cache)
 
-      # Remove deps and test results file to keep directory size down
+      # Remove test results file
+      test_results_path = Path.join(@code_repo_fixture_path, test_results_file)
+      File.rm!(test_results_path)
+
+      # Now generate failing test cache
+      IO.puts("[TestAdapter] Setting up failing test...")
+      failing_test_content = File.read!("test/fixtures/component_coding/blog_repository_test._ex")
+      test_path =
+        Path.join([
+          @code_repo_fixture_path,
+          "test",
+          "test_phoenix_project",
+          "blog",
+          "blog_repository_test.exs"
+        ])
+
+      File.mkdir_p!(Path.dirname(test_path))
+      File.write!(test_path, failing_test_content)
+
+      # Run tests with failing test
+      IO.puts("[TestAdapter] Running tests with failing test...")
+      test_results_failing_file = "test_results_failing.json"
+
+      System.cmd("mix", ["test", "--formatter", "ExUnitJsonFormatter"],
+        cd: @code_repo_fixture_path,
+        stderr_to_stdout: true,
+        env: [{"EXUNIT_JSON_OUTPUT_FILE", test_results_failing_file}]
+      )
+
+      # Copy failing test results to cache location
+      IO.puts("[TestAdapter] Caching failing test results...")
+      File.mkdir_p!(Path.dirname(@test_results_failing_cache))
+      File.cp!(
+        Path.join(@code_repo_fixture_path, test_results_failing_file),
+        @test_results_failing_cache
+      )
+
+      # Remove the failing test file
+      IO.puts("[TestAdapter] Cleaning up failing test file...")
+      File.rm!(test_path)
+
+      # Remove failing test results file
+      test_results_failing_path = Path.join(@code_repo_fixture_path, test_results_failing_file)
+      File.rm!(test_results_failing_path)
+
+      # Remove deps and build to keep directory size down
       IO.puts("[TestAdapter] Cleaning up dependencies...")
       File.rm_rf!(Path.join(@code_repo_fixture_path, "deps"))
       File.rm_rf!(Path.join(@code_repo_fixture_path, "_build"))
-      test_results_path = Path.join(@code_repo_fixture_path, test_results_file)
-      File.rm!(test_results_path)
 
       IO.puts("[TestAdapter] Cache generation complete!\n")
     end

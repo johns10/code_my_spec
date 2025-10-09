@@ -1,7 +1,6 @@
 defmodule CodeMySpec.ComponentDesignSessionsTest do
   alias CodeMySpec.Sessions.Interaction
   use CodeMySpec.DataCase
-  import Mox
   import CodeMySpec.Support.CLIRecorder
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
   alias CodeMySpec.{Sessions, Components}
@@ -19,12 +18,6 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
   describe "component design session workflow" do
     setup do
-      # Configure application to use mock for local environment
-      Application.put_env(:code_my_spec, :local_environment, CodeMySpec.MockEnvironment)
-
-      # Use stub environment that automatically records
-      stub_with(CodeMySpec.MockEnvironment, CodeMySpec.Support.RecordingEnvironment)
-
       user = user_fixture()
       account = account_fixture()
       member_fixture(user, account)
@@ -108,7 +101,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         File.write!(design_file, invalid_blog_repository_content())
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
 
         # Step 4: Validate Design
         {_, _, session} =
@@ -118,7 +111,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, %Interaction{result: %{status: :error}}]
+                           interactions: [%Interaction{result: %{status: :error}}, _, _]
                          }}
 
         # Step 5: Revise Design
@@ -128,7 +121,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
           )
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, _, _, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _, _, _]}}
 
         # Step 6: Revalidate Design
         {_, _, session} =
@@ -136,7 +129,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [_, _, _, _, %Interaction{result: %{status: :ok}}]
+                           interactions: [%Interaction{result: %{status: :ok}}, _, _, _, _]
                          }}
 
         # Step 6: Finalize (assuming validation passes)
@@ -144,10 +137,10 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
           execute_step(scope, session.id, Finalize, mock_output: "Finalized design successfully")
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, _, _, _, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _, _, _, _]}}
 
         # Step 6: Session should be complete
-        assert {:error, :session_complete} = Sessions.next_command(scope, session.id)
+        assert {:ok, %{status: :complete}} = Sessions.next_command(scope, session.id)
 
         # Verify final state
         assert session.state["component_design"] != nil
@@ -161,7 +154,8 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
     cd_opts = Keyword.get(opts, :cd_opts, [])
     mock_output = Keyword.get(opts, :mock_output)
 
-    {:ok, interaction} = Sessions.next_command(scope, session_id)
+    {:ok, session} = Sessions.next_command(scope, session_id, opts)
+    [interaction | _] = session.interactions
     assert interaction.command.module == expected_module
 
     result =
@@ -174,8 +168,13 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         %{status: :ok, stdout: output, stderr: "", exit_code: code}
       end
 
-    {:ok, updated_session} = Sessions.handle_result(scope, session_id, interaction.id, result)
-    {interaction, result, updated_session}
+    {:ok, updated_session} =
+      Sessions.handle_result(scope, session_id, interaction.id, result)
+
+    [final_interaction | _] = updated_session.interactions
+    final_result = Map.get(final_interaction, :result)
+
+    {final_interaction, final_result, updated_session}
   end
 
   defp invalid_blog_repository_content() do

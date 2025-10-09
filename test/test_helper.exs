@@ -12,3 +12,6 @@ CodeMySpec.Support.TestAdapter.ensure_fixture_fresh()
 
 # Use TestAdapter as default Git implementation for tests
 Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter)
+
+# Use RecordingEnvironment as default for local environment in tests
+Application.put_env(:code_my_spec, :local_environment, CodeMySpec.Support.RecordingEnvironment)

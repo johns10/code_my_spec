@@ -18,6 +18,8 @@ defmodule CodeMySpec.SessionsFixtures do
       })
 
     {:ok, session} = CodeMySpec.Sessions.create_session(scope, attrs)
-    session
+
+    # Reload with same preloads as list_sessions/1
+    CodeMySpec.Repo.preload(session, [:project, :component])
   end
 end
