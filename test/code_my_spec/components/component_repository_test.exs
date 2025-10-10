@@ -377,6 +377,202 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     end
   end
 
+  describe "create_components_with_dependencies/3" do
+    test "creates multiple components and their dependencies in a transaction", %{scope: scope} do
+      # Create a target component that will be referenced as a dependency
+      target_component =
+        component_fixture(scope, %{
+          name: "TargetComponent",
+          module_name: "MyApp.TargetComponent"
+        })
+
+      component_attrs_list = [
+        %{
+          name: "Component1",
+          type: :context,
+          module_name: "MyApp.Component1",
+          description: "First component"
+        },
+        %{
+          name: "Component2",
+          type: :schema,
+          module_name: "MyApp.Component2",
+          description: "Second component"
+        }
+      ]
+
+      dependencies = ["MyApp.TargetComponent"]
+
+      assert {:ok, components} =
+               ComponentRepository.create_components_with_dependencies(
+                 scope,
+                 component_attrs_list,
+                 dependencies
+               )
+
+      assert length(components) == 2
+
+      # Verify components were created
+      assert Enum.any?(components, &(&1.name == "Component1"))
+      assert Enum.any?(components, &(&1.name == "Component2"))
+
+      # Verify dependency was created
+      first_component = List.first(components)
+
+      deps =
+        ComponentRepository.get_component_with_dependencies(scope, first_component.id).dependencies
+
+      assert length(deps) == 1
+      assert hd(deps).id == target_component.id
+    end
+
+    test "rolls back all changes when component creation fails", %{scope: scope} do
+      # Create a component that will cause a unique constraint violation
+      _existing = component_fixture(scope, %{module_name: "MyApp.Duplicate"})
+
+      component_attrs_list = [
+        %{
+          name: "ValidComponent",
+          type: :context,
+          module_name: "MyApp.ValidComponent"
+        },
+        %{
+          name: "DuplicateComponent",
+          type: :context,
+          module_name: "MyApp.Duplicate"
+        }
+      ]
+
+      initial_count = length(ComponentRepository.list_components(scope))
+
+      assert {:error, _changeset} =
+               ComponentRepository.create_components_with_dependencies(
+                 scope,
+                 component_attrs_list,
+                 []
+               )
+
+      # Verify no components were created
+      final_count = length(ComponentRepository.list_components(scope))
+      assert final_count == initial_count
+    end
+
+    test "rolls back all changes when dependency creation fails", %{scope: scope} do
+      component_attrs_list = [
+        %{
+          name: "Component1",
+          type: :context,
+          module_name: "MyApp.Component1"
+        }
+      ]
+
+      # Reference a non-existent component, but this shouldn't cause an error
+      # because we skip missing dependencies
+      dependencies = ["MyApp.NonExistent"]
+
+      initial_count = length(ComponentRepository.list_components(scope))
+
+      assert {:ok, components} =
+               ComponentRepository.create_components_with_dependencies(
+                 scope,
+                 component_attrs_list,
+                 dependencies
+               )
+
+      # Components should be created even if dependency target doesn't exist
+      assert length(components) == 1
+      final_count = length(ComponentRepository.list_components(scope))
+      assert final_count == initial_count + 1
+    end
+
+    test "handles empty component list", %{scope: scope} do
+      assert {:ok, []} =
+               ComponentRepository.create_components_with_dependencies(scope, [], [])
+    end
+
+    test "handles empty dependency list", %{scope: scope} do
+      component_attrs_list = [
+        %{
+          name: "Component1",
+          type: :context,
+          module_name: "MyApp.Component1"
+        }
+      ]
+
+      assert {:ok, components} =
+               ComponentRepository.create_components_with_dependencies(
+                 scope,
+                 component_attrs_list,
+                 []
+               )
+
+      assert length(components) == 1
+      assert hd(components).name == "Component1"
+    end
+
+    test "creates multiple dependencies correctly", %{scope: scope} do
+      # Create target components
+      target1 = component_fixture(scope, %{module_name: "MyApp.Target1"})
+      target2 = component_fixture(scope, %{module_name: "MyApp.Target2"})
+
+      component_attrs_list = [
+        %{
+          name: "SourceComponent",
+          type: :context,
+          module_name: "MyApp.SourceComponent"
+        }
+      ]
+
+      dependencies = ["MyApp.Target1", "MyApp.Target2"]
+
+      assert {:ok, components} =
+               ComponentRepository.create_components_with_dependencies(
+                 scope,
+                 component_attrs_list,
+                 dependencies
+               )
+
+      source_component = hd(components)
+
+      deps =
+        ComponentRepository.get_component_with_dependencies(scope, source_component.id).dependencies
+
+      assert length(deps) == 2
+
+      dep_ids = Enum.map(deps, & &1.id)
+      assert target1.id in dep_ids
+      assert target2.id in dep_ids
+    end
+
+    test "returns error if component already exists with same module_name", %{scope: scope} do
+      # Create an existing component
+      _existing =
+        component_fixture(scope, %{
+          name: "OldName",
+          module_name: "MyApp.ExistingComponent",
+          description: "Old description"
+        })
+
+      component_attrs_list = [
+        %{
+          name: "NewName",
+          type: :context,
+          module_name: "MyApp.ExistingComponent",
+          description: "New description"
+        }
+      ]
+
+      assert {:error, changeset} =
+               ComponentRepository.create_components_with_dependencies(
+                 scope,
+                 component_attrs_list,
+                 []
+               )
+
+      assert errors_on(changeset) == %{module_name: ["has already been taken"]}
+    end
+  end
+
   describe "show_architecture/1" do
     test "returns empty list when no components with stories exist", %{scope: scope} do
       _component_without_story = component_fixture(scope)

@@ -7,6 +7,7 @@ defmodule CodeMySpec.Components.Component do
   import Ecto.Changeset
 
   alias CodeMySpec.Components.Dependency
+  alias CodeMySpec.Components.ComponentType
   alias CodeMySpec.Projects.Project
   alias CodeMySpec.Components.Requirements.Requirement
   alias CodeMySpec.Components.ComponentStatus
@@ -37,33 +38,12 @@ defmodule CodeMySpec.Components.Component do
           updated_at: DateTime.t()
         }
 
-  @type component_type ::
-          :genserver
-          | :context
-          | :coordination_context
-          | :schema
-          | :repository
-          | :task
-          | :registry
-          | :behaviour
-          | :other
+  @type component_type :: ComponentType.t()
 
   schema "components" do
     field :name, :string
 
-    field :type, Ecto.Enum,
-      values: [
-        :genserver,
-        :context,
-        :coordination_context,
-        :schema,
-        :repository,
-        :task,
-        :registry,
-        :behaviour,
-        :other
-      ]
-
+    field :type, Ecto.Enum, values: ComponentType.values()
     field :module_name, :string
     field :description, :string
     field :priority, :integer

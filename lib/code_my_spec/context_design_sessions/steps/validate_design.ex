@@ -20,71 +20,44 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
       {:ok, %{}, result}
     else
       {:error, error} ->
+        IO.inspect(error)
         updated_result = update_result_with_error(scope, result, error)
         {:ok, %{state: updated_state}, updated_result}
 
       error ->
         error
     end
+    |> IO.inspect()
   end
 
   defp create_components(scope, session, %{components: components, dependencies: dependencies}) do
     project_module_name = scope.active_project.module_name
     filtered_deps = filter_project_dependencies(dependencies, project_module_name)
 
-    created_components =
+    component_attrs_list =
       Enum.map(components, fn component_ref ->
         type = extract_type_from_table(component_ref.table)
 
-        component_attrs = %{
+        %{
           name: component_ref.module_name |> String.split(".") |> List.last(),
           module_name: component_ref.module_name,
           description: component_ref.description,
           parent_component_id: session.component.id,
           type: type
         }
-
-        CodeMySpec.Components.upsert_component(scope, component_attrs)
       end)
 
-    create_dependencies(scope, created_components, filtered_deps)
+    CodeMySpec.Components.create_components_with_dependencies(
+      scope,
+      component_attrs_list,
+      filtered_deps
+    )
   end
 
   defp filter_project_dependencies(dependencies, project_module_name) do
     Enum.filter(dependencies, fn dep ->
       String.starts_with?(dep, project_module_name)
     end)
-  end
-
-  defp create_dependencies(_scope, components, []), do: {:ok, components}
-
-  defp create_dependencies(scope, components, dependencies) do
-    # Create dependency records for filtered project dependencies
-    dependencies
-    |> Enum.reduce_while(:ok, fn dep, _acc ->
-      case CodeMySpec.Components.get_component_by_module_name(scope, dep) do
-        # Skip if no matching component found
-        nil ->
-          {:cont, :ok}
-
-        target_component ->
-          dependency_attrs = %{
-            # Use first created component as source
-            from_component_id: List.first(components).id,
-            to_component_id: target_component.id,
-            dependency_type: :internal
-          }
-
-          case CodeMySpec.Components.create_dependency(scope, dependency_attrs) do
-            {:ok, _} -> {:cont, :ok}
-            {:error, _} = error -> {:halt, error}
-          end
-      end
-    end)
-    |> case do
-      :ok -> {:ok, components}
-      error -> error
-    end
   end
 
   defp extract_type_from_table(table) do

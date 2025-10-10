@@ -4,6 +4,8 @@ defmodule CodeMySpec.Documents.Registry do
   descriptions, and specifications used for AI-generated design documents.
   """
 
+  alias CodeMySpec.Components.ComponentType
+
   @type document_definition :: %{
           overview: String.t(),
           required_sections: [String.t()],
@@ -60,14 +62,15 @@ defmodule CodeMySpec.Documents.Registry do
   - Indicate behavior contracts where applicable
   - Keep internal structure visible but not overwhelming
   - Use consistent naming conventions
+  - Valid component types: #{ComponentType.to_string()}
 
   Examples:
   - ## Components
     ### ModuleName
 
-    | field | value                                                                        |
-    | ----- | ---------------------------------------------------------------------------- |
-    | type  | genserver/context/coordination_context/schema/repository/task/registry/other |
+    | field | value |
+    | ----- | ----- |
+    | type  | #{ComponentType.to_string()} |
 
     Brief description of the component's responsibility.
   """

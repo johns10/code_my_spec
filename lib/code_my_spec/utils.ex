@@ -28,12 +28,30 @@ defmodule CodeMySpec.Utils do
   def changeset_error_to_string(%Ecto.Changeset{} = changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
+        String.replace(acc, "%{#{key}}", safe_to_string(key, value, opts))
       end)
     end)
     |> flatten_errors()
     |> Enum.map(fn {field, message} -> "#{field}: #{message}" end)
     |> Enum.join(", ")
+  end
+
+  defp safe_to_string(_key, value, _opts) do
+    to_string(value)
+  rescue
+    Protocol.UndefinedError ->
+      # Handle complex types that don't implement String.Chars (like Ecto.Enum metadata)
+      # For enum types, extract the valid values if available
+      case value do
+        {:parameterized, {Ecto.Enum, %{mappings: mappings}}} when is_list(mappings) ->
+          mappings
+          |> Keyword.values()
+          |> Enum.map(&to_string/1)
+          |> Enum.join(", ")
+
+        _ ->
+          inspect(value)
+      end
   end
 
   defp flatten_errors(errors, prefix \\ nil) do

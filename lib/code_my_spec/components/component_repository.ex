@@ -228,4 +228,77 @@ defmodule CodeMySpec.Components.ComponentRepository do
       direct_deps ++ indirect_deps
     end
   end
+
+  @doc """
+  Creates multiple components with their dependencies in a transaction.
+
+  Returns `{:ok, components}` if all operations succeed, or `{:error, reason}` if any fail.
+
+  ## Parameters
+    * `scope` - The user scope
+    * `component_attrs_list` - List of component attribute maps
+    * `dependencies` - List of dependency module name strings
+
+  ## Examples
+
+      iex> create_components_with_dependencies(scope, [%{name: "Foo", ...}], ["MyApp.Bar"])
+      {:ok, [%Component{}]}
+
+      iex> create_components_with_dependencies(scope, [%{name: ""}], [])
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec create_components_with_dependencies(Scope.t(), [map()], [String.t()]) ::
+          {:ok, [Component.t()]} | {:error, term()}
+  def create_components_with_dependencies(%Scope{} = scope, component_attrs_list, dependencies) do
+    Repo.transaction(fn ->
+      # Create all components
+      created_components =
+        Enum.reduce_while(component_attrs_list, [], fn attrs, acc ->
+          case create_component(scope, attrs) do
+            {:ok, component} -> {:cont, [component | acc]}
+            {:error, changeset} -> {:halt, {:error, changeset}}
+          end
+        end)
+
+      case created_components do
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+
+        components ->
+          components = Enum.reverse(components)
+
+          # Create dependencies
+          case create_dependencies_for_components(scope, components, dependencies) do
+            :ok -> components
+            {:error, reason} -> Repo.rollback(reason)
+          end
+      end
+    end)
+  end
+
+  defp create_dependencies_for_components(_scope, _components, []), do: :ok
+
+  defp create_dependencies_for_components(scope, components, dependencies) do
+    alias CodeMySpec.Components.DependencyRepository
+
+    dependencies
+    |> Enum.reduce_while(:ok, fn dep_module_name, _acc ->
+      case get_component_by_module_name(scope, dep_module_name) do
+        nil ->
+          {:cont, :ok}
+
+        target_component ->
+          dependency_attrs = %{
+            source_component_id: List.first(components).id,
+            target_component_id: target_component.id
+          }
+
+          case DependencyRepository.create_dependency(scope, dependency_attrs) do
+            {:ok, _} -> {:cont, :ok}
+            {:error, changeset} -> {:halt, {:error, changeset}}
+          end
+      end
+    end)
+  end
 end

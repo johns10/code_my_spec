@@ -47,6 +47,9 @@ defmodule CodeMySpec.Components do
   defdelegate show_architecture(scope), to: ComponentRepository
   defdelegate upsert_component(scope, attrs), to: ComponentRepository
 
+  defdelegate create_components_with_dependencies(scope, component_attrs_list, dependencies),
+    to: ComponentRepository
+
   @doc """
   Creates a component.
 

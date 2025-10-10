@@ -6,6 +6,8 @@ defmodule CodeMySpec.Documents.ContextDesign do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias CodeMySpec.Components.ComponentType
+
   @primary_key false
   embedded_schema do
     field :purpose, :string
@@ -17,6 +19,7 @@ defmodule CodeMySpec.Documents.ContextDesign do
 
     embeds_many :components, ComponentRef, primary_key: false do
       field :module_name, :string
+      field :type, Ecto.Enum, values: ComponentType.values()
       field :description, :string
       field :table, :map
     end
@@ -45,8 +48,8 @@ defmodule CodeMySpec.Documents.ContextDesign do
 
   defp component_ref_changeset(component_ref, attrs) do
     component_ref
-    |> cast(attrs, [:module_name, :description, :table])
-    |> validate_required([:module_name, :description])
+    |> cast(attrs, [:module_name, :type, :description, :table])
+    |> validate_required([:module_name, :type, :description])
     |> validate_length(:module_name, min: 1, max: 255)
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
       message: "must be a valid Elixir module name"

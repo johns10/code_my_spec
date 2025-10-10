@@ -64,8 +64,18 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
     |> group_by_h3()
     |> Enum.map(fn {module_name, content} ->
       {table, description} = extract_table_and_text(content)
-      %{module_name: module_name, table: table, description: description}
+      type = extract_type_from_table(table)
+      %{module_name: module_name, type: type, table: table, description: description}
     end)
+  end
+
+  defp extract_type_from_table(nil), do: nil
+  defp extract_type_from_table(table) when is_map(table) do
+    # Check if table has direct "type" key (single row table with field/value columns)
+    case {Map.get(table, "field"), Map.get(table, "value")} do
+      {"type", value} -> value
+      _ -> Map.get(table, "type")
+    end
   end
 
   defp parse_dependencies(ast) do
