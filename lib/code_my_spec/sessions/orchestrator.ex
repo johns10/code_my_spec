@@ -15,11 +15,6 @@ defmodule CodeMySpec.Sessions.Orchestrator do
       {%Interaction{} = _pending_interaction, session} ->
         {:ok, session}
 
-      {:error, :session_complete} ->
-        # Mark session as complete and return it
-        {:ok, %Session{} = session} = get_session(scope, session_id)
-        SessionsRepository.complete_session(scope, session)
-
       error ->
         error
     end

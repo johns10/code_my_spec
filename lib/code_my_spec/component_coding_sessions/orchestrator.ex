@@ -7,6 +7,8 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
   cycling between RunTests and FixTestFailures.
   """
 
+  @behaviour CodeMySpec.Sessions.OrchestratorBehaviour
+
   alias CodeMySpec.Sessions.{Result, Interaction, Utils, Session}
   alias CodeMySpec.ComponentCodingSessions.Steps
 
@@ -18,12 +20,23 @@ defmodule CodeMySpec.ComponentCodingSessions.Orchestrator do
     Steps.Finalize
   ]
 
+  @impl true
   @spec steps() :: [module()]
   def steps, do: @steps
 
-  @spec get_next_interaction(nil) :: {:ok, module()}
+  @impl true
+  def complete?(%Session{interactions: [last_interaction | _]}), do: complete?(last_interaction)
+
+  @impl true
+  def complete?(%Interaction{command: %{module: Steps.Finalize}, result: %Result{status: :ok}}),
+    do: true
+
+  def complete?(%Interaction{}), do: false
+
+  @impl true
   def get_next_interaction(nil), do: {:ok, Steps.Initialize}
 
+  @impl true
   def get_next_interaction(%Session{} = session) do
     with %Interaction{} = interaction <- Utils.find_last_completed_interaction(session) do
       status = extract_status(interaction)

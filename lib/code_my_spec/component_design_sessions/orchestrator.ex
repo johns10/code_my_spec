@@ -4,6 +4,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
   All state lives in the Session record and its embedded Interactions.
   """
 
+  @behaviour CodeMySpec.Sessions.OrchestratorBehaviour
+
   alias CodeMySpec.Sessions.{Interaction, Result, Utils, Session}
   alias CodeMySpec.ComponentDesignSessions.Steps
 
@@ -15,8 +17,19 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
     Steps.Finalize
   ]
 
+  @impl true
   def steps(), do: @step_modules
 
+  @impl true
+  def complete?(%Session{interactions: [last_interaction | _]}), do: complete?(last_interaction)
+
+  @impl true
+  def complete?(%Interaction{command: %{module: Steps.Finalize}, result: %Result{status: :ok}}),
+    do: true
+
+  def complete?(%Interaction{}), do: false
+
+  @impl true
   def get_next_interaction(%Session{} = session) do
     with %Interaction{} = interaction <- Utils.find_last_completed_interaction(session) do
       status = extract_status(interaction)
