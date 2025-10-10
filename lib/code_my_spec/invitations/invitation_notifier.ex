@@ -86,7 +86,7 @@ defmodule CodeMySpec.Invitations.InvitationNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"CodeMySpec", "contact@example.com"})
+      |> from({"CodeMySpec", "contact@codemyspec.com"})
       |> subject(subject)
       |> text_body(body)
 
