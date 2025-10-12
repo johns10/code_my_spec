@@ -2,7 +2,6 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
   use CodeMySpecWeb.ConnCase
 
   import CodeMySpec.{UsersFixtures, SessionsFixtures, ComponentsFixtures}
-  import Mox
 
   setup %{conn: conn} do
     scope = full_preferences_fixture()

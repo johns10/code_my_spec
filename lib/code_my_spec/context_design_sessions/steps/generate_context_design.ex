@@ -1,20 +1,23 @@
 defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.{Rules, Agents, Utils, Stories}
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.{Rules, Utils, Stories}
+  alias CodeMySpec.Sessions.{Session, Steps.Helpers}
   alias CodeMySpec.Documents.{ContextDesign, DocumentSpecProjector}
 
-  def get_command(scope, %Session{project: project, component: component}, _opts \\ []) do
+  def get_command(scope, %Session{project: project, component: component}, opts \\ []) do
     with {:ok, rules} <- get_design_rules(scope),
          stories <- Stories.list_component_stories(scope, component.id),
          {:ok, prompt} <- build_design_prompt(project, component, rules, stories),
-         {:ok, agent} <-
-           Agents.create_agent(:context_designer, "context-design-generator", :claude_code),
-         {:ok, command} <- Agents.build_command_string(agent, prompt) do
-      [command_string, pipe] = command
-      {:ok, Command.new(__MODULE__, command_string, pipe)}
+         {:ok, command} <-
+           Helpers.build_agent_command(
+             __MODULE__,
+             :context_designer,
+             "context-design-generator",
+             prompt,
+             opts
+           ) do
+      {:ok, command}
     end
   end
 

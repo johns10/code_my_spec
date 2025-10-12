@@ -108,6 +108,20 @@ defmodule CodeMySpec.ContentSync.Sync do
 
       case result do
         {:ok, content_list} ->
+          require Logger
+
+          # Log any content items that had parse errors
+          content_list
+          |> Enum.filter(&(&1.parse_status == :error))
+          |> Enum.each(fn content ->
+            Logger.error(
+              "Content sync error for file #{content.slug} #{inspect(content.parse_errors)}",
+              slug: content.slug,
+              parse_errors: content.parse_errors,
+              raw_content_preview: String.slice(content.raw_content || "", 0, 100)
+            )
+          end)
+
           end_time = System.monotonic_time(:millisecond)
           duration_ms = end_time - start_time
           sync_result = build_sync_result(content_list, duration_ms)
@@ -261,11 +275,34 @@ defmodule CodeMySpec.ContentSync.Sync do
         error_type: "MetaDataParseError",
         message:
           Map.get(error_detail, :message) || Map.get(error_detail, "message") || "Unknown error",
-        details: error_detail
+        details: serialize_error_detail(error_detail)
       },
       metadata: %{}
     }
   end
+
+  @spec serialize_error_detail(map()) :: map()
+  defp serialize_error_detail(error_detail) when is_map(error_detail) do
+    # Convert any nested structs to maps
+    Enum.reduce(error_detail, %{}, fn {key, value}, acc ->
+      Map.put(acc, key, serialize_value(value))
+    end)
+  end
+
+  defp serialize_value(%YamlElixir.ParsingError{} = error) do
+    %{
+      line: error.line,
+      column: error.column,
+      type: error.type,
+      message: error.message
+    }
+  end
+
+  defp serialize_value(value) when is_struct(value) do
+    Map.from_struct(value)
+  end
+
+  defp serialize_value(value), do: value
 
   @spec atomize_parse_errors(map() | nil) :: map() | nil
   defp atomize_parse_errors(nil), do: nil

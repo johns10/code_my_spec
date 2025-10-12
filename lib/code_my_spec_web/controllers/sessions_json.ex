@@ -21,11 +21,14 @@ defmodule CodeMySpecWeb.SessionsJSON do
       type: session.type |> Atom.to_string() |> String.split(".") |> List.last(),
       agent: session.agent,
       environment: session.environment,
+      execution_mode: session.execution_mode,
       status: session.status,
       state: session.state,
+      external_conversation_id: session.external_conversation_id,
       project_id: session.project_id,
       project: render_project(session.project),
       account_id: session.account_id,
+      user_id: session.user_id,
       component_id: session.component_id,
       component: render_component(session.component),
       interactions: render_interactions(session.interactions),
@@ -52,6 +55,7 @@ defmodule CodeMySpecWeb.SessionsJSON do
       module: command.module,
       command: command.command,
       pipe: command.pipe,
+      metadata: command.metadata,
       timestamp: command.timestamp
     }
   end

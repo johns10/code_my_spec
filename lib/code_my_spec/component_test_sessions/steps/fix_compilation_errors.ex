@@ -1,19 +1,21 @@
 defmodule CodeMySpec.ComponentTestSessions.Steps.FixCompilationErrors do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Agents}
-  alias CodeMySpec.Sessions.Command
+  alias CodeMySpec.Sessions.Steps.Helpers
 
   @impl true
-  def get_command(scope, session, _opts \\ []) do
+  def get_command(scope, session, opts \\ []) do
     with {:ok, test_failures} <- get_test_failures_from_previous_interaction(scope, session),
-         {:ok, agent} <-
-           Agents.create_agent(:test_writer, "component-test-error-fixer", :claude_code),
          prompt <- build_fix_prompt(test_failures),
-         {:ok, command_args} <- Agents.build_command_string(agent, prompt, %{"continue" => true}) do
-      [prompt | command] = Enum.reverse(command_args)
-
-      {:ok, Command.new(__MODULE__, command |> Enum.reverse() |> Enum.join(" "), prompt)}
+         {:ok, command} <-
+           Helpers.build_agent_command(
+             __MODULE__,
+             :test_writer,
+             "component-test-error-fixer",
+             prompt,
+             Keyword.put(opts, :continue, true)
+           ) do
+      {:ok, command}
     else
       {:error, reason} -> {:error, reason}
     end

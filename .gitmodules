@@ -1,5 +1,5 @@
 [submodule "content"]
-	path = lib/code_my_spec_web/code_my_spec_content
+	path = lib/code_my_spec_web/content
 	url = https://github.com/johns10/code_my_spec_content.git
 [submodule "docs"]
 	path = docs

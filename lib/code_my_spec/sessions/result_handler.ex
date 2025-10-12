@@ -8,11 +8,12 @@ defmodule CodeMySpec.Sessions.ResultHandler do
          {:ok, interaction} <- find_interaction(session, interaction_id),
          {:ok, session_attrs, final_result} <-
            interaction.command.module.handle_result(scope, session, result, opts),
+         enriched_attrs <- maybe_add_completion_status(session, interaction, session_attrs, final_result),
          {:ok, final_session} <-
            Sessions.complete_session_interaction(
              scope,
              session,
-             session_attrs,
+             enriched_attrs,
              interaction_id,
              final_result
            ) do
@@ -31,6 +32,21 @@ defmodule CodeMySpec.Sessions.ResultHandler do
     case Enum.find(interactions, &(&1.id == interaction_id)) do
       nil -> {:error, :interaction_not_found}
       %Interaction{} = interaction -> {:ok, interaction}
+    end
+  end
+
+  defp maybe_add_completion_status(
+         %Session{type: session_module},
+         interaction,
+         session_attrs,
+         final_result
+       ) do
+    updated_interaction = Map.put(interaction, :result, final_result)
+    orchestrator = Module.concat(session_module, Orchestrator)
+
+    case orchestrator.complete?(updated_interaction) do
+      true -> Map.put(session_attrs, :status, :complete)
+      _ -> session_attrs
     end
   end
 end

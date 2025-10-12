@@ -37,6 +37,7 @@ defmodule CodeMySpecWeb.Router do
       live "/blog/:slug", ContentLive.Public, :blog
       live "/pages/:slug", ContentLive.Public, :page
       live "/landing/:slug", ContentLive.Public, :landing
+      live "/documentation/:slug", ContentLive.Public, :documentation
     end
   end
 
@@ -47,6 +48,7 @@ defmodule CodeMySpecWeb.Router do
     live "/blog/:slug", ContentLive.Public, :private_blog
     live "/pages/:slug", ContentLive.Public, :private_page
     live "/landing/:slug", ContentLive.Public, :private_landing
+    live "/documentation/:slug", ContentLive.Public, :private_documentation
   end
 
   # OAuth2 routes
@@ -97,7 +99,10 @@ defmodule CodeMySpecWeb.Router do
 
     post "/sessions/:id/cancel", SessionsController, :cancel
 
-    post "/project-coordinator/sync-requirements", ProjectCoordinatorController, :sync_requirements
+    post "/project-coordinator/sync-requirements",
+         ProjectCoordinatorController,
+         :sync_requirements
+
     get "/project-coordinator/next-actions", ProjectCoordinatorController, :next_actions
   end
 

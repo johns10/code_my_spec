@@ -29,7 +29,7 @@ defmodule CodeMySpec.Content.Content do
   schema "contents" do
     field :slug, :string
     field :title, :string
-    field :content_type, Ecto.Enum, values: [:blog, :page, :landing]
+    field :content_type, Ecto.Enum, values: [:blog, :page, :landing, :documentation]
     field :raw_content, :string
     field :processed_content, :string
     field :protected, :boolean, default: false

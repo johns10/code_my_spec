@@ -6,20 +6,52 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
   """
 
   alias CodeMySpec.Agents.Agent
+  alias CodeMySpec.Sessions.Command
 
   @behaviour CodeMySpec.Agents.AgentBehaviour
 
   @impl true
-  def build_command(%Agent{} = agent, prompt) do
-    build_command(agent, prompt, %{})
+  def build_command_string(%Agent{} = agent, prompt) do
+    build_command_string(agent, prompt, %{})
   end
 
   @impl true
-  def build_command(%Agent{} = agent, prompt, opts) do
+  def build_command_string(%Agent{} = agent, prompt, opts) do
     merged_config = CodeMySpec.Agents.merge_configs(agent)
     final_config = Map.merge(merged_config, opts)
     command_args = build_command_args(prompt, final_config)
     {:ok, command_args}
+  end
+
+  @doc """
+  Builds a Command struct for Claude Code execution.
+
+  Returns a Command with:
+  - command: "claude"
+  - metadata: %{prompt: prompt, options: merged_config}
+
+  The step module should be set by the caller.
+
+  Accepts opts as either a keyword list or map.
+  """
+  @impl true
+  def build_command_struct(%Agent{} = agent, prompt, opts \\ []) do
+    merged_config = CodeMySpec.Agents.merge_configs(agent)
+    # Convert keyword list to map if needed
+    opts_map = if is_list(opts), do: Enum.into(opts, %{}), else: opts
+    final_config = Map.merge(merged_config, opts_map)
+
+    {:ok,
+     %Command{
+       # Caller should set this to their step module
+       module: nil,
+       command: "claude",
+       metadata: %{
+         prompt: prompt,
+         options: final_config
+       },
+       timestamp: DateTime.utc_now()
+     }}
   end
 
   defp build_command_args(prompt, config) do

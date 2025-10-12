@@ -56,6 +56,7 @@ defmodule CodeMySpecWeb.ContentLive.Public do
       action when action in [:blog, :private_blog] -> :blog
       action when action in [:page, :private_page] -> :page
       action when action in [:landing, :private_landing] -> :landing
+      action when action in [:documentation, :private_documentation] -> :documentation
     end
   end
 
@@ -64,6 +65,10 @@ defmodule CodeMySpecWeb.ContentLive.Public do
   end
 
   defp load_and_verify_content(scope, slug, content_type, _is_protected) do
+    IO.inspect(scope)
+    IO.inspect(content_type)
+    IO.inspect(slug)
+
     case Content.get_content_by_slug!(scope, slug, Atom.to_string(content_type)) do
       content ->
         if is_published?(content) do
@@ -108,10 +113,7 @@ defmodule CodeMySpecWeb.ContentLive.Public do
           {format_publish_date(@content.publish_at)}
         </div>
         <div :if={!Enum.empty?(@tags)} class="flex gap-2 flex-wrap">
-          <span
-            :for={tag <- @tags}
-            class="badge badge-primary"
-          >
+          <span :for={tag <- @tags} class="badge badge-primary">
             {tag.name}
           </span>
         </div>
@@ -138,10 +140,7 @@ defmodule CodeMySpecWeb.ContentLive.Public do
           <div class="sticky top-4">
             <h3 class="font-semibold text-lg mb-2">Tags</h3>
             <div :if={!Enum.empty?(@tags)} class="flex flex-col gap-2">
-              <span
-                :for={tag <- @tags}
-                class="badge badge-primary"
-              >
+              <span :for={tag <- @tags} class="badge badge-primary">
                 {tag.name}
               </span>
             </div>
@@ -205,10 +204,7 @@ defmodule CodeMySpecWeb.ContentLive.Public do
               {format_publish_date(@content.publish_at)}
             </div>
             <div :if={!Enum.empty?(@tags)} class="flex gap-2 flex-wrap">
-              <span
-                :for={tag <- @tags}
-                class="badge badge-primary badge-sm"
-              >
+              <span :for={tag <- @tags} class="badge badge-primary badge-sm">
                 {tag.name}
               </span>
             </div>

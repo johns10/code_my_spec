@@ -20,14 +20,9 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
       {:ok, %{}, result}
     else
       {:error, error} ->
-        IO.inspect(error)
         updated_result = update_result_with_error(scope, result, error)
         {:ok, %{state: updated_state}, updated_result}
-
-      error ->
-        error
     end
-    |> IO.inspect()
   end
 
   defp create_components(scope, session, %{components: components, dependencies: dependencies}) do

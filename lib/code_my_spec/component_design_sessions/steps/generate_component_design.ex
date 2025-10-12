@@ -1,23 +1,26 @@
 defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.{Rules, Agents, Utils}
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.{Rules, Utils}
+  alias CodeMySpec.Sessions.{Session, Steps.Helpers}
   alias CodeMySpec.Documents.DocumentSpecProjector
 
   def get_command(
         scope,
         %Session{project: project, component: component, state: state},
-        _opts \\ []
+        opts \\ []
       ) do
     with {:ok, rules} <- get_design_rules(scope, component),
          {:ok, prompt} <- build_design_prompt(project, component, rules, state),
-         {:ok, agent} <-
-           Agents.create_agent(:component_designer, "component-design-generator", :claude_code),
-         {:ok, command} <- Agents.build_command_string(agent, prompt) do
-      [command_string, pipe] = command
-      {:ok, Command.new(__MODULE__, command_string, pipe)}
+         {:ok, command} <-
+           Helpers.build_agent_command(
+             __MODULE__,
+             :component_designer,
+             "component-design-generator",
+             prompt,
+             opts
+           ) do
+      {:ok, command}
     end
   end
 

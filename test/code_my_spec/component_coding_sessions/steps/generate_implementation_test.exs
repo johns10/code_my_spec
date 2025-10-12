@@ -53,10 +53,10 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
       assert command.module == GenerateImplementation
-      assert command.pipe =~ "Test Phoenix Project"
-      assert command.pipe =~ "PostRepository"
-      assert command.pipe =~ "Generate the implementation"
-      assert command.pipe =~ "lib/test_phoenix_project/blog/post_repository.ex"
+      assert command.metadata.prompt =~ "Test Phoenix Project"
+      assert command.metadata.prompt =~ "PostRepository"
+      assert command.metadata.prompt =~ "Generate the implementation"
+      assert command.metadata.prompt =~ "lib/test_phoenix_project/blog/post_repository.ex"
     end
 
     test "includes project description in prompt" do
@@ -86,7 +86,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.pipe =~ "Application for testing"
+      assert command.metadata.prompt =~ "Application for testing"
     end
 
     test "includes component description when present" do
@@ -111,7 +111,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.pipe =~ "Handles user authentication"
+      assert command.metadata.prompt =~ "Handles user authentication"
     end
 
     test "handles missing component description" do
@@ -136,7 +136,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.pipe =~ "No description provided"
+      assert command.metadata.prompt =~ "No description provided"
     end
 
     test "includes implementation-specific coding rules" do
@@ -171,8 +171,8 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.pipe =~ "Write pure functions"
-      assert command.pipe =~ "Coding Rules:"
+      assert command.metadata.prompt =~ "Write pure functions"
+      assert command.metadata.prompt =~ "Coding Rules:"
     end
 
     test "specifies correct target file path for implementation" do
@@ -196,7 +196,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.pipe =~ "lib/test_phoenix_project/blog/post_repository.ex"
+      assert command.metadata.prompt =~ "lib/test_phoenix_project/blog/post_repository.ex"
     end
 
     test "creates agent with context_designer type and claude_code model" do
@@ -244,9 +244,9 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.pipe =~ "Read the test file"
-      assert command.pipe =~ "Create all necessary module files"
-      assert command.pipe =~ "Ensure the implementation satisfies the tests"
+      assert command.metadata.prompt =~ "Read the test file"
+      assert command.metadata.prompt =~ "Create all necessary module files"
+      assert command.metadata.prompt =~ "Ensure the implementation satisfies the tests"
     end
   end
 

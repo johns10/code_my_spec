@@ -92,25 +92,66 @@ defmodule CodeMySpec.Content do
   """
   @spec create_many(Scope.t(), [map()]) :: {:ok, [Content.t()]} | {:error, term()}
   def create_many(%Scope{} = scope, content_list) do
-    Repo.transaction(fn ->
-      Enum.map(content_list, fn attrs ->
+    require Logger
+
+    # Build changesets first
+    changesets =
+      Enum.with_index(content_list, fn attrs, index ->
         attrs = add_scope_to_attrs(scope, attrs)
 
-        %Content{}
-        |> Content.changeset(attrs)
-        |> Repo.insert!()
+        changeset =
+          %Content{}
+          |> Content.changeset(attrs)
+
+        {changeset, index}
       end)
-    end)
-    |> case do
-      {:ok, content_list} = result ->
-        Enum.each(content_list, fn content ->
-          broadcast_content_change(scope, {:created, content})
+
+    # Log validation errors
+    changesets
+    |> Enum.filter(fn {cs, _index} -> not cs.valid? end)
+    |> Enum.each(fn {cs, index} ->
+      errors =
+        Ecto.Changeset.traverse_errors(cs, fn {msg, opts} ->
+          Enum.reduce(opts, msg, fn {key, value}, acc ->
+            String.replace(acc, "%{#{key}}", to_string(value))
+          end)
         end)
 
-        result
+      title = Map.get(cs.changes, :title, "untitled")
+      error_string = CodeMySpec.Utils.changeset_error_to_string(cs)
 
-      error ->
-        error
+      Logger.error(
+        "Content validation failed at index #{index}: #{title} - #{error_string}",
+        changeset_errors: errors,
+        changeset_changes: cs.changes,
+        index: index
+      )
+    end)
+
+    # Check if any changesets are invalid
+    case Enum.find(changesets, fn {cs, _index} -> not cs.valid? end) do
+      nil ->
+        # All valid, proceed with transaction
+        Repo.transaction(fn ->
+          Enum.map(changesets, fn {changeset, _index} ->
+            Repo.insert!(changeset)
+          end)
+        end)
+        |> case do
+          {:ok, content_list} = result ->
+            Enum.each(content_list, fn content ->
+              broadcast_content_change(scope, {:created, content})
+            end)
+
+            result
+
+          error ->
+            error
+        end
+
+      {invalid_changeset, index} ->
+        Logger.error("Aborting create_many due to validation failure at index #{index}")
+        {:error, invalid_changeset}
     end
   end
 
@@ -138,7 +179,8 @@ defmodule CodeMySpec.Content do
   @doc """
   Deletes content.
   """
-  @spec delete_content(Scope.t(), Content.t()) :: {:ok, Content.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_content(Scope.t(), Content.t()) ::
+          {:ok, Content.t()} | {:error, Ecto.Changeset.t()}
   def delete_content(%Scope{} = scope, %Content{} = content) do
     verify_content_belongs_to_scope!(content, scope)
 

@@ -11,6 +11,7 @@ defmodule CodeMySpec.Sessions.Command do
           id: binary() | nil,
           module: String.t() | nil,
           command: String.t() | nil,
+          metadata: map() | nil,
           pipe: String.t() | nil,
           timestamp: DateTime.t() | nil
         }
@@ -20,13 +21,14 @@ defmodule CodeMySpec.Sessions.Command do
     field :module, CommandModuleType
     field :command, :string
     field :pipe, :string
+    field :metadata, :map, default: %{}
     field :timestamp, :utc_datetime_usec
   end
 
   def changeset(command \\ %__MODULE__{}, attrs) do
     command
-    |> cast(attrs, [:module, :command, :pipe])
-    |> validate_required([:module, :command, :pipe])
+    |> cast(attrs, [:module, :command, :pipe, :metadata])
+    |> validate_required([:module, :command])
     |> put_timestamp()
   end
 
@@ -37,11 +39,30 @@ defmodule CodeMySpec.Sessions.Command do
     end
   end
 
-  def new(module, command \\ %{}, pipe \\ nil) do
+  @doc """
+  Creates a new command.
+
+  ## Options
+  - `:metadata` - Map of metadata (e.g., prompt, options, child_session_ids)
+
+  ## Examples
+
+      # Claude SDK command
+      Command.new(MyModule, "claude",
+        metadata: %{prompt: "Generate...", options: %{model: "claude-3-opus"}},
+      )
+
+      # Spawn sessions command
+      Command.new(MyModule, "spawn_sessions",
+        metadata: %{child_session_ids: [1, 2, 3]}
+      )
+  """
+
+  def new(module, command, opts \\ []) do
     %__MODULE__{
       module: module,
       command: command,
-      pipe: pipe,
+      metadata: Keyword.get(opts, :metadata, %{}),
       timestamp: DateTime.utc_now()
     }
   end

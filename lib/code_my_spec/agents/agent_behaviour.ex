@@ -7,20 +7,30 @@ defmodule CodeMySpec.Agents.AgentBehaviour do
 
   alias CodeMySpec.Agents.Agent
 
-  @doc """
-  Build a command for the agent with the given prompt and configuration.
-  Returns the command that the client should execute.
-  """
-  @callback build_command(Agent.t(), prompt()) ::
-              {:ok, command()} | {:error, execution_error()}
+  alias CodeMySpec.Sessions.Command
 
-  @callback build_command(Agent.t(), prompt(), opts()) ::
-              {:ok, command()} | {:error, execution_error()}
+  @doc """
+  Build a command string for the agent with the given prompt and configuration.
+  Returns the command string that the client should execute.
+  Legacy API - returns [command_string, pipe] tuple.
+  """
+  @callback build_command_string(Agent.t(), prompt()) ::
+              {:ok, command_list()} | {:error, execution_error()}
+
+  @callback build_command_string(Agent.t(), prompt(), opts()) ::
+              {:ok, command_list()} | {:error, execution_error()}
+
+  @doc """
+  Build a Command struct for the agent with the given prompt and configuration.
+  Returns a Command struct for agentic execution (module field must be set by caller).
+  """
+  @callback build_command_struct(Agent.t(), prompt(), opts()) ::
+              {:ok, Command.t()} | {:error, execution_error()}
 
   @type prompt() :: String.t()
-  @type command() :: [String.t()]
+  @type command_list() :: [String.t()]
   @type config() :: map()
-  @type opts() :: map()
+  @type opts() :: map() | keyword()
   @type execution_error() :: atom()
   @type validation_error() :: String.t()
 end

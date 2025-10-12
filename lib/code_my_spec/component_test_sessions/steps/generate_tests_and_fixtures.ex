@@ -1,22 +1,25 @@
 defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.{Rules, Agents, Utils}
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.{Rules, Utils}
+  alias CodeMySpec.Sessions.{Session, Steps.Helpers}
 
   def get_command(
         scope,
         %Session{project: project, component: component},
-        _opts \\ []
+        opts \\ []
       ) do
     with {:ok, test_rules} <- get_test_rules(scope, component),
          {:ok, prompt} <- build_prompt(project, component, test_rules),
-         {:ok, agent} <-
-           Agents.create_agent(:test_writer, "component-test-and-fixture-generator", :claude_code),
-         {:ok, command} <- Agents.build_command_string(agent, prompt) do
-      [command_string, pipe] = command
-      {:ok, Command.new(__MODULE__, command_string, pipe)}
+         {:ok, command} <-
+           Helpers.build_agent_command(
+             __MODULE__,
+             :test_writer,
+             "component-test-and-fixture-generator",
+             prompt,
+             opts
+           ) do
+      {:ok, command}
     end
   end
 

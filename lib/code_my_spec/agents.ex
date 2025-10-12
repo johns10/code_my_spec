@@ -27,12 +27,25 @@ defmodule CodeMySpec.Agents do
   end
 
   @doc """
-  Builds a command using the agent's implementation.
+  Builds a command string using the agent's implementation (legacy API).
   Merges agent type config with instance config at runtime.
+  Returns [command_string, pipe] tuple.
   """
   def build_command_string(%Agent{} = agent, prompt, opts \\ %{}) do
     implementation = get_impl(agent)
     implementation.build_command_string(agent, prompt, opts)
+  end
+
+  @doc """
+  Builds a Command struct using the agent's implementation (new agentic API).
+  Merges agent type config with instance config at runtime.
+  Returns Command struct with command: "claude", metadata, and use_subprocess: false.
+
+  The caller must set the module field on the returned command.
+  """
+  def build_command_struct(%Agent{} = agent, prompt, opts \\ %{}) do
+    implementation = get_impl(agent)
+    implementation.build_command_struct(agent, prompt, opts)
   end
 
   @doc """

@@ -1,22 +1,25 @@
 defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.{Rules, Agents, Utils}
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.{Rules, Utils}
+  alias CodeMySpec.Sessions.{Session, Steps.Helpers}
 
   def get_command(
         scope,
         %Session{project: project, component: component},
-        _opts \\ []
+        opts \\ []
       ) do
     with {:ok, rules} <- get_implementation_rules(scope, component),
          {:ok, prompt} <- build_implementation_prompt(project, component, rules),
-         {:ok, agent} <-
-           Agents.create_agent(:unit_coder, "implementation-generator", :claude_code),
-         {:ok, command} <- Agents.build_command_string(agent, prompt) do
-      [command_string, pipe] = command
-      {:ok, Command.new(__MODULE__, command_string, pipe)}
+         {:ok, command} <-
+           Helpers.build_agent_command(
+             __MODULE__,
+             :unit_coder,
+             "implementation-generator",
+             prompt,
+             opts
+           ) do
+      {:ok, command}
     end
   end
 

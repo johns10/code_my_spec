@@ -91,7 +91,8 @@ config :swoosh, :api_client, false
 # File watcher for content sync
 config :code_my_spec,
   watch_content: true,
-  content_watch_directory: "/Users/johndavenport/Documents/github/code_my_spec/lib/code_my_spec_web/code_my_spec_content/content",
+  content_watch_directory:
+    "/Users/johndavenport/Documents/github/code_my_spec/lib/code_my_spec_web/content/content",
   content_watch_scope: %{
     account_id: 4,
     project_id: 4

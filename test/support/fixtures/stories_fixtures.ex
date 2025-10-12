@@ -16,7 +16,7 @@ defmodule CodeMySpec.StoriesFixtures do
         locked_at: ~U[2025-07-17 12:48:00Z],
         priority: 42,
         status: :in_progress,
-        title: Faker.Person.first_name()
+        title: Faker.Person.first_name() <> " " <> Faker.Person.last_name()
       })
 
     {:ok, story} = CodeMySpec.Stories.create_story(scope, attrs)
