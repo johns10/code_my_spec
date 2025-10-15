@@ -109,6 +109,7 @@ defmodule CodeMySpec.Utils.Data do
         :docs_repo,
         :content_repo,
         :client_api_url,
+        :account_id,
         :status,
         :inserted_at,
         :updated_at
@@ -127,6 +128,7 @@ defmodule CodeMySpec.Utils.Data do
         :type,
         :module_name,
         :description,
+        :account_id,
         :project_id,
         :priority,
         :component_status,
@@ -147,6 +149,7 @@ defmodule CodeMySpec.Utils.Data do
         :type,
         :status,
         :state,
+        :account_id,
         :project_id,
         :component_id,
         :user_id,
