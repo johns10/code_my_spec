@@ -31,7 +31,7 @@ fi
 
 ENV=$1
 APP_NAME="code-my-spec-${ENV}"
-ENV_FILE=".env.${ENV}"
+ENV_FILE="envs/${ENV}.env"
 
 # Validate environment argument
 if [[ ! "$ENV" =~ ^(uat|prod)$ ]]; then

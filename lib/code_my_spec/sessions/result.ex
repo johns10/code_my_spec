@@ -6,6 +6,8 @@ defmodule CodeMySpec.Sessions.Result do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive Jason.Encoder
+
   @type t :: %__MODULE__{
           id: binary() | nil,
           status: :ok | :pending | :error | :warning | nil,

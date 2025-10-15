@@ -9,6 +9,8 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   alias CodeMySpec.Sessions.{Command, Result}
 
+  @derive Jason.Encoder
+
   @type t :: %__MODULE__{
           id: binary() | nil,
           command: Command.t() | nil,

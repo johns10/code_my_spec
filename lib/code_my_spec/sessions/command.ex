@@ -7,6 +7,8 @@ defmodule CodeMySpec.Sessions.Command do
   import Ecto.Changeset
   alias CodeMySpec.Sessions.CommandModuleType
 
+  @derive Jason.Encoder
+
   @type t :: %__MODULE__{
           id: binary() | nil,
           module: String.t() | nil,

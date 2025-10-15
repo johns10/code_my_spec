@@ -30,15 +30,15 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
   }
 
   setup do
-    # Set the deploy key environment variable for tests
-    original_deploy_key = System.get_env("DEPLOY_KEY")
-    System.put_env("DEPLOY_KEY", @valid_deploy_key)
+    # Set the deploy key in application config for tests
+    original_deploy_key = Application.get_env(:code_my_spec, :deploy_key)
+    Application.put_env(:code_my_spec, :deploy_key, @valid_deploy_key)
 
     on_exit(fn ->
       if original_deploy_key do
-        System.put_env("DEPLOY_KEY", original_deploy_key)
+        Application.put_env(:code_my_spec, :deploy_key, original_deploy_key)
       else
-        System.delete_env("DEPLOY_KEY")
+        Application.delete_env(:code_my_spec, :deploy_key)
       end
     end)
 
@@ -138,7 +138,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
     end
 
     test "returns 500 when DEPLOY_KEY environment variable is not set", %{conn: conn} do
-      System.delete_env("DEPLOY_KEY")
+      Application.delete_env(:code_my_spec, :deploy_key)
 
       conn =
         conn
