@@ -48,9 +48,25 @@ defmodule CodeMySpec.Utils.Data do
         insert_components(data.components)
         insert_sessions(data.sessions)
 
+        # Reset sequences after manually setting IDs to prevent conflicts
+        reset_sequences()
+
         Logger.info("✓ Imported account #{data.account.name} (ID: #{account_id})")
       end)
     end
+  end
+
+  # Reset all table sequences after manual ID insertion
+  defp reset_sequences do
+    tables = ~w(accounts users members projects components sessions)
+
+    Enum.each(tables, fn table ->
+      Repo.query!("""
+        SELECT setval(pg_get_serial_sequence('#{table}', 'id'),
+                      COALESCE((SELECT MAX(id) FROM #{table}), 1),
+                      true)
+      """)
+    end)
   end
 
   def export_account(account_id, output_path) do
@@ -189,16 +205,16 @@ defmodule CodeMySpec.Utils.Data do
     from(a in Account, where: a.id == ^account_id) |> Repo.delete_all()
   end
 
-  # Insert functions - just use changesets directly
+  # Insert functions - preserve IDs to maintain consistency across environments
+  # This is important because account_id=4 should be the same account in all environments
   defp insert_account(account_data) do
-    %Account{}
+    %Account{id: account_data.id}
     |> Account.changeset(account_data)
     |> Repo.insert!()
   end
 
   defp insert_users(users_data) do
     Enum.each(users_data, fn user_data ->
-      # Parse datetime strings if needed
       confirmed_at = parse_datetime(user_data[:confirmed_at])
 
       %User{id: user_data.id}
@@ -211,7 +227,7 @@ defmodule CodeMySpec.Utils.Data do
 
   defp insert_members(members_data) do
     Enum.each(members_data, fn member_data ->
-      %Member{}
+      %Member{id: member_data.id}
       |> Member.changeset(member_data)
       |> Repo.insert!()
     end)
@@ -221,7 +237,7 @@ defmodule CodeMySpec.Utils.Data do
     Enum.each(projects_data, fn project_data ->
       scope = %{active_account_id: project_data.account_id}
 
-      %Project{}
+      %Project{id: project_data.id}
       |> Project.changeset(project_data, scope)
       |> Repo.insert!()
     end)
@@ -237,7 +253,7 @@ defmodule CodeMySpec.Utils.Data do
         active_project: %{id: component_data.project_id}
       }
 
-      %Component{}
+      %Component{id: component_data.id}
       |> Component.changeset(component_data, scope)
       |> Repo.insert!()
     end)
@@ -253,7 +269,7 @@ defmodule CodeMySpec.Utils.Data do
         active_project: %{id: session_data.project_id}
       }
 
-      %Session{}
+      %Session{id: session_data.id}
       |> Session.changeset(session_data, scope)
       |> Repo.insert!()
     end)
