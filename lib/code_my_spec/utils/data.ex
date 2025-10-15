@@ -201,7 +201,7 @@ defmodule CodeMySpec.Utils.Data do
       # Parse datetime strings if needed
       confirmed_at = parse_datetime(user_data[:confirmed_at])
 
-      %User{}
+      %User{id: user_data.id}
       |> User.email_changeset(user_data, validate_unique: false)
       |> Ecto.Changeset.put_change(:hashed_password, user_data.hashed_password)
       |> Ecto.Changeset.put_change(:confirmed_at, confirmed_at)
