@@ -162,6 +162,16 @@ defmodule CodeMySpec.Utils.Data do
     end)
   end
 
+  # Helper to parse datetime strings from JSON
+  defp parse_datetime(nil), do: nil
+  defp parse_datetime(%DateTime{} = dt), do: dt
+  defp parse_datetime(string) when is_binary(string) do
+    case DateTime.from_iso8601(string) do
+      {:ok, dt, _} -> dt
+      {:error, _} -> nil
+    end
+  end
+
   # Wipe all data for an account
   defp wipe_account_data(account_id) do
     # Get user IDs for this account before deleting anything
@@ -185,10 +195,13 @@ defmodule CodeMySpec.Utils.Data do
 
   defp insert_users(users_data) do
     Enum.each(users_data, fn user_data ->
+      # Parse datetime strings if needed
+      confirmed_at = parse_datetime(user_data[:confirmed_at])
+
       %User{}
       |> User.email_changeset(user_data, validate_unique: false)
       |> Ecto.Changeset.put_change(:hashed_password, user_data.hashed_password)
-      |> Ecto.Changeset.put_change(:confirmed_at, user_data.confirmed_at)
+      |> Ecto.Changeset.put_change(:confirmed_at, confirmed_at)
       |> Repo.insert!()
     end)
   end
