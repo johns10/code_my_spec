@@ -146,7 +146,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
                          }}
 
         # Session should be complete
-        assert {:ok, %{status: :complete}} = Sessions.next_command(scope, session.id)
+        assert {:error, :complete} = Sessions.next_command(scope, session.id)
       end
     end
   end

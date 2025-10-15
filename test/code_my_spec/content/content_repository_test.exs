@@ -1,5 +1,5 @@
 defmodule CodeMySpec.Content.ContentRepositoryTest do
-  use CodeMySpec.DataCase, async: true
+  use CodeMySpec.DataCase
 
   import CodeMySpec.UsersFixtures
   import CodeMySpec.ContentFixtures
@@ -8,99 +8,24 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
 
   alias CodeMySpec.Content.ContentRepository
 
-  describe "list_content/1" do
-    test "returns all content for scope without filtering" do
-      scope = full_scope_fixture()
-
-      published = published_content_fixture(scope.active_project, scope.active_account)
-      scheduled = scheduled_content_fixture(scope.active_project, scope.active_account)
-      expired = expired_content_fixture(scope.active_project, scope.active_account)
-
-      content_list = ContentRepository.list_content(scope)
-
-      assert length(content_list) == 3
-      content_ids = Enum.map(content_list, & &1.id)
-      assert published.id in content_ids
-      assert scheduled.id in content_ids
-      assert expired.id in content_ids
-    end
-
-    test "returns content regardless of parse status" do
-      scope = full_scope_fixture()
-
-      pending = content_fixture(scope.active_project, scope.active_account, %{parse_status: "pending"})
-      success = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-      failed = failed_content_fixture(scope.active_project, scope.active_account)
-
-      content_list = ContentRepository.list_content(scope)
-
-      assert length(content_list) == 3
-      content_ids = Enum.map(content_list, & &1.id)
-      assert pending.id in content_ids
-      assert success.id in content_ids
-      assert failed.id in content_ids
-    end
-
-    test "returns empty list when no content exists in scope" do
-      scope = full_scope_fixture()
-
-      content_list = ContentRepository.list_content(scope)
-
-      assert content_list == []
-    end
-
-    test "only returns content from scoped project" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      content1 = content_fixture(scope1.active_project, scope1.active_account)
-      _content2 = content_fixture(scope2.active_project, scope2.active_account)
-
-      content_list = ContentRepository.list_content(scope1)
-
-      assert length(content_list) == 1
-      assert List.first(content_list).id == content1.id
-    end
-
-    test "only returns content from scoped account" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      _content1 = content_fixture(scope1.active_project, scope1.active_account)
-      _content2 = content_fixture(scope2.active_project, scope2.active_account)
-
-      content_list = ContentRepository.list_content(scope1)
-
-      assert length(content_list) == 1
-      assert List.first(content_list).account_id == scope1.active_account_id
-    end
-
-    test "enforces multi-tenant isolation" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      _content1 = content_fixture(scope1.active_project, scope1.active_account)
-      _content2 = content_fixture(scope1.active_project, scope1.active_account)
-      _content3 = content_fixture(scope2.active_project, scope2.active_account)
-
-      content_list1 = ContentRepository.list_content(scope1)
-      content_list2 = ContentRepository.list_content(scope2)
-
-      assert length(content_list1) == 2
-      assert length(content_list2) == 1
-
-      assert Enum.all?(content_list1, &(&1.account_id == scope1.active_account_id))
-      assert Enum.all?(content_list1, &(&1.project_id == scope1.active_project_id))
-    end
-  end
-
-  describe "list_published_content/2" do
+  describe "list_published_content/2 with scope" do
     test "returns only published content with success parse status" do
       scope = full_scope_fixture()
 
-      published = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
-      _scheduled = scheduled_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
-      _expired = expired_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
+      published =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog"
+        })
+
+      _scheduled =
+        scheduled_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog"
+        })
+
+      _expired =
+        expired_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog"
+        })
 
       content_list = ContentRepository.list_published_content(scope, "blog")
 
@@ -111,8 +36,15 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
     test "filters by content_type" do
       scope = full_scope_fixture()
 
-      blog = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
-      _page = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "page"})
+      blog =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog"
+        })
+
+      _page =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "page"
+        })
 
       blog_list = ContentRepository.list_published_content(scope, "blog")
       page_list = ContentRepository.list_published_content(scope, "page")
@@ -122,41 +54,18 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       assert List.first(blog_list).id == blog.id
     end
 
-    test "excludes content with parse_status other than success" do
-      scope = full_scope_fixture()
-
-      now = DateTime.utc_now()
-      yesterday = DateTime.add(now, -1, :day)
-
-      _pending = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "blog",
-        publish_at: yesterday,
-        parse_status: "pending"
-      })
-
-      _failed = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "blog",
-        publish_at: yesterday,
-        parse_status: "error",
-        parse_errors: %{"error" => "test"}
-      })
-
-      content_list = ContentRepository.list_published_content(scope, "blog")
-
-      assert content_list == []
-    end
 
     test "includes content with publish_at in past and no expires_at" do
       scope = full_scope_fixture()
 
       yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      content = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "blog",
-        publish_at: yesterday,
-        expires_at: nil,
-        parse_status: "success"
-      })
+      content =
+        content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          publish_at: yesterday,
+          expires_at: nil
+        })
 
       content_list = ContentRepository.list_published_content(scope, "blog")
 
@@ -170,12 +79,12 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
       tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
 
-      content = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "blog",
-        publish_at: yesterday,
-        expires_at: tomorrow,
-        parse_status: "success"
-      })
+      content =
+        content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          publish_at: yesterday,
+          expires_at: tomorrow
+        })
 
       content_list = ContentRepository.list_published_content(scope, "blog")
 
@@ -183,364 +92,136 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       assert List.first(content_list).id == content.id
     end
 
-    test "respects multi-tenant scope" do
+    test "includes both public and protected content when scope provided" do
+      scope = full_scope_fixture()
+
+      public =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: false
+        })
+
+      protected =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: true
+        })
+
+      content_list = ContentRepository.list_published_content(scope, "blog")
+
+      assert length(content_list) == 2
+      content_ids = Enum.map(content_list, & &1.id)
+      assert public.id in content_ids
+      assert protected.id in content_ids
+    end
+
+    test "returns content from all accounts and projects (no multi-tenant filtering)" do
       scope1 = full_scope_fixture()
       scope2 = full_scope_fixture()
 
-      content1 = published_content_fixture(scope1.active_project, scope1.active_account, %{content_type: "blog"})
-      _content2 = published_content_fixture(scope2.active_project, scope2.active_account, %{content_type: "blog"})
+      content1 =
+        published_content_fixture(scope1.active_project, scope1.active_account, %{
+          content_type: "blog"
+        })
 
+      content2 =
+        published_content_fixture(scope2.active_project, scope2.active_account, %{
+          content_type: "blog"
+        })
+
+      # Using scope1, but should get content from both accounts/projects
       content_list = ContentRepository.list_published_content(scope1, "blog")
 
-      assert length(content_list) == 1
-      assert List.first(content_list).id == content1.id
+      assert length(content_list) == 2
+      content_ids = Enum.map(content_list, & &1.id)
+      assert content1.id in content_ids
+      assert content2.id in content_ids
     end
   end
 
-  describe "list_scheduled_content/1" do
-    test "returns content scheduled for future publication" do
+  describe "list_published_content/2 with nil scope" do
+    test "returns only public content when scope is nil" do
       scope = full_scope_fixture()
 
-      scheduled = scheduled_content_fixture(scope.active_project, scope.active_account)
-      _published = published_content_fixture(scope.active_project, scope.active_account)
+      public =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: false
+        })
 
-      content_list = ContentRepository.list_scheduled_content(scope)
+      _protected =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: true
+        })
+
+      content_list = ContentRepository.list_published_content(nil, "blog")
 
       assert length(content_list) == 1
-      assert List.first(content_list).id == scheduled.id
+      assert List.first(content_list).id == public.id
+      assert List.first(content_list).protected == false
     end
 
-    test "excludes content with publish_at in past or present" do
+    test "filters by content_type" do
       scope = full_scope_fixture()
 
-      now = DateTime.utc_now()
-      yesterday = DateTime.add(now, -1, :day)
+      blog =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: false
+        })
 
-      _past = content_fixture(scope.active_project, scope.active_account, %{publish_at: yesterday})
-      _present = content_fixture(scope.active_project, scope.active_account, %{publish_at: now})
+      _page =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "page",
+          protected: false
+        })
 
-      content_list = ContentRepository.list_scheduled_content(scope)
-
-      assert content_list == []
-    end
-
-    test "includes scheduled content regardless of parse status" do
-      scope = full_scope_fixture()
-
-      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
-
-      pending = content_fixture(scope.active_project, scope.active_account, %{
-        publish_at: tomorrow,
-        parse_status: "pending"
-      })
-
-      content_list = ContentRepository.list_scheduled_content(scope)
-
-      assert length(content_list) == 1
-      assert List.first(content_list).id == pending.id
-    end
-
-    test "respects multi-tenant scope" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      scheduled1 = scheduled_content_fixture(scope1.active_project, scope1.active_account)
-      _scheduled2 = scheduled_content_fixture(scope2.active_project, scope2.active_account)
-
-      content_list = ContentRepository.list_scheduled_content(scope1)
-
-      assert length(content_list) == 1
-      assert List.first(content_list).id == scheduled1.id
-    end
-  end
-
-  describe "list_expired_content/1" do
-    test "returns content that has passed expiration date" do
-      scope = full_scope_fixture()
-
-      expired = expired_content_fixture(scope.active_project, scope.active_account)
-      _published = published_content_fixture(scope.active_project, scope.active_account)
-
-      content_list = ContentRepository.list_expired_content(scope)
-
-      assert length(content_list) == 1
-      assert List.first(content_list).id == expired.id
-    end
-
-    test "excludes content with expires_at in future or nil" do
-      scope = full_scope_fixture()
-
-      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
-
-      _future = content_fixture(scope.active_project, scope.active_account, %{
-        publish_at: DateTime.utc_now(),
-        expires_at: tomorrow
-      })
-
-      _no_expiry = content_fixture(scope.active_project, scope.active_account, %{
-        publish_at: DateTime.utc_now(),
-        expires_at: nil
-      })
-
-      content_list = ContentRepository.list_expired_content(scope)
-
-      assert content_list == []
-    end
-
-    test "respects multi-tenant scope" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      expired1 = expired_content_fixture(scope1.active_project, scope1.active_account)
-      _expired2 = expired_content_fixture(scope2.active_project, scope2.active_account)
-
-      content_list = ContentRepository.list_expired_content(scope1)
-
-      assert length(content_list) == 1
-      assert List.first(content_list).id == expired1.id
-    end
-  end
-
-  describe "list_content_by_type/2" do
-    test "returns all content for specific content_type" do
-      scope = full_scope_fixture()
-
-      blog1 = blog_post_fixture(scope.active_project, scope.active_account)
-      blog2 = blog_post_fixture(scope.active_project, scope.active_account)
-      _page = page_fixture(scope.active_project, scope.active_account)
-
-      blog_list = ContentRepository.list_content_by_type(scope, "blog")
-
-      assert length(blog_list) == 2
-      blog_ids = Enum.map(blog_list, & &1.id)
-      assert blog1.id in blog_ids
-      assert blog2.id in blog_ids
-    end
-
-    test "returns content regardless of publication status" do
-      scope = full_scope_fixture()
-
-      published = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "page"})
-      scheduled = scheduled_content_fixture(scope.active_project, scope.active_account, %{content_type: "page"})
-      expired = expired_content_fixture(scope.active_project, scope.active_account, %{content_type: "page"})
-
-      page_list = ContentRepository.list_content_by_type(scope, "page")
-
-      assert length(page_list) == 3
-      page_ids = Enum.map(page_list, & &1.id)
-      assert published.id in page_ids
-      assert scheduled.id in page_ids
-      assert expired.id in page_ids
-    end
-
-    test "returns content regardless of parse status" do
-      scope = full_scope_fixture()
-
-      pending = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "landing",
-        parse_status: "pending"
-      })
-
-      success = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "landing",
-        parse_status: "success"
-      })
-
-      failed = content_fixture(scope.active_project, scope.active_account, %{
-        content_type: "landing",
-        parse_status: "error",
-        parse_errors: %{"error" => "test"}
-      })
-
-      landing_list = ContentRepository.list_content_by_type(scope, "landing")
-
-      assert length(landing_list) == 3
-      landing_ids = Enum.map(landing_list, & &1.id)
-      assert pending.id in landing_ids
-      assert success.id in landing_ids
-      assert failed.id in landing_ids
-    end
-
-    test "respects multi-tenant scope" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      blog1 = blog_post_fixture(scope1.active_project, scope1.active_account)
-      _blog2 = blog_post_fixture(scope2.active_project, scope2.active_account)
-
-      blog_list = ContentRepository.list_content_by_type(scope1, "blog")
+      blog_list = ContentRepository.list_published_content(nil, "blog")
 
       assert length(blog_list) == 1
-      assert List.first(blog_list).id == blog1.id
+      assert List.first(blog_list).id == blog.id
+    end
+
+    test "excludes scheduled and expired content" do
+      scope = full_scope_fixture()
+
+      published =
+        published_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: false
+        })
+
+      _scheduled =
+        scheduled_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: false
+        })
+
+      _expired =
+        expired_content_fixture(scope.active_project, scope.active_account, %{
+          content_type: "blog",
+          protected: false
+        })
+
+      content_list = ContentRepository.list_published_content(nil, "blog")
+
+      assert length(content_list) == 1
+      assert List.first(content_list).id == published.id
     end
   end
 
-  describe "list_content_by_parse_status/2" do
-    test "returns content filtered by parse_status" do
+  describe "get_content_by_slug/3 with scope" do
+    test "returns published content when slug and content_type match" do
       scope = full_scope_fixture()
 
-      pending = content_fixture(scope.active_project, scope.active_account, %{parse_status: "pending"})
-      _success = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      pending_list = ContentRepository.list_content_by_parse_status(scope, "pending")
-
-      assert length(pending_list) == 1
-      assert List.first(pending_list).id == pending.id
-    end
-
-    test "returns error status content with parse_errors" do
-      scope = full_scope_fixture()
-
-      failed1 = failed_content_fixture(scope.active_project, scope.active_account)
-      failed2 = failed_content_fixture(scope.active_project, scope.active_account)
-      _success = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-
-      error_list = ContentRepository.list_content_by_parse_status(scope, "error")
-
-      assert length(error_list) == 2
-      error_ids = Enum.map(error_list, & &1.id)
-      assert failed1.id in error_ids
-      assert failed2.id in error_ids
-    end
-
-    test "returns success status content" do
-      scope = full_scope_fixture()
-
-      success1 = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-      success2 = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-      _pending = content_fixture(scope.active_project, scope.active_account, %{parse_status: "pending"})
-
-      success_list = ContentRepository.list_content_by_parse_status(scope, "success")
-
-      assert length(success_list) == 2
-      success_ids = Enum.map(success_list, & &1.id)
-      assert success1.id in success_ids
-      assert success2.id in success_ids
-    end
-
-    test "respects multi-tenant scope" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      pending1 = content_fixture(scope1.active_project, scope1.active_account, %{parse_status: "pending"})
-      _pending2 = content_fixture(scope2.active_project, scope2.active_account, %{parse_status: "pending"})
-
-      pending_list = ContentRepository.list_content_by_parse_status(scope1, "pending")
-
-      assert length(pending_list) == 1
-      assert List.first(pending_list).id == pending1.id
-    end
-  end
-
-  describe "get_content/2" do
-    test "returns content when id exists in scope" do
-      scope = full_scope_fixture()
-
-      created = content_fixture(scope.active_project, scope.active_account)
-
-      content = ContentRepository.get_content(scope, created.id)
-
-      assert content.id == created.id
-      assert content.slug == created.slug
-    end
-
-    test "returns nil when content does not exist" do
-      scope = full_scope_fixture()
-
-      content = ContentRepository.get_content(scope, 999_999)
-
-      assert content == nil
-    end
-
-    test "returns nil when content exists in different project" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      created = content_fixture(scope1.active_project, scope1.active_account)
-
-      content = ContentRepository.get_content(scope2, created.id)
-
-      assert content == nil
-    end
-
-    test "returns nil when content exists in different account" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      created = content_fixture(scope1.active_project, scope1.active_account)
-
-      content = ContentRepository.get_content(scope2, created.id)
-
-      assert content == nil
-    end
-
-    test "enforces multi-tenant isolation" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      content1 = content_fixture(scope1.active_project, scope1.active_account)
-      content2 = content_fixture(scope2.active_project, scope2.active_account)
-
-      result1 = ContentRepository.get_content(scope1, content1.id)
-      result2 = ContentRepository.get_content(scope2, content2.id)
-
-      assert result1.id == content1.id
-      assert result2.id == content2.id
-
-      # Cross-scope access returns nil
-      assert ContentRepository.get_content(scope1, content2.id) == nil
-      assert ContentRepository.get_content(scope2, content1.id) == nil
-    end
-  end
-
-  describe "get_content!/2" do
-    test "returns content when id exists in scope" do
-      scope = full_scope_fixture()
-
-      created = content_fixture(scope.active_project, scope.active_account)
-
-      content = ContentRepository.get_content!(scope, created.id)
-
-      assert content.id == created.id
-      assert content.slug == created.slug
-    end
-
-    test "raises Ecto.NoResultsError when content does not exist" do
-      scope = full_scope_fixture()
-
-      assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content!(scope, 999_999)
-      end
-    end
-
-    test "raises Ecto.NoResultsError when content exists in different project" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      created = content_fixture(scope1.active_project, scope1.active_account)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content!(scope2, created.id)
-      end
-    end
-
-    test "raises Ecto.NoResultsError when content exists in different account" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      created = content_fixture(scope1.active_project, scope1.active_account)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content!(scope2, created.id)
-      end
-    end
-  end
-
-  describe "get_content_by_slug/3" do
-    test "returns content when slug and content_type exist in scope" do
-      scope = full_scope_fixture()
-
-      created = blog_post_fixture(scope.active_project, scope.active_account, %{slug: "test-post"})
+      created =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "test-post",
+          publish_at: yesterday,
+        })
 
       content = ContentRepository.get_content_by_slug(scope, "test-post", "blog")
 
@@ -560,18 +241,95 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
     test "returns nil when content_type does not match" do
       scope = full_scope_fixture()
 
-      _blog = blog_post_fixture(scope.active_project, scope.active_account, %{slug: "test-slug"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      _blog =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "test-slug",
+          publish_at: yesterday,
+        })
 
       content = ContentRepository.get_content_by_slug(scope, "test-slug", "page")
 
       assert content == nil
     end
 
+    test "returns nil for unpublished content (scheduled)" do
+      scope = full_scope_fixture()
+
+      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
+
+      _scheduled =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "scheduled-post",
+          publish_at: tomorrow,
+        })
+
+      content = ContentRepository.get_content_by_slug(scope, "scheduled-post", "blog")
+
+      assert content == nil
+    end
+
+    test "returns nil for expired content" do
+      scope = full_scope_fixture()
+
+      week_ago = DateTime.utc_now() |> DateTime.add(-7, :day)
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      _expired =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "expired-post",
+          publish_at: week_ago,
+          expires_at: yesterday,
+        })
+
+      content = ContentRepository.get_content_by_slug(scope, "expired-post", "blog")
+
+      assert content == nil
+    end
+
+    test "returns both public and protected content when scope provided" do
+      scope = full_scope_fixture()
+
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      public =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "public-post",
+          publish_at: yesterday,
+          protected: false
+        })
+
+      protected =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "protected-post",
+          publish_at: yesterday,
+          protected: true
+        })
+
+      public_result = ContentRepository.get_content_by_slug(scope, "public-post", "blog")
+      protected_result = ContentRepository.get_content_by_slug(scope, "protected-post", "blog")
+
+      assert public_result.id == public.id
+      assert protected_result.id == protected.id
+    end
+
     test "enforces slug uniqueness per content_type" do
       scope = full_scope_fixture()
 
-      blog = blog_post_fixture(scope.active_project, scope.active_account, %{slug: "shared-slug"})
-      page = page_fixture(scope.active_project, scope.active_account, %{slug: "shared-slug"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      blog =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "shared-slug",
+          publish_at: yesterday,
+        })
+
+      page =
+        page_fixture(scope.active_project, scope.active_account, %{
+          slug: "shared-slug",
+          publish_at: yesterday,
+        })
 
       blog_result = ContentRepository.get_content_by_slug(scope, "shared-slug", "blog")
       page_result = ContentRepository.get_content_by_slug(scope, "shared-slug", "page")
@@ -580,50 +338,70 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       assert page_result.id == page.id
       assert blog_result.id != page_result.id
     end
+  end
 
-    test "returns nil when slug exists in different project" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
+  describe "get_content_by_slug/3 with nil scope" do
+    test "returns only public content when scope is nil" do
+      scope = full_scope_fixture()
 
-      _blog = blog_post_fixture(scope1.active_project, scope1.active_account, %{slug: "project-post"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      content = ContentRepository.get_content_by_slug(scope2, "project-post", "blog")
+      public =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "public-post",
+          publish_at: yesterday,
+          protected: false
+        })
+
+      _protected =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "protected-post",
+          publish_at: yesterday,
+          protected: true
+        })
+
+      public_result = ContentRepository.get_content_by_slug(nil, "public-post", "blog")
+      protected_result = ContentRepository.get_content_by_slug(nil, "protected-post", "blog")
+
+      assert public_result.id == public.id
+      assert protected_result == nil
+    end
+
+    test "returns nil when slug does not exist" do
+      content = ContentRepository.get_content_by_slug(nil, "nonexistent", "blog")
 
       assert content == nil
     end
 
-    test "returns nil when slug exists in different account" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
+    test "excludes unpublished content" do
+      scope = full_scope_fixture()
 
-      _blog = blog_post_fixture(scope1.active_project, scope1.active_account, %{slug: "account-post"})
+      tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
 
-      content = ContentRepository.get_content_by_slug(scope2, "account-post", "blog")
+      _scheduled =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "scheduled-post",
+          publish_at: tomorrow,
+          protected: false
+        })
+
+      content = ContentRepository.get_content_by_slug(nil, "scheduled-post", "blog")
 
       assert content == nil
-    end
-
-    test "enforces multi-tenant isolation" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      blog1 = blog_post_fixture(scope1.active_project, scope1.active_account, %{slug: "shared-slug"})
-      blog2 = blog_post_fixture(scope2.active_project, scope2.active_account, %{slug: "shared-slug"})
-
-      result1 = ContentRepository.get_content_by_slug(scope1, "shared-slug", "blog")
-      result2 = ContentRepository.get_content_by_slug(scope2, "shared-slug", "blog")
-
-      assert result1.id == blog1.id
-      assert result2.id == blog2.id
-      assert result1.id != result2.id
     end
   end
 
-  describe "get_content_by_slug!/3" do
-    test "returns content when slug and content_type exist in scope" do
+  describe "get_content_by_slug!/3 with scope" do
+    test "returns content when slug and content_type exist" do
       scope = full_scope_fixture()
 
-      created = blog_post_fixture(scope.active_project, scope.active_account, %{slug: "test-post"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      created =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "test-post",
+          publish_at: yesterday,
+        })
 
       content = ContentRepository.get_content_by_slug!(scope, "test-post", "blog")
 
@@ -642,33 +420,59 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
     test "raises Ecto.NoResultsError when content_type does not match" do
       scope = full_scope_fixture()
 
-      _blog = blog_post_fixture(scope.active_project, scope.active_account, %{slug: "test-slug"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      _blog =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "test-slug",
+          publish_at: yesterday,
+        })
 
       assert_raise Ecto.NoResultsError, fn ->
         ContentRepository.get_content_by_slug!(scope, "test-slug", "page")
       end
     end
+  end
 
-    test "raises Ecto.NoResultsError when slug exists in different project" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
+  describe "get_content_by_slug!/3 with nil scope" do
+    test "returns nil when scope is nil and content not found (non-raising)" do
+      result = ContentRepository.get_content_by_slug!(nil, "nonexistent", "blog")
 
-      _blog = blog_post_fixture(scope1.active_project, scope1.active_account, %{slug: "project-post"})
-
-      assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content_by_slug!(scope2, "project-post", "blog")
-      end
+      assert result == nil
     end
 
-    test "raises Ecto.NoResultsError when slug exists in different account" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
+    test "returns public content when scope is nil" do
+      scope = full_scope_fixture()
 
-      _blog = blog_post_fixture(scope1.active_project, scope1.active_account, %{slug: "account-post"})
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content_by_slug!(scope2, "account-post", "blog")
-      end
+      public =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "public-post",
+          publish_at: yesterday,
+          protected: false
+        })
+
+      result = ContentRepository.get_content_by_slug!(nil, "public-post", "blog")
+
+      assert result.id == public.id
+    end
+
+    test "returns nil for protected content when scope is nil (non-raising)" do
+      scope = full_scope_fixture()
+
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      _protected =
+        blog_post_fixture(scope.active_project, scope.active_account, %{
+          slug: "protected-post",
+          publish_at: yesterday,
+          protected: true
+        })
+
+      result = ContentRepository.get_content_by_slug!(nil, "protected-post", "blog")
+
+      assert result == nil
     end
   end
 

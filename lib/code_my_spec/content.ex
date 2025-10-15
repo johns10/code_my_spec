@@ -1,276 +1,299 @@
 defmodule CodeMySpec.Content do
   @moduledoc """
-  The Content Context manages all content entities (blog posts, pages, landing pages),
-  their lifecycle (scheduling, expiration), SEO metadata, and tag associations.
+  The Content Context manages published content for public and authenticated viewing.
+
+  This is the production-ready content system that serves blog posts, pages, landing pages,
+  and documentation to end users. Content is single-tenant (no account_id/project_id), and
+  access control is based on authentication (scope vs nil) rather than multi-tenancy.
+
+  ## Architectural Note
+
+  Content is distinct from ContentAdmin:
+  - **ContentAdmin**: Multi-tenant validation/preview layer where developers test content synced from Git
+  - **Content**: Single-tenant published content layer where end users view finalized content
+
+  Content is NOT copied from ContentAdmin. Publishing triggers a fresh Git pull, processes
+  content, and POSTs to the Content sync endpoint.
+
+  ## Scope Integration
+
+  **Scope is for authentication, NOT multi-tenancy**:
+  - **With %Scope{}**: User is authenticated → can access both public and protected content
+  - **With nil**: Anonymous visitor → can only access public content (protected = false)
+
+  NO account_id or project_id filtering. All queries are unscoped from a multi-tenant perspective.
   """
 
   import Ecto.Query, warn: false
 
   alias CodeMySpec.Repo
-  alias CodeMySpec.Content.{Content, Tag, ContentTag, ContentRepository, TagRepository}
+  alias CodeMySpec.Content.{Content, Tag, ContentTag, ContentRepository}
   alias CodeMySpec.Users.Scope
 
-  # Content Queries
+  # Content Retrieval
 
   @doc """
   Returns all published content for a given content type.
 
   Content is considered published when:
-  - parse_status is 'success'
   - publish_at is in the past or nil
   - expires_at is in the future or nil
+
+  ## Parameters
+    - scope_or_nil: %Scope{} for authenticated users (access to protected content), nil for anonymous (public only)
+    - content_type: String "blog", "page", "landing", or "documentation"
+
+  ## Examples
+
+      # Anonymous user - only public content
+      Content.list_published_content(nil, "blog")
+
+      # Authenticated user - public AND protected content
+      Content.list_published_content(scope, "blog")
   """
-  @spec list_published_content(Scope.t(), String.t()) :: [Content.t()]
-  def list_published_content(%Scope{} = scope, content_type) do
-    ContentRepository.list_published_content(scope, content_type)
+  @spec list_published_content(Scope.t() | nil, String.t()) :: [Content.t()]
+  def list_published_content(scope_or_nil, content_type) do
+    ContentRepository.list_published_content(scope_or_nil, content_type)
   end
 
   @doc """
-  Returns content scheduled for future publication.
-  """
-  @spec list_scheduled_content(Scope.t()) :: [Content.t()]
-  def list_scheduled_content(%Scope{} = scope) do
-    ContentRepository.list_scheduled_content(scope)
-  end
+  Gets content by slug and content type.
 
-  @doc """
-  Returns content that has expired.
-  """
-  @spec list_expired_content(Scope.t()) :: [Content.t()]
-  def list_expired_content(%Scope{} = scope) do
-    ContentRepository.list_expired_content(scope)
-  end
+  Returns nil if not found or if content is protected and scope is nil.
 
-  @doc """
-  Returns all content regardless of publish or expiration status.
+  ## Parameters
+    - scope_or_nil: %Scope{} for authenticated users, nil for anonymous
+    - slug: String slug identifier
+    - content_type: String "blog", "page", "landing", or "documentation"
+
+  ## Examples
+
+      # Try to get public content (anonymous)
+      Content.get_content_by_slug(nil, "my-post", "blog")
+
+      # Get any published content (authenticated)
+      Content.get_content_by_slug(scope, "my-post", "blog")
   """
-  @spec list_all_content(Scope.t()) :: [Content.t()]
-  def list_all_content(%Scope{} = scope) do
-    ContentRepository.list_content(scope)
+  @spec get_content_by_slug(Scope.t() | nil, String.t(), String.t()) :: Content.t() | nil
+  def get_content_by_slug(scope_or_nil, slug, content_type) do
+    ContentRepository.get_content_by_slug(scope_or_nil, slug, content_type)
   end
 
   @doc """
   Gets content by slug and content type. Raises if not found.
+
+  With %Scope{}: Raises Ecto.NoResultsError if not found.
+  With nil: Returns nil if not found (non-raising for anonymous users).
+
+  ## Parameters
+    - scope_or_nil: %Scope{} for authenticated users, nil for anonymous
+    - slug: String slug identifier
+    - content_type: String "blog", "page", "landing", or "documentation"
+
+  ## Examples
+
+      # Authenticated - raises if not found
+      Content.get_content_by_slug!(scope, "my-post", "blog")
+
+      # Anonymous - returns nil if not found (non-raising)
+      Content.get_content_by_slug!(nil, "my-post", "blog")
   """
-  @spec get_content_by_slug!(Scope.t(), String.t(), String.t()) :: Content.t()
-  def get_content_by_slug!(%Scope{} = scope, slug, content_type) do
-    ContentRepository.get_content_by_slug!(scope, slug, content_type)
+  @spec get_content_by_slug!(Scope.t() | nil, String.t(), String.t()) :: Content.t() | nil
+  def get_content_by_slug!(scope_or_nil, slug, content_type) do
+    ContentRepository.get_content_by_slug!(scope_or_nil, slug, content_type)
   end
 
-  @doc """
-  Gets content by id. Raises if not found.
-  """
-  @spec get_content!(Scope.t(), integer()) :: Content.t()
-  def get_content!(%Scope{} = scope, id) do
-    ContentRepository.get_content!(scope, id)
-  end
-
-  # Content CRUD
+  # Content Sync (Publishing Flow)
 
   @doc """
-  Creates content with the given attributes.
+  Synchronizes content from publishing flow.
+
+  Deletes all existing content and creates new content records in a transaction.
+  This ensures Content always reflects the GitHub source of truth.
+
+  ## Publishing Flow
+
+  1. Developer clicks "Publish" in ContentAdmin UI
+  2. Server pulls latest from GitHub repository
+  3. Server processes content files (markdown → HTML, parse frontmatter)
+  4. Server extracts/generates tags
+  5. Server POSTs processed content to `/api/content/sync` endpoint
+  6. This function handles the sync
+
+  ## Parameters
+    - content_list: List of content maps with all fields (slug, title, content_type, content, etc.)
+
+  ## Examples
+
+      Content.sync_content([
+        %{slug: "post-1", title: "Post 1", content_type: "blog", content: "<h1>Post 1</h1>", ...},
+        %{slug: "post-2", title: "Post 2", content_type: "blog", content: "<h1>Post 2</h1>", ...}
+      ])
   """
-  @spec create_content(Scope.t(), map()) :: {:ok, Content.t()} | {:error, Ecto.Changeset.t()}
-  def create_content(%Scope{} = scope, attrs) do
-    attrs = add_scope_to_attrs(scope, attrs)
-
-    %Content{}
-    |> Content.changeset(attrs)
-    |> Repo.insert()
-    |> case do
-      {:ok, content} = result ->
-        broadcast_content_change(scope, {:created, content})
-        result
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
-  Creates multiple content records in a transaction.
-  """
-  @spec create_many(Scope.t(), [map()]) :: {:ok, [Content.t()]} | {:error, term()}
-  def create_many(%Scope{} = scope, content_list) do
+  @spec sync_content([map()]) :: {:ok, [Content.t()]} | {:error, term()}
+  def sync_content(content_list) do
     require Logger
 
-    # Build changesets first
-    changesets =
-      Enum.with_index(content_list, fn attrs, index ->
-        attrs = add_scope_to_attrs(scope, attrs)
+    Repo.transaction(fn ->
+      # Delete all existing content
+      {deleted_count, _} = Repo.delete_all(Content)
+      Logger.info("Deleted #{deleted_count} existing content records")
 
-        changeset =
-          %Content{}
-          |> Content.changeset(attrs)
+      # Build changesets
+      changesets =
+        Enum.with_index(content_list, fn attrs, index ->
+          changeset = Content.changeset(%Content{}, attrs)
+          {changeset, index}
+        end)
 
-        {changeset, index}
+      # Log validation errors
+      changesets
+      |> Enum.filter(fn {cs, _index} -> not cs.valid? end)
+      |> Enum.each(fn {cs, index} ->
+        errors =
+          Ecto.Changeset.traverse_errors(cs, fn {msg, opts} ->
+            Enum.reduce(opts, msg, fn {key, value}, acc ->
+              String.replace(acc, "%{#{key}}", to_string(value))
+            end)
+          end)
+
+        title = Map.get(cs.changes, :title, "untitled")
+        error_string = CodeMySpec.Utils.changeset_error_to_string(cs)
+
+        Logger.error(
+          "Content validation failed at index #{index}: #{title} - #{error_string}",
+          changeset_errors: errors,
+          changeset_changes: cs.changes,
+          index: index
+        )
       end)
 
-    # Log validation errors
-    changesets
-    |> Enum.filter(fn {cs, _index} -> not cs.valid? end)
-    |> Enum.each(fn {cs, index} ->
-      errors =
-        Ecto.Changeset.traverse_errors(cs, fn {msg, opts} ->
-          Enum.reduce(opts, msg, fn {key, value}, acc ->
-            String.replace(acc, "%{#{key}}", to_string(value))
-          end)
-        end)
-
-      title = Map.get(cs.changes, :title, "untitled")
-      error_string = CodeMySpec.Utils.changeset_error_to_string(cs)
-
-      Logger.error(
-        "Content validation failed at index #{index}: #{title} - #{error_string}",
-        changeset_errors: errors,
-        changeset_changes: cs.changes,
-        index: index
-      )
-    end)
-
-    # Check if any changesets are invalid
-    case Enum.find(changesets, fn {cs, _index} -> not cs.valid? end) do
-      nil ->
-        # All valid, proceed with transaction
-        Repo.transaction(fn ->
-          Enum.map(changesets, fn {changeset, _index} ->
-            Repo.insert!(changeset)
-          end)
-        end)
-        |> case do
-          {:ok, content_list} = result ->
-            Enum.each(content_list, fn content ->
-              broadcast_content_change(scope, {:created, content})
+      # Check for invalid changesets
+      case Enum.find(changesets, fn {cs, _index} -> not cs.valid? end) do
+        nil ->
+          # All valid, insert content
+          content_records =
+            Enum.map(changesets, fn {changeset, _index} ->
+              Repo.insert!(changeset)
             end)
 
-            result
+          Logger.info("Created #{length(content_records)} new content records")
+          content_records
 
-          error ->
-            error
-        end
-
-      {invalid_changeset, index} ->
-        Logger.error("Aborting create_many due to validation failure at index #{index}")
-        {:error, invalid_changeset}
-    end
+        {invalid_changeset, index} ->
+          Logger.error("Aborting sync_content due to validation failure at index #{index}")
+          Repo.rollback(invalid_changeset)
+      end
+    end)
   end
 
   @doc """
-  Updates content with the given attributes.
+  Deletes all content.
+
+  Used during sync to clear existing content before inserting new content.
+
+  ## Examples
+
+      Content.delete_all_content()
+      # => {:ok, 42}
   """
-  @spec update_content(Scope.t(), Content.t(), map()) ::
-          {:ok, Content.t()} | {:error, Ecto.Changeset.t()}
-  def update_content(%Scope{} = scope, %Content{} = content, attrs) do
-    verify_content_belongs_to_scope!(content, scope)
-
-    content
-    |> Content.changeset(attrs)
-    |> Repo.update()
-    |> case do
-      {:ok, updated} = result ->
-        broadcast_content_change(scope, {:updated, updated})
-        result
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
-  Deletes content.
-  """
-  @spec delete_content(Scope.t(), Content.t()) ::
-          {:ok, Content.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content(%Scope{} = scope, %Content{} = content) do
-    verify_content_belongs_to_scope!(content, scope)
-
-    Repo.delete(content)
-    |> case do
-      {:ok, deleted} = result ->
-        broadcast_content_change(scope, {:deleted, deleted})
-        result
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
-  Deletes all content for the given scope.
-  """
-  @spec delete_all_content(Scope.t()) :: {:ok, integer()}
-  def delete_all_content(%Scope{} = scope) do
-    {count, _} =
-      Content
-      |> where([c], c.account_id == ^scope.active_account_id)
-      |> where([c], c.project_id == ^scope.active_project_id)
-      |> Repo.delete_all()
-
-    broadcast_content_change(scope, :bulk_delete)
-    {:ok, count}
-  end
-
-  # Bulk Operations
-
-  @doc """
-  Deletes all expired content for the given scope.
-  """
-  @spec purge_expired_content(Scope.t()) :: {:ok, integer()}
-  def purge_expired_content(%Scope{} = scope) do
-    now = DateTime.utc_now()
-
-    {count, _} =
-      Content
-      |> where([c], c.account_id == ^scope.active_account_id)
-      |> where([c], c.project_id == ^scope.active_project_id)
-      |> where([c], not is_nil(c.expires_at) and c.expires_at <= ^now)
-      |> Repo.delete_all()
-
-    if count > 0 do
-      broadcast_content_change(scope, :purge_expired)
-    end
-
+  @spec delete_all_content() :: {:ok, integer()}
+  def delete_all_content do
+    {count, _} = Repo.delete_all(Content)
     {:ok, count}
   end
 
   # Tag Management
 
   @doc """
-  Returns all tags for the given scope.
-  """
-  @spec list_tags(Scope.t()) :: [Tag.t()]
-  def list_tags(%Scope{} = scope) do
-    TagRepository.list_tags(scope)
-  end
+  Returns all tags.
 
-  @doc """
-  Creates a tag or returns existing tag with the same slug.
+  No scoping - returns all tags in the system.
+
+  ## Examples
+
+      Content.list_all_tags()
+      # => [%Tag{name: "elixir", slug: "elixir"}, ...]
   """
-  @spec upsert_tag(Scope.t(), String.t()) :: {:ok, Tag.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_tag(%Scope{} = scope, name) do
-    TagRepository.upsert_tag(scope, name)
+  @spec list_all_tags() :: [Tag.t()]
+  def list_all_tags do
+    Repo.all(Tag)
   end
 
   @doc """
   Returns all tags associated with the given content.
-  """
-  @spec get_content_tags(Scope.t(), Content.t()) :: [Tag.t()]
-  def get_content_tags(%Scope{} = scope, %Content{} = content) do
-    verify_content_belongs_to_scope!(content, scope)
 
+  ## Parameters
+    - content: Content struct
+
+  ## Examples
+
+      content = Content.get_content_by_slug(scope, "my-post", "blog")
+      Content.get_content_tags(content)
+      # => [%Tag{name: "elixir", slug: "elixir"}, ...]
+  """
+  @spec get_content_tags(Content.t()) :: [Tag.t()]
+  def get_content_tags(%Content{} = content) do
     content
     |> ContentRepository.preload_tags()
     |> Map.get(:tags)
   end
 
   @doc """
-  Synchronizes tags for content. Removes old associations and creates new ones.
-  """
-  @spec sync_content_tags(Scope.t(), Content.t(), [String.t()]) ::
-          {:ok, Content.t()} | {:error, term()}
-  def sync_content_tags(%Scope{} = scope, %Content{} = content, tag_names) do
-    verify_content_belongs_to_scope!(content, scope)
+  Creates or returns existing tag with the given name.
 
+  Generates slug from name automatically.
+
+  ## Parameters
+    - name: String tag name
+
+  ## Examples
+
+      Content.upsert_tag("Elixir")
+      # => {:ok, %Tag{name: "Elixir", slug: "elixir"}}
+  """
+  @spec upsert_tag(String.t()) :: {:ok, Tag.t()} | {:error, Ecto.Changeset.t()}
+  def upsert_tag(name) do
+    slug = slugify(name)
+
+    case Repo.get_by(Tag, slug: slug) do
+      nil ->
+        %Tag{}
+        |> Tag.changeset(%{name: name, slug: slug})
+        |> Repo.insert()
+
+      tag ->
+        {:ok, tag}
+    end
+  end
+
+  # Helper to generate slug from name
+  defp slugify(string) do
+    string
+    |> String.downcase()
+    |> String.replace(~r/[^\w\s-]/, "")
+    |> String.replace(~r/\s+/, "-")
+    |> String.replace(~r/-+/, "-")
+    |> String.trim("-")
+  end
+
+  @doc """
+  Synchronizes tags for content.
+
+  Removes old tag associations and creates new ones.
+
+  ## Parameters
+    - content: Content struct
+    - tag_names: List of tag name strings
+
+  ## Examples
+
+      content = Content.get_content_by_slug(scope, "my-post", "blog")
+      Content.sync_content_tags(content, ["elixir", "phoenix", "liveview"])
+      # => {:ok, %Content{tags: [...]}}
+  """
+  @spec sync_content_tags(Content.t(), [String.t()]) :: {:ok, Content.t()} | {:error, term()}
+  def sync_content_tags(%Content{} = content, tag_names) do
     Repo.transaction(fn ->
       # Delete existing associations
       ContentTag
@@ -280,7 +303,7 @@ defmodule CodeMySpec.Content do
       # Upsert tags and create new associations
       tag_names
       |> Enum.map(fn name ->
-        {:ok, tag} = upsert_tag(scope, name)
+        {:ok, tag} = upsert_tag(name)
         tag
       end)
       |> Enum.each(fn tag ->
@@ -290,100 +313,9 @@ defmodule CodeMySpec.Content do
       end)
 
       # Reload content with tags
-      ContentRepository.get_content!(scope, content.id)
+      content
+      |> Repo.reload!()
       |> ContentRepository.preload_tags()
     end)
-  end
-
-  # Status Queries
-
-  @doc """
-  Returns content filtered by the given criteria.
-
-  Supported filters:
-  - parse_status: "success", "error", "pending"
-  - content_type: "blog", "page", "landing"
-  """
-  @spec list_content_with_status(Scope.t(), map()) :: [Content.t()]
-  def list_content_with_status(%Scope{} = scope, filters) do
-    query = Content
-
-    query =
-      query
-      |> where([c], c.account_id == ^scope.active_account_id)
-      |> where([c], c.project_id == ^scope.active_project_id)
-
-    query =
-      case Map.get(filters, :parse_status) do
-        nil ->
-          query
-
-        status when is_binary(status) ->
-          status_atom = String.to_existing_atom(status)
-          where(query, [c], c.parse_status == ^status_atom)
-      end
-
-    query =
-      case Map.get(filters, :content_type) do
-        nil ->
-          query
-
-        type when is_binary(type) ->
-          type_atom = String.to_existing_atom(type)
-          where(query, [c], c.content_type == ^type_atom)
-      end
-
-    Repo.all(query)
-  end
-
-  @doc """
-  Returns counts of content by parse status.
-  """
-  @spec count_by_parse_status(Scope.t()) :: %{success: integer(), error: integer()}
-  def count_by_parse_status(%Scope{} = scope) do
-    success_count =
-      Content
-      |> where([c], c.account_id == ^scope.active_account_id)
-      |> where([c], c.project_id == ^scope.active_project_id)
-      |> where([c], c.parse_status == :success)
-      |> Repo.aggregate(:count)
-
-    error_count =
-      Content
-      |> where([c], c.account_id == ^scope.active_account_id)
-      |> where([c], c.project_id == ^scope.active_project_id)
-      |> where([c], c.parse_status == :error)
-      |> Repo.aggregate(:count)
-
-    %{success: success_count, error: error_count}
-  end
-
-  # Private Helpers
-
-  defp add_scope_to_attrs(%Scope{} = scope, attrs) do
-    attrs
-    |> Map.put(:account_id, scope.active_account_id)
-    |> Map.put(:project_id, scope.active_project_id)
-  end
-
-  defp verify_content_belongs_to_scope!(%Content{} = content, %Scope{} = scope) do
-    unless content.account_id == scope.active_account_id and
-             content.project_id == scope.active_project_id do
-      raise ArgumentError, "Content does not belong to the given scope"
-    end
-
-    :ok
-  end
-
-  defp broadcast_content_change(%Scope{} = scope, message) do
-    Phoenix.PubSub.broadcast(
-      CodeMySpec.PubSub,
-      content_topic(scope),
-      message
-    )
-  end
-
-  defp content_topic(%Scope{} = scope) do
-    "account:#{scope.active_account_id}:project:#{scope.active_project_id}:content"
   end
 end

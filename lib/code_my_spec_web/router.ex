@@ -31,7 +31,7 @@ defmodule CodeMySpecWeb.Router do
 
     get "/", PageController, :home
 
-    # Public content routes
+    # Public content routes (CLIENT APP FUNCTIONALITY)
     live_session :public_content,
       on_mount: [{CodeMySpecWeb.UserAuth, :mount_current_scope}] do
       live "/blog/:slug", ContentLive.Public, :blog
@@ -41,7 +41,7 @@ defmodule CodeMySpecWeb.Router do
     end
   end
 
-  # Protected content routes (require authentication)
+  # Protected content routes (CLIENT APP FUNCTIONALITY)
   scope "/private", CodeMySpecWeb do
     pipe_through [:browser, :require_authenticated_user]
 
@@ -106,6 +106,13 @@ defmodule CodeMySpecWeb.Router do
     get "/project-coordinator/next-actions", ProjectCoordinatorController, :next_actions
   end
 
+  # Content sync endpoint (authenticated via deployment key, not OAuth)
+  scope "/api/content", CodeMySpecWeb do
+    pipe_through :api
+
+    post "/sync", ContentSyncController, :sync
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:code_my_spec, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
@@ -164,8 +171,8 @@ defmodule CodeMySpecWeb.Router do
       live "/rules/:id", RuleLive.Show, :show
       live "/rules/:id/edit", RuleLive.Form, :edit
 
-      live "/content", ContentLive.Index, :index
-      live "/content/:id", ContentLive.Show, :show
+      live "/content_admin", ContentAdminLive.Index, :index
+      live "/content_admin/:id", ContentAdminLive.Show, :show
 
       live "/architecture", ArchitectureLive.Index, :index
     end

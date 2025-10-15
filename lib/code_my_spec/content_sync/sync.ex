@@ -1,29 +1,53 @@
 defmodule CodeMySpec.ContentSync.Sync do
   @moduledoc """
-  Orchestrates the core content synchronization pipeline from filesystem to database.
+  Agnostic content synchronization pipeline that processes filesystem content into attribute maps.
 
-  Accepts a directory path, discovers content files in that directory (non-recursive),
-  processes them through appropriate parsers and processors, and performs atomic
-  database updates. Implements a 'delete all and recreate' strategy where filesystem
-  is the source of truth.
+  Accepts a directory path, discovers content files (non-recursive), processes them through
+  appropriate parsers and processors, and returns a list of attribute maps. These maps can be
+  consumed by either Content or ContentAdmin changesets - the caller handles database operations.
+
+  ## Philosophy
+
+  Sync is the foundational layer that:
+  - Reads files from filesystem
+  - Parses metadata (YAML sidecar files)
+  - Processes content (Markdown, HTML, HEEx)
+  - Returns generic attribute maps
+
+  Sync does NOT:
+  - Create database records
+  - Handle multi-tenant scoping
+  - Manage transactions
+  - Broadcast events
+
+  The caller decides how to use the attribute maps (Content for production, ContentAdmin for validation).
 
   ## Public API
 
-      @spec sync_directory(Scope.t(), directory :: String.t()) :: {:ok, sync_result()} | {:error, term()}
+      @spec process_directory(directory :: String.t()) :: {:ok, [content_attrs()]} | {:error, term()}
 
   ## Example
 
-      iex> Sync.sync_directory(scope, "/path/to/content")
-      {:ok, %{
-        total_files: 10,
-        successful: 9,
-        errors: 1,
-        duration_ms: 1234,
-        content_types: %{blog: 5, page: 3, landing: 1}
-      }}
+      iex> Sync.process_directory("/path/to/content")
+      {:ok, [
+        %{
+          slug: "hello-world",
+          title: "Hello World",
+          content_type: :blog,
+          content: "# Hello World\\n\\nWelcome...",
+          processed_content: "<h1>Hello World</h1><p>Welcome...</p>",
+          parse_status: :success,
+          parse_errors: nil,
+          # ... other attributes
+        },
+        %{
+          slug: "about",
+          title: "About Us",
+          content_type: :page,
+          # ...
+        }
+      ]}
   """
-
-  alias CodeMySpec.Content
 
   alias CodeMySpec.ContentSync.{
     MetaDataParser,
@@ -33,104 +57,99 @@ defmodule CodeMySpec.ContentSync.Sync do
     ProcessorResult
   }
 
-  alias CodeMySpec.Repo
-  alias CodeMySpec.Users.Scope
-
-  @type sync_result :: %{
-          total_files: integer(),
-          successful: integer(),
-          errors: integer(),
-          duration_ms: integer(),
-          content_types: %{blog: integer(), page: integer(), landing: integer()}
+  @type content_attrs :: %{
+          required(:slug) => String.t(),
+          required(:content_type) => :blog | :page | :landing | :documentation,
+          required(:content) => String.t(),
+          required(:processed_content) => String.t() | nil,
+          required(:parse_status) => :success | :error,
+          optional(:parse_errors) => map() | nil,
+          optional(:title) => String.t(),
+          optional(:protected) => boolean(),
+          optional(:publish_at) => DateTime.t(),
+          optional(:expires_at) => DateTime.t(),
+          optional(:meta_title) => String.t(),
+          optional(:meta_description) => String.t(),
+          optional(:og_image) => String.t(),
+          optional(:og_title) => String.t(),
+          optional(:og_description) => String.t(),
+          optional(:metadata) => map()
         }
 
   @doc """
-  Syncs a directory of content files to the database.
+  Processes a directory of content files and returns attribute maps.
 
   ## Parameters
 
-    - `scope` - The user scope containing account and project information
     - `directory` - Absolute path to the directory containing content files
 
   ## Returns
 
-    - `{:ok, sync_result}` - Successful sync with statistics
+    - `{:ok, [content_attrs]}` - List of attribute maps ready for changesets
     - `{:error, :invalid_directory}` - Directory doesn't exist or isn't readable
-    - `{:error, reason}` - Database transaction failure
 
   ## Processing Steps
 
   1. Validates directory exists and is readable
-  2. Starts database transaction
-  3. Deletes all existing content for the project
-  4. Discovers content files (*.md, *.html, *.heex) in flat directory structure
-  5. Processes each file: reads content, parses metadata, routes to processor
-  6. Inserts all content records via batch operation
-  7. Commits transaction
-  8. Returns sync statistics
+  2. Discovers content files (*.md, *.html, *.heex) in flat directory structure
+  3. For each file:
+     - Reads file contents
+     - Parses metadata from sidecar .yaml file
+     - Routes to appropriate processor based on extension
+     - Merges metadata + processed content into attribute map
+     - Captures parse errors in parse_status/parse_errors fields
+  4. Returns list of attribute maps
+
+  ## Error Handling
+
+  Individual file parse errors do NOT fail the entire operation. Files with parse errors
+  will have `parse_status: :error` and `parse_errors: %{...}` in their attribute maps.
 
   ## Examples
 
-      iex> sync_directory(scope, "/path/to/content")
-      {:ok, %{total_files: 3, successful: 3, errors: 0, ...}}
+      iex> process_directory("/path/to/content")
+      {:ok, [%{slug: "post-1", ...}, %{slug: "post-2", ...}]}
 
-      iex> sync_directory(scope, "/nonexistent")
+      iex> process_directory("/nonexistent")
       {:error, :invalid_directory}
-  """
-  @spec sync_directory(Scope.t(), String.t()) :: {:ok, sync_result()} | {:error, term()}
-  def sync_directory(%Scope{} = scope, directory) do
-    start_time = System.monotonic_time(:millisecond)
 
-    with :ok <- validate_directory(directory),
-         :ok <- validate_scope(scope) do
-      result =
-        Repo.transaction(fn ->
-          {:ok, _count} = Content.delete_all_content(scope)
+  ## Usage with Content (single-tenant production)
 
-          file_paths = discover_files(directory)
-          content_attrs_list = Enum.map(file_paths, &process_file(&1, scope))
+      {:ok, attrs_list} = Sync.process_directory("/path/to/content")
 
-          case content_attrs_list do
-            [] ->
-              []
+      Repo.transaction(fn ->
+        Content.delete_all_content()
 
-            attrs_list ->
-              case Content.create_many(scope, attrs_list) do
-                {:ok, content_list} ->
-                  content_list
-
-                {:error, reason} ->
-                  IO.puts("error?")
-                  Repo.rollback(reason)
-              end
-          end
+        Enum.each(attrs_list, fn attrs ->
+          # Filter attrs to only Content fields
+          content_attrs = Map.take(attrs, [:slug, :title, :content_type, :content, ...])
+          Content.create_content(content_attrs)
         end)
+      end)
 
-      case result do
-        {:ok, content_list} ->
-          require Logger
+  ## Usage with ContentAdmin (multi-tenant validation)
 
-          # Log any content items that had parse errors
-          content_list
-          |> Enum.filter(&(&1.parse_status == :error))
-          |> Enum.each(fn content ->
-            Logger.error(
-              "Content sync error for file #{content.slug} #{inspect(content.parse_errors)}",
-              slug: content.slug,
-              parse_errors: content.parse_errors,
-              raw_content_preview: String.slice(content.raw_content || "", 0, 100)
-            )
-          end)
+      {:ok, attrs_list} = Sync.process_directory("/path/to/content")
 
-          end_time = System.monotonic_time(:millisecond)
-          duration_ms = end_time - start_time
-          sync_result = build_sync_result(content_list, duration_ms)
-          broadcast_sync_completed(scope, sync_result)
-          {:ok, sync_result}
+      Repo.transaction(fn ->
+        ContentAdmin.delete_all_content(scope)
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+        Enum.each(attrs_list, fn attrs ->
+          # Add multi-tenant scoping
+          admin_attrs = Map.merge(attrs, %{
+            account_id: scope.active_account_id,
+            project_id: scope.active_project_id
+          })
+          ContentAdmin.create_content_admin(scope, admin_attrs)
+        end)
+      end)
+  """
+  @spec process_directory(String.t()) :: {:ok, [content_attrs()]} | {:error, term()}
+  def process_directory(directory) do
+    with :ok <- validate_directory(directory) do
+      file_paths = discover_files(directory)
+      attrs_list = Enum.map(file_paths, &process_file/1)
+      {:ok, attrs_list}
     end
   end
 
@@ -165,15 +184,6 @@ defmodule CodeMySpec.ContentSync.Sync do
   end
 
   # ============================================================================
-  # Scope Validation
-  # ============================================================================
-
-  @spec validate_scope(Scope.t()) :: :ok | {:error, term()}
-  defp validate_scope(%Scope{active_project_id: nil}), do: {:error, :no_active_project}
-  defp validate_scope(%Scope{active_account_id: nil}), do: {:error, :no_active_account}
-  defp validate_scope(%Scope{}), do: :ok
-
-  # ============================================================================
   # File Discovery
   # ============================================================================
 
@@ -202,8 +212,8 @@ defmodule CodeMySpec.ContentSync.Sync do
   # File Processing
   # ============================================================================
 
-  @spec process_file(String.t(), Scope.t()) :: map()
-  defp process_file(file_path, _scope) do
+  @spec process_file(String.t()) :: content_attrs()
+  defp process_file(file_path) do
     raw_content = File.read!(file_path)
     extension = Path.extname(file_path)
     metadata_path = Path.rootname(file_path) <> ".yaml"
@@ -211,7 +221,7 @@ defmodule CodeMySpec.ContentSync.Sync do
     case MetaDataParser.parse_metadata_file(metadata_path) do
       {:ok, metadata} ->
         processor_result = route_to_processor(extension, raw_content)
-        merge_metadata_and_result(metadata, processor_result)
+        merge_metadata_and_result(metadata, processor_result, raw_content)
 
       {:error, error_detail} ->
         build_metadata_error_attrs(raw_content, error_detail)
@@ -234,41 +244,43 @@ defmodule CodeMySpec.ContentSync.Sync do
     result
   end
 
-  @spec merge_metadata_and_result(map(), ProcessorResult.t()) :: map()
-  defp merge_metadata_and_result(metadata, %ProcessorResult{} = result) do
+  @spec merge_metadata_and_result(map(), ProcessorResult.t(), String.t()) :: content_attrs()
+  defp merge_metadata_and_result(metadata, %ProcessorResult{} = result, raw_content) do
+    # Base attrs are always present (even when nil)
     base_attrs = %{
       slug: metadata[:slug],
       title: metadata[:title],
       content_type: atomize_content_type(metadata[:type]),
-      raw_content: result.raw_content,
+      content: raw_content,
       processed_content: result.processed_content,
       parse_status: result.parse_status,
       parse_errors: atomize_parse_errors(result.parse_errors),
-      metadata: %{}
+      metadata: stringify_keys(metadata)
     }
 
-    optional_attrs = %{
-      publish_at: parse_datetime(metadata[:publish_at]),
-      expires_at: parse_datetime(metadata[:expires_at]),
-      meta_title: metadata[:meta_title],
-      meta_description: metadata[:meta_description],
-      og_image: metadata[:og_image],
-      og_title: metadata[:og_title],
-      og_description: metadata[:og_description],
-      protected: metadata[:protected]
-    }
+    # Optional attrs - only include when not nil
+    optional_attrs =
+      %{
+        publish_at: parse_datetime(metadata[:publish_at]),
+        expires_at: parse_datetime(metadata[:expires_at]),
+        meta_title: metadata[:meta_title],
+        meta_description: metadata[:meta_description],
+        og_image: metadata[:og_image],
+        og_title: metadata[:og_title],
+        og_description: metadata[:og_description],
+        protected: metadata[:protected]
+      }
+      |> reject_nil_values()
 
-    base_attrs
-    |> Map.merge(optional_attrs)
-    |> reject_nil_values()
+    Map.merge(base_attrs, optional_attrs)
   end
 
-  @spec build_metadata_error_attrs(String.t(), map()) :: map()
+  @spec build_metadata_error_attrs(String.t(), map()) :: content_attrs()
   defp build_metadata_error_attrs(raw_content, error_detail) do
     %{
       slug: generate_error_slug(),
       content_type: :blog,
-      raw_content: raw_content,
+      content: raw_content,
       processed_content: nil,
       parse_status: :error,
       parse_errors: %{
@@ -317,6 +329,7 @@ defmodule CodeMySpec.ContentSync.Sync do
   defp atomize_content_type("blog"), do: :blog
   defp atomize_content_type("page"), do: :page
   defp atomize_content_type("landing"), do: :landing
+  defp atomize_content_type("documentation"), do: :documentation
   defp atomize_content_type(_), do: :blog
 
   @spec parse_datetime(String.t() | DateTime.t() | nil) :: DateTime.t() | nil
@@ -339,52 +352,11 @@ defmodule CodeMySpec.ContentSync.Sync do
     |> Map.new()
   end
 
-  # ============================================================================
-  # Sync Result Calculation
-  # ============================================================================
-
-  @spec build_sync_result([Content.Content.t()], integer()) :: sync_result()
-  defp build_sync_result(content_list, duration_ms) do
-    successful = Enum.count(content_list, &(&1.parse_status == :success))
-    errors = Enum.count(content_list, &(&1.parse_status == :error))
-
-    content_types = %{
-      blog: count_content_type(content_list, :blog, :success),
-      page: count_content_type(content_list, :page, :success),
-      landing: count_content_type(content_list, :landing, :success)
-    }
-
-    %{
-      total_files: length(content_list),
-      successful: successful,
-      errors: errors,
-      duration_ms: duration_ms,
-      content_types: content_types
-    }
-  end
-
-  @spec count_content_type([Content.Content.t()], atom(), atom()) :: integer()
-  defp count_content_type(content_list, type, status) do
-    Enum.count(content_list, fn content ->
-      content.content_type == type and content.parse_status == status
+  @spec stringify_keys(map()) :: map()
+  defp stringify_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {key, value} when is_atom(key) -> {Atom.to_string(key), value}
+      {key, value} -> {key, value}
     end)
-  end
-
-  # ============================================================================
-  # Broadcasting
-  # ============================================================================
-
-  @spec broadcast_sync_completed(Scope.t(), sync_result()) :: :ok | {:error, term()}
-  defp broadcast_sync_completed(%Scope{} = scope, sync_result) do
-    Phoenix.PubSub.broadcast(
-      CodeMySpec.PubSub,
-      content_topic(scope),
-      {:sync_completed, sync_result}
-    )
-  end
-
-  @spec content_topic(Scope.t()) :: String.t()
-  defp content_topic(%Scope{} = scope) do
-    "account:#{scope.active_account_id}:project:#{scope.active_project_id}:content"
   end
 end

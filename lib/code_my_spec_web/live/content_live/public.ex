@@ -1,13 +1,13 @@
 defmodule CodeMySpecWeb.ContentLive.Public do
   use CodeMySpecWeb, :live_view
 
-  alias CodeMySpec.Content
+  alias CodeMySpec.ContentAdmin
 
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <.render_template content={@content} tags={@tags} template={@template} />
+      <.render_template content_admin={@content_admin} tags={@tags} template={@template} />
     </Layouts.app>
     """
   end
@@ -20,33 +20,36 @@ defmodule CodeMySpecWeb.ContentLive.Public do
 
     scope = socket.assigns.current_scope
 
-    case load_and_verify_content(scope, slug, content_type, is_protected) do
-      {:ok, content} ->
-        tags = Content.get_content_tags(scope, content)
-        template = Map.get(content.metadata, "template", "default")
+    case load_and_verify_content_admin(scope, slug, content_type, is_protected) do
+      {:ok, content_admin} ->
+        tags = []  # ContentAdmin doesn't have tags
+        template = Map.get(content_admin.metadata, "template", "default")
 
         {:ok,
          socket
-         |> assign(:content, content)
+         |> assign(:content_admin, content_admin)
          |> assign(:tags, tags)
          |> assign(:template, template)
-         |> assign(:page_title, content.meta_title || content.title || content.slug)
-         |> assign(:meta_description, content.meta_description)
-         |> assign(:og_title, content.og_title)
-         |> assign(:og_description, content.og_description)
-         |> assign(:og_image, content.og_image)
-         |> assign(:canonical_url, build_canonical_url(content, is_protected))}
+         |> assign(
+           :page_title,
+           content_admin.meta_title || content_admin.title || content_admin.slug
+         )
+         |> assign(:meta_description, content_admin.meta_description)
+         |> assign(:og_title, content_admin.og_title)
+         |> assign(:og_description, content_admin.og_description)
+         |> assign(:og_image, content_admin.og_image)
+         |> assign(:canonical_url, build_canonical_url(content_admin, is_protected))}
 
       {:error, :not_found} ->
         {:ok,
          socket
-         |> put_flash(:error, "Content not found")
+         |> put_flash(:error, "ContentAdmin not found")
          |> redirect(to: ~p"/")}
 
       {:error, :not_published} ->
         {:ok,
          socket
-         |> put_flash(:error, "Content not available")
+         |> put_flash(:error, "ContentAdmin not available")
          |> redirect(to: ~p"/")}
     end
   end
@@ -61,18 +64,14 @@ defmodule CodeMySpecWeb.ContentLive.Public do
   end
 
   defp is_protected_route?(live_action) do
-    live_action in [:private_blog, :private_page, :private_landing]
+    live_action in [:private_blog, :private_page, :private_landing, :private_documentation]
   end
 
-  defp load_and_verify_content(scope, slug, content_type, _is_protected) do
-    IO.inspect(scope)
-    IO.inspect(content_type)
-    IO.inspect(slug)
-
-    case Content.get_content_by_slug!(scope, slug, Atom.to_string(content_type)) do
-      content ->
-        if is_published?(content) do
-          {:ok, content}
+  defp load_and_verify_content_admin(scope, slug, content_type, _is_protected) do
+    case ContentAdmin.get_by_slug(scope, slug, content_type) do
+      content_admin ->
+        if is_published?(content_admin) do
+          {:ok, content_admin}
         else
           {:error, :not_published}
         end
@@ -82,17 +81,17 @@ defmodule CodeMySpecWeb.ContentLive.Public do
       {:error, :not_found}
   end
 
-  defp is_published?(content) do
+  defp is_published?(content_admin) do
     now = DateTime.utc_now()
 
-    content.parse_status == :success &&
-      (is_nil(content.publish_at) || DateTime.compare(content.publish_at, now) != :gt) &&
-      (is_nil(content.expires_at) || DateTime.compare(content.expires_at, now) == :gt)
+    content_admin.parse_status == :success &&
+      (is_nil(content_admin.publish_at) || DateTime.compare(content_admin.publish_at, now) != :gt) &&
+      (is_nil(content_admin.expires_at) || DateTime.compare(content_admin.expires_at, now) == :gt)
   end
 
-  defp build_canonical_url(content, is_protected) do
+  defp build_canonical_url(content_admin, is_protected) do
     prefix = if is_protected, do: "/private", else: ""
-    "#{prefix}/#{content.content_type}/#{content.slug}"
+    "#{prefix}/#{content_admin.content_type}/#{content_admin.slug}"
   end
 
   # Template rendering component
@@ -108,9 +107,9 @@ defmodule CodeMySpecWeb.ContentLive.Public do
     ~H"""
     <article class="max-w-4xl mx-auto px-4 py-8">
       <header class="mb-8">
-        <h1 class="text-4xl font-bold mb-4">{@content.title || @content.slug}</h1>
-        <div :if={@content.content_type == :blog} class="opacity-60 mb-4">
-          {format_publish_date(@content.publish_at)}
+        <h1 class="text-4xl font-bold mb-4">{@content_admin.title || @content_admin.slug}</h1>
+        <div :if={@content_admin.content_type == :blog} class="opacity-60 mb-4">
+          {format_publish_date(@content_admin.publish_at)}
         </div>
         <div :if={!Enum.empty?(@tags)} class="flex gap-2 flex-wrap">
           <span :for={tag <- @tags} class="badge badge-primary">
@@ -120,8 +119,8 @@ defmodule CodeMySpecWeb.ContentLive.Public do
       </header>
 
       <div class="prose prose-lg max-w-none">
-        <%= if @content.processed_content do %>
-          {raw(@content.processed_content)}
+        <%= if @content_admin.processed_content do %>
+          {raw(@content_admin.processed_content)}
         <% else %>
           <div class="opacity-60 italic">
             Content not available
@@ -152,15 +151,15 @@ defmodule CodeMySpecWeb.ContentLive.Public do
 
         <article class="lg:col-span-3 order-1 lg:order-2">
           <header class="mb-8">
-            <h1 class="text-4xl font-bold mb-4">{@content.title || @content.slug}</h1>
+            <h1 class="text-4xl font-bold mb-4">{@content_admin.title || @content_admin.slug}</h1>
             <div class="opacity-60 mb-4">
-              {format_publish_date(@content.publish_at)}
+              {format_publish_date(@content_admin.publish_at)}
             </div>
           </header>
 
           <div class="prose prose-lg max-w-none">
-            <%= if @content.processed_content do %>
-              {raw(@content.processed_content)}
+            <%= if @content_admin.processed_content do %>
+              {raw(@content_admin.processed_content)}
             <% else %>
               <div class="opacity-60 italic">
                 Content not available
@@ -187,9 +186,9 @@ defmodule CodeMySpecWeb.ContentLive.Public do
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <aside class="lg:col-span-1">
           <div class="sticky top-4">
-            <h3 class="font-semibold text-lg mb-4">Table of Contents</h3>
+            <h3 class="font-semibold text-lg mb-4">Table of ContentAdmins</h3>
             <div class="text-sm opacity-60">
-              <p class="italic">Auto-generated from content headings</p>
+              <p class="italic">Auto-generated from content_admin headings</p>
             </div>
           </div>
         </aside>
@@ -199,9 +198,9 @@ defmodule CodeMySpecWeb.ContentLive.Public do
             <div class="badge badge-secondary mb-4">
               Tutorial
             </div>
-            <h1 class="text-4xl font-bold mb-4">{@content.title || @content.slug}</h1>
+            <h1 class="text-4xl font-bold mb-4">{@content_admin.title || @content_admin.slug}</h1>
             <div class="opacity-60 mb-4">
-              {format_publish_date(@content.publish_at)}
+              {format_publish_date(@content_admin.publish_at)}
             </div>
             <div :if={!Enum.empty?(@tags)} class="flex gap-2 flex-wrap">
               <span :for={tag <- @tags} class="badge badge-primary badge-sm">
@@ -211,8 +210,8 @@ defmodule CodeMySpecWeb.ContentLive.Public do
           </header>
 
           <div class="prose prose-lg max-w-none">
-            <%= if @content.processed_content do %>
-              {raw(@content.processed_content)}
+            <%= if @content_admin.processed_content do %>
+              {raw(@content_admin.processed_content)}
             <% else %>
               <div class="opacity-60 italic">
                 Content not available

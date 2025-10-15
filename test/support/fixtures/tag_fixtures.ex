@@ -2,44 +2,45 @@ defmodule CodeMySpec.TagFixtures do
   @moduledoc """
   This module defines test helpers for creating
   entities via the `CodeMySpec.Content.Tag` schema.
+
+  Note: Tags are single-tenant (no account_id/project_id).
+  The project and account parameters are kept for backwards compatibility
+  but are ignored.
   """
 
-  alias CodeMySpec.Content.Tag
-  alias CodeMySpec.Repo
+  alias CodeMySpec.Content.TagRepository
 
-  def valid_tag_attributes(project, account, attrs \\ %{}) do
+  def valid_tag_attributes(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
 
     Enum.into(attrs, %{
-      name: "Test Tag #{unique_id}",
-      project_id: project.id,
-      account_id: account.id
+      name: "Test Tag #{unique_id}"
     })
   end
 
-  def tag_fixture(project, account, attrs \\ %{}) do
-    %Tag{}
-    |> Tag.changeset(valid_tag_attributes(project, account, attrs))
-    |> Repo.insert!()
+  def tag_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
+    attrs = valid_tag_attributes(nil, nil, attrs)
+    {:ok, tag} = TagRepository.upsert_tag(attrs.name)
+    tag
   end
 
-  def uppercase_tag_fixture(project, account, attrs \\ %{}) do
+  def uppercase_tag_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs = Enum.into(attrs, %{name: "UPPERCASE TAG"})
-    tag_fixture(project, account, attrs)
+    tag_fixture(nil, nil, attrs)
   end
 
-  def mixed_case_tag_fixture(project, account, attrs \\ %{}) do
+  def mixed_case_tag_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs = Enum.into(attrs, %{name: "MiXeD CaSe TaG"})
-    tag_fixture(project, account, attrs)
+    tag_fixture(nil, nil, attrs)
   end
 
-  def special_chars_tag_fixture(project, account, attrs \\ %{}) do
+  def special_chars_tag_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs = Enum.into(attrs, %{name: "Tag with Special-Chars & Symbols!"})
-    tag_fixture(project, account, attrs)
+    tag_fixture(nil, nil, attrs)
   end
 
-  def long_tag_fixture(project, account, attrs \\ %{}) do
+  def long_tag_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs = Enum.into(attrs, %{name: String.duplicate("a", 50)})
-    tag_fixture(project, account, attrs)
+    tag_fixture(nil, nil, attrs)
   end
 end

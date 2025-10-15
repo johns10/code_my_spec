@@ -20,6 +20,26 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
         <.input field={@form[:code_repo]} type="text" label="Code repo" />
         <.input field={@form[:docs_repo]} type="text" label="Docs repo" />
         <.input field={@form[:content_repo]} type="text" label="Content repo" />
+        <.input field={@form[:client_api_url]} type="text" label="Client API URL" />
+        <div class="fieldset mb-2">
+          <label>
+            <span class="label mb-1">Deploy Key</span>
+          </label>
+          <input type="hidden" name={@form[:deploy_key].name} value={@deploy_key_value} />
+          <div class="join w-full">
+            <input
+              type="text"
+              id={@form[:deploy_key].id}
+              value={@deploy_key_value}
+              readonly
+              class="input input-bordered join-item flex-1"
+              placeholder="Click Generate to create a deploy key"
+            />
+            <button type="button" phx-click="generate_deploy_key" class="btn join-item">
+              Generate
+            </button>
+          </div>
+        </div>
         <footer>
           <.button phx-disable-with="Saving...">Save Project</.button>
           <.button navigate={return_path(@current_scope, @return_to, @project)}>Cancel</.button>
@@ -46,6 +66,7 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
     socket
     |> assign(:page_title, "Edit Project")
     |> assign(:project, project)
+    |> assign(:deploy_key_value, project.deploy_key)
     |> assign(:form, to_form(Projects.change_project(socket.assigns.current_scope, project)))
   end
 
@@ -55,6 +76,7 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
     socket
     |> assign(:page_title, "New Project")
     |> assign(:project, project)
+    |> assign(:deploy_key_value, nil)
     |> assign(:form, to_form(Projects.change_project(socket.assigns.current_scope, project)))
   end
 
@@ -68,6 +90,13 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
       )
 
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+  end
+
+  def handle_event("generate_deploy_key", _params, socket) do
+    # Generate a secure random deploy key (64 bytes = 128 hex characters)
+    deploy_key = :crypto.strong_rand_bytes(64) |> Base.encode16(case: :lower)
+
+    {:noreply, assign(socket, deploy_key_value: deploy_key)}
   end
 
   def handle_event("save", %{"project" => project_params}, socket) do

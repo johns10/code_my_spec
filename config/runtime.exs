@@ -24,7 +24,8 @@ if config_env() == :dev do
   config :code_my_spec,
     github_client_id: System.get_env("GITHUB_CLIENT_ID"),
     github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-    oauth_base_url: System.get_env("OAUTH_BASE_URL") || "http://localhost:4000"
+    oauth_base_url: System.get_env("OAUTH_BASE_URL") || "http://localhost:4000",
+    deploy_key: System.get_env("DEPLOY_KEY")
 end
 
 if config_env() == :prod do
@@ -32,7 +33,8 @@ if config_env() == :prod do
   config :code_my_spec,
     github_client_id: System.get_env("GITHUB_CLIENT_ID"),
     github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-    oauth_base_url: System.get_env("OAUTH_BASE_URL")
+    oauth_base_url: System.get_env("OAUTH_BASE_URL"),
+    deploy_key: System.get_env("DEPLOY_KEY")
 
   database_url =
     System.get_env("DATABASE_URL") ||

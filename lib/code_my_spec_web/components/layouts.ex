@@ -62,7 +62,7 @@ defmodule CodeMySpecWeb.Layouts do
                 </ul>
               </details>
             </li>
-            <li><.link href={~p"/content"} class="btn btn-ghost">Content</.link></li>
+            <li><.link href={~p"/content_admin"} class="btn btn-ghost">Content</.link></li>
             <li>
               <.link href={~p"/architecture"} class="btn btn-ghost">Architecture</.link>
             </li>

@@ -1,10 +1,20 @@
 defmodule CodeMySpec.ContentSync.FileWatcher do
   @moduledoc """
-  GenServer that monitors local content directories for file changes during development.
+  Public API for file watching during development.
 
-  Watches configured filesystem paths using the FileSystem library and triggers content
-  sync operations when files are modified. Started conditionally based on environment
-  configuration (development only).
+  Monitors local content directories for file changes and triggers ContentAdmin
+  sync operations. This provides immediate validation feedback during content
+  development without manual sync button clicking.
+
+  ## Purpose
+
+  FileWatcher syncs to **ContentAdmin** (NOT Content):
+  - ContentAdmin: Multi-tenant validation layer in SaaS platform
+  - Stores parse_status and parse_errors for developer feedback
+  - Content: Single-tenant production layer in deployed clients
+
+  Publishing flow: FileWatcher → ContentAdmin → (Publish) → Content
+  ContentAdmin is NEVER copied to Content. Publishing always pulls fresh from Git.
 
   ## Configuration
 
@@ -13,8 +23,8 @@ defmodule CodeMySpec.ContentSync.FileWatcher do
         watch_content: true,
         content_watch_directory: "/Users/developer/my_project/content",
         content_watch_scope: %{
-          account_id: "dev_account",
-          project_id: "dev_project"
+          account_id: 1,
+          project_id: 1
         }
 
       # config/prod.exs
@@ -27,26 +37,51 @@ defmodule CodeMySpec.ContentSync.FileWatcher do
 
       children =
         if Application.get_env(:code_my_spec, :watch_content, false) do
-          [ContentSync.FileWatcher | children]
+          [CodeMySpec.ContentSync.FileWatcher | children]
         else
           children
         end
 
+  ## Architecture
+
+  This module follows Dave Thomas's pattern of separating execution strategy
+  from business logic:
+
+  - `FileWatcher` (this module): Public API
+  - `FileWatcher.Server`: GenServer implementation with side effects
+  - `FileWatcher.Impl`: Pure business logic (100% unit testable)
+
+  ## Testing
+
+  For production use, call `start_link/0` or `start_link/1` without options.
+  Application config will be used.
+
+  For testing, inject dependencies:
+
+      FileWatcher.start_link(
+        directory: "/tmp/test",
+        scope: test_scope,
+        debounce_ms: 10,
+        sync_fn: fn scope -> send(test_pid, {:synced, scope}); {:ok, %{}} end
+      )
   """
 
-  use GenServer
-  require Logger
+  alias CodeMySpec.ContentSync.FileWatcher.Server
 
-  alias CodeMySpec.ContentSync.Sync
-  alias CodeMySpec.Users.Scope
+  @doc """
+  Returns a child specification for use in a supervision tree.
 
-  defstruct [:scope, :watched_directory, :debounce_timer]
-
-  @debounce_ms 1000
-
-  # ============================================================================
-  # Public API
-  # ============================================================================
+  This is required for `start_supervised!/1` in tests and supervisor usage.
+  """
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]},
+      type: :worker,
+      restart: :permanent,
+      shutdown: 500
+    }
+  end
 
   @doc """
   Starts the FileWatcher GenServer.
@@ -56,20 +91,30 @@ defmodule CodeMySpec.ContentSync.FileWatcher do
 
   ## Options
 
-  Accepts an options keyword list (currently unused, but required for child_spec).
+  For production use, pass no options or empty list. Configuration will be
+  loaded from Application environment.
+
+  For testing, you can inject dependencies:
+
+    - `:directory` - Override watched directory
+    - `:scope` - Override scope (provide Scope struct directly)
+    - `:debounce_ms` - Override debounce delay (useful for fast tests)
+    - `:sync_fn` - Override sync function (useful for mocking)
+    - `:enabled` - Override enabled check (for testing conditional startup)
 
   ## Returns
 
     - `{:ok, pid}` - Successfully started GenServer
     - `:ignore` - File watching is disabled in configuration
     - `{:error, reason}` - Failed to start due to invalid configuration
-
   """
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts) do
-    case Application.get_env(:code_my_spec, :watch_content) do
+  def start_link(opts \\ []) do
+    enabled = opts[:enabled] || Application.get_env(:code_my_spec, :watch_content, false)
+
+    case enabled do
       true ->
-        GenServer.start_link(__MODULE__, opts)
+        GenServer.start_link(Server, opts)
 
       _ ->
         :ignore
@@ -77,169 +122,36 @@ defmodule CodeMySpec.ContentSync.FileWatcher do
   end
 
   # ============================================================================
-  # GenServer Callbacks
+  # Public Utility Functions
   # ============================================================================
 
-  @impl true
-  def init(_opts) do
-    case load_and_validate() do
-      {:ok, directory, scope} ->
-        case subscribe_to_filesystem(directory) do
-          {:ok, _pid} ->
-            state = %__MODULE__{
-              scope: scope,
-              watched_directory: directory,
-              debounce_timer: nil
-            }
+  @doc """
+  Validates that a directory exists and is actually a directory.
 
-            Logger.info(
-              "FileWatcher started: watching #{directory} for account_id=#{scope.active_account_id} project_id=#{scope.active_project_id}"
-            )
+  Returns :ok if valid, {:error, :invalid_directory} otherwise.
 
-            {:ok, state}
+  ## Examples
 
-          {:error, reason} ->
-            {:stop, reason}
-        end
+      iex> FileWatcher.validate_directory("/tmp")
+      :ok
 
-      {:error, reason} ->
-        {:stop, reason}
-    end
-  end
+      iex> FileWatcher.validate_directory("/nonexistent")
+      {:error, :invalid_directory}
+  """
+  defdelegate validate_directory(directory), to: CodeMySpec.ContentSync.FileWatcher.Impl
 
-  @spec load_and_validate() :: {:ok, String.t(), Scope.t()} | {:error, term()}
-  defp load_and_validate do
-    with {:ok, directory} <- load_directory(),
-         {:ok, scope} <- load_scope(),
-         :ok <- validate_directory(directory) do
-      {:ok, directory, scope}
-    end
-  end
+  @doc """
+  Checks if an event list contains relevant file events.
 
-  @impl true
-  def handle_info({:file_event, _watcher_pid, {_path, events}}, state) do
-    if relevant_event?(events) do
-      if state.debounce_timer do
-        Process.cancel_timer(state.debounce_timer)
-      end
+  Returns true if events contain :modified, :created, or :removed.
 
-      timer_ref = Process.send_after(self(), :trigger_sync, @debounce_ms)
+  ## Examples
 
-      {:noreply, %{state | debounce_timer: timer_ref}}
-    else
-      {:noreply, state}
-    end
-  end
+      iex> FileWatcher.relevant_event?([:modified])
+      true
 
-  @impl true
-  def handle_info(:trigger_sync, state) do
-    case Sync.sync_directory(state.scope, state.watched_directory) do
-      {:ok, result} ->
-        Logger.info("FileWatcher: Content synced successfully", result: result)
-
-      {:error, reason} ->
-        Logger.error("FileWatcher: Sync failed", reason: reason)
-    end
-
-    {:noreply, %{state | debounce_timer: nil}}
-  end
-
-  @impl true
-  def handle_info(_msg, state) do
-    {:noreply, state}
-  end
-
-  @impl true
-  def terminate(_reason, state) do
-    if state.debounce_timer do
-      Process.cancel_timer(state.debounce_timer)
-    end
-
-    :ok
-  end
-
-  # ============================================================================
-  # Configuration Loading
-  # ============================================================================
-
-  @spec load_directory() :: {:ok, String.t()} | {:error, :missing_directory_config}
-  defp load_directory do
-    case Application.get_env(:code_my_spec, :content_watch_directory) do
-      nil ->
-        {:error, :missing_directory_config}
-
-      "" ->
-        {:error, :missing_directory_config}
-
-      directory when is_binary(directory) ->
-        {:ok, directory}
-    end
-  end
-
-  @spec load_scope() :: {:ok, Scope.t()} | {:error, :missing_scope_config}
-  defp load_scope do
-    case Application.get_env(:code_my_spec, :content_watch_scope) do
-      nil ->
-        {:error, :missing_scope_config}
-
-      %{account_id: account_id, project_id: project_id}
-      when not is_nil(account_id) and not is_nil(project_id) ->
-        scope = %Scope{
-          active_account_id: account_id,
-          active_project_id: project_id
-        }
-
-        {:ok, scope}
-
-      _ ->
-        {:error, :missing_scope_config}
-    end
-  end
-
-  # ============================================================================
-  # Directory Validation
-  # ============================================================================
-
-  @spec validate_directory(String.t()) :: :ok | {:error, :invalid_directory}
-  defp validate_directory(directory) do
-    cond do
-      not File.exists?(directory) ->
-        {:error, :invalid_directory}
-
-      not File.dir?(directory) ->
-        {:error, :invalid_directory}
-
-      true ->
-        :ok
-    end
-  end
-
-  # ============================================================================
-  # FileSystem Integration
-  # ============================================================================
-
-  @spec subscribe_to_filesystem(String.t()) :: {:ok, pid()} | {:error, term()}
-  defp subscribe_to_filesystem(directory) do
-    case FileSystem.start_link(dirs: [directory]) do
-      {:ok, pid} ->
-        FileSystem.subscribe(pid)
-        {:ok, pid}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  # ============================================================================
-  # Event Filtering
-  # ============================================================================
-
-  @spec relevant_event?(list()) :: boolean()
-  defp relevant_event?(events) when is_list(events) do
-    Enum.any?(events, fn event ->
-      event in [:modified, :created, :removed]
-    end)
-  end
-
-  defp relevant_event?(_), do: false
+      iex> FileWatcher.relevant_event?([])
+      false
+  """
+  defdelegate relevant_event?(events), to: CodeMySpec.ContentSync.FileWatcher.Impl
 end

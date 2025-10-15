@@ -1,77 +1,173 @@
 defmodule CodeMySpec.ContentTest do
-  use CodeMySpec.DataCase, async: true
+  use CodeMySpec.DataCase, async: false
 
   import CodeMySpec.UsersFixtures
   import CodeMySpec.ContentFixtures
-  import CodeMySpec.TagFixtures
+  import ExUnit.CaptureLog
 
   alias CodeMySpec.Content
 
-  describe "list_published_content/2" do
-    test "returns only published content with success parse status" do
+  describe "list_published_content/2 with scope" do
+    test "returns only published content" do
       scope = full_scope_fixture()
 
-      published = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
-      _scheduled = scheduled_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
-      _expired = expired_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
+      published = published_content_fixture(nil, nil, %{content_type: "blog"})
+      _scheduled = scheduled_content_fixture(nil, nil, %{content_type: "blog"})
+      _expired = expired_content_fixture(nil, nil, %{content_type: "blog"})
 
       result = Content.list_published_content(scope, "blog")
 
       assert length(result) == 1
       assert List.first(result).id == published.id
     end
-  end
 
-  describe "list_scheduled_content/1" do
-    test "returns content scheduled for future publication" do
+    test "includes both public and protected content" do
       scope = full_scope_fixture()
 
-      scheduled = scheduled_content_fixture(scope.active_project, scope.active_account)
-      _published = published_content_fixture(scope.active_project, scope.active_account)
+      public = published_content_fixture(nil, nil, %{content_type: "blog", protected: false})
+      protected = published_content_fixture(nil, nil, %{content_type: "blog", protected: true})
 
-      result = Content.list_scheduled_content(scope)
+      result = Content.list_published_content(scope, "blog")
+
+      assert length(result) == 2
+      content_ids = Enum.map(result, & &1.id)
+      assert public.id in content_ids
+      assert protected.id in content_ids
+    end
+
+    test "filters by content_type" do
+      scope = full_scope_fixture()
+
+      blog = published_content_fixture(nil, nil, %{content_type: "blog"})
+      _page = published_content_fixture(nil, nil, %{content_type: "page"})
+
+      result = Content.list_published_content(scope, "blog")
 
       assert length(result) == 1
-      assert List.first(result).id == scheduled.id
+      assert List.first(result).id == blog.id
     end
   end
 
-  describe "list_expired_content/1" do
-    test "returns content past expiration date" do
-      scope = full_scope_fixture()
+  describe "list_published_content/2 with nil scope" do
+    test "returns only public content" do
+      public = published_content_fixture(nil, nil, %{content_type: "blog", protected: false})
+      _protected = published_content_fixture(nil, nil, %{content_type: "blog", protected: true})
 
-      expired = expired_content_fixture(scope.active_project, scope.active_account)
-      _published = published_content_fixture(scope.active_project, scope.active_account)
-
-      result = Content.list_expired_content(scope)
+      result = Content.list_published_content(nil, "blog")
 
       assert length(result) == 1
-      assert List.first(result).id == expired.id
+      assert List.first(result).id == public.id
+      assert List.first(result).protected == false
+    end
+
+    test "excludes scheduled and expired content" do
+      published = published_content_fixture(nil, nil, %{content_type: "blog", protected: false})
+      _scheduled = scheduled_content_fixture(nil, nil, %{content_type: "blog", protected: false})
+      _expired = expired_content_fixture(nil, nil, %{content_type: "blog", protected: false})
+
+      result = Content.list_published_content(nil, "blog")
+
+      assert length(result) == 1
+      assert List.first(result).id == published.id
     end
   end
 
-  describe "list_all_content/1" do
-    test "returns all content regardless of status" do
-      scope = full_scope_fixture()
-
-      _published = published_content_fixture(scope.active_project, scope.active_account)
-      _scheduled = scheduled_content_fixture(scope.active_project, scope.active_account)
-      _expired = expired_content_fixture(scope.active_project, scope.active_account)
-
-      result = Content.list_all_content(scope)
-
-      assert length(result) == 3
-    end
-  end
-
-  describe "get_content_by_slug!/3" do
+  describe "get_content_by_slug/3 with scope" do
     test "returns content by slug and type" do
       scope = full_scope_fixture()
 
-      created = published_content_fixture(scope.active_project, scope.active_account, %{
-        slug: "test-post",
-        content_type: "blog"
-      })
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      created =
+        blog_post_fixture(nil, nil, %{
+          slug: "test-post",
+          publish_at: yesterday
+        })
+
+      result = Content.get_content_by_slug(scope, "test-post", "blog")
+
+      assert result.id == created.id
+      assert result.slug == "test-post"
+    end
+
+    test "returns nil when content not found" do
+      scope = full_scope_fixture()
+
+      result = Content.get_content_by_slug(scope, "nonexistent", "blog")
+
+      assert result == nil
+    end
+
+    test "returns both public and protected content" do
+      scope = full_scope_fixture()
+
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      public =
+        blog_post_fixture(nil, nil, %{
+          slug: "public-post",
+          publish_at: yesterday,
+          protected: false
+        })
+
+      protected =
+        blog_post_fixture(nil, nil, %{
+          slug: "protected-post",
+          publish_at: yesterday,
+          protected: true
+        })
+
+      public_result = Content.get_content_by_slug(scope, "public-post", "blog")
+      protected_result = Content.get_content_by_slug(scope, "protected-post", "blog")
+
+      assert public_result.id == public.id
+      assert protected_result.id == protected.id
+    end
+  end
+
+  describe "get_content_by_slug/3 with nil scope" do
+    test "returns only public content" do
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      public =
+        blog_post_fixture(nil, nil, %{
+          slug: "public-post",
+          publish_at: yesterday,
+          protected: false
+        })
+
+      _protected =
+        blog_post_fixture(nil, nil, %{
+          slug: "protected-post",
+          publish_at: yesterday,
+          protected: true
+        })
+
+      public_result = Content.get_content_by_slug(nil, "public-post", "blog")
+      protected_result = Content.get_content_by_slug(nil, "protected-post", "blog")
+
+      assert public_result.id == public.id
+      assert protected_result == nil
+    end
+
+    test "returns nil when content not found" do
+      result = Content.get_content_by_slug(nil, "nonexistent", "blog")
+
+      assert result == nil
+    end
+  end
+
+  describe "get_content_by_slug!/3 with scope" do
+    test "returns content by slug and type" do
+      scope = full_scope_fixture()
+
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+      created =
+        blog_post_fixture(nil, nil, %{
+          slug: "test-post",
+          publish_at: yesterday
+        })
 
       result = Content.get_content_by_slug!(scope, "test-post", "blog")
 
@@ -87,221 +183,191 @@ defmodule CodeMySpec.ContentTest do
     end
   end
 
-  describe "get_content!/2" do
-    test "returns content by id" do
-      scope = full_scope_fixture()
+  describe "get_content_by_slug!/3 with nil scope" do
+    test "returns nil when content not found (non-raising)" do
+      result = Content.get_content_by_slug!(nil, "nonexistent", "blog")
 
-      created = content_fixture(scope.active_project, scope.active_account)
-
-      result = Content.get_content!(scope, created.id)
-
-      assert result.id == created.id
+      assert result == nil
     end
 
-    test "raises when content not found" do
-      scope = full_scope_fixture()
+    test "returns public content" do
+      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Content.get_content!(scope, 999_999)
-      end
-    end
-  end
+      public =
+        blog_post_fixture(nil, nil, %{
+          slug: "public-post",
+          publish_at: yesterday,
+          protected: false
+        })
 
-  describe "create_content/2" do
-    test "creates content with valid attributes" do
-      scope = full_scope_fixture()
+      result = Content.get_content_by_slug!(nil, "public-post", "blog")
 
-      attrs = %{
-        slug: "new-post",
-        content_type: :blog,
-        raw_content: "# Hello World",
-        processed_content: "<h1>Hello World</h1>",
-        parse_status: "success"
-      }
-
-      {:ok, content} = Content.create_content(scope, attrs)
-
-      assert content.slug == "new-post"
-      assert content.content_type == :blog
-      assert content.account_id == scope.active_account_id
-      assert content.project_id == scope.active_project_id
-    end
-
-    test "returns error with invalid attributes" do
-      scope = full_scope_fixture()
-
-      {:error, changeset} = Content.create_content(scope, %{})
-
-      assert changeset.errors[:slug]
-      assert changeset.errors[:content_type]
+      assert result.id == public.id
     end
   end
 
-  describe "create_many/2" do
-    test "creates multiple content records in transaction" do
-      scope = full_scope_fixture()
-
+  describe "sync_content/1" do
+    test "creates content from list" do
       content_list = [
-        %{slug: "post-1", content_type: :blog, raw_content: "Content 1", parse_status: "success"},
-        %{slug: "post-2", content_type: :blog, raw_content: "Content 2", parse_status: "success"}
+        %{
+          slug: "post-1",
+          title: "Post 1",
+          content_type: "blog",
+          content: "<h1>Post 1</h1>"
+        },
+        %{
+          slug: "post-2",
+          title: "Post 2",
+          content_type: "blog",
+          content: "<h1>Post 2</h1>"
+        }
       ]
 
-      {:ok, results} = Content.create_many(scope, content_list)
+      {:ok, results} = Content.sync_content(content_list)
 
       assert length(results) == 2
-      assert Enum.all?(results, &(&1.account_id == scope.active_account_id))
-      assert Enum.all?(results, &(&1.project_id == scope.active_project_id))
+      assert Enum.all?(results, &(&1.content_type == :blog))
+
+      slugs = Enum.map(results, & &1.slug)
+      assert "post-1" in slugs
+      assert "post-2" in slugs
+    end
+
+    test "deletes existing content before creating new" do
+      # Create initial content
+      _existing = content_fixture(nil, nil, %{slug: "existing"})
+
+      content_list = [
+        %{slug: "new", title: "New", content_type: "blog", content: "<h1>New</h1>"}
+      ]
+
+      {:ok, _results} = Content.sync_content(content_list)
+
+      # Should only have 1 content record (the new one)
+      all_content = Content.list_published_content(nil, "blog")
+      assert length(all_content) == 1
+      assert List.first(all_content).slug == "new"
+    end
+
+    test "returns error with invalid content" do
+      content_list = [
+        %{slug: "valid", content_type: "blog", content: "<h1>Valid</h1>"},
+        %{slug: nil, content_type: "blog", content: "<h1>Invalid</h1>"}
+      ]
+
+      capture_log(fn ->
+        {:error, changeset} = Content.sync_content(content_list)
+        assert changeset.errors[:slug]
+      end)
+    end
+
+    test "rolls back transaction on error" do
+      _existing = content_fixture(nil, nil, %{slug: "existing"})
+
+      content_list = [
+        %{slug: "valid", content_type: "blog", content: "<h1>Valid</h1>"},
+        %{slug: nil, content_type: "blog", content: "<h1>Invalid</h1>"}
+      ]
+
+      capture_log(fn ->
+        {:error, _} = Content.sync_content(content_list)
+      end)
+
+      # Existing content should still be there (rollback)
+      scope = full_scope_fixture()
+      all_content = Content.list_published_content(scope, "blog")
+      assert length(all_content) == 1
+      assert List.first(all_content).slug == "existing"
     end
   end
 
-  describe "update_content/3" do
-    test "updates content with valid attributes" do
-      scope = full_scope_fixture()
+  describe "delete_all_content/0" do
+    test "deletes all content" do
+      _content1 = content_fixture(nil, nil)
+      _content2 = content_fixture(nil, nil)
 
-      content = content_fixture(scope.active_project, scope.active_account)
-
-      {:ok, updated} = Content.update_content(scope, content, %{slug: "updated-slug"})
-
-      assert updated.slug == "updated-slug"
-    end
-
-    test "returns error with invalid attributes" do
-      scope = full_scope_fixture()
-
-      content = content_fixture(scope.active_project, scope.active_account)
-
-      {:error, changeset} = Content.update_content(scope, content, %{slug: nil})
-
-      assert changeset.errors[:slug]
-    end
-  end
-
-  describe "delete_content/2" do
-    test "deletes content" do
-      scope = full_scope_fixture()
-
-      content = content_fixture(scope.active_project, scope.active_account)
-
-      {:ok, deleted} = Content.delete_content(scope, content)
-
-      assert deleted.id == content.id
-
-      assert_raise Ecto.NoResultsError, fn ->
-        Content.get_content!(scope, content.id)
-      end
-    end
-  end
-
-  describe "delete_all_content/1" do
-    test "deletes all content for scope" do
-      scope = full_scope_fixture()
-
-      _content1 = content_fixture(scope.active_project, scope.active_account)
-      _content2 = content_fixture(scope.active_project, scope.active_account)
-
-      {:ok, count} = Content.delete_all_content(scope)
+      {:ok, count} = Content.delete_all_content()
 
       assert count == 2
-      assert Content.list_all_content(scope) == []
-    end
 
-    test "only deletes content in scope" do
-      scope1 = full_scope_fixture()
-      scope2 = full_scope_fixture()
-
-      _content1 = content_fixture(scope1.active_project, scope1.active_account)
-      content2 = content_fixture(scope2.active_project, scope2.active_account)
-
-      {:ok, _count} = Content.delete_all_content(scope1)
-
-      assert Content.list_all_content(scope1) == []
-      assert length(Content.list_all_content(scope2)) == 1
-      assert List.first(Content.list_all_content(scope2)).id == content2.id
+      scope = full_scope_fixture()
+      assert Content.list_published_content(scope, "blog") == []
     end
   end
 
-  describe "purge_expired_content/1" do
-    test "deletes only expired content" do
-      scope = full_scope_fixture()
+  describe "list_all_tags/0" do
+    test "returns all tags" do
+      {:ok, tag1} = Content.upsert_tag("elixir")
+      {:ok, tag2} = Content.upsert_tag("phoenix")
 
-      expired = expired_content_fixture(scope.active_project, scope.active_account)
-      published = published_content_fixture(scope.active_project, scope.active_account)
-
-      {:ok, count} = Content.purge_expired_content(scope)
-
-      assert count == 1
-      remaining = Content.list_all_content(scope)
-      assert length(remaining) == 1
-      assert List.first(remaining).id == published.id
-      refute Enum.any?(remaining, &(&1.id == expired.id))
-    end
-  end
-
-  describe "list_tags/1" do
-    test "returns all tags for scope" do
-      scope = full_scope_fixture()
-
-      tag1 = tag_fixture(scope.active_project, scope.active_account, %{name: "tag1"})
-      tag2 = tag_fixture(scope.active_project, scope.active_account, %{name: "tag2"})
-
-      result = Content.list_tags(scope)
+      result = Content.list_all_tags()
 
       assert length(result) == 2
       tag_ids = Enum.map(result, & &1.id)
       assert tag1.id in tag_ids
       assert tag2.id in tag_ids
     end
+
+    test "returns empty list when no tags" do
+      result = Content.list_all_tags()
+
+      assert result == []
+    end
   end
 
-  describe "upsert_tag/2" do
+  describe "upsert_tag/1" do
     test "creates new tag" do
-      scope = full_scope_fixture()
-
-      {:ok, tag} = Content.upsert_tag(scope, "newtag")
+      {:ok, tag} = Content.upsert_tag("newtag")
 
       assert tag.name == "newtag"
-      assert tag.account_id == scope.active_account_id
-      assert tag.project_id == scope.active_project_id
+      assert tag.slug == "newtag"
     end
 
     test "returns existing tag on duplicate" do
-      scope = full_scope_fixture()
-
-      {:ok, tag1} = Content.upsert_tag(scope, "duplicate")
-      {:ok, tag2} = Content.upsert_tag(scope, "duplicate")
+      {:ok, tag1} = Content.upsert_tag("duplicate")
+      {:ok, tag2} = Content.upsert_tag("duplicate")
 
       assert tag1.id == tag2.id
     end
-  end
 
-  describe "get_content_tags/2" do
-    test "returns tags associated with content" do
-      scope = full_scope_fixture()
+    test "generates slug from name" do
+      {:ok, tag} = Content.upsert_tag("Elixir Programming")
 
-      content = content_fixture(scope.active_project, scope.active_account)
-      _tag1 = tag_fixture(scope.active_project, scope.active_account, %{name: "tag1"})
-      _tag2 = tag_fixture(scope.active_project, scope.active_account, %{name: "tag2"})
-
-      {:ok, _} = Content.sync_content_tags(scope, content, ["tag1", "tag2"])
-
-      result = Content.get_content_tags(scope, content)
-
-      assert length(result) == 2
-      tag_names = Enum.map(result, & &1.name)
-      assert "tag1" in tag_names
-      assert "tag2" in tag_names
+      assert tag.name == "Elixir Programming"
+      assert tag.slug == "elixir-programming"
     end
   end
 
-  describe "sync_content_tags/3" do
+  describe "get_content_tags/1" do
+    test "returns tags associated with content" do
+      content = content_fixture(nil, nil)
+
+      {:ok, _} = Content.sync_content_tags(content, ["elixir", "phoenix"])
+
+      result = Content.get_content_tags(content)
+
+      assert length(result) == 2
+      tag_names = Enum.map(result, & &1.name)
+      assert "elixir" in tag_names
+      assert "phoenix" in tag_names
+    end
+
+    test "returns empty list when no tags" do
+      content = content_fixture(nil, nil)
+
+      result = Content.get_content_tags(content)
+
+      assert result == []
+    end
+  end
+
+  describe "sync_content_tags/2" do
     test "associates tags with content" do
-      scope = full_scope_fixture()
+      content = content_fixture(nil, nil)
 
-      content = content_fixture(scope.active_project, scope.active_account)
+      {:ok, updated} = Content.sync_content_tags(content, ["elixir", "phoenix"])
 
-      {:ok, updated} = Content.sync_content_tags(scope, content, ["elixir", "phoenix"])
-
-      tags = Content.get_content_tags(scope, updated)
+      tags = Content.get_content_tags(updated)
       assert length(tags) == 2
       tag_names = Enum.map(tags, & &1.name)
       assert "elixir" in tag_names
@@ -309,69 +375,38 @@ defmodule CodeMySpec.ContentTest do
     end
 
     test "removes old tags and adds new tags" do
-      scope = full_scope_fixture()
+      content = content_fixture(nil, nil)
 
-      content = content_fixture(scope.active_project, scope.active_account)
+      {:ok, _} = Content.sync_content_tags(content, ["old-tag"])
+      {:ok, updated} = Content.sync_content_tags(content, ["new-tag"])
 
-      {:ok, _} = Content.sync_content_tags(scope, content, ["old-tag"])
-      {:ok, updated} = Content.sync_content_tags(scope, content, ["new-tag"])
-
-      tags = Content.get_content_tags(scope, updated)
+      tags = Content.get_content_tags(updated)
       assert length(tags) == 1
       assert List.first(tags).name == "new-tag"
     end
 
     test "removes all tags when empty list provided" do
-      scope = full_scope_fixture()
+      content = content_fixture(nil, nil)
 
-      content = content_fixture(scope.active_project, scope.active_account)
+      {:ok, _} = Content.sync_content_tags(content, ["tag1", "tag2"])
+      {:ok, updated} = Content.sync_content_tags(content, [])
 
-      {:ok, _} = Content.sync_content_tags(scope, content, ["tag1", "tag2"])
-      {:ok, updated} = Content.sync_content_tags(scope, content, [])
-
-      tags = Content.get_content_tags(scope, updated)
+      tags = Content.get_content_tags(updated)
       assert tags == []
     end
-  end
 
-  describe "list_content_with_status/2" do
-    test "filters content by parse_status" do
-      scope = full_scope_fixture()
+    test "creates tags that don't exist" do
+      content = content_fixture(nil, nil)
 
-      success = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-      _failed = failed_content_fixture(scope.active_project, scope.active_account)
+      {:ok, updated} = Content.sync_content_tags(content, ["brand-new-tag"])
 
-      result = Content.list_content_with_status(scope, %{parse_status: "success"})
+      tags = Content.get_content_tags(updated)
+      assert length(tags) == 1
+      assert List.first(tags).name == "brand-new-tag"
 
-      assert length(result) == 1
-      assert List.first(result).id == success.id
-    end
-
-    test "filters content by content_type" do
-      scope = full_scope_fixture()
-
-      blog = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "blog"})
-      _page = published_content_fixture(scope.active_project, scope.active_account, %{content_type: "page"})
-
-      result = Content.list_content_with_status(scope, %{content_type: "blog"})
-
-      assert length(result) == 1
-      assert List.first(result).id == blog.id
-    end
-  end
-
-  describe "count_by_parse_status/1" do
-    test "returns count of success and error statuses" do
-      scope = full_scope_fixture()
-
-      _success1 = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-      _success2 = content_fixture(scope.active_project, scope.active_account, %{parse_status: "success"})
-      _failed = failed_content_fixture(scope.active_project, scope.active_account)
-
-      result = Content.count_by_parse_status(scope)
-
-      assert result.success == 2
-      assert result.error == 1
+      # Tag should now exist in system
+      all_tags = Content.list_all_tags()
+      assert Enum.any?(all_tags, &(&1.name == "brand-new-tag"))
     end
   end
 end

@@ -1,11 +1,11 @@
 defmodule CodeMySpec.ContentSyncTest do
   use CodeMySpec.DataCase
 
-  import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
+  import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures, ContentAdminFixtures}
   import Mox
 
   alias CodeMySpec.ContentSync
-  alias CodeMySpec.Content
+  alias CodeMySpec.ContentAdmin
   alias CodeMySpec.Users.Scope
 
   setup tags do
@@ -67,15 +67,15 @@ defmodule CodeMySpec.ContentSyncTest do
   end
 
   # ============================================================================
-  # sync_from_git/1 - Successful Sync Operations
+  # sync_to_content_admin/1 - Successful Sync Operations
   # ============================================================================
 
-  describe "sync_from_git/1 - successful git-based sync" do
+  describe "sync_to_content_admin/1 - successful git-based sync" do
     @tag :integration
-    test "successfully clones repo and syncs content" do
+    test "successfully clones repo and syncs content to ContentAdmin" do
       scope = scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
 
-      assert {:ok, result} = ContentSync.sync_from_git(scope)
+      assert {:ok, result} = ContentSync.sync_to_content_admin(scope)
       # test_content_repo has 5 valid files and 1 bad file (missing metadata)
       assert result.total_files >= 5
       assert result.successful >= 5
@@ -83,37 +83,37 @@ defmodule CodeMySpec.ContentSyncTest do
       assert is_integer(result.duration_ms)
       assert result.duration_ms >= 0
 
-      # Verify content was created in database
-      content = Content.list_all_content(scope)
-      assert length(content) >= 5
+      # Verify ContentAdmin records were created in database
+      content_admin = ContentAdmin.list_all_content(scope)
+      assert length(content_admin) >= 5
 
       # Verify scoping
-      Enum.each(content, fn item ->
+      Enum.each(content_admin, fn item ->
         assert item.account_id == scope.active_account_id
         assert item.project_id == scope.active_project_id
       end)
     end
   end
 
-  describe "sync_from_git/1 - scope validation" do
+  describe "sync_to_content_admin/1 - scope validation" do
     test "returns error when scope has no active_project_id" do
       scope = scope_without_project()
 
-      result = ContentSync.sync_from_git(scope)
+      result = ContentSync.sync_to_content_admin(scope)
       assert match?({:error, _}, result)
     end
 
     test "returns error when project has no content_repo configured" do
       scope = scope_without_content_repo()
 
-      assert {:error, :no_content_repo} = ContentSync.sync_from_git(scope)
+      assert {:error, :no_content_repo} = ContentSync.sync_to_content_admin(scope)
     end
 
     test "returns error when project does not exist" do
       scope = scope_with_project()
       invalid_scope = %{scope | active_project_id: 999_999}
 
-      assert {:error, :project_not_found} = ContentSync.sync_from_git(invalid_scope)
+      assert {:error, :project_not_found} = ContentSync.sync_to_content_admin(invalid_scope)
     end
 
     test "returns error when scope account does not match project account" do
@@ -123,58 +123,49 @@ defmodule CodeMySpec.ContentSyncTest do
       # Try to access project from scope1 using scope2's account
       invalid_scope = %{scope2 | active_project_id: scope1.active_project_id}
 
-      assert {:error, :project_not_found} = ContentSync.sync_from_git(invalid_scope)
+      assert {:error, :project_not_found} = ContentSync.sync_to_content_admin(invalid_scope)
     end
   end
 
-  describe "sync_from_git/1 - temporary directory cleanup" do
+  describe "sync_to_content_admin/1 - temporary directory cleanup" do
     @tag :integration
     test "cleans up temporary directory after successful sync" do
       scope = scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
 
-      assert {:ok, result} = ContentSync.sync_from_git(scope)
+      assert {:ok, result} = ContentSync.sync_to_content_admin(scope)
 
       # Verify sync completed successfully
       assert result.total_files > 0
       assert result.successful > 0
 
       # Verify content was synced to database
-      content = Content.list_all_content(scope)
-      assert length(content) > 0
+      content_admin = ContentAdmin.list_all_content(scope)
+      assert length(content_admin) > 0
     end
   end
 
   # ============================================================================
-  # list_content_errors/1 - Query Error Content
+  # list_content_admin_errors/1 - Query Error ContentAdmin
   # ============================================================================
 
-  describe "list_content_errors/1 - query content with errors" do
-    test "returns only content with error parse status" do
+  describe "list_content_admin_errors/1 - query content admin with errors" do
+    test "returns only content admin with error parse status" do
       scope = scope_with_project()
 
-      # Create successful content
-      {:ok, _success} =
-        Content.create_content(scope, %{
-          title: "Success Post",
-          slug: "success-post",
-          content_type: :blog,
-          raw_content: "Content",
-          processed_content: "Processed",
-          parse_status: :success
-        })
+      # Create successful content admin
+      _success = success_content_admin_fixture(scope, %{
+        title: "Success Post",
+        slug: "success-post"
+      })
 
-      # Create error content
-      {:ok, error} =
-        Content.create_content(scope, %{
-          title: "Error Post",
-          slug: "error-post",
-          content_type: :blog,
-          raw_content: "Content",
-          parse_status: :error,
-          parse_errors: %{"error_type" => "metadata_missing", "message" => "Missing title"}
-        })
+      # Create error content admin
+      error = error_content_admin_fixture(scope, %{
+        title: "Error Post",
+        slug: "error-post",
+        parse_errors: %{"error_type" => "metadata_missing", "message" => "Missing title"}
+      })
 
-      result = ContentSync.list_content_errors(scope)
+      result = ContentSync.list_content_admin_errors(scope)
       assert length(result) == 1
       assert hd(result).id == error.id
       assert hd(result).parse_status == :error
@@ -183,36 +174,26 @@ defmodule CodeMySpec.ContentSyncTest do
     test "returns empty list when no errors exist" do
       scope = scope_with_project()
 
-      {:ok, _success} =
-        Content.create_content(scope, %{
-          title: "Success Post",
-          slug: "success-post",
-          content_type: :blog,
-          raw_content: "Content",
-          processed_content: "Processed",
-          parse_status: :success
-        })
+      _success = success_content_admin_fixture(scope, %{
+        title: "Success Post",
+        slug: "success-post"
+      })
 
-      result = ContentSync.list_content_errors(scope)
+      result = ContentSync.list_content_admin_errors(scope)
       assert result == []
     end
 
-    test "returns multiple error content records" do
+    test "returns multiple error content admin records" do
       scope = scope_with_project()
 
       for i <- 1..5 do
-        {:ok, _error} =
-          Content.create_content(scope, %{
-            title: "Error Post #{i}",
-            slug: "error-post-#{i}",
-            content_type: :blog,
-            raw_content: "Content",
-            parse_status: :error,
-            parse_errors: %{"error_type" => "parse_error", "message" => "Parse failed"}
-          })
+        error_content_admin_fixture(scope, %{
+          title: "Error Post #{i}",
+          slug: "error-post-#{i}"
+        })
       end
 
-      result = ContentSync.list_content_errors(scope)
+      result = ContentSync.list_content_admin_errors(scope)
       assert length(result) == 5
       assert Enum.all?(result, &(&1.parse_status == :error))
     end
@@ -222,32 +203,22 @@ defmodule CodeMySpec.ContentSyncTest do
       scope2 = scope_with_project()
 
       # Create error in project 1
-      {:ok, error1} =
-        Content.create_content(scope1, %{
-          title: "Error Post 1",
-          slug: "error-post-1",
-          content_type: :blog,
-          raw_content: "Content",
-          parse_status: :error,
-          parse_errors: %{"error_type" => "parse_error"}
-        })
+      error1 = error_content_admin_fixture(scope1, %{
+        title: "Error Post 1",
+        slug: "error-post-1"
+      })
 
       # Create error in project 2
-      {:ok, _error2} =
-        Content.create_content(scope2, %{
-          title: "Error Post 2",
-          slug: "error-post-2",
-          content_type: :blog,
-          raw_content: "Content",
-          parse_status: :error,
-          parse_errors: %{"error_type" => "parse_error"}
-        })
+      _error2 = error_content_admin_fixture(scope2, %{
+        title: "Error Post 2",
+        slug: "error-post-2"
+      })
 
-      result1 = ContentSync.list_content_errors(scope1)
+      result1 = ContentSync.list_content_admin_errors(scope1)
       assert length(result1) == 1
       assert hd(result1).id == error1.id
 
-      result2 = ContentSync.list_content_errors(scope2)
+      result2 = ContentSync.list_content_admin_errors(scope2)
       assert length(result2) == 1
       refute hd(result2).id == error1.id
     end
@@ -261,16 +232,12 @@ defmodule CodeMySpec.ContentSyncTest do
         "field" => "title"
       }
 
-      {:ok, error} =
-        Content.create_content(scope, %{
-          slug: "error-post",
-          content_type: :blog,
-          raw_content: "Content",
-          parse_status: :error,
-          parse_errors: error_details
-        })
+      error = error_content_admin_fixture(scope, %{
+        slug: "error-post",
+        parse_errors: error_details
+      })
 
-      [result] = ContentSync.list_content_errors(scope)
+      [result] = ContentSync.list_content_admin_errors(scope)
       assert result.id == error.id
       assert result.parse_errors == error_details
       assert result.parse_errors["error_type"] == "metadata_validation"

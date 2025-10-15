@@ -2,61 +2,61 @@ defmodule CodeMySpec.ContentFixtures do
   @moduledoc """
   This module defines test helpers for creating
   entities via the `CodeMySpec.Content` context.
+
+  NOTE: project and account parameters are kept for backwards compatibility
+  but are ignored since Content schema no longer has multi-tenant fields.
   """
 
   alias CodeMySpec.Content.Content
   alias CodeMySpec.Repo
 
-  def valid_content_attributes(project, account, attrs \\ %{}) do
+  def valid_content_attributes(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
 
     Enum.into(attrs, %{
       slug: "test-content-#{unique_id}",
       content_type: "blog",
-      raw_content: "# Test Content\n\nThis is test content.",
-      project_id: project.id,
-      account_id: account.id,
+      content: "<h1>Test Content</h1><p>This is test content.</p>",
       protected: false,
-      parse_status: "pending",
       metadata: %{}
     })
   end
 
-  def content_fixture(project, account, attrs \\ %{}) do
+  def content_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     %Content{}
-    |> Content.changeset(valid_content_attributes(project, account, attrs))
+    |> Content.changeset(valid_content_attributes(nil, nil, attrs))
     |> Repo.insert!()
   end
 
-  def blog_post_fixture(project, account, attrs \\ %{}) do
+  def blog_post_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         content_type: "blog",
-        raw_content: "# Blog Post\n\nThis is a blog post.",
+        content: "<h1>Blog Post</h1><p>This is a blog post.</p>",
         meta_title: "Test Blog Post",
         meta_description: "A test blog post for testing purposes"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def page_fixture(project, account, attrs \\ %{}) do
+  def page_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         content_type: "page",
-        raw_content: "# Page\n\nThis is a page.",
+        content: "<h1>Page</h1><p>This is a page.</p>",
         meta_title: "Test Page",
         meta_description: "A test page for testing purposes"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def landing_page_fixture(project, account, attrs \\ %{}) do
+  def landing_page_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         content_type: "landing",
-        raw_content: "# Landing Page\n\nThis is a landing page.",
+        content: "<h1>Landing Page</h1><p>This is a landing page.</p>",
         meta_title: "Test Landing Page",
         meta_description: "A test landing page",
         og_title: "Test Landing Page",
@@ -64,64 +64,53 @@ defmodule CodeMySpec.ContentFixtures do
         og_image: "https://example.com/image.jpg"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def published_content_fixture(project, account, attrs \\ %{}) do
+  def published_content_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         publish_at: DateTime.utc_now() |> DateTime.add(-1, :day),
-        parse_status: "success",
-        processed_content: "<h1>Test Content</h1><p>This is test content.</p>"
+        content: "<h1>Test Content</h1><p>This is test content.</p>"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def scheduled_content_fixture(project, account, attrs \\ %{}) do
+  def scheduled_content_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         publish_at: DateTime.utc_now() |> DateTime.add(1, :day),
-        parse_status: "success",
-        processed_content: "<h1>Scheduled Content</h1><p>This is scheduled content.</p>"
+        content: "<h1>Scheduled Content</h1><p>This is scheduled content.</p>"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def expired_content_fixture(project, account, attrs \\ %{}) do
+  def expired_content_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         publish_at: DateTime.utc_now() |> DateTime.add(-7, :day),
         expires_at: DateTime.utc_now() |> DateTime.add(-1, :day),
-        parse_status: "success",
-        processed_content: "<h1>Expired Content</h1><p>This is expired content.</p>"
+        content: "<h1>Expired Content</h1><p>This is expired content.</p>"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def protected_content_fixture(project, account, attrs \\ %{}) do
+  def protected_content_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
         protected: true,
-        parse_status: "success",
-        processed_content: "<h1>Protected Content</h1><p>This is protected content.</p>"
+        content: "<h1>Protected Content</h1><p>This is protected content.</p>"
       })
 
-    content_fixture(project, account, attrs)
+    content_fixture(nil, nil, attrs)
   end
 
-  def failed_content_fixture(project, account, attrs \\ %{}) do
-    attrs =
-      Enum.into(attrs, %{
-        parse_status: "error",
-        parse_errors: %{
-          "error" => "Processing failed",
-          "details" => "Invalid markdown syntax"
-        }
-      })
-
-    content_fixture(project, account, attrs)
+  def failed_content_fixture(_project \\ nil, _account \\ nil, attrs \\ %{}) do
+    # Note: parse_status and parse_errors no longer exist in Content schema
+    # This fixture is kept for backwards compatibility but just creates regular content
+    content_fixture(nil, nil, attrs)
   end
 end

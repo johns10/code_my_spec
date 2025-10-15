@@ -10,6 +10,8 @@ defmodule CodeMySpec.Projects.Project do
           code_repo: String.t() | nil,
           docs_repo: String.t() | nil,
           content_repo: String.t() | nil,
+          client_api_url: String.t() | nil,
+          deploy_key: String.t() | nil,
           setup_error: String.t() | nil,
           account_id: integer() | nil,
           status:
@@ -34,6 +36,8 @@ defmodule CodeMySpec.Projects.Project do
     field :code_repo, :string
     field :docs_repo, :string
     field :content_repo, :string
+    field :client_api_url, :string
+    field :deploy_key, :string
     field :setup_error, :string
     field :account_id, :id
 
@@ -65,6 +69,8 @@ defmodule CodeMySpec.Projects.Project do
       :code_repo,
       :docs_repo,
       :content_repo,
+      :client_api_url,
+      :deploy_key,
       :status,
       :setup_error
     ])
@@ -72,6 +78,15 @@ defmodule CodeMySpec.Projects.Project do
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9]*$/,
       message: "must be a valid Elixir module name"
     )
+    |> maybe_validate_url(:client_api_url)
     |> put_change(:account_id, user_scope.active_account_id)
+  end
+
+  defp maybe_validate_url(changeset, field) do
+    case get_field(changeset, field) do
+      nil -> changeset
+      "" -> changeset
+      _url -> validate_format(changeset, field, ~r/^https?:\/\/.+/, message: "must be a valid URL")
+    end
   end
 end
