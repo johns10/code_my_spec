@@ -244,7 +244,10 @@ defmodule CodeMySpec.Utils.Data do
   end
 
   defp insert_components(components_data) do
-    Enum.each(components_data, fn component_data ->
+    # Sort components so parents are inserted before children
+    sorted_components = sort_components_by_dependency(components_data)
+
+    Enum.each(sorted_components, fn component_data ->
       scope = %CodeMySpec.Users.Scope{
         user: nil,
         active_account_id: component_data.account_id,
@@ -257,6 +260,33 @@ defmodule CodeMySpec.Utils.Data do
       |> Component.changeset(component_data, scope)
       |> Repo.insert!()
     end)
+  end
+
+  # Sort components so parents are inserted before children
+  defp sort_components_by_dependency(components) do
+    # Build a map of id -> component for quick lookup
+    component_map = Map.new(components, fn c -> {c.id, c} end)
+
+    # Topological sort: repeatedly insert components with no parent or whose parent is already inserted
+    {sorted, _remaining} =
+      Enum.reduce_while(1..length(components), {[], components}, fn _iteration, {sorted, remaining} ->
+        # Find components that can be inserted (no parent or parent already sorted)
+        sorted_ids = MapSet.new(sorted, & &1.id)
+
+        {insertable, still_waiting} =
+          Enum.split_with(remaining, fn c ->
+            is_nil(c.parent_component_id) or MapSet.member?(sorted_ids, c.parent_component_id)
+          end)
+
+        if insertable == [] do
+          # No progress made - there's a circular dependency or missing parent
+          {:halt, {sorted ++ remaining, []}}
+        else
+          {:cont, {sorted ++ insertable, still_waiting}}
+        end
+      end)
+
+    sorted
   end
 
   defp insert_sessions(sessions_data) do
