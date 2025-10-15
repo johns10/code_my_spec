@@ -21,6 +21,37 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
           </:actions>
         </.header>
 
+        <dialog id="push-error-modal" class="modal">
+          <div :if={@push_error_detail} class="modal-box w-11/12 max-w-3xl">
+            <form method="dialog">
+              <button
+                phx-click="close-error-modal"
+                class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              >
+                ✕
+              </button>
+            </form>
+            <h3 class="font-bold text-lg mb-4">Push to Client Failed</h3>
+            <div class="space-y-4">
+              <div>
+                <h4 class="font-semibold text-sm mb-2">Error Type:</h4>
+                <p class="text-sm font-mono bg-base-200 p-2 rounded">{@push_error_detail.type}</p>
+              </div>
+              <div>
+                <h4 class="font-semibold text-sm mb-2">Details:</h4>
+                <pre class="text-xs font-mono bg-base-200 p-3 rounded overflow-x-auto whitespace-pre-wrap">{@push_error_detail.message}</pre>
+              </div>
+              <div :if={@push_error_detail.debug_info}>
+                <h4 class="font-semibold text-sm mb-2">Debug Information:</h4>
+                <pre class="text-xs font-mono bg-base-200 p-3 rounded overflow-x-auto whitespace-pre-wrap">{@push_error_detail.debug_info}</pre>
+              </div>
+            </div>
+          </div>
+          <form method="dialog" class="modal-backdrop" phx-click="close-error-modal">
+            <button>close</button>
+          </form>
+        </dialog>
+
         <div class="mb-4 flex gap-2">
           <span class="badge badge-success gap-2">
             {@status_counts.success} Published
@@ -58,49 +89,47 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
         <.table
           id="content_admin"
           rows={@streams.content_admin}
-          row_click={
-            fn {_id, content_admin} -> JS.navigate(~p"/content_admin/#{content_admin}") end
-          }
+          row_click={fn {_id, content_admin} -> JS.navigate(~p"/content_admin/#{content_admin}") end}
         >
           <:col :let={{_id, content_admin}} label="Slug">
             <div class="truncate max-w-sm">
               {get_metadata(content_admin, "slug") || "no-slug"}
             </div>
           </:col>
-            <:col :let={{_id, content_admin}} label="Type">
-              <.this_badge
-                type={:content_type}
-                value={atomize_type(get_metadata(content_admin, "type"))}
-              />
-            </:col>
-            <:col :let={{_id, content_admin}} label="Status">
-              <.this_badge
-                type={:parse_status}
-                value={content_admin.parse_status}
-                title={format_parse_errors(content_admin.parse_errors)}
-              />
-            </:col>
-            <:col :let={{_id, content_admin}} label="Published">
-              {format_publish_date(get_metadata(content_admin, "publish_at"))}
-            </:col>
-            <:col :let={{_id, content_admin}} label="Expires">
-              {format_expiry_date(get_metadata(content_admin, "expires_at"))}
-            </:col>
-            <:action :let={{_id, content_admin}}>
-              <div class="sr-only">
-                <.link navigate={~p"/content_admin/#{content_admin}"}>Show</.link>
-              </div>
-              <.link navigate={~p"/content_admin/#{content_admin}"}>View</.link>
-            </:action>
-            <:action :let={{id, content_admin}}>
-              <.link
-                phx-click={JS.push("delete", value: %{id: content_admin.id}) |> hide("##{id}")}
-                data-confirm="Are you sure? ContentAdmin will re-sync on next Git sync."
-              >
-                Delete
-              </.link>
-            </:action>
-          </.table>
+          <:col :let={{_id, content_admin}} label="Type">
+            <.this_badge
+              type={:content_type}
+              value={atomize_type(get_metadata(content_admin, "type"))}
+            />
+          </:col>
+          <:col :let={{_id, content_admin}} label="Status">
+            <.this_badge
+              type={:parse_status}
+              value={content_admin.parse_status}
+              title={format_parse_errors(content_admin.parse_errors)}
+            />
+          </:col>
+          <:col :let={{_id, content_admin}} label="Published">
+            {format_publish_date(get_metadata(content_admin, "publish_at"))}
+          </:col>
+          <:col :let={{_id, content_admin}} label="Expires">
+            {format_expiry_date(get_metadata(content_admin, "expires_at"))}
+          </:col>
+          <:action :let={{_id, content_admin}}>
+            <div class="sr-only">
+              <.link navigate={~p"/content_admin/#{content_admin}"}>Show</.link>
+            </div>
+            <.link navigate={~p"/content_admin/#{content_admin}"}>View</.link>
+          </:action>
+          <:action :let={{id, content_admin}}>
+            <.link
+              phx-click={JS.push("delete", value: %{id: content_admin.id}) |> hide("##{id}")}
+              data-confirm="Are you sure? ContentAdmin will re-sync on next Git sync."
+            >
+              Delete
+            </.link>
+          </:action>
+        </.table>
 
         <div :if={@content_admin_count == 0} class="text-center py-12 opacity-60">
           <%= if @filter_type || @filter_status do %>
@@ -129,6 +158,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
      |> assign(:page_title, "ContentAdmin")
      |> assign(:filter_type, nil)
      |> assign(:filter_status, nil)
+     |> assign(:push_error_detail, nil)
      |> assign(:content_admin_count, length(content_admin))
      |> assign_status_counts(scope)
      |> stream(:content_admin, content_admin)}
@@ -187,56 +217,87 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
   end
 
   def handle_event("push-to-client", _params, socket) do
-    scope = socket.assigns.current_scope
-
-    case CodeMySpec.ContentSync.push_to_client(scope) do
+    socket.assigns.current_scope
+    |> CodeMySpec.ContentSync.push_to_client()
+    |> IO.inspect()
+    |> case do
       {:ok, push_result} ->
         message = """
         Push to client completed successfully!
         Synced: #{push_result.synced_content_count} content items
         """
 
-        {:noreply, put_flash(socket, :info, message)}
+        {:noreply, socket |> assign(:push_error_detail, nil) |> put_flash(:info, message)}
 
       {:error, :no_active_project} ->
-        {:noreply, put_flash(socket, :error, "No active project selected")}
+        {:noreply,
+         assign_push_error(socket, "No Active Project", "No active project selected", nil)}
 
       {:error, :has_validation_errors} ->
+        error_count = socket.assigns.status_counts.error
+
         {:noreply,
-         put_flash(
+         assign_push_error(
            socket,
-           :error,
-           "Cannot push to client: ContentAdmin has validation errors. Fix errors first by syncing from Git."
+           "Validation Errors",
+           "Cannot push to client because ContentAdmin has #{error_count} validation errors.",
+           "Fix errors first by syncing from Git. Check the error status column in the content list."
          )}
 
       {:error, :project_not_found} ->
-        {:noreply, put_flash(socket, :error, "Project not found")}
+        {:noreply, assign_push_error(socket, "Project Not Found", "Project not found", nil)}
 
       {:error, :no_content_repo} ->
-        {:noreply, put_flash(socket, :error, "Project has no content repository configured")}
+        {:noreply,
+         assign_push_error(
+           socket,
+           "No Content Repository",
+           "Project has no content repository configured",
+           "Update your project settings to add a content_repo URL"
+         )}
 
       {:error, :no_client_config} ->
         {:noreply,
-         put_flash(
+         assign_push_error(
            socket,
-           :error,
-           "Project has no client API URL or deploy key configured. Please update project settings."
+           "Missing Client Configuration",
+           "Project has no client API URL or deploy key configured",
+           "Go to Project Settings and configure:\n1. Client API URL (e.g., https://client.example.com)\n2. Deploy Key (click Generate to create one)"
          )}
 
       {:error, {:http_error, status_code, response_body}} ->
+        IO.puts("here")
+
         {:noreply,
-         put_flash(
+         assign_push_error(
            socket,
-           :error,
-           "Client API returned error #{status_code}: #{inspect(response_body)}"
+           "Client API Error (HTTP #{status_code})",
+           "The client appliance returned an error",
+           "Status: #{status_code}\nResponse:\n#{format_response_body(response_body)}"
          )}
 
       {:error, {:http_request_failed, message}} ->
-        {:noreply, put_flash(socket, :error, "Failed to connect to client: #{message}")}
+        {:noreply,
+         assign_push_error(
+           socket,
+           "Connection Failed",
+           "Failed to connect to client appliance",
+           "Error: #{message}\n\nPossible causes:\n- Client is offline or unreachable\n- Incorrect Client API URL\n- Network/firewall issues"
+         )}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, "Push failed: #{inspect(reason)}")}
+        {:noreply,
+         assign_push_error(
+           socket,
+           "Unknown Error",
+           "Push to client failed with an unexpected error",
+           inspect(reason, pretty: true, limit: :infinity)
+         )}
     end
+  end
+
+  def handle_event("close-error-modal", _params, socket) do
+    {:noreply, assign(socket, :push_error_detail, nil)}
   end
 
   @impl true
@@ -421,4 +482,18 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
     |> Enum.map(fn {key, value} -> "#{key}: #{inspect(value)}" end)
     |> Enum.join("\n")
   end
+
+  defp assign_push_error(socket, type, message, debug_info) do
+    socket
+    |> assign(:push_error_detail, %{
+      type: type,
+      message: message,
+      debug_info: debug_info
+    })
+    |> push_event("show-error-modal", %{})
+  end
+
+  defp format_response_body(body) when is_binary(body), do: body
+  defp format_response_body(body) when is_map(body), do: Jason.encode!(body, pretty: true)
+  defp format_response_body(body), do: inspect(body, pretty: true)
 end

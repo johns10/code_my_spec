@@ -70,6 +70,7 @@ defmodule CodeMySpec.UsersFixtures do
   def full_scope_fixture() do
     user = user_fixture()
     account = account_fixture()
+    member_fixture(user, account)
     project = user_scope_fixture(user, account) |> project_fixture()
     user_scope_fixture(user, account, project)
   end

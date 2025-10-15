@@ -38,6 +38,4 @@ npm-debug.log
 .DS_Store
 
 /test_repos/
-.env
-.env.prod
-.env.uat
+/envs

@@ -1,54 +1,95 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
+# Deploy secrets from .env files to Fly.io applications
 # Usage: ./scripts/deploy-secrets.sh uat|prod
 
-if [ -z "$1" ]; then
-  echo "Usage: ./scripts/deploy-secrets.sh uat|prod"
-  exit 1
+# Color output for better readability
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Helper functions
+error() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
+}
+
+info() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+warn() {
+    echo -e "${YELLOW}$1${NC}"
+}
+
+# Validate arguments
+if [ $# -ne 1 ]; then
+    error "Usage: ./scripts/deploy-secrets.sh uat|prod"
 fi
 
 ENV=$1
 APP_NAME="code-my-spec-${ENV}"
 ENV_FILE=".env.${ENV}"
 
-if [ ! -f "$ENV_FILE" ]; then
-  echo "Error: $ENV_FILE not found"
-  exit 1
+# Validate environment argument
+if [[ ! "$ENV" =~ ^(uat|prod)$ ]]; then
+    error "Invalid environment: $ENV. Must be 'uat' or 'prod'"
 fi
 
-echo "Deploying secrets from $ENV_FILE to $APP_NAME..."
+# Check if .env file exists
+if [ ! -f "$ENV_FILE" ]; then
+    error "$ENV_FILE not found"
+fi
 
-# Read .env file and build fly secrets set command
-# Skip empty lines and comments
-SECRETS=""
+# Check if fly CLI is installed
+if ! command -v fly &> /dev/null; then
+    error "fly CLI is not installed. Install it from https://fly.io/docs/flyctl/install/"
+fi
+
+info "Deploying secrets from $ENV_FILE to $APP_NAME..."
+
+# Parse .env file and build secrets array
+declare -a SECRETS_ARRAY
+LINE_NUM=0
+
 while IFS= read -r line || [ -n "$line" ]; do
-  # Skip empty lines and comments
-  if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
-    continue
-  fi
+    LINE_NUM=$((LINE_NUM + 1))
 
-  # Extract key=value
-  if [[ "$line" =~ ^[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*=[[:space:]]*(.*)[[:space:]]*$ ]]; then
-    KEY="${BASH_REMATCH[1]}"
-    VALUE="${BASH_REMATCH[2]}"
-
-    # Add to secrets string
-    if [ -n "$SECRETS" ]; then
-      SECRETS="$SECRETS $KEY=$VALUE"
-    else
-      SECRETS="$KEY=$VALUE"
+    # Skip empty lines and comments
+    if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+        continue
     fi
-  fi
+
+    # Match KEY=VALUE pattern
+    if [[ "$line" =~ ^[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*=[[:space:]]*(.*)[[:space:]]*$ ]]; then
+        KEY="${BASH_REMATCH[1]}"
+        VALUE="${BASH_REMATCH[2]}"
+
+        # Remove surrounding quotes from value if present
+        VALUE="${VALUE#\"}"
+        VALUE="${VALUE%\"}"
+        VALUE="${VALUE#\'}"
+        VALUE="${VALUE%\'}"
+
+        SECRETS_ARRAY+=("$KEY=$VALUE")
+    else
+        warn "Skipping invalid line $LINE_NUM: $line"
+    fi
 done < "$ENV_FILE"
 
-if [ -z "$SECRETS" ]; then
-  echo "No secrets found in $ENV_FILE"
-  exit 1
+# Check if any secrets were found
+if [ ${#SECRETS_ARRAY[@]} -eq 0 ]; then
+    error "No valid secrets found in $ENV_FILE"
 fi
 
-# Deploy secrets
-echo "Setting secrets..."
-fly secrets set $SECRETS -a "$APP_NAME"
+info "Found ${#SECRETS_ARRAY[@]} secret(s) to deploy"
 
-echo "Done! Secrets deployed to $APP_NAME"
+# Deploy secrets to Fly.io
+info "Setting secrets on $APP_NAME..."
+if fly secrets set "${SECRETS_ARRAY[@]}" -a "$APP_NAME"; then
+    info "Successfully deployed secrets to $APP_NAME"
+else
+    error "Failed to deploy secrets to $APP_NAME"
+fi

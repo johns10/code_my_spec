@@ -72,60 +72,25 @@ defmodule CodeMySpec.ContentSync do
     with {:ok, project} <- load_project(scope),
          {:ok, repo_url} <- extract_content_repo(project),
          {:ok, temp_path} <- create_temp_directory(),
-         {:ok, cloned_path} <- clone_repository(scope, repo_url, temp_path) do
-      content_dir = Path.join(cloned_path, "content")
+         {:ok, cloned_path} <- clone_repository(scope, repo_url, temp_path),
+         content_dir = Path.join(cloned_path, "content"),
+         {:ok, attrs_list} <- Sync.process_directory(content_dir),
+         {:ok, validated_attrs_list} <- validate_attrs_against_content_schema(attrs_list),
+         {:ok, content_admin_list} <- persist_validated_content_to_admin(scope, validated_attrs_list) do
+      end_time = System.monotonic_time(:millisecond)
+      duration_ms = end_time - start_time
 
-      # Use agnostic Sync.process_directory, then create ContentAdmin records
-      case Sync.process_directory(content_dir) do
-        {:ok, attrs_list} ->
-          result =
-            CodeMySpec.Repo.transaction(fn ->
-              # Delete existing ContentAdmin records for this project
-              {:ok, _count} = ContentAdmin.delete_all_content(scope)
+      sync_result = %{
+        total_files: length(content_admin_list),
+        successful: Enum.count(content_admin_list, &(&1.parse_status == :success)),
+        errors: Enum.count(content_admin_list, &(&1.parse_status == :error)),
+        duration_ms: duration_ms
+      }
 
-              # Add multi-tenant scoping to each attribute map
-              admin_attrs_list =
-                Enum.map(attrs_list, fn attrs ->
-                  Map.merge(attrs, %{
-                    account_id: scope.active_account_id,
-                    project_id: scope.active_project_id
-                  })
-                end)
+      # Broadcast sync completed
+      broadcast_sync_completed(scope, sync_result)
 
-              # Create ContentAdmin records
-              case ContentAdmin.create_many(scope, admin_attrs_list) do
-                {:ok, content_admin_list} ->
-                  content_admin_list
-
-                {:error, reason} ->
-                  CodeMySpec.Repo.rollback(reason)
-              end
-            end)
-
-          case result do
-            {:ok, content_admin_list} ->
-              end_time = System.monotonic_time(:millisecond)
-              duration_ms = end_time - start_time
-
-              sync_result = %{
-                total_files: length(content_admin_list),
-                successful: Enum.count(content_admin_list, &(&1.parse_status == :success)),
-                errors: Enum.count(content_admin_list, &(&1.parse_status == :error)),
-                duration_ms: duration_ms
-              }
-
-              # Broadcast sync completed
-              broadcast_sync_completed(scope, sync_result)
-
-              {:ok, sync_result}
-
-            {:error, reason} ->
-              {:error, reason}
-          end
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+      {:ok, sync_result}
     end
   end
 
@@ -274,6 +239,83 @@ defmodule CodeMySpec.ContentSync do
       %{error: 0} -> :ok
       %{error: _count} -> {:error, :has_validation_errors}
     end
+  end
+
+  @spec validate_attrs_against_content_schema([map()]) :: {:ok, [map()]}
+  defp validate_attrs_against_content_schema(attrs_list) do
+    validated_attrs_list =
+      Enum.map(attrs_list, fn attrs ->
+        # Extract only Content schema fields
+        content_attrs =
+          Map.take(attrs, [
+            :slug,
+            :title,
+            :content_type,
+            :content,
+            :protected,
+            :publish_at,
+            :expires_at,
+            :meta_title,
+            :meta_description,
+            :og_image,
+            :og_title,
+            :og_description,
+            :metadata
+          ])
+
+        # Validate against Content schema
+        content_changeset =
+          CodeMySpec.Content.Content.changeset(%CodeMySpec.Content.Content{}, content_attrs)
+
+        if content_changeset.valid? do
+          # Keep existing parse_status from Sync.process_directory
+          attrs
+        else
+          # Override with content validation errors
+          content_errors =
+            Ecto.Changeset.traverse_errors(content_changeset, fn {msg, opts} ->
+              Enum.reduce(opts, msg, fn {key, value}, acc ->
+                String.replace(acc, "%{#{key}}", to_string(value))
+              end)
+            end)
+
+          %{
+            attrs
+            | parse_status: :error,
+              parse_errors:
+                Map.merge(attrs[:parse_errors] || %{}, %{content_validation: content_errors})
+          }
+        end
+      end)
+
+    {:ok, validated_attrs_list}
+  end
+
+  @spec persist_validated_content_to_admin(Scope.t(), [map()]) ::
+          {:ok, [ContentAdmin.ContentAdmin.t()]} | {:error, term()}
+  defp persist_validated_content_to_admin(%Scope{} = scope, validated_attrs_list) do
+    CodeMySpec.Repo.transaction(fn ->
+      # Delete existing ContentAdmin records for this project
+      {:ok, _count} = ContentAdmin.delete_all_content(scope)
+
+      # Add multi-tenant scoping to each attribute map
+      admin_attrs_list =
+        Enum.map(validated_attrs_list, fn attrs ->
+          Map.merge(attrs, %{
+            account_id: scope.active_account_id,
+            project_id: scope.active_project_id
+          })
+        end)
+
+      # Create ContentAdmin records
+      case ContentAdmin.create_many(scope, admin_attrs_list) do
+        {:ok, content_admin_list} ->
+          content_admin_list
+
+        {:error, reason} ->
+          CodeMySpec.Repo.rollback(reason)
+      end
+    end)
   end
 
   # ============================================================================

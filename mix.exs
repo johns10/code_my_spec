@@ -85,7 +85,8 @@ defmodule CodeMySpec.MixProject do
       {:dir_walker, "~> 0.0.8"},
       {:assent, "~> 0.3.1"},
       {:cloak_ecto, "~> 1.3.0"},
-      {:git_cli, "~> 0.3.0"}
+      {:git_cli, "~> 0.3.0"},
+      {:dotenvy, "~> 1.1.0"}
     ]
   end
 

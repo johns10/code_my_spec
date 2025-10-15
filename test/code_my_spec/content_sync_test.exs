@@ -73,7 +73,8 @@ defmodule CodeMySpec.ContentSyncTest do
   describe "sync_to_content_admin/1 - successful git-based sync" do
     @tag :integration
     test "successfully clones repo and syncs content to ContentAdmin" do
-      scope = scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
+      scope =
+        scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
 
       assert {:ok, result} = ContentSync.sync_to_content_admin(scope)
       # test_content_repo has 5 valid files and 1 bad file (missing metadata)
@@ -130,7 +131,8 @@ defmodule CodeMySpec.ContentSyncTest do
   describe "sync_to_content_admin/1 - temporary directory cleanup" do
     @tag :integration
     test "cleans up temporary directory after successful sync" do
-      scope = scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
+      scope =
+        scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
 
       assert {:ok, result} = ContentSync.sync_to_content_admin(scope)
 
@@ -153,17 +155,19 @@ defmodule CodeMySpec.ContentSyncTest do
       scope = scope_with_project()
 
       # Create successful content admin
-      _success = success_content_admin_fixture(scope, %{
-        title: "Success Post",
-        slug: "success-post"
-      })
+      _success =
+        success_content_admin_fixture(scope, %{
+          title: "Success Post",
+          slug: "success-post"
+        })
 
       # Create error content admin
-      error = error_content_admin_fixture(scope, %{
-        title: "Error Post",
-        slug: "error-post",
-        parse_errors: %{"error_type" => "metadata_missing", "message" => "Missing title"}
-      })
+      error =
+        error_content_admin_fixture(scope, %{
+          title: "Error Post",
+          slug: "error-post",
+          parse_errors: %{"error_type" => "metadata_missing", "message" => "Missing title"}
+        })
 
       result = ContentSync.list_content_admin_errors(scope)
       assert length(result) == 1
@@ -174,10 +178,11 @@ defmodule CodeMySpec.ContentSyncTest do
     test "returns empty list when no errors exist" do
       scope = scope_with_project()
 
-      _success = success_content_admin_fixture(scope, %{
-        title: "Success Post",
-        slug: "success-post"
-      })
+      _success =
+        success_content_admin_fixture(scope, %{
+          title: "Success Post",
+          slug: "success-post"
+        })
 
       result = ContentSync.list_content_admin_errors(scope)
       assert result == []
@@ -203,16 +208,18 @@ defmodule CodeMySpec.ContentSyncTest do
       scope2 = scope_with_project()
 
       # Create error in project 1
-      error1 = error_content_admin_fixture(scope1, %{
-        title: "Error Post 1",
-        slug: "error-post-1"
-      })
+      error1 =
+        error_content_admin_fixture(scope1, %{
+          title: "Error Post 1",
+          slug: "error-post-1"
+        })
 
       # Create error in project 2
-      _error2 = error_content_admin_fixture(scope2, %{
-        title: "Error Post 2",
-        slug: "error-post-2"
-      })
+      _error2 =
+        error_content_admin_fixture(scope2, %{
+          title: "Error Post 2",
+          slug: "error-post-2"
+        })
 
       result1 = ContentSync.list_content_admin_errors(scope1)
       assert length(result1) == 1
@@ -232,10 +239,11 @@ defmodule CodeMySpec.ContentSyncTest do
         "field" => "title"
       }
 
-      error = error_content_admin_fixture(scope, %{
-        slug: "error-post",
-        parse_errors: error_details
-      })
+      error =
+        error_content_admin_fixture(scope, %{
+          slug: "error-post",
+          parse_errors: error_details
+        })
 
       [result] = ContentSync.list_content_admin_errors(scope)
       assert result.id == error.id
@@ -245,5 +253,4 @@ defmodule CodeMySpec.ContentSyncTest do
       assert result.parse_errors["field"] == "title"
     end
   end
-
 end

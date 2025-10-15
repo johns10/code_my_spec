@@ -1,4 +1,15 @@
 import Config
+import Dotenvy
+
+# Load environment variables from .env files
+env_dir_prefix = System.get_env("RELEASE_ROOT") || Path.expand("./envs")
+
+source!([
+  Path.absname(".env", env_dir_prefix),
+  Path.absname("#{config_env()}.env", env_dir_prefix),
+  System.get_env()
+])
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -20,22 +31,13 @@ if System.get_env("PHX_SERVER") do
 end
 
 # Configure OAuth providers for development
-if config_env() == :dev do
-  config :code_my_spec,
-    github_client_id: System.get_env("GITHUB_CLIENT_ID"),
-    github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-    oauth_base_url: System.get_env("OAUTH_BASE_URL") || "http://localhost:4000",
-    deploy_key: System.get_env("DEPLOY_KEY")
-end
+config :code_my_spec,
+  github_client_id: env!("GITHUB_CLIENT_ID"),
+  github_client_secret: env!("GITHUB_CLIENT_SECRET"),
+  oauth_base_url: env!("OAUTH_BASE_URL"),
+  deploy_key: env!("DEPLOY_KEY")
 
 if config_env() == :prod do
-  # Configure OAuth providers for production
-  config :code_my_spec,
-    github_client_id: System.get_env("GITHUB_CLIENT_ID"),
-    github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-    oauth_base_url: System.get_env("OAUTH_BASE_URL"),
-    deploy_key: System.get_env("DEPLOY_KEY")
-
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
