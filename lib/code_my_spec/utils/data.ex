@@ -13,6 +13,7 @@ defmodule CodeMySpec.Utils.Data do
   alias CodeMySpec.Sessions.Session
   alias CodeMySpec.Users.User
   alias CodeMySpec.Accounts.Member
+  alias CodeMySpec.Stories.Story
 
   import Ecto.Query
 
@@ -30,6 +31,7 @@ defmodule CodeMySpec.Utils.Data do
       Logger.info("  - #{length(data.users)} users")
       Logger.info("  - #{length(data.projects)} projects")
       Logger.info("  - #{length(data.components)} components")
+      Logger.info("  - #{length(data.stories || [])} stories")
       Logger.info("  - #{length(data.sessions)} sessions")
     else
       Repo.transaction(fn ->
@@ -46,6 +48,7 @@ defmodule CodeMySpec.Utils.Data do
         insert_members(data.members)
         insert_projects(data.projects)
         insert_components(data.components)
+        insert_stories(data[:stories] || [])
         # Skip sessions - they're environment-specific and complex to sync
         # insert_sessions(data.sessions)
         Logger.info("Skipped #{length(data.sessions)} sessions (environment-specific)")
@@ -60,7 +63,7 @@ defmodule CodeMySpec.Utils.Data do
 
   # Reset all table sequences after manual ID insertion
   defp reset_sequences do
-    tables = ~w(accounts users members projects components sessions)
+    tables = ~w(accounts users members projects components stories sessions)
 
     Enum.each(tables, fn table ->
       Repo.query!("""
@@ -82,6 +85,7 @@ defmodule CodeMySpec.Utils.Data do
       members: serialize_members(account),
       projects: serialize_projects(account_id),
       components: serialize_components(account_id),
+      stories: serialize_stories(account_id),
       sessions: serialize_sessions(account_id)
     }
 
@@ -92,6 +96,7 @@ defmodule CodeMySpec.Utils.Data do
     Logger.info("  - #{length(data.users)} users")
     Logger.info("  - #{length(data.projects)} projects")
     Logger.info("  - #{length(data.components)} components")
+    Logger.info("  - #{length(data.stories)} stories")
     Logger.info("  - #{length(data.sessions)} sessions")
   end
 
@@ -157,6 +162,31 @@ defmodule CodeMySpec.Utils.Data do
     end)
   end
 
+  defp serialize_stories(account_id) do
+    Story
+    |> where([s], s.account_id == ^account_id)
+    |> Repo.all()
+    |> Enum.map(fn story ->
+      Map.take(story, [
+        :id,
+        :title,
+        :description,
+        :acceptance_criteria,
+        :status,
+        :locked_at,
+        :lock_expires_at,
+        :locked_by,
+        :project_id,
+        :component_id,
+        :account_id,
+        :first_version_id,
+        :current_version_id,
+        :inserted_at,
+        :updated_at
+      ])
+    end)
+  end
+
   defp serialize_sessions(account_id) do
     Session
     |> where([s], s.account_id == ^account_id)
@@ -209,6 +239,7 @@ defmodule CodeMySpec.Utils.Data do
 
     # Delete in reverse dependency order
     from(s in Session, where: s.account_id == ^account_id) |> Repo.delete_all()
+    from(st in Story, where: st.account_id == ^account_id) |> Repo.delete_all()
     from(c in Component, where: c.account_id == ^account_id) |> Repo.delete_all()
     from(p in Project, where: p.account_id == ^account_id) |> Repo.delete_all()
     from(m in Member, where: m.account_id == ^account_id) |> Repo.delete_all()
@@ -298,6 +329,17 @@ defmodule CodeMySpec.Utils.Data do
       end)
 
     sorted
+  end
+
+  defp insert_stories(stories_data) do
+    Enum.each(stories_data, fn story_data ->
+      %Story{id: story_data.id}
+      |> Story.changeset(story_data)
+      |> Ecto.Changeset.put_change(:account_id, story_data.account_id)
+      |> Ecto.Changeset.put_change(:first_version_id, story_data[:first_version_id])
+      |> Ecto.Changeset.put_change(:current_version_id, story_data[:current_version_id])
+      |> Repo.insert!()
+    end)
   end
 
   defp insert_sessions(sessions_data) do
