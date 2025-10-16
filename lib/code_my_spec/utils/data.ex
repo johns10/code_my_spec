@@ -14,6 +14,7 @@ defmodule CodeMySpec.Utils.Data do
   alias CodeMySpec.Users.User
   alias CodeMySpec.Accounts.Member
   alias CodeMySpec.Stories.Story
+  alias PaperTrail.Version
 
   import Ecto.Query
 
@@ -32,6 +33,7 @@ defmodule CodeMySpec.Utils.Data do
       Logger.info("  - #{length(data.projects)} projects")
       Logger.info("  - #{length(data.components)} components")
       Logger.info("  - #{length(data.stories || [])} stories")
+      Logger.info("  - #{length(data.versions || [])} versions")
       Logger.info("  - #{length(data.sessions)} sessions")
     else
       Repo.transaction(fn ->
@@ -48,6 +50,8 @@ defmodule CodeMySpec.Utils.Data do
         insert_members(data.members)
         insert_projects(data.projects)
         insert_components(data.components)
+        # Insert versions before stories (stories reference versions via first_version_id/current_version_id)
+        insert_versions(data[:versions] || [])
         insert_stories(data[:stories] || [])
         # Skip sessions - they're environment-specific and complex to sync
         # insert_sessions(data.sessions)
@@ -63,7 +67,7 @@ defmodule CodeMySpec.Utils.Data do
 
   # Reset all table sequences after manual ID insertion
   defp reset_sequences do
-    tables = ~w(accounts users members projects components stories sessions)
+    tables = ~w(accounts users members projects components versions stories sessions)
 
     Enum.each(tables, fn table ->
       Repo.query!("""
@@ -85,6 +89,7 @@ defmodule CodeMySpec.Utils.Data do
       members: serialize_members(account),
       projects: serialize_projects(account_id),
       components: serialize_components(account_id),
+      versions: serialize_versions(account_id),
       stories: serialize_stories(account_id),
       sessions: serialize_sessions(account_id)
     }
@@ -97,6 +102,7 @@ defmodule CodeMySpec.Utils.Data do
     Logger.info("  - #{length(data.projects)} projects")
     Logger.info("  - #{length(data.components)} components")
     Logger.info("  - #{length(data.stories)} stories")
+    Logger.info("  - #{length(data.versions)} versions")
     Logger.info("  - #{length(data.sessions)} sessions")
   end
 
@@ -187,6 +193,33 @@ defmodule CodeMySpec.Utils.Data do
     end)
   end
 
+  defp serialize_versions(account_id) do
+    # Get all story IDs for this account
+    story_ids =
+      Story
+      |> where([s], s.account_id == ^account_id)
+      |> select([s], s.id)
+      |> Repo.all()
+
+    # Get all versions for those stories
+    Version
+    |> where([v], v.item_type == "Story" and v.item_id in ^story_ids)
+    |> Repo.all()
+    |> Enum.map(fn version ->
+      Map.take(version, [
+        :id,
+        :event,
+        :item_type,
+        :item_id,
+        :item_changes,
+        :originator_id,
+        :origin,
+        :meta,
+        :inserted_at
+      ])
+    end)
+  end
+
   defp serialize_sessions(account_id) do
     Session
     |> where([s], s.account_id == ^account_id)
@@ -240,9 +273,14 @@ defmodule CodeMySpec.Utils.Data do
     user_ids =
       from(m in Member, where: m.account_id == ^account_id, select: m.user_id) |> Repo.all()
 
+    # Get story IDs for this account (needed to delete their versions)
+    story_ids =
+      from(st in Story, where: st.account_id == ^account_id, select: st.id) |> Repo.all()
+
     # Delete in reverse dependency order
     from(s in Session, where: s.account_id == ^account_id) |> Repo.delete_all()
     from(st in Story, where: st.account_id == ^account_id) |> Repo.delete_all()
+    from(v in Version, where: v.item_type == "Story" and v.item_id in ^story_ids) |> Repo.delete_all()
     from(c in Component, where: c.account_id == ^account_id) |> Repo.delete_all()
     from(p in Project, where: p.account_id == ^account_id) |> Repo.delete_all()
     from(m in Member, where: m.account_id == ^account_id) |> Repo.delete_all()
@@ -330,6 +368,25 @@ defmodule CodeMySpec.Utils.Data do
       end)
 
     sorted
+  end
+
+  defp insert_versions(versions_data) do
+    Enum.each(versions_data, fn version_data ->
+      inserted_at = parse_datetime(version_data.inserted_at)
+
+      %Version{id: version_data.id}
+      |> Ecto.Changeset.change(
+        event: version_data.event,
+        item_type: version_data.item_type,
+        item_id: version_data.item_id,
+        item_changes: version_data.item_changes,
+        originator_id: version_data[:originator_id],
+        origin: version_data[:origin],
+        meta: version_data[:meta],
+        inserted_at: inserted_at
+      )
+      |> Repo.insert!()
+    end)
   end
 
   defp insert_stories(stories_data) do
