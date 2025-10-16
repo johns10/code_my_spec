@@ -160,7 +160,8 @@ defmodule CodeMySpec.Utils.Data do
     |> where([s], s.account_id == ^account_id)
     |> Repo.all()
     |> Enum.map(fn session ->
-      Map.take(session, [
+      # Convert session to map, ensuring types are serialized as strings
+      session_map = Map.take(session, [
         :id,
         :type,
         :status,
@@ -178,6 +179,14 @@ defmodule CodeMySpec.Utils.Data do
         :inserted_at,
         :updated_at
       ])
+
+      # Convert atom/enum types to strings for JSON serialization
+      session_map
+      |> Map.update(:type, nil, &to_string/1)
+      |> Map.update(:status, nil, &to_string/1)
+      |> Map.update(:agent, nil, &to_string/1)
+      |> Map.update(:execution_mode, nil, &to_string/1)
+      |> Map.update(:environment, nil, &to_string/1)
     end)
   end
 
