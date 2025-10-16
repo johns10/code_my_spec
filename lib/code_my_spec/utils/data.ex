@@ -193,24 +193,25 @@ defmodule CodeMySpec.Utils.Data do
     |> Repo.all()
     |> Enum.map(fn session ->
       # Convert session to map, ensuring types are serialized as strings
-      session_map = Map.take(session, [
-        :id,
-        :type,
-        :status,
-        :state,
-        :account_id,
-        :project_id,
-        :component_id,
-        :user_id,
-        :environment,
-        :agent,
-        :context_id,
-        :interactions,
-        :execution_mode,
-        :session_id,
-        :inserted_at,
-        :updated_at
-      ])
+      session_map =
+        Map.take(session, [
+          :id,
+          :type,
+          :status,
+          :state,
+          :account_id,
+          :project_id,
+          :component_id,
+          :user_id,
+          :environment,
+          :agent,
+          :context_id,
+          :interactions,
+          :execution_mode,
+          :session_id,
+          :inserted_at,
+          :updated_at
+        ])
 
       # Convert atom/enum types to strings for JSON serialization
       session_map
@@ -225,6 +226,7 @@ defmodule CodeMySpec.Utils.Data do
   # Helper to parse datetime strings from JSON
   defp parse_datetime(nil), do: nil
   defp parse_datetime(%DateTime{} = dt), do: dt
+
   defp parse_datetime(string) when is_binary(string) do
     case DateTime.from_iso8601(string) do
       {:ok, dt, _} -> dt
@@ -235,7 +237,8 @@ defmodule CodeMySpec.Utils.Data do
   # Wipe all data for an account
   defp wipe_account_data(account_id) do
     # Get user IDs for this account before deleting anything
-    user_ids = from(m in Member, where: m.account_id == ^account_id, select: m.user_id) |> Repo.all()
+    user_ids =
+      from(m in Member, where: m.account_id == ^account_id, select: m.user_id) |> Repo.all()
 
     # Delete in reverse dependency order
     from(s in Session, where: s.account_id == ^account_id) |> Repo.delete_all()
@@ -306,12 +309,10 @@ defmodule CodeMySpec.Utils.Data do
 
   # Sort components so parents are inserted before children
   defp sort_components_by_dependency(components) do
-    # Build a map of id -> component for quick lookup
-    component_map = Map.new(components, fn c -> {c.id, c} end)
-
     # Topological sort: repeatedly insert components with no parent or whose parent is already inserted
     {sorted, _remaining} =
-      Enum.reduce_while(1..length(components), {[], components}, fn _iteration, {sorted, remaining} ->
+      Enum.reduce_while(1..length(components), {[], components}, fn _iteration,
+                                                                    {sorted, remaining} ->
         # Find components that can be inserted (no parent or parent already sorted)
         sorted_ids = MapSet.new(sorted, & &1.id)
 
