@@ -46,7 +46,9 @@ defmodule CodeMySpec.Utils.Data do
         insert_members(data.members)
         insert_projects(data.projects)
         insert_components(data.components)
-        insert_sessions(data.sessions)
+        # Skip sessions - they're environment-specific and complex to sync
+        # insert_sessions(data.sessions)
+        Logger.info("Skipped #{length(data.sessions)} sessions (environment-specific)")
 
         # Reset sequences after manually setting IDs to prevent conflicts
         reset_sequences()
