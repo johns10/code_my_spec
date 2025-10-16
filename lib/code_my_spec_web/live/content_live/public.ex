@@ -119,8 +119,8 @@ defmodule CodeMySpecWeb.ContentLive.Public do
       </header>
 
       <div class="prose prose-lg max-w-none">
-        <%= if @content.content do %>
-          {raw(@content.content)}
+        <%= if @content.processed_content do %>
+          {raw(@content.processed_content)}
         <% else %>
           <div class="opacity-60 italic">
             Content not available
@@ -158,8 +158,8 @@ defmodule CodeMySpecWeb.ContentLive.Public do
           </header>
 
           <div class="prose prose-lg max-w-none">
-            <%= if @content.content do %>
-              {raw(@content.content)}
+            <%= if @content.processed_content do %>
+              {raw(@content.processed_content)}
             <% else %>
               <div class="opacity-60 italic">
                 Content not available
@@ -210,8 +210,8 @@ defmodule CodeMySpecWeb.ContentLive.Public do
           </header>
 
           <div class="prose prose-lg max-w-none">
-            <%= if @content.content do %>
-              {raw(@content.content)}
+            <%= if @content.processed_content do %>
+              {raw(@content.processed_content)}
             <% else %>
               <div class="opacity-60 italic">
                 Content not available
