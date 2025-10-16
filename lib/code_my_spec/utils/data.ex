@@ -343,19 +343,19 @@ defmodule CodeMySpec.Utils.Data do
     end)
   end
 
-  defp insert_sessions(sessions_data) do
-    Enum.each(sessions_data, fn session_data ->
-      scope = %CodeMySpec.Users.Scope{
-        user: %{id: session_data.user_id},
-        active_account_id: session_data.account_id,
-        active_account: %{id: session_data.account_id},
-        active_project_id: session_data.project_id,
-        active_project: %{id: session_data.project_id}
-      }
+  # defp insert_sessions(sessions_data) do
+  #   Enum.each(sessions_data, fn session_data ->
+  #     scope = %CodeMySpec.Users.Scope{
+  #       user: %{id: session_data.user_id},
+  #       active_account_id: session_data.account_id,
+  #       active_account: %{id: session_data.account_id},
+  #       active_project_id: session_data.project_id,
+  #       active_project: %{id: session_data.project_id}
+  #     }
 
-      %Session{id: session_data.id}
-      |> Session.changeset(session_data, scope)
-      |> Repo.insert!()
-    end)
-  end
+  #     %Session{id: session_data.id}
+  #     |> Session.changeset(session_data, scope)
+  #     |> Repo.insert!()
+  #   end)
+  # end
 end
