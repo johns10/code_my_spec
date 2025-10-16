@@ -273,19 +273,25 @@ defmodule CodeMySpec.Utils.Data do
     user_ids =
       from(m in Member, where: m.account_id == ^account_id, select: m.user_id) |> Repo.all()
 
-    # Get story IDs for this account (needed to delete their versions)
-    story_ids =
-      from(st in Story, where: st.account_id == ^account_id, select: st.id) |> Repo.all()
+    # Get all account IDs for these users (including personal accounts)
+    all_account_ids =
+      from(m in Member, where: m.user_id in ^user_ids, select: m.account_id, distinct: true)
+      |> Repo.all()
 
-    # Delete in reverse dependency order
-    from(s in Session, where: s.account_id == ^account_id) |> Repo.delete_all()
-    from(st in Story, where: st.account_id == ^account_id) |> Repo.delete_all()
-    from(v in Version, where: v.item_type == "Story" and v.item_id in ^story_ids) |> Repo.delete_all()
-    from(c in Component, where: c.account_id == ^account_id) |> Repo.delete_all()
-    from(p in Project, where: p.account_id == ^account_id) |> Repo.delete_all()
-    from(m in Member, where: m.account_id == ^account_id) |> Repo.delete_all()
+    # Get story IDs for ALL these accounts (not just the target account)
+    story_ids =
+      from(st in Story, where: st.account_id in ^all_account_ids, select: st.id) |> Repo.all()
+
+    # Delete in reverse dependency order for ALL accounts owned by these users
+    from(s in Session, where: s.account_id in ^all_account_ids) |> Repo.delete_all()
+    from(st in Story, where: st.account_id in ^all_account_ids) |> Repo.delete_all()
+    from(v in Version, where: v.item_type == "Story" and v.item_id in ^story_ids)
+    |> Repo.delete_all()
+    from(c in Component, where: c.account_id in ^all_account_ids) |> Repo.delete_all()
+    from(p in Project, where: p.account_id in ^all_account_ids) |> Repo.delete_all()
+    from(m in Member, where: m.user_id in ^user_ids) |> Repo.delete_all()
     from(u in User, where: u.id in ^user_ids) |> Repo.delete_all()
-    from(a in Account, where: a.id == ^account_id) |> Repo.delete_all()
+    from(a in Account, where: a.id in ^all_account_ids) |> Repo.delete_all()
   end
 
   # Insert functions - preserve IDs to maintain consistency across environments
