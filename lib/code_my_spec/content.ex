@@ -121,13 +121,13 @@ defmodule CodeMySpec.Content do
   6. This function handles the sync
 
   ## Parameters
-    - content_list: List of content maps with all fields (slug, title, content_type, content, etc.)
+    - content_list: List of content maps with all fields (slug, title, content_type, processed_content, etc.)
 
   ## Examples
 
       Content.sync_content([
-        %{slug: "post-1", title: "Post 1", content_type: "blog", content: "<h1>Post 1</h1>", ...},
-        %{slug: "post-2", title: "Post 2", content_type: "blog", content: "<h1>Post 2</h1>", ...}
+        %{slug: "post-1", title: "Post 1", content_type: "blog", processed_content: "<h1>Post 1</h1>", ...},
+        %{slug: "post-2", title: "Post 2", content_type: "blog", processed_content: "<h1>Post 2</h1>", ...}
       ])
   """
   @spec sync_content([map()]) :: {:ok, [Content.t()]} | {:error, term()}

@@ -7,7 +7,7 @@ defmodule CodeMySpec.Content.Content do
           slug: String.t(),
           title: String.t() | nil,
           content_type: :blog | :page | :landing | :documentation,
-          content: String.t(),
+          processed_content: String.t(),
           protected: boolean(),
           publish_at: DateTime.t() | nil,
           expires_at: DateTime.t() | nil,
@@ -25,7 +25,7 @@ defmodule CodeMySpec.Content.Content do
     field :slug, :string
     field :title, :string
     field :content_type, Ecto.Enum, values: [:blog, :page, :landing, :documentation]
-    field :content, :string
+    field :processed_content, :string
     field :protected, :boolean, default: false
     field :publish_at, :utc_datetime
     field :expires_at, :utc_datetime
@@ -51,7 +51,7 @@ defmodule CodeMySpec.Content.Content do
       :slug,
       :title,
       :content_type,
-      :content,
+      :processed_content,
       :protected,
       :publish_at,
       :expires_at,
@@ -62,7 +62,7 @@ defmodule CodeMySpec.Content.Content do
       :og_description,
       :metadata
     ])
-    |> validate_required([:slug, :content_type, :content])
+    |> validate_required([:slug, :content_type, :processed_content])
     |> validate_length(:meta_title, max: 60)
     |> validate_length(:meta_description, max: 160)
     |> validate_inclusion(:content_type, [:blog, :page, :landing, :documentation])

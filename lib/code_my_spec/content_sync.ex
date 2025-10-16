@@ -182,13 +182,12 @@ defmodule CodeMySpec.ContentSync do
             attrs_list
             |> Enum.filter(&(&1.parse_status == :success))
             |> Enum.map(fn attrs ->
-              # Content schema doesn't have parse_status/parse_errors
+              # Content schema doesn't have parse_status/parse_errors or raw_content
               # Only include Content fields
               Map.take(attrs, [
                 :slug,
                 :title,
                 :content_type,
-                :content,
                 :processed_content,
                 :protected,
                 :publish_at,
@@ -251,7 +250,7 @@ defmodule CodeMySpec.ContentSync do
             :slug,
             :title,
             :content_type,
-            :content,
+            :processed_content,
             :protected,
             :publish_at,
             :expires_at,

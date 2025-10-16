@@ -7,7 +7,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          content: String.t() | nil,
+          raw_content: String.t() | nil,
           processed_content: String.t() | nil,
           parse_status: :success | :error | nil,
           parse_errors: map() | nil,
@@ -21,7 +21,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
         }
 
   schema "content_admin" do
-    field :content, :string
+    field :raw_content, :string
     field :processed_content, :string
     field :parse_status, Ecto.Enum, values: [:success, :error]
     field :parse_errors, :map
@@ -37,7 +37,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
   def changeset(content_admin, attrs) do
     content_admin
     |> cast(attrs, [
-      :content,
+      :raw_content,
       :processed_content,
       :parse_status,
       :parse_errors,
@@ -45,6 +45,6 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
       :project_id,
       :account_id
     ])
-    |> validate_required([:content, :parse_status, :project_id, :account_id])
+    |> validate_required([:raw_content, :parse_status, :project_id, :account_id])
   end
 end

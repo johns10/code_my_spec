@@ -60,7 +60,7 @@ defmodule CodeMySpec.ContentSync.Sync do
   @type content_attrs :: %{
           required(:slug) => String.t(),
           required(:content_type) => :blog | :page | :landing | :documentation,
-          required(:content) => String.t(),
+          required(:raw_content) => String.t(),
           required(:processed_content) => String.t() | nil,
           required(:parse_status) => :success | :error,
           optional(:parse_errors) => map() | nil,
@@ -251,7 +251,7 @@ defmodule CodeMySpec.ContentSync.Sync do
       slug: metadata[:slug],
       title: metadata[:title],
       content_type: atomize_content_type(metadata[:type]),
-      content: raw_content,
+      raw_content: raw_content,
       processed_content: result.processed_content,
       parse_status: result.parse_status,
       parse_errors: atomize_parse_errors(result.parse_errors),
@@ -280,7 +280,7 @@ defmodule CodeMySpec.ContentSync.Sync do
     %{
       slug: generate_error_slug(),
       content_type: :blog,
-      content: raw_content,
+      raw_content: raw_content,
       processed_content: nil,
       parse_status: :error,
       parse_errors: %{
