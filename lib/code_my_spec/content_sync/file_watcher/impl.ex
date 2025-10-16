@@ -11,7 +11,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
 
   alias CodeMySpec.Accounts.{Account, AccountsRepository}
   alias CodeMySpec.Projects.Project
-  alias CodeMySpec.Users.Scope
+  alias CodeMySpec.Users.{Scope, User}
   alias CodeMySpec.Repo
 
   defstruct [:scope, :watched_directory, :debounce_timer, :debounce_ms, :sync_fn]
@@ -69,7 +69,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
 
   @spec get_scope(keyword()) ::
           {:ok, Scope.t()}
-          | {:error, :missing_scope_config | :account_not_found | :project_not_found}
+          | {:error, :missing_scope_config | :account_not_found | :project_not_found | :user_not_found}
   defp get_scope(opts) do
     case opts[:scope] do
       %Scope{} = scope ->
@@ -82,17 +82,19 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
 
   @spec load_scope_from_config() ::
           {:ok, Scope.t()}
-          | {:error, :missing_scope_config | :account_not_found | :project_not_found}
+          | {:error, :missing_scope_config | :account_not_found | :project_not_found | :user_not_found}
   defp load_scope_from_config do
     case Application.get_env(:code_my_spec, :content_watch_scope) do
       nil ->
         {:error, :missing_scope_config}
 
-      %{account_id: account_id, project_id: project_id}
-      when not is_nil(account_id) and not is_nil(project_id) ->
-        with {:ok, account} <- load_account(account_id),
+      %{user_id: user_id, account_id: account_id, project_id: project_id}
+      when not is_nil(user_id) and not is_nil(account_id) and not is_nil(project_id) ->
+        with {:ok, user} <- load_user(user_id),
+             {:ok, account} <- load_account(account_id),
              {:ok, project} <- load_project(project_id) do
           scope = %Scope{
+            user: user,
             active_account: account,
             active_account_id: account.id,
             active_project: project,
@@ -120,6 +122,14 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
     case Repo.get(Project, project_id) do
       nil -> {:error, :project_not_found}
       project -> {:ok, project}
+    end
+  end
+
+  @spec load_user(integer()) :: {:ok, User.t()} | {:error, :user_not_found}
+  defp load_user(user_id) do
+    case Repo.get(User, user_id) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
     end
   end
 

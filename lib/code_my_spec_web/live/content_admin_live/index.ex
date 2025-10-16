@@ -15,7 +15,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
             <.button phx-click="trigger-sync">
               <.icon name="hero-arrow-path" /> Sync from Git
             </.button>
-            <.button phx-click="push-to-client" class="ml-2">
+            <.button phx-click="push-to-client" class="btn btn-primary ml-2">
               <.icon name="hero-cloud-arrow-up" /> Push to Client
             </.button>
           </:actions>

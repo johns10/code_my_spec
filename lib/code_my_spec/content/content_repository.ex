@@ -111,8 +111,7 @@ defmodule CodeMySpec.Content.ContentRepository do
   end
 
   defp by_content_type(query, content_type) do
-    content_type_atom = String.to_existing_atom(content_type)
-    where(query, [c], c.content_type == ^content_type_atom)
+    where(query, [c], c.content_type == ^content_type)
   end
 
   defp by_slug(query, slug) do

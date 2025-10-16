@@ -63,7 +63,7 @@ defmodule CodeMySpec.Integrations.IntegrationRepository do
   def list_integrations(%Scope{user: user}) do
     Integration
     |> where([i], i.user_id == ^user.id)
-    |> order_by([i], [desc: i.inserted_at, desc: i.id])
+    |> order_by([i], desc: i.inserted_at, desc: i.id)
     |> Repo.all()
   end
 

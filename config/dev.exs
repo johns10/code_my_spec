@@ -94,6 +94,7 @@ config :code_my_spec,
   content_watch_directory:
     "/Users/johndavenport/Documents/github/code_my_spec/lib/code_my_spec_web/content/content",
   content_watch_scope: %{
+    user_id: 1,
     account_id: 4,
     project_id: 4
   }
