@@ -10,7 +10,7 @@ defmodule CodeMySpec.Sessions.OrchestratorBehaviour do
   the SessionsRepository and ResultHandler.
   """
 
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.Sessions.{Session, Interaction}
 
   @doc """
   Returns the list of step modules in order for this orchestrator.

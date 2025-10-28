@@ -15,7 +15,7 @@ defmodule CodeMySpec.ContentTest do
       _scheduled = scheduled_content_fixture(nil, nil, %{content_type: "blog"})
       _expired = expired_content_fixture(nil, nil, %{content_type: "blog"})
 
-      result = Content.list_published_content(scope, "blog")
+      result = Content.list_published_content(scope, :blog)
 
       assert length(result) == 1
       assert List.first(result).id == published.id
@@ -27,7 +27,7 @@ defmodule CodeMySpec.ContentTest do
       public = published_content_fixture(nil, nil, %{content_type: "blog", protected: false})
       protected = published_content_fixture(nil, nil, %{content_type: "blog", protected: true})
 
-      result = Content.list_published_content(scope, "blog")
+      result = Content.list_published_content(scope, :blog)
 
       assert length(result) == 2
       content_ids = Enum.map(result, & &1.id)
@@ -41,7 +41,7 @@ defmodule CodeMySpec.ContentTest do
       blog = published_content_fixture(nil, nil, %{content_type: "blog"})
       _page = published_content_fixture(nil, nil, %{content_type: "page"})
 
-      result = Content.list_published_content(scope, "blog")
+      result = Content.list_published_content(scope, :blog)
 
       assert length(result) == 1
       assert List.first(result).id == blog.id
@@ -53,7 +53,7 @@ defmodule CodeMySpec.ContentTest do
       public = published_content_fixture(nil, nil, %{content_type: "blog", protected: false})
       _protected = published_content_fixture(nil, nil, %{content_type: "blog", protected: true})
 
-      result = Content.list_published_content(nil, "blog")
+      result = Content.list_published_content(nil, :blog)
 
       assert length(result) == 1
       assert List.first(result).id == public.id
@@ -65,7 +65,7 @@ defmodule CodeMySpec.ContentTest do
       _scheduled = scheduled_content_fixture(nil, nil, %{content_type: "blog", protected: false})
       _expired = expired_content_fixture(nil, nil, %{content_type: "blog", protected: false})
 
-      result = Content.list_published_content(nil, "blog")
+      result = Content.list_published_content(nil, :blog)
 
       assert length(result) == 1
       assert List.first(result).id == published.id
@@ -84,7 +84,7 @@ defmodule CodeMySpec.ContentTest do
           publish_at: yesterday
         })
 
-      result = Content.get_content_by_slug(scope, "test-post", "blog")
+      result = Content.get_content_by_slug(scope, "test-post", :blog)
 
       assert result.id == created.id
       assert result.slug == "test-post"
@@ -93,7 +93,7 @@ defmodule CodeMySpec.ContentTest do
     test "returns nil when content not found" do
       scope = full_scope_fixture()
 
-      result = Content.get_content_by_slug(scope, "nonexistent", "blog")
+      result = Content.get_content_by_slug(scope, "nonexistent", :blog)
 
       assert result == nil
     end
@@ -117,8 +117,8 @@ defmodule CodeMySpec.ContentTest do
           protected: true
         })
 
-      public_result = Content.get_content_by_slug(scope, "public-post", "blog")
-      protected_result = Content.get_content_by_slug(scope, "protected-post", "blog")
+      public_result = Content.get_content_by_slug(scope, "public-post", :blog)
+      protected_result = Content.get_content_by_slug(scope, "protected-post", :blog)
 
       assert public_result.id == public.id
       assert protected_result.id == protected.id
@@ -143,15 +143,15 @@ defmodule CodeMySpec.ContentTest do
           protected: true
         })
 
-      public_result = Content.get_content_by_slug(nil, "public-post", "blog")
-      protected_result = Content.get_content_by_slug(nil, "protected-post", "blog")
+      public_result = Content.get_content_by_slug(nil, "public-post", :blog)
+      protected_result = Content.get_content_by_slug(nil, "protected-post", :blog)
 
       assert public_result.id == public.id
       assert protected_result == nil
     end
 
     test "returns nil when content not found" do
-      result = Content.get_content_by_slug(nil, "nonexistent", "blog")
+      result = Content.get_content_by_slug(nil, "nonexistent", :blog)
 
       assert result == nil
     end
@@ -169,7 +169,7 @@ defmodule CodeMySpec.ContentTest do
           publish_at: yesterday
         })
 
-      result = Content.get_content_by_slug!(scope, "test-post", "blog")
+      result = Content.get_content_by_slug!(scope, "test-post", :blog)
 
       assert result.id == created.id
     end
@@ -178,14 +178,14 @@ defmodule CodeMySpec.ContentTest do
       scope = full_scope_fixture()
 
       assert_raise Ecto.NoResultsError, fn ->
-        Content.get_content_by_slug!(scope, "nonexistent", "blog")
+        Content.get_content_by_slug!(scope, "nonexistent", :blog)
       end
     end
   end
 
   describe "get_content_by_slug!/3 with nil scope" do
     test "returns nil when content not found (non-raising)" do
-      result = Content.get_content_by_slug!(nil, "nonexistent", "blog")
+      result = Content.get_content_by_slug!(nil, "nonexistent", :blog)
 
       assert result == nil
     end
@@ -200,7 +200,7 @@ defmodule CodeMySpec.ContentTest do
           protected: false
         })
 
-      result = Content.get_content_by_slug!(nil, "public-post", "blog")
+      result = Content.get_content_by_slug!(nil, "public-post", :blog)
 
       assert result.id == public.id
     end
@@ -213,13 +213,13 @@ defmodule CodeMySpec.ContentTest do
           slug: "post-1",
           title: "Post 1",
           content_type: "blog",
-          content: "<h1>Post 1</h1>"
+          processed_content: "<h1>Post 1</h1>"
         },
         %{
           slug: "post-2",
           title: "Post 2",
           content_type: "blog",
-          content: "<h1>Post 2</h1>"
+          processed_content: "<h1>Post 2</h1>"
         }
       ]
 
@@ -238,21 +238,21 @@ defmodule CodeMySpec.ContentTest do
       _existing = content_fixture(nil, nil, %{slug: "existing"})
 
       content_list = [
-        %{slug: "new", title: "New", content_type: "blog", content: "<h1>New</h1>"}
+        %{slug: "new", title: "New", content_type: "blog", processed_content: "<h1>New</h1>"}
       ]
 
       {:ok, _results} = Content.sync_content(content_list)
 
       # Should only have 1 content record (the new one)
-      all_content = Content.list_published_content(nil, "blog")
+      all_content = Content.list_published_content(nil, :blog)
       assert length(all_content) == 1
       assert List.first(all_content).slug == "new"
     end
 
     test "returns error with invalid content" do
       content_list = [
-        %{slug: "valid", content_type: "blog", content: "<h1>Valid</h1>"},
-        %{slug: nil, content_type: "blog", content: "<h1>Invalid</h1>"}
+        %{slug: "valid", content_type: "blog", processed_content: "<h1>Valid</h1>"},
+        %{slug: nil, content_type: "blog", processed_content: "<h1>Invalid</h1>"}
       ]
 
       capture_log(fn ->
@@ -265,8 +265,8 @@ defmodule CodeMySpec.ContentTest do
       _existing = content_fixture(nil, nil, %{slug: "existing"})
 
       content_list = [
-        %{slug: "valid", content_type: "blog", content: "<h1>Valid</h1>"},
-        %{slug: nil, content_type: "blog", content: "<h1>Invalid</h1>"}
+        %{slug: "valid", content_type: "blog", processed_content: "<h1>Valid</h1>"},
+        %{slug: nil, content_type: "blog", processed_content: "<h1>Invalid</h1>"}
       ]
 
       capture_log(fn ->
@@ -275,7 +275,7 @@ defmodule CodeMySpec.ContentTest do
 
       # Existing content should still be there (rollback)
       scope = full_scope_fixture()
-      all_content = Content.list_published_content(scope, "blog")
+      all_content = Content.list_published_content(scope, :blog)
       assert length(all_content) == 1
       assert List.first(all_content).slug == "existing"
     end
@@ -291,7 +291,7 @@ defmodule CodeMySpec.ContentTest do
       assert count == 2
 
       scope = full_scope_fixture()
-      assert Content.list_published_content(scope, "blog") == []
+      assert Content.list_published_content(scope, :blog) == []
     end
   end
 

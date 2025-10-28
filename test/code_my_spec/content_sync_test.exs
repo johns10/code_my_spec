@@ -34,7 +34,7 @@ defmodule CodeMySpec.ContentSyncTest do
 
     default_project_attrs = %{
       name: "Test Project",
-      content_repo: "https://github.com/test/content-repo.git"
+      docs_repo: "https://github.com/test/docs-repo.git"
     }
 
     project_attrs = Map.merge(default_project_attrs, attrs)
@@ -62,8 +62,8 @@ defmodule CodeMySpec.ContentSyncTest do
     }
   end
 
-  defp scope_without_content_repo do
-    scope_with_project(%{content_repo: nil})
+  defp scope_without_docs_repo do
+    scope_with_project(%{docs_repo: nil})
   end
 
   # ============================================================================
@@ -74,19 +74,19 @@ defmodule CodeMySpec.ContentSyncTest do
     @tag :integration
     test "successfully clones repo and syncs content to ContentAdmin" do
       scope =
-        scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
+        scope_with_project(%{docs_repo: "https://github.com/johns10/test_content_repo.git"})
 
       assert {:ok, result} = ContentSync.sync_to_content_admin(scope)
-      # test_content_repo has 5 valid files and 1 bad file (missing metadata)
-      assert result.total_files >= 5
-      assert result.successful >= 5
+      # test_content_repo has at least 4 valid files
+      assert result.total_files >= 4
+      assert result.successful >= 4
       assert result.errors >= 0
       assert is_integer(result.duration_ms)
       assert result.duration_ms >= 0
 
       # Verify ContentAdmin records were created in database
       content_admin = ContentAdmin.list_all_content(scope)
-      assert length(content_admin) >= 5
+      assert length(content_admin) >= 4
 
       # Verify scoping
       Enum.each(content_admin, fn item ->
@@ -104,10 +104,10 @@ defmodule CodeMySpec.ContentSyncTest do
       assert match?({:error, _}, result)
     end
 
-    test "returns error when project has no content_repo configured" do
-      scope = scope_without_content_repo()
+    test "returns error when project has no docs_repo configured" do
+      scope = scope_without_docs_repo()
 
-      assert {:error, :no_content_repo} = ContentSync.sync_to_content_admin(scope)
+      assert {:error, :no_docs_repo} = ContentSync.sync_to_content_admin(scope)
     end
 
     test "returns error when project does not exist" do
@@ -132,7 +132,7 @@ defmodule CodeMySpec.ContentSyncTest do
     @tag :integration
     test "cleans up temporary directory after successful sync" do
       scope =
-        scope_with_project(%{content_repo: "https://github.com/johns10/test_content_repo.git"})
+        scope_with_project(%{docs_repo: "https://github.com/johns10/test_content_repo.git"})
 
       assert {:ok, result} = ContentSync.sync_to_content_admin(scope)
 

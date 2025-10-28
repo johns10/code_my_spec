@@ -26,7 +26,7 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
 
     default_attrs = %{
       name: "Test Project",
-      content_repo: "https://github.com/johns10/test_phoenix_project.git"
+      docs_repo: "https://github.com/johns10/test_phoenix_project.git"
     }
 
     project = project_fixture(scope, Map.merge(default_attrs, project_attrs))
@@ -79,8 +79,8 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
       File.rm_rf!(temp_path)
     end
 
-    test "trims whitespace from content_repo URL" do
-      scope = scope_with_project(%{content_repo: "  https://github.com/johns10/test_phoenix_project.git  "})
+    test "trims whitespace from docs_repo URL" do
+      scope = scope_with_project(%{docs_repo: "  https://github.com/johns10/test_phoenix_project.git  "})
 
       assert {:ok, temp_path} = GitSync.clone_to_temp(scope)
       assert is_binary(temp_path)
@@ -119,22 +119,22 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
   end
 
   describe "clone_to_temp/1 - project configuration errors" do
-    test "returns error when project has no content_repo configured" do
-      scope = scope_with_project(%{content_repo: nil})
+    test "returns error when project has no docs_repo configured" do
+      scope = scope_with_project(%{docs_repo: nil})
 
-      assert {:error, :no_content_repo} = GitSync.clone_to_temp(scope)
+      assert {:error, :no_docs_repo} = GitSync.clone_to_temp(scope)
     end
 
-    test "returns error when project content_repo is empty string" do
-      scope = scope_with_project(%{content_repo: ""})
+    test "returns error when project docs_repo is empty string" do
+      scope = scope_with_project(%{docs_repo: ""})
 
-      assert {:error, :no_content_repo} = GitSync.clone_to_temp(scope)
+      assert {:error, :no_docs_repo} = GitSync.clone_to_temp(scope)
     end
 
-    test "returns error when project content_repo is whitespace only" do
-      scope = scope_with_project(%{content_repo: "   "})
+    test "returns error when project docs_repo is whitespace only" do
+      scope = scope_with_project(%{docs_repo: "   "})
 
-      assert {:error, :no_content_repo} = GitSync.clone_to_temp(scope)
+      assert {:error, :no_docs_repo} = GitSync.clone_to_temp(scope)
     end
   end
 
@@ -234,7 +234,7 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
       project =
         project_fixture(scope, %{
           name: "Test Project",
-          content_repo: "https://github.com/johns10/test_phoenix_project.git"
+          docs_repo: "https://github.com/johns10/test_phoenix_project.git"
         })
 
       scope = %{scope | active_project: project, active_project_id: project.id}

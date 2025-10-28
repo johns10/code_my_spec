@@ -73,7 +73,7 @@ defmodule Mix.Tasks.Sync.Data do
 
     Logger.error("Full sync from #{from} to #{to} is not yet implemented.")
     Logger.error("Use pg_dump/restore for full database syncs (see docs/devops.md)")
-    System.halt(1)
+    raise("full sync failed because from to is not yet implemented")
   end
 
   defp show_help do

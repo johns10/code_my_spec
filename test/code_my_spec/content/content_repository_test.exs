@@ -27,7 +27,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           content_type: "blog"
         })
 
-      content_list = ContentRepository.list_published_content(scope, "blog")
+      content_list = ContentRepository.list_published_content(scope, :blog)
 
       assert length(content_list) == 1
       assert List.first(content_list).id == published.id
@@ -46,8 +46,8 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           content_type: "page"
         })
 
-      blog_list = ContentRepository.list_published_content(scope, "blog")
-      page_list = ContentRepository.list_published_content(scope, "page")
+      blog_list = ContentRepository.list_published_content(scope, :blog)
+      page_list = ContentRepository.list_published_content(scope, :page)
 
       assert length(blog_list) == 1
       assert length(page_list) == 1
@@ -67,7 +67,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           expires_at: nil
         })
 
-      content_list = ContentRepository.list_published_content(scope, "blog")
+      content_list = ContentRepository.list_published_content(scope, :blog)
 
       assert length(content_list) == 1
       assert List.first(content_list).id == content.id
@@ -86,7 +86,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           expires_at: tomorrow
         })
 
-      content_list = ContentRepository.list_published_content(scope, "blog")
+      content_list = ContentRepository.list_published_content(scope, :blog)
 
       assert length(content_list) == 1
       assert List.first(content_list).id == content.id
@@ -107,7 +107,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: true
         })
 
-      content_list = ContentRepository.list_published_content(scope, "blog")
+      content_list = ContentRepository.list_published_content(scope, :blog)
 
       assert length(content_list) == 2
       content_ids = Enum.map(content_list, & &1.id)
@@ -130,7 +130,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
         })
 
       # Using scope1, but should get content from both accounts/projects
-      content_list = ContentRepository.list_published_content(scope1, "blog")
+      content_list = ContentRepository.list_published_content(scope1, :blog)
 
       assert length(content_list) == 2
       content_ids = Enum.map(content_list, & &1.id)
@@ -155,7 +155,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: true
         })
 
-      content_list = ContentRepository.list_published_content(nil, "blog")
+      content_list = ContentRepository.list_published_content(nil, :blog)
 
       assert length(content_list) == 1
       assert List.first(content_list).id == public.id
@@ -177,7 +177,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: false
         })
 
-      blog_list = ContentRepository.list_published_content(nil, "blog")
+      blog_list = ContentRepository.list_published_content(nil, :blog)
 
       assert length(blog_list) == 1
       assert List.first(blog_list).id == blog.id
@@ -204,7 +204,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: false
         })
 
-      content_list = ContentRepository.list_published_content(nil, "blog")
+      content_list = ContentRepository.list_published_content(nil, :blog)
 
       assert length(content_list) == 1
       assert List.first(content_list).id == published.id
@@ -223,7 +223,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           publish_at: yesterday,
         })
 
-      content = ContentRepository.get_content_by_slug(scope, "test-post", "blog")
+      content = ContentRepository.get_content_by_slug(scope, "test-post", :blog)
 
       assert content.id == created.id
       assert content.slug == "test-post"
@@ -233,7 +233,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
     test "returns nil when slug does not exist" do
       scope = full_scope_fixture()
 
-      content = ContentRepository.get_content_by_slug(scope, "nonexistent", "blog")
+      content = ContentRepository.get_content_by_slug(scope, "nonexistent", :blog)
 
       assert content == nil
     end
@@ -249,7 +249,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           publish_at: yesterday,
         })
 
-      content = ContentRepository.get_content_by_slug(scope, "test-slug", "page")
+      content = ContentRepository.get_content_by_slug(scope, "test-slug", :page)
 
       assert content == nil
     end
@@ -265,7 +265,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           publish_at: tomorrow,
         })
 
-      content = ContentRepository.get_content_by_slug(scope, "scheduled-post", "blog")
+      content = ContentRepository.get_content_by_slug(scope, "scheduled-post", :blog)
 
       assert content == nil
     end
@@ -283,7 +283,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           expires_at: yesterday,
         })
 
-      content = ContentRepository.get_content_by_slug(scope, "expired-post", "blog")
+      content = ContentRepository.get_content_by_slug(scope, "expired-post", :blog)
 
       assert content == nil
     end
@@ -307,8 +307,8 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: true
         })
 
-      public_result = ContentRepository.get_content_by_slug(scope, "public-post", "blog")
-      protected_result = ContentRepository.get_content_by_slug(scope, "protected-post", "blog")
+      public_result = ContentRepository.get_content_by_slug(scope, "public-post", :blog)
+      protected_result = ContentRepository.get_content_by_slug(scope, "protected-post", :blog)
 
       assert public_result.id == public.id
       assert protected_result.id == protected.id
@@ -331,8 +331,8 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           publish_at: yesterday,
         })
 
-      blog_result = ContentRepository.get_content_by_slug(scope, "shared-slug", "blog")
-      page_result = ContentRepository.get_content_by_slug(scope, "shared-slug", "page")
+      blog_result = ContentRepository.get_content_by_slug(scope, "shared-slug", :blog)
+      page_result = ContentRepository.get_content_by_slug(scope, "shared-slug", :page)
 
       assert blog_result.id == blog.id
       assert page_result.id == page.id
@@ -360,15 +360,15 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: true
         })
 
-      public_result = ContentRepository.get_content_by_slug(nil, "public-post", "blog")
-      protected_result = ContentRepository.get_content_by_slug(nil, "protected-post", "blog")
+      public_result = ContentRepository.get_content_by_slug(nil, "public-post", :blog)
+      protected_result = ContentRepository.get_content_by_slug(nil, "protected-post", :blog)
 
       assert public_result.id == public.id
       assert protected_result == nil
     end
 
     test "returns nil when slug does not exist" do
-      content = ContentRepository.get_content_by_slug(nil, "nonexistent", "blog")
+      content = ContentRepository.get_content_by_slug(nil, "nonexistent", :blog)
 
       assert content == nil
     end
@@ -385,7 +385,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: false
         })
 
-      content = ContentRepository.get_content_by_slug(nil, "scheduled-post", "blog")
+      content = ContentRepository.get_content_by_slug(nil, "scheduled-post", :blog)
 
       assert content == nil
     end
@@ -403,7 +403,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           publish_at: yesterday,
         })
 
-      content = ContentRepository.get_content_by_slug!(scope, "test-post", "blog")
+      content = ContentRepository.get_content_by_slug!(scope, "test-post", :blog)
 
       assert content.id == created.id
       assert content.slug == "test-post"
@@ -413,7 +413,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       scope = full_scope_fixture()
 
       assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content_by_slug!(scope, "nonexistent", "blog")
+        ContentRepository.get_content_by_slug!(scope, "nonexistent", :blog)
       end
     end
 
@@ -429,14 +429,14 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
         })
 
       assert_raise Ecto.NoResultsError, fn ->
-        ContentRepository.get_content_by_slug!(scope, "test-slug", "page")
+        ContentRepository.get_content_by_slug!(scope, "test-slug", :page)
       end
     end
   end
 
   describe "get_content_by_slug!/3 with nil scope" do
     test "returns nil when scope is nil and content not found (non-raising)" do
-      result = ContentRepository.get_content_by_slug!(nil, "nonexistent", "blog")
+      result = ContentRepository.get_content_by_slug!(nil, "nonexistent", :blog)
 
       assert result == nil
     end
@@ -453,7 +453,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: false
         })
 
-      result = ContentRepository.get_content_by_slug!(nil, "public-post", "blog")
+      result = ContentRepository.get_content_by_slug!(nil, "public-post", :blog)
 
       assert result.id == public.id
     end
@@ -470,7 +470,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
           protected: true
         })
 
-      result = ContentRepository.get_content_by_slug!(nil, "protected-post", "blog")
+      result = ContentRepository.get_content_by_slug!(nil, "protected-post", :blog)
 
       assert result == nil
     end

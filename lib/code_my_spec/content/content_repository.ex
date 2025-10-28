@@ -16,6 +16,7 @@ defmodule CodeMySpec.Content.ContentRepository do
   alias CodeMySpec.Users.Scope
 
   @type scope :: Scope.t()
+  @type content_type :: :blog | :page | :landing | :documentation
 
   @doc """
   Returns published content filtered by content_type.
@@ -25,7 +26,7 @@ defmodule CodeMySpec.Content.ContentRepository do
 
   With nil: Returns ONLY public published content (protected = false).
   """
-  @spec list_published_content(scope() | nil, String.t()) :: [Content.t()]
+  @spec list_published_content(scope() | nil, content_type()) :: [Content.t()]
   def list_published_content(%Scope{} = _scope, content_type) do
     now = DateTime.utc_now()
 
@@ -54,7 +55,7 @@ defmodule CodeMySpec.Content.ContentRepository do
 
   With nil: Returns ONLY public content (protected = false) if published.
   """
-  @spec get_content_by_slug(scope() | nil, String.t(), String.t()) :: Content.t() | nil
+  @spec get_content_by_slug(scope() | nil, String.t(), content_type()) :: Content.t() | nil
   def get_content_by_slug(%Scope{} = _scope, slug, content_type) do
     now = DateTime.utc_now()
 
@@ -85,7 +86,7 @@ defmodule CodeMySpec.Content.ContentRepository do
 
   With nil: Returns nil if not found (non-raising).
   """
-  @spec get_content_by_slug!(scope() | nil, String.t(), String.t()) :: Content.t() | nil
+  @spec get_content_by_slug!(scope() | nil, String.t(), content_type()) :: Content.t() | nil
   def get_content_by_slug!(%Scope{} = _scope, slug, content_type) do
     now = DateTime.utc_now()
 

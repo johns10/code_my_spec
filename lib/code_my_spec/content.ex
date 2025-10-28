@@ -30,6 +30,8 @@ defmodule CodeMySpec.Content do
   alias CodeMySpec.Content.{Content, Tag, ContentTag, ContentRepository}
   alias CodeMySpec.Users.Scope
 
+  @type content_type :: :blog | :page | :landing | :documentation
+
   # Content Retrieval
 
   @doc """
@@ -46,12 +48,12 @@ defmodule CodeMySpec.Content do
   ## Examples
 
       # Anonymous user - only public content
-      Content.list_published_content(nil, "blog")
+      Content.list_published_content(nil, :blog)
 
       # Authenticated user - public AND protected content
-      Content.list_published_content(scope, "blog")
+      Content.list_published_content(scope, :blog)
   """
-  @spec list_published_content(Scope.t() | nil, String.t()) :: [Content.t()]
+  @spec list_published_content(Scope.t() | nil, content_type()) :: [Content.t()]
   def list_published_content(scope_or_nil, content_type) do
     ContentRepository.list_published_content(scope_or_nil, content_type)
   end
@@ -69,12 +71,12 @@ defmodule CodeMySpec.Content do
   ## Examples
 
       # Try to get public content (anonymous)
-      Content.get_content_by_slug(nil, "my-post", "blog")
+      Content.get_content_by_slug(nil, "my-post", :blog)
 
       # Get any published content (authenticated)
-      Content.get_content_by_slug(scope, "my-post", "blog")
+      Content.get_content_by_slug(scope, "my-post", :blog)
   """
-  @spec get_content_by_slug(Scope.t() | nil, String.t(), String.t()) :: Content.t() | nil
+  @spec get_content_by_slug(Scope.t() | nil, String.t(), content_type()) :: Content.t() | nil
   def get_content_by_slug(scope_or_nil, slug, content_type) do
     ContentRepository.get_content_by_slug(scope_or_nil, slug, content_type)
   end
@@ -93,12 +95,12 @@ defmodule CodeMySpec.Content do
   ## Examples
 
       # Authenticated - raises if not found
-      Content.get_content_by_slug!(scope, "my-post", "blog")
+      Content.get_content_by_slug!(scope, "my-post", :blog)
 
       # Anonymous - returns nil if not found (non-raising)
-      Content.get_content_by_slug!(nil, "my-post", "blog")
+      Content.get_content_by_slug!(nil, "my-post", :blog)
   """
-  @spec get_content_by_slug!(Scope.t() | nil, String.t(), String.t()) :: Content.t() | nil
+  @spec get_content_by_slug!(Scope.t() | nil, String.t(), content_type()) :: Content.t() | nil
   def get_content_by_slug!(scope_or_nil, slug, content_type) do
     ContentRepository.get_content_by_slug!(scope_or_nil, slug, content_type)
   end
@@ -228,7 +230,7 @@ defmodule CodeMySpec.Content do
 
   ## Examples
 
-      content = Content.get_content_by_slug(scope, "my-post", "blog")
+      content = Content.get_content_by_slug(scope, "my-post", :blog)
       Content.get_content_tags(content)
       # => [%Tag{name: "elixir", slug: "elixir"}, ...]
   """
@@ -288,7 +290,7 @@ defmodule CodeMySpec.Content do
 
   ## Examples
 
-      content = Content.get_content_by_slug(scope, "my-post", "blog")
+      content = Content.get_content_by_slug(scope, "my-post", :blog)
       Content.sync_content_tags(content, ["elixir", "phoenix", "liveview"])
       # => {:ok, %Content{tags: [...]}}
   """

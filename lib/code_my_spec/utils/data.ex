@@ -50,6 +50,7 @@ defmodule CodeMySpec.Utils.Data do
         insert_members(data.members)
         insert_projects(data.projects)
         insert_components(data.components)
+
         # Insert versions before stories (stories reference versions via first_version_id/current_version_id)
         insert_versions(data[:versions] || [])
         insert_stories(data[:stories] || [])
@@ -136,7 +137,6 @@ defmodule CodeMySpec.Utils.Data do
         :module_name,
         :code_repo,
         :docs_repo,
-        :content_repo,
         :client_api_url,
         :account_id,
         :status,
@@ -285,8 +285,10 @@ defmodule CodeMySpec.Utils.Data do
     # Delete in reverse dependency order for ALL accounts owned by these users
     from(s in Session, where: s.account_id in ^all_account_ids) |> Repo.delete_all()
     from(st in Story, where: st.account_id in ^all_account_ids) |> Repo.delete_all()
+
     from(v in Version, where: v.item_type == "Story" and v.item_id in ^story_ids)
     |> Repo.delete_all()
+
     from(c in Component, where: c.account_id in ^all_account_ids) |> Repo.delete_all()
     from(p in Project, where: p.account_id in ^all_account_ids) |> Repo.delete_all()
     from(m in Member, where: m.user_id in ^user_ids) |> Repo.delete_all()
@@ -332,17 +334,18 @@ defmodule CodeMySpec.Utils.Data do
     end)
   end
 
+  @dialyzer {:nowarn_function, insert_components: 1}
   defp insert_components(components_data) do
     # Sort components so parents are inserted before children
     sorted_components = sort_components_by_dependency(components_data)
 
     Enum.each(sorted_components, fn component_data ->
+      # Note: Using plain maps for active_account/active_project violates Scope typespec,
+      # but Component.changeset.put_scope_associations only needs %{id: _} pattern match
       scope = %CodeMySpec.Users.Scope{
         user: nil,
         active_account_id: component_data.account_id,
-        active_account: %{id: component_data.account_id},
-        active_project_id: component_data.project_id,
-        active_project: %{id: component_data.project_id}
+        active_project_id: component_data.project_id
       }
 
       %Component{id: component_data.id}

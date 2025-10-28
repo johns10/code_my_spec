@@ -9,7 +9,6 @@ defmodule CodeMySpec.Projects.Project do
           module_name: String.t() | nil,
           code_repo: String.t() | nil,
           docs_repo: String.t() | nil,
-          content_repo: String.t() | nil,
           client_api_url: String.t() | nil,
           deploy_key: String.t() | nil,
           setup_error: String.t() | nil,
@@ -35,7 +34,6 @@ defmodule CodeMySpec.Projects.Project do
     field :module_name, :string
     field :code_repo, :string
     field :docs_repo, :string
-    field :content_repo, :string
     field :client_api_url, :string
     field :deploy_key, :string
     field :setup_error, :string
@@ -68,7 +66,6 @@ defmodule CodeMySpec.Projects.Project do
       :module_name,
       :code_repo,
       :docs_repo,
-      :content_repo,
       :client_api_url,
       :deploy_key,
       :status,

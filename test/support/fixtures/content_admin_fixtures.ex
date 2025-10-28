@@ -11,7 +11,7 @@ defmodule CodeMySpec.ContentAdminFixtures do
     unique_id = System.unique_integer([:positive])
 
     Enum.into(attrs, %{
-      content: "# Test Content\n\nThis is test content.",
+      raw_content: "# Test Content\n\nThis is test content.",
       processed_content: "<h1>Test Content</h1><p>This is test content.</p>",
       parse_status: :success,
       parse_errors: nil,

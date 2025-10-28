@@ -208,8 +208,8 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
       {:error, :project_not_found} ->
         {:noreply, put_flash(socket, :error, "Project not found")}
 
-      {:error, :no_content_repo} ->
-        {:noreply, put_flash(socket, :error, "Project has no content repository configured")}
+      {:error, :no_docs_repo} ->
+        {:noreply, put_flash(socket, :error, "Project has no docs repository configured")}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Sync failed: #{inspect(reason)}")}
@@ -247,13 +247,13 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
       {:error, :project_not_found} ->
         {:noreply, assign_push_error(socket, "Project Not Found", "Project not found", nil)}
 
-      {:error, :no_content_repo} ->
+      {:error, :no_docs_repo} ->
         {:noreply,
          assign_push_error(
            socket,
-           "No Content Repository",
-           "Project has no content repository configured",
-           "Update your project settings to add a content_repo URL"
+           "No Docs Repository",
+           "Project has no docs repository configured",
+           "Update your project settings to add a docs_repo URL"
          )}
 
       {:error, :no_client_config} ->

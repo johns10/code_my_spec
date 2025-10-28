@@ -46,13 +46,13 @@ defmodule CodeMySpec.ContentSync do
     - `{:ok, sync_result}` - Successful sync with statistics
     - `{:error, :no_active_project}` - No active project in scope
     - `{:error, :project_not_found}` - Project doesn't exist or scope doesn't have access
-    - `{:error, :no_content_repo}` - Project has no content_repo configured
+    - `{:error, :no_docs_repo}` - Project has no docs_repo configured
     - `{:error, reason}` - Git clone failed or sync operation failed
 
   ## Process
 
   1. Validates scope has an active project
-  2. Loads project to retrieve content_repo URL
+  2. Loads project to retrieve docs_repo URL
   3. Creates temporary directory using Briefly
   4. Clones repository to temporary directory
   5. Syncs content to ContentAdmin (validation only)
@@ -70,7 +70,7 @@ defmodule CodeMySpec.ContentSync do
     start_time = System.monotonic_time(:millisecond)
 
     with {:ok, project} <- load_project(scope),
-         {:ok, repo_url} <- extract_content_repo(project),
+         {:ok, repo_url} <- extract_docs_repo(project),
          {:ok, temp_path} <- create_temp_directory(),
          {:ok, cloned_path} <- clone_repository(scope, repo_url, temp_path),
          content_dir = Path.join(cloned_path, "content"),
@@ -133,7 +133,7 @@ defmodule CodeMySpec.ContentSync do
     - `{:error, :no_active_project}` - No active project in scope
     - `{:error, :has_validation_errors}` - ContentAdmin has parse errors, must fix first
     - `{:error, :project_not_found}` - Project doesn't exist or scope doesn't have access
-    - `{:error, :no_content_repo}` - Project has no content_repo configured
+    - `{:error, :no_docs_repo}` - Project has no docs_repo configured
     - `{:error, :no_client_config}` - Missing client_api_url or deploy_key
     - `{:error, reason}` - Git clone failed or HTTP request failed
 
@@ -153,7 +153,7 @@ defmodule CodeMySpec.ContentSync do
       iex> push_to_client(scope, "https://client.example.com", "deploy_key_123")
       {:ok, %{synced_content_count: 10, client_response: %{...}}}
   """
-  @spec push_to_client(Scope.t(), String.t(), String.t()) ::
+  @spec push_to_client(Scope.t(), String.t() | nil, String.t() | nil) ::
           {:ok, push_result()} | {:error, term()}
   def push_to_client(%Scope{active_project_id: nil}), do: {:error, :no_active_project}
 
@@ -169,7 +169,7 @@ defmodule CodeMySpec.ContentSync do
          {:ok, project} <- load_project(scope),
          {:ok, client_api_url} <- get_client_api_url(project, client_api_url),
          {:ok, deploy_key} <- get_deploy_key(project, deploy_key),
-         {:ok, repo_url} <- extract_content_repo(project),
+         {:ok, repo_url} <- extract_docs_repo(project),
          {:ok, temp_path} <- create_temp_directory(),
          {:ok, cloned_path} <- clone_repository(scope, repo_url, temp_path) do
       content_dir = Path.join(cloned_path, "content")
@@ -329,11 +329,11 @@ defmodule CodeMySpec.ContentSync do
     end
   end
 
-  @spec extract_content_repo(Projects.Project.t()) ::
-          {:ok, String.t()} | {:error, :no_content_repo}
-  defp extract_content_repo(%{content_repo: nil}), do: {:error, :no_content_repo}
-  defp extract_content_repo(%{content_repo: ""}), do: {:error, :no_content_repo}
-  defp extract_content_repo(%{content_repo: repo_url}), do: {:ok, repo_url}
+  @spec extract_docs_repo(Projects.Project.t()) ::
+          {:ok, String.t()} | {:error, :no_docs_repo}
+  defp extract_docs_repo(%{docs_repo: nil}), do: {:error, :no_docs_repo}
+  defp extract_docs_repo(%{docs_repo: ""}), do: {:error, :no_docs_repo}
+  defp extract_docs_repo(%{docs_repo: repo_url}), do: {:ok, repo_url}
 
   @spec get_client_api_url(Projects.Project.t(), String.t() | nil) ::
           {:ok, String.t()} | {:error, :no_client_config}

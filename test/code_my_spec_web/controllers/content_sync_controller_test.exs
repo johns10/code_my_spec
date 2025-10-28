@@ -14,7 +14,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
         "slug" => "test-post",
         "title" => "Test Post",
         "content_type" => "blog",
-        "content" => "<h1>Test Content</h1>",
+        "processed_content" => "<h1>Test Content</h1>",
         "protected" => false,
         "publish_at" => nil,
         "expires_at" => nil,
@@ -60,7 +60,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
              }
 
       # Verify content was actually synced
-      content = Content.get_content_by_slug(nil, "test-post", "blog")
+      content = Content.get_content_by_slug(nil, "test-post", :blog)
       assert content != nil
       assert content.title == "Test Post"
     end
@@ -78,7 +78,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
              }
 
       # Verify content was NOT synced
-      content = Content.get_content_by_slug(nil, "test-post", "blog")
+      content = Content.get_content_by_slug(nil, "test-post", :blog)
       assert content == nil
     end
 
@@ -159,7 +159,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
             "slug" => "post-1",
             "title" => "Post 1",
             "content_type" => "blog",
-            "content" => "<h1>Post 1</h1>",
+            "processed_content" => "<h1>Post 1</h1>",
             "protected" => false,
             "publish_at" => nil,
             "expires_at" => nil,
@@ -174,7 +174,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
             "slug" => "post-2",
             "title" => "Post 2",
             "content_type" => "blog",
-            "content" => "<h1>Post 2</h1>",
+            "processed_content" => "<h1>Post 2</h1>",
             "protected" => false,
             "publish_at" => nil,
             "expires_at" => nil,
@@ -202,8 +202,8 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
              }
 
       # Verify both items were synced
-      post1 = Content.get_content_by_slug(nil, "post-1", "blog")
-      post2 = Content.get_content_by_slug(nil, "post-2", "blog")
+      post1 = Content.get_content_by_slug(nil, "post-1", :blog)
+      post2 = Content.get_content_by_slug(nil, "post-2", :blog)
 
       assert post1 != nil
       assert post1.title == "Post 1"
@@ -228,7 +228,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
             "slug" => "new-post",
             "title" => "New Post",
             "content_type" => "blog",
-            "content" => "<h1>New Content</h1>",
+            "processed_content" => "<h1>New Content</h1>",
             "protected" => false,
             "publish_at" => nil,
             "expires_at" => nil,
@@ -252,8 +252,8 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
       assert json_response(conn2, 200)["synced_count"] == 1
 
       # Verify old content is gone and new content exists
-      old_content = Content.get_content_by_slug(nil, "test-post", "blog")
-      new_content = Content.get_content_by_slug(nil, "new-post", "blog")
+      old_content = Content.get_content_by_slug(nil, "test-post", :blog)
+      new_content = Content.get_content_by_slug(nil, "new-post", :blog)
 
       assert old_content == nil
       assert new_content != nil
@@ -265,7 +265,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
         "content" => [
           %{
             # Missing required fields like slug, title, content_type
-            "content" => "<h1>Test</h1>"
+            "processed_content" => "<h1>Test</h1>"
           }
         ],
         "synced_at" => "2024-01-01T00:00:00Z"
@@ -311,7 +311,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
             "slug" => "metadata-test",
             "title" => "Metadata Test Post",
             "content_type" => "blog",
-            "content" => "<h1>Test Content</h1>",
+            "processed_content" => "<h1>Test Content</h1>",
             "protected" => false,
             "publish_at" => nil,
             "expires_at" => nil,
@@ -340,7 +340,7 @@ defmodule CodeMySpecWeb.ContentSyncControllerTest do
       assert json_response(conn, 200)["status"] == "success"
 
       # Verify metadata was properly saved
-      content = Content.get_content_by_slug(nil, "metadata-test", "blog")
+      content = Content.get_content_by_slug(nil, "metadata-test", :blog)
       assert content != nil
       assert content.title == "Metadata Test Post"
 

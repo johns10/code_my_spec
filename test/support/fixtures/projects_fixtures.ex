@@ -12,7 +12,7 @@ defmodule CodeMySpec.ProjectsFixtures do
       Enum.into(attrs, %{
         code_repo: "some code_repo",
         module_name: "MyApp",
-        docs_repo: "some docs_repo",
+        docs_repo: "https://github.com/test/docs-repo.git",
         name: "some name",
         setup_error: "some setup_error",
         status: :created

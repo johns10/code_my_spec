@@ -2,7 +2,7 @@ defmodule CodeMySpec.ContentSync.GitSync do
   @moduledoc """
   Handles Git repository operations for content sync.
 
-  Clones project's content_repo to temporary directory using Briefly for
+  Clones project's docs_repo to temporary directory using Briefly for
   automatic cleanup. Returns local directory path for sync operations.
 
   Each sync creates a fresh clone - no persistent caching or pull operations.
@@ -15,7 +15,7 @@ defmodule CodeMySpec.ContentSync.GitSync do
   @type path :: String.t()
   @type error_reason ::
           :project_not_found
-          | :no_content_repo
+          | :no_docs_repo
           | :not_connected
           | :unsupported_provider
           | :invalid_url
@@ -30,7 +30,7 @@ defmodule CodeMySpec.ContentSync.GitSync do
   ## Returns
   - `{:ok, path}` - Absolute path to cloned repository
   - `{:error, :project_not_found}` - Project lookup failed
-  - `{:error, :no_content_repo}` - Project lacks content_repo URL
+  - `{:error, :no_docs_repo}` - Project lacks docs_repo URL
   - `{:error, :not_connected}` - No integration for provider
   - `{:error, :unsupported_provider}` - Provider not supported
   - `{:error, :invalid_url}` - Invalid repository URL format
@@ -49,9 +49,9 @@ defmodule CodeMySpec.ContentSync.GitSync do
 
   def clone_to_temp(%Scope{} = scope) do
     with {:ok, project} <- Projects.get_project(scope, scope.active_project_id),
-         {:ok, content_repo} <- validate_content_repo(project),
+         {:ok, docs_repo} <- validate_docs_repo(project),
          {:ok, temp_dir} <- create_temp_clone_dir(),
-         {:ok, _path} <- Git.clone(scope, content_repo, temp_dir) do
+         {:ok, _path} <- Git.clone(scope, docs_repo, temp_dir) do
       {:ok, temp_dir}
     end
   end
@@ -70,15 +70,15 @@ defmodule CodeMySpec.ContentSync.GitSync do
     {:ok, path}
   end
 
-  # Validates that project has a non-nil, non-empty content_repo
-  defp validate_content_repo(%{content_repo: nil}), do: {:error, :no_content_repo}
-  defp validate_content_repo(%{content_repo: ""}), do: {:error, :no_content_repo}
+  # Validates that project has a non-nil, non-empty docs_repo
+  defp validate_docs_repo(%{docs_repo: nil}), do: {:error, :no_docs_repo}
+  defp validate_docs_repo(%{docs_repo: ""}), do: {:error, :no_docs_repo}
 
-  defp validate_content_repo(%{content_repo: content_repo}) when is_binary(content_repo) do
-    trimmed = String.trim(content_repo)
+  defp validate_docs_repo(%{docs_repo: docs_repo}) when is_binary(docs_repo) do
+    trimmed = String.trim(docs_repo)
 
     case trimmed do
-      "" -> {:error, :no_content_repo}
+      "" -> {:error, :no_docs_repo}
       url -> {:ok, url}
     end
   end

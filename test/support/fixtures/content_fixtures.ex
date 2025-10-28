@@ -16,7 +16,7 @@ defmodule CodeMySpec.ContentFixtures do
     Enum.into(attrs, %{
       slug: "test-content-#{unique_id}",
       content_type: "blog",
-      content: "<h1>Test Content</h1><p>This is test content.</p>",
+      processed_content: "<h1>Test Content</h1><p>This is test content.</p>",
       protected: false,
       metadata: %{}
     })
@@ -32,7 +32,7 @@ defmodule CodeMySpec.ContentFixtures do
     attrs =
       Enum.into(attrs, %{
         content_type: "blog",
-        content: "<h1>Blog Post</h1><p>This is a blog post.</p>",
+        processed_content: "<h1>Blog Post</h1><p>This is a blog post.</p>",
         meta_title: "Test Blog Post",
         meta_description: "A test blog post for testing purposes"
       })
@@ -44,7 +44,7 @@ defmodule CodeMySpec.ContentFixtures do
     attrs =
       Enum.into(attrs, %{
         content_type: "page",
-        content: "<h1>Page</h1><p>This is a page.</p>",
+        processed_content: "<h1>Page</h1><p>This is a page.</p>",
         meta_title: "Test Page",
         meta_description: "A test page for testing purposes"
       })
@@ -56,7 +56,7 @@ defmodule CodeMySpec.ContentFixtures do
     attrs =
       Enum.into(attrs, %{
         content_type: "landing",
-        content: "<h1>Landing Page</h1><p>This is a landing page.</p>",
+        processed_content: "<h1>Landing Page</h1><p>This is a landing page.</p>",
         meta_title: "Test Landing Page",
         meta_description: "A test landing page",
         og_title: "Test Landing Page",
@@ -71,7 +71,7 @@ defmodule CodeMySpec.ContentFixtures do
     attrs =
       Enum.into(attrs, %{
         publish_at: DateTime.utc_now() |> DateTime.add(-1, :day),
-        content: "<h1>Test Content</h1><p>This is test content.</p>"
+        processed_content: "<h1>Test Content</h1><p>This is test content.</p>"
       })
 
     content_fixture(nil, nil, attrs)
@@ -81,7 +81,7 @@ defmodule CodeMySpec.ContentFixtures do
     attrs =
       Enum.into(attrs, %{
         publish_at: DateTime.utc_now() |> DateTime.add(1, :day),
-        content: "<h1>Scheduled Content</h1><p>This is scheduled content.</p>"
+        processed_content: "<h1>Scheduled Content</h1><p>This is scheduled content.</p>"
       })
 
     content_fixture(nil, nil, attrs)
@@ -92,7 +92,7 @@ defmodule CodeMySpec.ContentFixtures do
       Enum.into(attrs, %{
         publish_at: DateTime.utc_now() |> DateTime.add(-7, :day),
         expires_at: DateTime.utc_now() |> DateTime.add(-1, :day),
-        content: "<h1>Expired Content</h1><p>This is expired content.</p>"
+        processed_content: "<h1>Expired Content</h1><p>This is expired content.</p>"
       })
 
     content_fixture(nil, nil, attrs)
@@ -102,7 +102,7 @@ defmodule CodeMySpec.ContentFixtures do
     attrs =
       Enum.into(attrs, %{
         protected: true,
-        content: "<h1>Protected Content</h1><p>This is protected content.</p>"
+        processed_content: "<h1>Protected Content</h1><p>This is protected content.</p>"
       })
 
     content_fixture(nil, nil, attrs)

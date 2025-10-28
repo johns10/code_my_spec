@@ -70,6 +70,9 @@ defmodule CodeMySpecWeb.ContentLive.Public do
 
   defp load_and_verify_content(scope, slug, content_type, _is_protected) do
     case Content.get_content_by_slug(scope, slug, content_type) do
+      nil ->
+        {:error, :not_found}
+
       content ->
         if is_published?(content) do
           {:ok, content}
@@ -77,9 +80,6 @@ defmodule CodeMySpecWeb.ContentLive.Public do
           {:error, :not_published}
         end
     end
-  rescue
-    Ecto.NoResultsError ->
-      {:error, :not_found}
   end
 
   defp is_published?(content) do

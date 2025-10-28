@@ -116,7 +116,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       assert attrs.slug == "test-blog-post"
       assert attrs.title == "Test Blog Post"
       assert attrs.content_type == :blog
-      assert attrs.content == simple_markdown_content()
+      assert attrs.raw_content == simple_markdown_content()
       assert is_binary(attrs.processed_content)
       assert String.contains?(attrs.processed_content, "<h1>")
       assert attrs.parse_status == :success
@@ -137,7 +137,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       [attrs] = attrs_list
       assert attrs.slug == "test-page"
       assert attrs.content_type == :page
-      assert attrs.content == simple_html_content()
+      assert attrs.raw_content == simple_html_content()
       assert attrs.parse_status == :success
 
       cleanup_directory(dir)
@@ -155,7 +155,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       [attrs] = attrs_list
       assert attrs.slug == "test-landing"
       assert attrs.content_type == :landing
-      assert attrs.content == simple_heex_content()
+      assert attrs.raw_content == simple_heex_content()
       assert attrs.parse_status == :success
       assert attrs.protected == true
 
@@ -454,7 +454,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       assert {:ok, [attrs]} = Sync.process_directory(dir)
       assert attrs.parse_status == :success
       assert is_nil(attrs.processed_content)
-      assert attrs.content == simple_heex_content()
+      assert attrs.raw_content == simple_heex_content()
 
       cleanup_directory(dir)
     end
@@ -601,7 +601,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       assert {:ok, [attrs]} = Sync.process_directory(dir)
       assert Map.has_key?(attrs, :slug)
       assert Map.has_key?(attrs, :content_type)
-      assert Map.has_key?(attrs, :content)
+      assert Map.has_key?(attrs, :raw_content)
       assert Map.has_key?(attrs, :processed_content)
       assert Map.has_key?(attrs, :parse_status)
 
@@ -653,7 +653,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
 
       assert attrs1.slug == attrs2.slug
       assert attrs1.title == attrs2.title
-      assert attrs1.content == attrs2.content
+      assert attrs1.raw_content == attrs2.raw_content
 
       cleanup_directory(dir)
     end
@@ -696,7 +696,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
 
       assert {:ok, [attrs]} = Sync.process_directory(dir)
       assert attrs.parse_status == :success
-      assert String.length(attrs.content) > 10_000
+      assert String.length(attrs.raw_content) > 10_000
 
       cleanup_directory(dir)
     end
