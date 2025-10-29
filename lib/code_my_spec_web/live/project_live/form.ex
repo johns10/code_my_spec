@@ -20,6 +20,11 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
         <.input field={@form[:code_repo]} type="text" label="Code repo" />
         <.input field={@form[:docs_repo]} type="text" label="Docs repo" />
         <.input field={@form[:client_api_url]} type="text" label="Client API URL" />
+        <.input
+          field={@form[:google_analytics_property_id]}
+          type="text"
+          label="Google Analytics Property ID"
+        />
         <div class="fieldset mb-2">
           <label>
             <span class="label mb-1">Deploy Key</span>

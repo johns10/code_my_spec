@@ -11,6 +11,7 @@ defmodule CodeMySpec.Projects.Project do
           docs_repo: String.t() | nil,
           client_api_url: String.t() | nil,
           deploy_key: String.t() | nil,
+          google_analytics_property_id: String.t() | nil,
           setup_error: String.t() | nil,
           account_id: integer() | nil,
           status:
@@ -36,6 +37,7 @@ defmodule CodeMySpec.Projects.Project do
     field :docs_repo, :string
     field :client_api_url, :string
     field :deploy_key, :string
+    field :google_analytics_property_id, :string
     field :setup_error, :string
     field :account_id, :id
 
@@ -68,6 +70,7 @@ defmodule CodeMySpec.Projects.Project do
       :docs_repo,
       :client_api_url,
       :deploy_key,
+      :google_analytics_property_id,
       :status,
       :setup_error
     ])

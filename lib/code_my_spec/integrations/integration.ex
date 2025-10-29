@@ -23,7 +23,7 @@ defmodule CodeMySpec.Integrations.Integration do
   @type t :: %__MODULE__{
           id: integer() | nil,
           user_id: integer(),
-          provider: :github | :gitlab | :bitbucket,
+          provider: :github | :gitlab | :bitbucket | :google,
           access_token: binary(),
           refresh_token: binary() | nil,
           expires_at: DateTime.t(),
@@ -35,7 +35,7 @@ defmodule CodeMySpec.Integrations.Integration do
         }
 
   schema "integrations" do
-    field :provider, Ecto.Enum, values: [:github, :gitlab, :bitbucket]
+    field :provider, Ecto.Enum, values: [:github, :gitlab, :bitbucket, :google]
     field :access_token, CodeMySpec.Encrypted.Binary
     field :refresh_token, CodeMySpec.Encrypted.Binary
     field :expires_at, :utc_datetime_usec
@@ -59,7 +59,6 @@ defmodule CodeMySpec.Integrations.Integration do
       :provider_metadata
     ])
     |> validate_required([:user_id, :provider, :access_token, :expires_at])
-    |> validate_inclusion(:provider, [:github, :gitlab, :bitbucket])
     |> validate_provider_metadata()
     |> assoc_constraint(:user)
     |> unique_constraint([:user_id, :provider],

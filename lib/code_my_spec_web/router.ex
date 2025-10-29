@@ -86,6 +86,9 @@ defmodule CodeMySpecWeb.Router do
 
     forward "/components", Hermes.Server.Transport.StreamableHTTP.Plug,
       server: CodeMySpec.MCPServers.ComponentsServer
+
+    forward "/analytics-admin", Hermes.Server.Transport.StreamableHTTP.Plug,
+      server: CodeMySpec.MCPServers.AnalyticsAdminServer
   end
 
   # API routes

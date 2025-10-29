@@ -31,10 +31,11 @@ defmodule CodeMySpec.Integrations do
   alias CodeMySpec.Users.Scope
 
   @providers %{
-    github: CodeMySpec.Integrations.Providers.GitHub
+    github: CodeMySpec.Integrations.Providers.GitHub,
+    google: CodeMySpec.Integrations.Providers.Google
   }
 
-  @type provider :: :github | :gitlab | :bitbucket
+  @type provider :: :github | :gitlab | :bitbucket | :google
   @type oauth_params :: %{String.t() => String.t()}
 
   @doc """
@@ -85,9 +86,11 @@ defmodule CodeMySpec.Integrations do
           {:ok, Integration.t()} | {:error, term()}
   def handle_callback(%Scope{} = scope, provider, callback_params, session_params) do
     with {:ok, provider_module} <- get_provider_module(provider),
-         {:ok, token_response} <- exchange_code_for_token(provider_module, callback_params, session_params),
+         {:ok, token_response} <-
+           exchange_code_for_token(provider_module, callback_params, session_params),
          {:ok, normalized_user} <- provider_module.normalize_user(token_response.user),
-         {:ok, integration} <- persist_integration(scope, provider, token_response, normalized_user) do
+         {:ok, integration} <-
+           persist_integration(scope, provider, token_response, normalized_user) do
       {:ok, integration}
     end
   end

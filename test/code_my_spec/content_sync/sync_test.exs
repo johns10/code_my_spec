@@ -332,6 +332,8 @@ defmodule CodeMySpec.ContentSync.SyncTest do
           {"good2.heex", simple_heex_content(), valid_landing_metadata()}
         ])
 
+      on_exit(fn -> cleanup_directory(dir) end)
+
       assert {:ok, attrs_list} = Sync.process_directory(dir)
       assert length(attrs_list) == 3
 
@@ -340,8 +342,6 @@ defmodule CodeMySpec.ContentSync.SyncTest do
 
       errors = Enum.filter(attrs_list, &(&1.parse_status == :error))
       assert length(errors) == 1
-
-      cleanup_directory(dir)
     end
   end
 

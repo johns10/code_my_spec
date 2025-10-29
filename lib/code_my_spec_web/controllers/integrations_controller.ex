@@ -153,5 +153,6 @@ defmodule CodeMySpecWeb.IntegrationsController do
   defp provider_name(:github), do: "GitHub"
   defp provider_name(:gitlab), do: "GitLab"
   defp provider_name(:bitbucket), do: "Bitbucket"
+  defp provider_name(:google), do: "Google"
   defp provider_name(provider), do: to_string(provider)
 end

@@ -34,6 +34,8 @@ end
 config :code_my_spec,
   github_client_id: env!("GITHUB_CLIENT_ID"),
   github_client_secret: env!("GITHUB_CLIENT_SECRET"),
+  google_client_id: env!("GOOGLE_CLIENT_ID"),
+  google_client_secret: env!("GOOGLE_CLIENT_SECRET"),
   oauth_base_url: env!("OAUTH_BASE_URL"),
   deploy_key: env!("DEPLOY_KEY")
 
