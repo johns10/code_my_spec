@@ -12,12 +12,14 @@ defmodule CodeMySpec.Sessions.Session do
           type:
             CodeMySpec.ContextDesignSessions
             | CodeMySpec.ComponentDesignSessions
+            | CodeMySpec.ComponentDesignReviewSessions
             | CodeMySpec.ComponentTestSessions
             | CodeMySpec.ComponentCodingSessions
             | CodeMySpec.IntegrationSessions
             | nil,
           agent: :claude_code | nil,
           environment: :local | :vscode | nil,
+          execution_mode: :manual | :auto | :agentic | nil,
           status: :active | :complete | :failed | :cancelled | nil,
           state: map() | nil,
           project_id: integer() | nil,
@@ -28,6 +30,10 @@ defmodule CodeMySpec.Sessions.Session do
           user: User.t() | Ecto.Association.NotLoaded.t() | nil,
           component_id: integer() | nil,
           component: Component.t() | Ecto.Association.NotLoaded.t() | nil,
+          session_id: integer() | nil,
+          parent_session: t() | Ecto.Association.NotLoaded.t() | nil,
+          child_sessions: [t()] | Ecto.Association.NotLoaded.t(),
+          external_conversation_id: String.t() | nil,
           interactions: [Interaction.t()],
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -37,7 +43,9 @@ defmodule CodeMySpec.Sessions.Session do
     field :type, CodeMySpec.Sessions.SessionType
     field :agent, Ecto.Enum, values: [:claude_code]
     field :environment, Ecto.Enum, values: [:local, :vscode]
+    field :execution_mode, Ecto.Enum, values: [:manual, :auto, :agentic], default: :manual
     field :status, Ecto.Enum, values: [:active, :complete, :failed, :cancelled], default: :active
+    field :external_conversation_id, :string
 
     field :state, :map
 
@@ -45,6 +53,9 @@ defmodule CodeMySpec.Sessions.Session do
     belongs_to :account, Account
     belongs_to :user, User
     belongs_to :component, Component
+    belongs_to :parent_session, __MODULE__, foreign_key: :session_id
+
+    has_many :child_sessions, __MODULE__, foreign_key: :session_id
 
     embeds_many :interactions, Interaction
 
@@ -54,7 +65,17 @@ defmodule CodeMySpec.Sessions.Session do
   @doc false
   def changeset(session, attrs, user_scope) do
     session
-    |> cast(attrs, [:type, :agent, :environment, :status, :state, :component_id])
+    |> cast(attrs, [
+      :type,
+      :agent,
+      :environment,
+      :execution_mode,
+      :status,
+      :state,
+      :component_id,
+      :session_id,
+      :external_conversation_id
+    ])
     |> validate_required([:type])
     |> cast_embed(:interactions)
     |> put_change(:account_id, user_scope.active_account.id)
@@ -75,7 +96,17 @@ defmodule CodeMySpec.Sessions.Session do
       end)
 
     session
-    |> cast(session_attrs, [:type, :agent, :environment, :status, :state, :component_id])
+    |> cast(session_attrs, [
+      :type,
+      :agent,
+      :environment,
+      :execution_mode,
+      :status,
+      :state,
+      :component_id,
+      :session_id,
+      :external_conversation_id
+    ])
     |> put_embed(:interactions, interactions)
   end
 

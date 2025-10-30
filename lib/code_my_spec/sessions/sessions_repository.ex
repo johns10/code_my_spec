@@ -31,6 +31,31 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
     |> Repo.get_by(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
   end
 
+  @doc """
+  Gets a single session with all child sessions preloaded.
+
+  Returns nil if the Session does not exist.
+
+  ## Examples
+
+      iex> get_session_with_children(scope, 123)
+      %Session{child_sessions: [%Session{}, ...]}
+
+      iex> get_session_with_children(scope, 456)
+      nil
+
+  """
+  def get_session_with_children(%Scope{} = scope, id) do
+    Session
+    |> preload([
+      :project,
+      :component,
+      [component: :parent_component],
+      [child_sessions: [:component]]
+    ])
+    |> Repo.get_by(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
+  end
+
   def complete_session_interaction(
         %Scope{} = scope,
         %Session{} = session,
