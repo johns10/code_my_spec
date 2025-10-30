@@ -6,9 +6,9 @@ defmodule CodeMySpecWeb.ContentLive.Public do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.marketing flash={@flash} current_scope={@current_scope}>
       <.render_template content={@content} tags={@tags} template={@template} />
-    </Layouts.app>
+    </Layouts.marketing>
     """
   end
 
