@@ -13,13 +13,27 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomDimension do
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
   alias CodeMySpec.MCPServers.Validators
-  alias CodeMySpec.Projects
 
   schema do
-    field(:display_name, :string, required: true, description: "Display name for the custom dimension")
-    field(:parameter_name, :string, required: true, description: "Parameter name (event parameter, user property, or item parameter)")
-    field(:scope, :string, required: true, description: "Scope of the dimension: EVENT, USER, or ITEM")
-    field(:description, :string, required: false, description: "Description of the custom dimension")
+    field(:display_name, :string,
+      required: true,
+      description: "Display name for the custom dimension"
+    )
+
+    field(:parameter_name, :string,
+      required: true,
+      description: "Parameter name (event parameter, user property, or item parameter)"
+    )
+
+    field(:scope, :string,
+      required: true,
+      description: "Scope of the dimension: EVENT, USER, or ITEM"
+    )
+
+    field(:description, :string,
+      required: false,
+      description: "Description of the custom dimension"
+    )
   end
 
   @valid_scopes ["EVENT", "USER", "ITEM"]
@@ -31,11 +45,12 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomDimension do
            {:ok, validated_params} <- validate_params(params),
            {:ok, property_id} <- get_property_id(scope),
            {:ok, conn} <- Analytics.get_connection(scope),
-           {:ok, result} <- Analytics.create_custom_dimension(
-             conn,
-             "properties/#{property_id}",
-             validated_params
-           ) do
+           {:ok, result} <-
+             Analytics.create_custom_dimension(
+               conn,
+               "properties/#{property_id}",
+               validated_params
+             ) do
         format_response(result)
       else
         {:error, :not_found} ->

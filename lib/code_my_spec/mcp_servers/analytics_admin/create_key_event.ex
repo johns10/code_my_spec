@@ -14,13 +14,29 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateKeyEvent do
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
   alias CodeMySpec.MCPServers.Validators
-  alias CodeMySpec.Projects
 
   schema do
-    field(:event_name, :string, required: true, description: "Name of the event to mark as a key event")
-    field(:counting_method, :string, required: false, description: "How to count the event: ONCE_PER_EVENT or ONCE_PER_SESSION (default: ONCE_PER_EVENT)")
-    field(:default_value, :float, required: false, description: "Default numeric value for the conversion (requires currency_code if provided)")
-    field(:currency_code, :string, required: false, description: "Currency code for the default value (e.g., USD, EUR, GBP). Required when default_value is provided")
+    field(:event_name, :string,
+      required: true,
+      description: "Name of the event to mark as a key event"
+    )
+
+    field(:counting_method, :string,
+      required: false,
+      description:
+        "How to count the event: ONCE_PER_EVENT or ONCE_PER_SESSION (default: ONCE_PER_EVENT)"
+    )
+
+    field(:default_value, :float,
+      required: false,
+      description: "Default numeric value for the conversion (requires currency_code if provided)"
+    )
+
+    field(:currency_code, :string,
+      required: false,
+      description:
+        "Currency code for the default value (e.g., USD, EUR, GBP). Required when default_value is provided"
+    )
   end
 
   @valid_counting_methods ["ONCE_PER_EVENT", "ONCE_PER_SESSION"]
@@ -32,11 +48,12 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateKeyEvent do
            {:ok, validated_params} <- validate_params(params),
            {:ok, property_id} <- get_property_id(scope),
            {:ok, conn} <- Analytics.get_connection(scope),
-           {:ok, result} <- Analytics.create_key_event(
-             conn,
-             "properties/#{property_id}",
-             validated_params
-           ) do
+           {:ok, result} <-
+             Analytics.create_key_event(
+               conn,
+               "properties/#{property_id}",
+               validated_params
+             ) do
         format_response(result)
       else
         {:error, :not_found} ->
@@ -63,9 +80,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateKeyEvent do
           )
 
         {:error, :currency_code_requires_default_value} ->
-          error_response(
-            "currency_code can only be set when default_value is provided"
-          )
+          error_response("currency_code can only be set when default_value is provided")
 
         {:error, reason} ->
           error_response("Failed to create key event: #{inspect(reason)}")
@@ -130,17 +145,21 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateKeyEvent do
   end
 
   defp format_response(key_event) do
-    default_value = if key_event.defaultValue do
-      value = key_event.defaultValue.numericValue || "N/A"
-      currency = if key_event.defaultValue.currencyCode do
-        " #{key_event.defaultValue.currencyCode}"
+    default_value =
+      if key_event.defaultValue do
+        value = key_event.defaultValue.numericValue || "N/A"
+
+        currency =
+          if key_event.defaultValue.currencyCode do
+            " #{key_event.defaultValue.currencyCode}"
+          else
+            ""
+          end
+
+        "#{value}#{currency}"
       else
-        ""
+        "N/A"
       end
-      "#{value}#{currency}"
-    else
-      "N/A"
-    end
 
     Response.tool()
     |> Response.text("""

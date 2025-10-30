@@ -12,7 +12,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomDimensions do
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
   alias CodeMySpec.MCPServers.Validators
-  alias CodeMySpec.Projects
 
   schema do
   end

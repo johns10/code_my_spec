@@ -14,15 +14,32 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomMetric do
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
   alias CodeMySpec.MCPServers.Validators
-  alias CodeMySpec.Projects
 
   schema do
-    field(:display_name, :string, required: true, description: "Display name for the custom metric")
-    field(:parameter_name, :string, required: true, description: "Parameter name (event parameter)")
-    field(:measurement_unit, :string, required: true, description: "Measurement unit: STANDARD, CURRENCY, FEET, METERS, KILOMETERS, MILES, MILLISECONDS, SECONDS, MINUTES, HOURS. Note: CURRENCY requires restricted_metric_types")
+    field(:display_name, :string,
+      required: true,
+      description: "Display name for the custom metric"
+    )
+
+    field(:parameter_name, :string,
+      required: true,
+      description: "Parameter name (event parameter)"
+    )
+
+    field(:measurement_unit, :string,
+      required: true,
+      description:
+        "Measurement unit: STANDARD, CURRENCY, FEET, METERS, KILOMETERS, MILES, MILLISECONDS, SECONDS, MINUTES, HOURS. Note: CURRENCY requires restricted_metric_types"
+    )
+
     field(:scope, :string, required: true, description: "Scope of the metric (EVENT)")
     field(:description, :string, required: false, description: "Description of the custom metric")
-    field(:restricted_metric_type, :string, required: false, description: "Required when measurement_unit is CURRENCY, must not be set otherwise. Valid values: COST_DATA or REVENUE_DATA")
+
+    field(:restricted_metric_type, :string,
+      required: false,
+      description:
+        "Required when measurement_unit is CURRENCY, must not be set otherwise. Valid values: COST_DATA or REVENUE_DATA"
+    )
   end
 
   @valid_scopes ["EVENT"]
@@ -46,11 +63,12 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomMetric do
            {:ok, validated_params} <- validate_params(params),
            {:ok, property_id} <- get_property_id(scope),
            {:ok, conn} <- Analytics.get_connection(scope),
-           {:ok, result} <- Analytics.create_custom_metric(
-             conn,
-             "properties/#{property_id}",
-             validated_params
-           ) do
+           {:ok, result} <-
+             Analytics.create_custom_metric(
+               conn,
+               "properties/#{property_id}",
+               validated_params
+             ) do
         format_response(result)
       else
         {:error, :not_found} ->
@@ -77,9 +95,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomMetric do
           )
 
         {:error, :restricted_metric_type_requires_currency} ->
-          error_response(
-            "restricted_metric_type can only be set for CURRENCY measurement unit."
-          )
+          error_response("restricted_metric_type can only be set for CURRENCY measurement unit.")
 
         {:error, :currency_requires_restricted_metric_type} ->
           error_response(
@@ -158,11 +174,12 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomMetric do
   end
 
   defp format_response(metric) do
-    restricted_type = if metric.restrictedMetricType do
-      Enum.join(metric.restrictedMetricType, ", ")
-    else
-      "N/A"
-    end
+    restricted_type =
+      if metric.restrictedMetricType do
+        Enum.join(metric.restrictedMetricType, ", ")
+      else
+        "N/A"
+      end
 
     Response.tool()
     |> Response.text("""

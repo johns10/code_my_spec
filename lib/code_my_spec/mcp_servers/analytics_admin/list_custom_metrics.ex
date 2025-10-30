@@ -12,7 +12,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomMetrics do
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
   alias CodeMySpec.MCPServers.Validators
-  alias CodeMySpec.Projects
 
   schema do
   end
@@ -68,11 +67,12 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomMetrics do
   defp format_metrics(metrics) do
     metrics
     |> Enum.map(fn metric ->
-      restricted_type = if metric.restrictedMetricType do
-        Enum.join(metric.restrictedMetricType, ", ")
-      else
-        "N/A"
-      end
+      restricted_type =
+        if metric.restrictedMetricType do
+          Enum.join(metric.restrictedMetricType, ", ")
+        else
+          "N/A"
+        end
 
       """
       Custom Metric: #{metric.displayName || "Unnamed"}

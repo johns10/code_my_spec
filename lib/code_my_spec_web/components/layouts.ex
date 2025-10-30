@@ -151,6 +151,10 @@ defmodule CodeMySpecWeb.Layouts do
 
   slot :inner_block, required: true
 
+  attr :current_scope, :map,
+    default: nil,
+    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
   def marketing(assigns) do
     ~H"""
     <div class="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
@@ -172,10 +176,10 @@ defmodule CodeMySpecWeb.Layouts do
             <.theme_toggle />
           </div>
         </div>
-        
+
     <!-- Content -->
         {render_slot(@inner_block)}
-        
+
     <!-- Footer -->
         <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded-box shadow-inner mt-20">
           <!--<nav class="grid grid-flow-col gap-6">

@@ -13,11 +13,17 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListKeyEvents do
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
   alias CodeMySpec.MCPServers.Validators
-  alias CodeMySpec.Projects
 
   schema do
-    field(:page_size, :integer, required: false, description: "Maximum number of resources to return (default: 50, max: 200)")
-    field(:page_token, :string, required: false, description: "Page token from previous ListKeyEvents call for pagination")
+    field(:page_size, :integer,
+      required: false,
+      description: "Maximum number of resources to return (default: 50, max: 200)"
+    )
+
+    field(:page_token, :string,
+      required: false,
+      description: "Page token from previous ListKeyEvents call for pagination"
+    )
   end
 
   @impl true
@@ -26,12 +32,13 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListKeyEvents do
       with {:ok, scope} <- Validators.validate_scope(frame),
            {:ok, property_id} <- get_property_id(scope),
            {:ok, conn} <- Analytics.get_connection(scope),
-           {:ok, result} <- Analytics.list_key_events(
-             conn,
-             "properties/#{property_id}",
-             params[:page_size],
-             params[:page_token]
-           ) do
+           {:ok, result} <-
+             Analytics.list_key_events(
+               conn,
+               "properties/#{property_id}",
+               params[:page_size],
+               params[:page_token]
+             ) do
         format_response(result)
       else
         {:error, :not_found} ->
@@ -66,11 +73,13 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListKeyEvents do
        when is_list(key_events) and length(key_events) > 0 do
     text = format_key_events(key_events)
 
-    text = if result.nextPageToken do
-      text <> "\n\nNext Page Token: #{result.nextPageToken}\nUse this token to retrieve the next page of results."
-    else
-      text
-    end
+    text =
+      if result.nextPageToken do
+        text <>
+          "\n\nNext Page Token: #{result.nextPageToken}\nUse this token to retrieve the next page of results."
+      else
+        text
+      end
 
     Response.tool()
     |> Response.text(text)
