@@ -140,7 +140,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
                          %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _, _, _, _]}}
 
         # Step 6: Session should be complete
-        assert {:ok, %{status: :complete}} = Sessions.next_command(scope, session.id)
+        assert {:error, :complete} = Sessions.next_command(scope, session.id)
 
         # Verify final state
         assert session.state["component_design"] != nil

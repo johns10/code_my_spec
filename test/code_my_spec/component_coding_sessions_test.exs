@@ -147,7 +147,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
                          }}
 
         # Session should be complete
-        assert {:ok, %{status: :complete}} = Sessions.next_command(scope, session.id)
+        assert {:error, :complete} = Sessions.next_command(scope, session.id)
 
         File.rm_rf(project_dir)
       end
