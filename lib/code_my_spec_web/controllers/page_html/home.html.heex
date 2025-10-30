@@ -1,133 +1,128 @@
-<Layouts.flash_group flash={@flash} />
-
-<div class="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-  <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="navbar bg-base-100/50 backdrop-blur-lg rounded-box shadow-lg mb-20">
-      <div class="flex-1 gap-3">
-        <div class="avatar placeholder">
-          <div class="bg-primary text-primary-content rounded-xl w-12">
-            <.icon name="hero-cube-transparent" class="w-7 h-7" />
-          </div>
+<Layouts.marketing flash={@flash}>
+  <!-- Hero Content -->
+  <div class="hero mb-32">
+    <div class="hero-content text-center">
+      <div class="max-w-5xl">
+        <div class="badge badge-primary badge-lg mb-6 gap-2">
+          <.icon name="hero-sparkles" class="w-4 h-4" /> Process-Guided AI Development
         </div>
-        <div class="text-xl font-bold">{@copy.hero.title}</div>
-      </div>
-      <div class="flex-none">
-        <Layouts.theme_toggle />
-      </div>
-    </div>
-    
-<!-- Hero Content -->
-    <div class="text-center max-w-5xl mx-auto mb-32">
-      <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent leading-tight">
-        {@copy.hero.tagline}
-      </h1>
-      <p class="text-xl md:text-2xl mb-12 opacity-80 leading-relaxed">
-        {@copy.hero.description}
-      </p>
 
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href={@copy.cta.primary.href} class="btn btn-primary btn-lg gap-2">
-          <.icon name="hero-bolt" class="h-6 w-6" />
-          {@copy.cta.primary.text}
-        </a>
-        <a href={@copy.cta.secondary.href} class="btn btn-outline btn-lg gap-2">
-          <.icon name="hero-book-open" class="h-6 w-6" />
-          {@copy.cta.secondary.text}
-        </a>
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent leading-tight">
+          {@copy.hero.tagline}
+        </h1>
+
+        <p class="text-xl md:text-2xl mb-12 text-base-content/80 leading-relaxed max-w-3xl mx-auto">
+          {@copy.hero.description}
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a href={@copy.cta.primary.href} class="btn btn-primary btn-lg gap-2 shadow-lg">
+            <.icon name="hero-rocket-launch" class="w-6 h-6" />
+            {@copy.cta.primary.text}
+          </a>
+          <!--<a href={@copy.cta.secondary.href} class="btn btn-outline btn-lg gap-2">
+              <.icon name="hero-book-open" class="w-6 h-6" />
+              {@copy.cta.secondary.text}
+            </a>-->
+        </div>
       </div>
     </div>
-    
+  </div>
+  
 <!-- Value Props -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-32">
-      <%= for prop <- @copy.value_props do %>
-        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all hover:scale-105">
-          <div class="card-body items-center text-center">
-            <div class="avatar placeholder mb-4">
-              <div class="bg-primary/10 text-primary rounded-lg w-16 h-16 flex items-center justify-center">
-                <%= case prop.icon do %>
-                  <% :structure -> %>
-                    <.icon name="hero-squares-2x2" class="h-8 w-8" />
-                  <% :boundaries -> %>
-                    <.icon name="hero-cube-transparent" class="h-8 w-8" />
-                  <% :oversight -> %>
-                    <.icon name="hero-check-badge" class="h-8 w-8" />
-                  <% :traceability -> %>
-                    <.icon name="hero-chart-bar" class="h-8 w-8" />
-                <% end %>
-              </div>
-            </div>
-            <h3 class="card-title text-lg">{prop.title}</h3>
-            <p class="text-sm opacity-70">{prop.description}</p>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-32">
+    <%= for prop <- @copy.value_props do %>
+      <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-base-300">
+        <div class="card-body items-center text-center gap-4">
+          <div class="rounded-2xl bg-primary/10 p-4">
+            <%= case prop.icon do %>
+              <% :structure -> %>
+                <.icon name="hero-squares-2x2" class="w-10 h-10 text-primary" />
+              <% :boundaries -> %>
+                <.icon name="hero-cube-transparent" class="w-10 h-10 text-primary" />
+              <% :oversight -> %>
+                <.icon name="hero-shield-check" class="w-10 h-10 text-primary" />
+              <% :traceability -> %>
+                <.icon name="hero-chart-bar" class="w-10 h-10 text-primary" />
+            <% end %>
+          </div>
+          <h3 class="card-title text-lg">{prop.title}</h3>
+          <p class="text-sm text-base-content/70 leading-relaxed">{prop.description}</p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  
+<!-- Features Section -->
+  <div class="mb-32">
+    <div class="text-center mb-12">
+      <div class="badge badge-outline badge-lg mb-4">Features</div>
+      <h2 class="text-4xl font-bold mb-4">Complete Platform Features</h2>
+      <p class="text-lg text-base-content/70 max-w-2xl mx-auto">
+        Everything you need for structured AI-assisted development
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <%= for feature <- @copy.features do %>
+        <div class="card bg-base-100 border border-base-300 hover:border-primary transition-all duration-300 hover:shadow-lg">
+          <div class="card-body gap-3">
+            <h4 class="card-title text-base flex items-center gap-2">
+              <.icon name="hero-check-circle-solid" class="w-5 h-5 text-primary" />
+              {feature.title}
+            </h4>
+            <p class="text-sm text-base-content/70">{feature.description}</p>
           </div>
         </div>
       <% end %>
     </div>
-    
-<!-- Features Section -->
-    <div class="mb-32">
-      <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold mb-4">Complete Platform Features</h2>
-        <p class="text-lg opacity-70">
-          Everything you need for structured AI-assisted development
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <%= for feature <- @copy.features do %>
-          <div class="card bg-base-100 border border-base-300 hover:border-primary transition-all">
-            <div class="card-body">
-              <h4 class="font-semibold flex items-center gap-2">
-                <div class="badge badge-primary badge-sm"></div>
-                {feature.title}
-              </h4>
-              <p class="text-sm opacity-70">{feature.description}</p>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-    
+  </div>
+  
 <!-- Philosophy Section -->
-    <div class="card bg-gradient-to-br from-primary/20 to-secondary/20 shadow-2xl mb-20">
-      <div class="card-body">
-        <h2 class="card-title text-3xl mb-6">
-          <.icon name="hero-light-bulb" class="h-8 w-8 text-primary" /> The Philosophy
-        </h2>
-        <div class="space-y-6 text-lg">
+  <div class="card bg-gradient-to-br from-primary/20 to-secondary/20 shadow-2xl mb-20 border border-primary/20">
+    <div class="card-body p-8 lg:p-12">
+      <h2 class="card-title text-3xl mb-8 gap-3">
+        <.icon name="hero-light-bulb" class="w-8 h-8 text-primary" /> The Philosophy
+      </h2>
+      <div class="space-y-6 text-lg">
+        <div class="flex gap-4">
+          <div class="flex-shrink-0">
+            <.icon name="hero-exclamation-triangle" class="w-6 h-6 text-warning" />
+          </div>
           <p class="leading-relaxed">
-            The best way to use LLMs for software development is through <span class="badge badge-primary">strictly defined processes</span>, not vague prompts that compound errors across specification layers.
+            The best way to use LLMs for software development is through <span class="badge badge-primary gap-1">
+                <.icon
+                name="hero-lock-closed"
+                class="w-3 h-3"
+              />
+                strictly defined processes
+              </span>, not vague prompts that compound errors across specification layers.
           </p>
+        </div>
+
+        <div class="flex gap-4">
+          <div class="flex-shrink-0">
+            <.icon name="hero-check-circle-solid" class="w-6 h-6 text-success" />
+          </div>
           <p class="leading-relaxed">
-            CodeMySpec provides <strong>structured architecture</strong>, <strong>tight standards</strong>, and
-            <strong>human oversight</strong>
+            CodeMySpec provides <span class="font-semibold text-primary">structured architecture</span>, <span class="font-semibold text-primary">tight standards</span>, and
+            <span class="font-semibold text-primary">human oversight</span>
             during planning and design. This makes AI-generated tests and implementations trivial — the weight of specification and traceability creates prompts that leave little room for error.
           </p>
-          <div class="alert alert-info">
-            <.icon name="hero-information-circle" class="shrink-0 w-6 h-6" />
-            <span>
-              The result? Documentation and designs that make it possible to
+        </div>
+
+        <div class="alert alert-info shadow-lg">
+          <.icon name="hero-information-circle" class="shrink-0 w-6 h-6" />
+          <div>
+            <h3 class="font-bold">The Result</h3>
+            <div class="text-sm">
+              Documentation and designs that make it possible to
               <strong>completely regenerate your application</strong>
               if needed, or switch languages and frameworks with confidence.
-            </span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    
-<!-- Footer -->
-    <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded-box">
-      <nav>
-        <div class="grid grid-flow-col gap-4">
-          <a href="https://github.com/phoenixframework/phoenix" class="link link-hover">GitHub</a>
-          <a href="/content" class="link link-hover">Documentation</a>
-          <a href="https://elixirforum.com" class="link link-hover">Community</a>
-        </div>
-      </nav>
-      <aside>
-        <p class="font-semibold">Ready to build better?</p>
-        <p class="text-sm opacity-70">Process-guided AI development for Phoenix applications</p>
-      </aside>
-    </footer>
   </div>
-</div>
+</Layouts.marketing>

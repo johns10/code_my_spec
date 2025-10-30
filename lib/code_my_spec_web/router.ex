@@ -34,6 +34,7 @@ defmodule CodeMySpecWeb.Router do
     # Public content routes (CLIENT APP FUNCTIONALITY)
     live_session :public_content,
       on_mount: [{CodeMySpecWeb.UserAuth, :mount_current_scope}] do
+      live "/blog", ContentLive.Index, :blog_index
       live "/blog/:slug", ContentLive.Public, :blog
       live "/pages/:slug", ContentLive.Public, :page
       live "/landing/:slug", ContentLive.Public, :landing

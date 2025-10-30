@@ -135,6 +135,84 @@ defmodule CodeMySpecWeb.Layouts do
   end
 
   @doc """
+  Renders the marketing/public layout for home page and blog.
+
+  This layout provides a clean, marketing-focused design without app navigation.
+
+  ## Examples
+
+      <Layouts.marketing flash={@flash}>
+        <h1>Content</h1>
+      </Layouts.marketing>
+
+  """
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :page_title, :string, default: "CodeMySpec"
+
+  slot :inner_block, required: true
+
+  def marketing(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+      <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Navbar -->
+        <div class="navbar bg-base-100/50 backdrop-blur-lg rounded-box shadow-xl mb-20">
+          <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl font-bold normal-case">CodeMySpec</a>
+          </div>
+
+          <div class="navbar-end gap-2">
+            <ul class="menu menu-horizontal px-1">
+              <li>
+                <a href="/blog" class="gap-2">
+                  <.icon name="hero-document-text" class="w-4 h-4" /> Blog
+                </a>
+              </li>
+            </ul>
+            <.theme_toggle />
+          </div>
+        </div>
+        
+    <!-- Content -->
+        {render_slot(@inner_block)}
+        
+    <!-- Footer -->
+        <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded-box shadow-inner mt-20">
+          <!--<nav class="grid grid-flow-col gap-6">
+            <a href="/blog" class="link link-hover inline-flex items-center gap-2">
+              <.icon name="hero-document-text" class="w-4 h-4" />
+              Blog
+            </a>
+            <a
+              href="https://github.com/phoenixframework/phoenix"
+              class="link link-hover inline-flex items-center gap-2"
+            >
+              <.icon name="hero-code-bracket" class="w-4 h-4" />
+              GitHub
+            </a>
+            <a href="/users/register" class="link link-hover inline-flex items-center gap-2">
+              <.icon name="hero-user-plus" class="w-4 h-4" />
+              Get Started
+            </a>
+          </nav>-->
+
+          <aside class="items-center grid-flow-col">
+            <div>
+              <p class="font-bold text-lg">CodeMySpec</p>
+              <p class="text-sm text-base-content/70">
+                Process-guided AI development for Phoenix applications
+              </p>
+            </div>
+          </aside>
+        </footer>
+      </div>
+
+      <.flash_group flash={@flash} />
+    </div>
+    """
+  end
+
+  @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 
   See <head> in root.html.heex which applies the theme before page load.

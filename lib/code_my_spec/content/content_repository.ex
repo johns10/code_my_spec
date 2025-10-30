@@ -35,6 +35,7 @@ defmodule CodeMySpec.Content.ContentRepository do
     |> where([c], is_nil(c.publish_at) or c.publish_at <= ^now)
     |> where([c], is_nil(c.expires_at) or c.expires_at > ^now)
     |> Repo.all()
+    |> preload_tags()
   end
 
   def list_published_content(nil, content_type) do
@@ -46,6 +47,7 @@ defmodule CodeMySpec.Content.ContentRepository do
     |> where([c], is_nil(c.expires_at) or c.expires_at > ^now)
     |> where([c], c.protected == false)
     |> Repo.all()
+    |> preload_tags()
   end
 
   @doc """
