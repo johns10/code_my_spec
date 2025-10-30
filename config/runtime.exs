@@ -36,7 +36,7 @@ config :code_my_spec,
   github_client_secret: env!("GITHUB_CLIENT_SECRET"),
   google_client_id: env!("GOOGLE_CLIENT_ID"),
   google_client_secret: env!("GOOGLE_CLIENT_SECRET"),
-  oauth_base_url: env!("OAUTH_BASE_URL"),
+  oauth_base_url: env("OAUTH_BASE_URL", nil),
   deploy_key: env!("DEPLOY_KEY")
 
 if config_env() == :prod do

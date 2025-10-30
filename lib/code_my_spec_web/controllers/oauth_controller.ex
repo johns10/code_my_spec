@@ -246,10 +246,6 @@ defmodule CodeMySpecWeb.OAuthController do
   end
 
   defp get_base_url do
-    if Mix.env() == :dev do
-      "https://special-mutually-falcon.ngrok-free.app"
-    else
-      CodeMySpecWeb.Endpoint.url()
-    end
+    Application.get_env(:code_my_spec, :oauth_base_url) || CodeMySpecWeb.Endpoint.url()
   end
 end
