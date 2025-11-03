@@ -12,7 +12,7 @@ defmodule CodeMySpec.Integrations.IntegrationRepository do
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Integrations.Integration
 
-  @type provider :: :github | :gitlab | :bitbucket
+  @type provider :: :github | :gitlab | :bitbucket | :google
   @type integration_attrs :: %{
           optional(:user_id) => integer(),
           optional(:provider) => provider(),

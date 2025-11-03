@@ -15,11 +15,32 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomDimension do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field(:name, :string, required: true, description: "The resource name of the custom dimension (e.g., properties/1234/customDimensions/5678)")
-    field(:display_name, :string, required: false, description: "Display name for the custom dimension")
-    field(:description, :string, required: false, description: "Description of the custom dimension")
-    field(:disallow_ads_personalization, :boolean, required: false, description: "Whether to disallow ads personalization for this dimension")
-    field(:update_mask, :string, required: true, description: "Comma-separated list of fields to update (e.g., 'displayName,description') or '*' for all fields")
+    field(:name, :string,
+      required: true,
+      description:
+        "The resource name of the custom dimension (e.g., properties/1234/customDimensions/5678)"
+    )
+
+    field(:display_name, :string,
+      required: false,
+      description: "Display name for the custom dimension"
+    )
+
+    field(:description, :string,
+      required: false,
+      description: "Description of the custom dimension"
+    )
+
+    field(:disallow_ads_personalization, :boolean,
+      required: false,
+      description: "Whether to disallow ads personalization for this dimension"
+    )
+
+    field(:update_mask, :string,
+      required: true,
+      description:
+        "Comma-separated list of fields to update (e.g., 'displayName,description') or '*' for all fields"
+    )
   end
 
   @impl true
@@ -29,29 +50,24 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomDimension do
            {:ok, dimension_name} <- validate_dimension_name(params.name),
            {:ok, validated_params} <- validate_params(params),
            {:ok, conn} <- Analytics.get_connection(scope),
-           {:ok, result} <- Analytics.update_custom_dimension(
-             conn,
-             dimension_name,
-             validated_params,
-             params.update_mask
-           ) do
+           {:ok, result} <-
+             Analytics.update_custom_dimension(
+               conn,
+               dimension_name,
+               validated_params,
+               params.update_mask
+             ) do
         format_response(result)
       else
-        {:error, :not_found} ->
-          error_response(
-            "Google account not connected. Please connect your Google account first."
-          )
-
-        {:error, :token_expired} ->
-          error_response("Google access token has expired. Please reconnect your Google account.")
-
         {:error, :invalid_dimension_name} ->
           error_response(
             "Invalid custom dimension name. Expected format: properties/1234/customDimensions/5678"
           )
 
         {:error, :no_fields_to_update} ->
-          error_response("No fields specified for update. Please provide at least one field to update.")
+          error_response(
+            "No fields specified for update. Please provide at least one field to update."
+          )
 
         {:error, reason} ->
           error_response("Failed to update custom dimension: #{inspect(reason)}")
@@ -90,7 +106,11 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomDimension do
 
     custom_dimension =
       if Map.has_key?(params, :disallow_ads_personalization) do
-        Map.put(custom_dimension, :disallowAdsPersonalization, params.disallow_ads_personalization)
+        Map.put(
+          custom_dimension,
+          :disallowAdsPersonalization,
+          params.disallow_ads_personalization
+        )
       else
         custom_dimension
       end
@@ -119,9 +139,5 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomDimension do
   defp error_response(message) when is_binary(message) do
     Response.tool()
     |> Response.error(message)
-  end
-
-  defp error_response(error) when is_atom(error) do
-    error |> to_string() |> error_response()
   end
 end

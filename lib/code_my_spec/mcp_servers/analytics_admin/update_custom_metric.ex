@@ -75,14 +75,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomMetric do
              ) do
         format_response(result)
       else
-        {:error, :not_found} ->
-          error_response(
-            "Google account not connected. Please connect your Google account first."
-          )
-
-        {:error, :token_expired} ->
-          error_response("Google access token has expired. Please reconnect your Google account.")
-
         {:error, :invalid_metric_name} ->
           error_response(
             "Invalid custom metric name. Expected format: properties/1234/customMetrics/5678"
@@ -208,9 +200,5 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomMetric do
   defp error_response(message) when is_binary(message) do
     Response.tool()
     |> Response.error(message)
-  end
-
-  defp error_response(error) when is_atom(error) do
-    error |> to_string() |> error_response()
   end
 end

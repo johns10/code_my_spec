@@ -14,7 +14,11 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomMetric do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field(:name, :string, required: true, description: "The resource name of the custom metric to retrieve (e.g., properties/1234/customMetrics/5678)")
+    field(:name, :string,
+      required: true,
+      description:
+        "The resource name of the custom metric to retrieve (e.g., properties/1234/customMetrics/5678)"
+    )
   end
 
   @impl true
@@ -26,14 +30,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomMetric do
            {:ok, result} <- Analytics.get_custom_metric(conn, metric_name) do
         format_response(result)
       else
-        {:error, :not_found} ->
-          error_response(
-            "Google account not connected. Please connect your Google account first."
-          )
-
-        {:error, :token_expired} ->
-          error_response("Google access token has expired. Please reconnect your Google account.")
-
         {:error, :invalid_metric_name} ->
           error_response(
             "Invalid custom metric name. Expected format: properties/1234/customMetrics/5678"
@@ -57,11 +53,12 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomMetric do
   defp validate_metric_name(_), do: {:error, :invalid_metric_name}
 
   defp format_response(metric) do
-    restricted_type = if metric.restrictedMetricType do
-      Enum.join(metric.restrictedMetricType, ", ")
-    else
-      "N/A"
-    end
+    restricted_type =
+      if metric.restrictedMetricType do
+        Enum.join(metric.restrictedMetricType, ", ")
+      else
+        "N/A"
+      end
 
     Response.tool()
     |> Response.text("""
@@ -78,9 +75,5 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomMetric do
   defp error_response(message) when is_binary(message) do
     Response.tool()
     |> Response.error(message)
-  end
-
-  defp error_response(error) when is_atom(error) do
-    error |> to_string() |> error_response()
   end
 end

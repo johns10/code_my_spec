@@ -14,7 +14,11 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomDimension do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field(:name, :string, required: true, description: "The resource name of the custom dimension to retrieve (e.g., properties/1234/customDimensions/5678)")
+    field(:name, :string,
+      required: true,
+      description:
+        "The resource name of the custom dimension to retrieve (e.g., properties/1234/customDimensions/5678)"
+    )
   end
 
   @impl true
@@ -26,14 +30,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomDimension do
            {:ok, result} <- Analytics.get_custom_dimension(conn, dimension_name) do
         format_response(result)
       else
-        {:error, :not_found} ->
-          error_response(
-            "Google account not connected. Please connect your Google account first."
-          )
-
-        {:error, :token_expired} ->
-          error_response("Google access token has expired. Please reconnect your Google account.")
-
         {:error, :invalid_dimension_name} ->
           error_response(
             "Invalid custom dimension name. Expected format: properties/1234/customDimensions/5678"
@@ -71,9 +67,5 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomDimension do
   defp error_response(message) when is_binary(message) do
     Response.tool()
     |> Response.error(message)
-  end
-
-  defp error_response(error) when is_atom(error) do
-    error |> to_string() |> error_response()
   end
 end

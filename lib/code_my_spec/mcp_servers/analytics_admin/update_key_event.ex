@@ -63,14 +63,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateKeyEvent do
              ) do
         format_response(result)
       else
-        {:error, :not_found} ->
-          error_response(
-            "Google account not connected. Please connect your Google account first."
-          )
-
-        {:error, :token_expired} ->
-          error_response("Google access token has expired. Please reconnect your Google account.")
-
         {:error, :invalid_key_event_name} ->
           error_response(
             "Invalid key event name. Expected format: properties/1234/keyEvents/event_name"
@@ -87,9 +79,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateKeyEvent do
           )
 
         {:error, :currency_code_requires_default_value} ->
-          error_response(
-            "currency_code can only be set when default_value is provided"
-          )
+          error_response("currency_code can only be set when default_value is provided")
 
         {:error, :no_fields_to_update} ->
           error_response(
@@ -196,9 +186,5 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateKeyEvent do
   defp error_response(message) when is_binary(message) do
     Response.tool()
     |> Response.error(message)
-  end
-
-  defp error_response(error) when is_atom(error) do
-    error |> to_string() |> error_response()
   end
 end

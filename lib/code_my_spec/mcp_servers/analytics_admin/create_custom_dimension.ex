@@ -53,14 +53,6 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomDimension do
              ) do
         format_response(result)
       else
-        {:error, :not_found} ->
-          error_response(
-            "Google account not connected. Please connect your Google account first."
-          )
-
-        {:error, :token_expired} ->
-          error_response("Google access token has expired. Please reconnect your Google account.")
-
         {:error, :missing_property_id} ->
           error_response(
             "Google Analytics Property ID is not set for this project. Please update the project settings."
@@ -125,9 +117,5 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateCustomDimension do
   defp error_response(message) when is_binary(message) do
     Response.tool()
     |> Response.error(message)
-  end
-
-  defp error_response(error) when is_atom(error) do
-    error |> to_string() |> error_response()
   end
 end
