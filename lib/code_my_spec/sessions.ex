@@ -22,15 +22,39 @@ defmodule CodeMySpec.Sessions do
 
   """
   def subscribe_sessions(%Scope{} = scope) do
-    key = scope.active_account.id
+    key = scope.active_account_id
 
     Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "account:#{key}:sessions")
   end
 
-  defp broadcast(%Scope{} = scope, message) do
-    key = scope.active_account.id
+  @doc """
+  Subscribes to user-level notifications about session changes.
 
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{key}:sessions", message)
+  Accepts either a %Scope{} or a user_id integer.
+
+  The broadcasted messages match the pattern:
+
+    * {:created, %Session{}}
+    * {:updated, %Session{}}
+    * {:deleted, %Session{}}
+
+  """
+  def subscribe_user_sessions(%Scope{} = scope) do
+    user_id = scope.user.id
+
+    Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "user:#{user_id}:sessions")
+  end
+
+  def subscribe_user_sessions(user_id) when is_integer(user_id) do
+    Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "user:#{user_id}:sessions")
+  end
+
+  defp broadcast(%Scope{} = scope, message) do
+    account_key = scope.active_account_id
+    user_id = scope.user.id
+
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{account_key}:sessions", message)
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{user_id}:sessions", message)
   end
 
   @doc """
@@ -62,6 +86,7 @@ defmodule CodeMySpec.Sessions do
 
   defdelegate get_session!(scope, id), to: SessionsRepository
   defdelegate get_session(scope, id), to: SessionsRepository
+
   defdelegate update_external_conversation_id(scope, session_id, external_conversation_id),
     to: SessionsRepository
 
