@@ -25,6 +25,8 @@ defmodule CodeMySpec.Documents.ContextDesign do
     end
 
     field :dependencies, {:array, :string}
+    field :test_strategies, :string
+    field :test_assertions, :string
 
     field :other_sections, :map
   end
@@ -39,7 +41,9 @@ defmodule CodeMySpec.Documents.ContextDesign do
       :state_management_strategy,
       :execution_flow,
       :other_sections,
-      :dependencies
+      :dependencies,
+      :test_strategies,
+      :test_assertions
     ])
     |> validate_required([:purpose])
     |> cast_embed(:components, with: &component_ref_changeset/2)

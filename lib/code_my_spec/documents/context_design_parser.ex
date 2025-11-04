@@ -26,6 +26,8 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
       execution_flow: extract_text(sections["execution flow"] || []),
       components: parse_components(sections["components"] || []),
       dependencies: parse_dependencies(sections["dependencies"] || []),
+      test_strategies: extract_text(sections["test strategies"] || []),
+      test_assertions: extract_text(sections["test assertions"] || []),
       other_sections: build_other_sections(sections)
     }
   end
@@ -135,7 +137,9 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
       "state management strategy",
       "execution flow",
       "components",
-      "dependencies"
+      "dependencies",
+      "test strategies",
+      "test assertions"
     ]
 
     sections
@@ -233,6 +237,8 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
       execution_flow: sections.execution_flow,
       components: sections.components,
       dependencies: sections.dependencies,
+      test_strategies: sections.test_strategies,
+      test_assertions: sections.test_assertions,
       other_sections: sections.other_sections
     }
   end

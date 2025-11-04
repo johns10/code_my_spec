@@ -296,18 +296,76 @@ defmodule CodeMySpec.Documents.Registry do
     - project_id references projects.id, on_delete: cascade
   """
 
+  @test_strategies """
+  Format:
+  - Use H2 heading
+  - Organized sections for different testing aspects
+
+  Content:
+  - Document fixtures needed for testing this context
+  - Identify which functions need recordings, mocks or doubles
+  - Outline any special test setup or teardown requirements
+  - Consider scope-based testing scenarios
+  - Plan for edge cases and error conditions
+
+  Examples:
+  - ## Test Strategies
+    ### Fixtures
+    - **valid_component_attrs**: Factory for creating valid component attributes
+    - **component_with_dependencies**: Pre-built component with full dependency tree
+
+    ### Mocks and Doubles
+    - Record external API calls in dependency resolution
+    - Use test doubles for Agent process communication
+
+    ### Testing Approach
+    - Unit tests for pure functions (validation, parsing)
+    - Integration tests for database operations with scope filtering
+  """
+
+  @test_assertions """
+  Format:
+  - Use H2 heading
+  - Hierarchical list organized by describe blocks
+  - Each describe contains related test assertions
+  - Order from happiest path to least happy path
+
+  Content:
+  - Use ExUnit conventions (describe/test format)
+  - One-line test descriptions that clearly state expected behavior
+  - Group related tests under descriptive describe blocks
+  - Progress from successful cases to error cases
+  - Include edge cases and boundary conditions
+
+  Examples:
+  - ## Test Assertions
+    - describe "list_components/1"
+      - test "returns all components for given scope"
+      - test "returns empty list when no components exist"
+      - test "filters by scope correctly"
+      - test "preloads associations when requested"
+      - test "raises when scope is nil"
+
+    - describe "create_component/2"
+      - test "creates component with valid attributes"
+      - test "returns error tuple with invalid attributes"
+      - test "validates scope ownership"
+      - test "raises when scope lacks permissions"
+  """
+
   @default_component_definition %{
     overview: """
     Components are Elixir modules that encapsulate focused business logic within a Phoenix context.
     Each component handles a specific responsibility.
     The context module orchestrates these components to provide cohesive domain functionality.
     """,
-    required_sections: ["purpose", "public api", "execution flow"],
+    required_sections: ["purpose", "public api", "execution flow", "test assertions"],
     optional_sections: [],
     section_descriptions: %{
       "purpose" => @component_purpose,
       "public api" => @public_api,
-      "execution flow" => @execution_flow
+      "execution flow" => @execution_flow,
+      "test assertions" => @test_assertions
     }
   }
 
@@ -326,7 +384,9 @@ defmodule CodeMySpec.Documents.Registry do
         "state management strategy",
         "execution flow",
         "dependencies",
-        "components"
+        "components",
+        "test strategies",
+        "test assertions"
       ],
       optional_sections: [],
       section_descriptions: %{
@@ -337,7 +397,9 @@ defmodule CodeMySpec.Documents.Registry do
         "state management strategy" => @state_management_strategy,
         "execution flow" => @execution_flow,
         "dependencies" => @dependencies,
-        "components" => @components
+        "components" => @components,
+        "test strategies" => @test_strategies,
+        "test assertions" => @test_assertions
       }
     },
     coordination_context: %{
@@ -346,7 +408,14 @@ defmodule CodeMySpec.Documents.Registry do
       Each context groups related functionality and encapsulates access to data and business logic.
       Components within a context handle specific responsibilities and are orchestrated by the context module.
       """,
-      required_sections: ["purpose", "execution flow", "access patterns", "public api"],
+      required_sections: [
+        "purpose",
+        "execution flow",
+        "access patterns",
+        "public api",
+        "test strategies",
+        "test assertions"
+      ],
       optional_sections: ["entity ownership", "state management strategy"],
       section_descriptions: %{
         "purpose" => @context_purpose,
@@ -354,7 +423,9 @@ defmodule CodeMySpec.Documents.Registry do
         "access patterns" => @access_patterns,
         "public api" => @public_api,
         "state management strategy" => @state_management_strategy,
-        "execution flow" => @execution_flow
+        "execution flow" => @execution_flow,
+        "test strategies" => @test_strategies,
+        "test assertions" => @test_assertions
       }
     },
     schema: %{
@@ -363,14 +434,15 @@ defmodule CodeMySpec.Documents.Registry do
       relationships, and validation rules for persistence in the database. Each schema
       documents its fields, associations, validations, and database constraints.
       """,
-      required_sections: ["purpose", "fields"],
+      required_sections: ["purpose", "fields", "test assertions"],
       optional_sections: ["associations", "validation rules", "database constraints"],
       section_descriptions: %{
         "purpose" => @schema_purpose,
         "fields" => @schema_fields,
         "associations" => @schema_associations,
         "validation rules" => @validation_rules,
-        "database constraints" => @database_constraints
+        "database constraints" => @database_constraints,
+        "test assertions" => @test_assertions
       }
     }
   }
