@@ -19,7 +19,7 @@ defmodule CodeMySpec.Components.Registry do
   @child_designs %{
     name: :children_designs,
     checker: CodeMySpec.Components.Requirements.HierarchicalChecker,
-    satisfied_by: nil
+    satisfied_by: "ContextComponentsDesignSessions"
   }
 
   @dependencies %{

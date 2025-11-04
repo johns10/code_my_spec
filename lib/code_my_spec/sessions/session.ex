@@ -11,6 +11,7 @@ defmodule CodeMySpec.Sessions.Session do
           id: integer() | nil,
           type:
             CodeMySpec.ContextDesignSessions
+            | CodeMySpec.ContextComponentsDesignSessions
             | CodeMySpec.ComponentDesignSessions
             | CodeMySpec.ComponentDesignReviewSessions
             | CodeMySpec.ComponentTestSessions

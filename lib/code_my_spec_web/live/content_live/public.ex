@@ -28,6 +28,7 @@ defmodule CodeMySpecWeb.ContentLive.Public do
 
         {:ok,
          socket
+         |> assign(:current_scope, scope)
          |> assign(:content, content)
          |> assign(:tags, tags)
          |> assign(:template, template)

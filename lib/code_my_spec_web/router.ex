@@ -99,9 +99,9 @@ defmodule CodeMySpecWeb.Router do
     resources "/sessions", SessionsController, except: [:edit, :new, :update, :delete] do
       get "/next-command", SessionsController, :next_command
       post "/submit-result/:interaction_id", SessionsController, :submit_result
+      post "/cancel", SessionsController, :cancel
+      put "/external_conversation_id", SessionsController, :update_external_conversation_id
     end
-
-    post "/sessions/:id/cancel", SessionsController, :cancel
 
     post "/project-coordinator/sync-requirements",
          ProjectCoordinatorController,

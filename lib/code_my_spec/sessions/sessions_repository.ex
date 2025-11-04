@@ -51,7 +51,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       :project,
       :component,
       [component: :parent_component],
-      [child_sessions: [:component]]
+      [child_sessions: [component: :project]]
     ])
     |> Repo.get_by(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
   end
@@ -97,6 +97,18 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
            |> Session.changeset(%{status: :complete}, scope)
            |> Repo.update() do
       {:ok, session}
+    end
+  end
+
+  def update_external_conversation_id(%Scope{} = scope, session_id, external_conversation_id) do
+    case get_session(scope, session_id) do
+      nil ->
+        {:error, :session_not_found}
+
+      session ->
+        session
+        |> Session.changeset(%{external_conversation_id: external_conversation_id}, scope)
+        |> Repo.update()
     end
   end
 end

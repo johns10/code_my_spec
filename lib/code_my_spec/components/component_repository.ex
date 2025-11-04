@@ -12,6 +12,14 @@ defmodule CodeMySpec.Components.ComponentRepository do
     |> Repo.all()
   end
 
+  @spec list_child_components(Scope.t(), integer()) :: [Component.t()]
+  def list_child_components(%Scope{active_project_id: project_id}, parent_component_id) do
+    Component
+    |> where([c], c.parent_component_id == ^parent_component_id and c.project_id == ^project_id)
+    |> order_by([c], [desc: c.priority, asc: c.name])
+    |> Repo.all()
+  end
+
   @spec get_component!(Scope.t(), integer()) :: Component.t()
   def get_component!(%Scope{active_project_id: project_id}, id) do
     Component

@@ -93,7 +93,7 @@ defmodule CodeMySpecWeb.SessionsController do
     end
   end
 
-  def cancel(conn, %{"id" => id}) do
+  def cancel(conn, %{"sessions_id" => id}) do
     scope = conn.assigns.current_scope
 
     case Sessions.get_session(scope, id) do
@@ -106,6 +106,23 @@ defmodule CodeMySpecWeb.SessionsController do
         with {:ok, session} <- Sessions.update_session(scope, session, %{status: :cancelled}) do
           render(conn, :show, session: session)
         end
+    end
+  end
+
+  def update_external_conversation_id(conn, %{
+        "sessions_id" => id,
+        "external_conversation_id" => external_conversation_id
+      }) do
+    scope = conn.assigns.current_scope
+
+    case Sessions.update_external_conversation_id(scope, id, external_conversation_id) do
+      {:ok, session} ->
+        render(conn, :show, session: session)
+
+      {:error, :session_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Session not found"})
     end
   end
 end
