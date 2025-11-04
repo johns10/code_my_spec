@@ -105,7 +105,8 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTestsTest do
                RunTests.handle_result(scope, session, result)
 
       assert updated_result.status == :error
-      assert updated_result.error_message =~ "invalid JSON"
+      assert updated_result.error_message =~ "No JSON output found in stdout"
+      assert updated_result.error_message =~ "not valid json"
     end
 
     test "returns error when test run data is missing", %{scope: scope, session: session} do

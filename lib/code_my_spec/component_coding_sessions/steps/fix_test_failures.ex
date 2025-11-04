@@ -13,7 +13,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.FixTestFailures do
              :unit_coder,
              "component-code-reviser",
              prompt,
-             Keyword.put(opts, :continue, true)
+             Keyword.put(opts, :resume, session.external_conversation_id)
            ) do
       {:ok, command}
     else

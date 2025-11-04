@@ -44,9 +44,20 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTests do
   defp get_test_run_data(%{stdout: stdout}) when is_binary(stdout) do
     json_string = extract_json_from_stdout(stdout)
 
-    case Jason.decode(json_string) do
-      {:ok, data} -> {:ok, data}
-      {:error, _} -> {:error, "invalid JSON in stdout"}
+    case json_string do
+      "" ->
+        {:error,
+         "No JSON output found in stdout. Test may have crashed before ExUnitJsonFormatter could run. Stdout:\n#{stdout}"}
+
+      _ ->
+        case Jason.decode(json_string) do
+          {:ok, data} ->
+            {:ok, data}
+
+          {:error, _} ->
+            {:error,
+             "Found JSON-like output but failed to parse. Extracted: #{String.slice(json_string, 0..200)}..."}
+        end
     end
   end
 
@@ -54,21 +65,27 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTests do
 
   defp extract_json_from_stdout(stdout) do
     # Extract JSON part from stdout (filter out compilation messages)
-    case {String.graphemes(stdout) |> Enum.find_index(&(&1 == "{")),
-          String.reverse(stdout) |> String.graphemes() |> Enum.find_index(&(&1 == "}"))} do
-      {nil, _} ->
+    # Search for {" to find start of JSON object (not Elixir tuples like {:ok, ...})
+    json_start = :binary.match(stdout, "{\"")
+    json_end_match = :binary.matches(stdout, "}")
+
+    case {json_start, json_end_match} do
+      {:nomatch, _} ->
         ""
 
-      {_, nil} ->
+      {_, []} ->
         ""
 
-      {json_start, reverse_end} ->
-        json_end = String.length(stdout) - reverse_end
+      {{start_pos, _}, matches} ->
+        # Get the last "}" position
+        {end_pos, _} = List.last(matches)
+        json_end = end_pos + 1
 
-        if json_start >= json_end do
+        if start_pos >= json_end do
           ""
         else
-          String.slice(stdout, json_start..(json_end - 1))
+          # Use binary_part since we're working with byte positions
+          :binary.part(stdout, start_pos, json_end - start_pos)
         end
     end
   end
