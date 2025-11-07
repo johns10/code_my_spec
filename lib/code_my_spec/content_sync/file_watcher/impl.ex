@@ -21,7 +21,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
           watched_directory: String.t(),
           debounce_timer: reference() | nil,
           debounce_ms: non_neg_integer(),
-          sync_fn: (Scope.t() -> {:ok, map()} | {:error, term()})
+          sync_fn: (Scope.t(), String.t() -> {:ok, map()} | {:error, term()})
         }
 
   @default_debounce_ms 1000
@@ -41,7 +41,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
     - `:directory` - Directory to watch (required)
     - `:scope` - Scope struct with account/project (required)
     - `:debounce_ms` - Debounce delay in milliseconds (default: 1000)
-    - `:sync_fn` - Function to call for sync (default: ContentSync.sync_to_content_admin/1)
+    - `:sync_fn` - Function to call for sync (default: ContentSync.sync_directory_to_content_admin/2)
   """
   @spec build_config(keyword()) :: {:ok, map()} | {:error, atom()}
   def build_config(opts) do
@@ -51,7 +51,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
         directory: directory,
         scope: scope,
         debounce_ms: opts[:debounce_ms] || @default_debounce_ms,
-        sync_fn: opts[:sync_fn] || (&CodeMySpec.ContentSync.sync_to_content_admin/1)
+        sync_fn: opts[:sync_fn] || (&CodeMySpec.ContentSync.sync_directory_to_content_admin/2)
       }
 
       {:ok, config}
@@ -69,7 +69,8 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
 
   @spec get_scope(keyword()) ::
           {:ok, Scope.t()}
-          | {:error, :missing_scope_config | :account_not_found | :project_not_found | :user_not_found}
+          | {:error,
+             :missing_scope_config | :account_not_found | :project_not_found | :user_not_found}
   defp get_scope(opts) do
     case opts[:scope] do
       %Scope{} = scope ->
@@ -82,7 +83,8 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
 
   @spec load_scope_from_config() ::
           {:ok, Scope.t()}
-          | {:error, :missing_scope_config | :account_not_found | :project_not_found | :user_not_found}
+          | {:error,
+             :missing_scope_config | :account_not_found | :project_not_found | :user_not_found}
   defp load_scope_from_config do
     case Application.get_env(:code_my_spec, :content_watch_scope) do
       nil ->
@@ -252,10 +254,10 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
   @doc """
   Handles a sync trigger and returns sync arguments.
 
-  Returns `{scope, new_state}` where scope should be passed to sync_fn
+  Returns `{scope, sync_fn, new_state}` where scope and directory should be passed to sync_fn
   and new_state has the timer cleared.
   """
-  @spec handle_sync_trigger(t()) :: {Scope.t(), (Scope.t() -> any()), t()}
+  @spec handle_sync_trigger(t()) :: {Scope.t(), (Scope.t(), String.t() -> any()), t()}
   def handle_sync_trigger(state) do
     new_state = %{state | debounce_timer: nil}
     {state.scope, state.sync_fn, new_state}

@@ -11,7 +11,7 @@ defmodule CodeMySpec.ContentSync.Sync do
   Sync is the foundational layer that:
   - Reads files from filesystem
   - Parses metadata (YAML sidecar files)
-  - Processes content (Markdown, HTML, HEEx)
+  - Processes content (Markdown, HTML)
   - Returns generic attribute maps
 
   Sync does NOT:
@@ -53,7 +53,6 @@ defmodule CodeMySpec.ContentSync.Sync do
     MetaDataParser,
     MarkdownProcessor,
     HtmlProcessor,
-    HeexProcessor,
     ProcessorResult
   }
 
@@ -91,7 +90,7 @@ defmodule CodeMySpec.ContentSync.Sync do
   ## Processing Steps
 
   1. Validates directory exists and is readable
-  2. Discovers content files (*.md, *.html, *.heex) in flat directory structure
+  2. Discovers content files (*.md, *.html) in flat directory structure
   3. For each file:
      - Reads file contents
      - Parses metadata from sidecar .yaml file
@@ -191,8 +190,7 @@ defmodule CodeMySpec.ContentSync.Sync do
   defp discover_files(directory) do
     patterns = [
       Path.join(directory, "*.md"),
-      Path.join(directory, "*.html"),
-      Path.join(directory, "*.heex")
+      Path.join(directory, "*.html")
     ]
 
     patterns
@@ -236,11 +234,6 @@ defmodule CodeMySpec.ContentSync.Sync do
 
   defp route_to_processor(".html", raw_content) do
     {:ok, result} = HtmlProcessor.process(raw_content)
-    result
-  end
-
-  defp route_to_processor(".heex", raw_content) do
-    {:ok, result} = HeexProcessor.process(raw_content)
     result
   end
 

@@ -74,7 +74,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Server do
     {scope, sync_fn, new_state} = Impl.handle_sync_trigger(state)
 
     # Perform side effect: call sync function
-    case sync_fn.(scope) do
+    case sync_fn.(scope, state.watched_directory) do
       {:ok, result} ->
         Logger.info("FileWatcher: ContentAdmin synced successfully",
           total: result.total_files,

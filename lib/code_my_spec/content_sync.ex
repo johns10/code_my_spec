@@ -17,7 +17,8 @@ defmodule CodeMySpec.ContentSync do
           total_files: integer(),
           successful: integer(),
           errors: integer(),
-          duration_ms: integer()
+          duration_ms: integer(),
+          content_synced: integer()
         }
 
   @type push_result :: %{
@@ -76,7 +77,8 @@ defmodule CodeMySpec.ContentSync do
          content_dir = Path.join(cloned_path, "content"),
          {:ok, attrs_list} <- Sync.process_directory(content_dir),
          {:ok, validated_attrs_list} <- validate_attrs_against_content_schema(attrs_list),
-         {:ok, content_admin_list} <- persist_validated_content_to_admin(scope, validated_attrs_list) do
+         {:ok, content_admin_list} <-
+           persist_validated_content_to_admin(scope, validated_attrs_list) do
       end_time = System.monotonic_time(:millisecond)
       duration_ms = end_time - start_time
 
@@ -84,7 +86,34 @@ defmodule CodeMySpec.ContentSync do
         total_files: length(content_admin_list),
         successful: Enum.count(content_admin_list, &(&1.parse_status == :success)),
         errors: Enum.count(content_admin_list, &(&1.parse_status == :error)),
-        duration_ms: duration_ms
+        duration_ms: duration_ms,
+        content_synced: 0
+      }
+
+      # Broadcast sync completed
+      broadcast_sync_completed(scope, sync_result)
+
+      {:ok, sync_result}
+    end
+  end
+
+  def sync_directory_to_content_and_content_admin(%Scope{} = scope, content_dir) do
+    start_time = System.monotonic_time(:millisecond)
+
+    with {:ok, attrs_list} <- Sync.process_directory(content_dir),
+         {:ok, validated_attrs_list} <- validate_attrs_against_content_schema(attrs_list),
+         {:ok, content_admin_list} <-
+           persist_validated_content_to_admin(scope, validated_attrs_list),
+         {:ok, content_list} <- sync_to_content(validated_attrs_list) do
+      end_time = System.monotonic_time(:millisecond)
+      duration_ms = end_time - start_time
+
+      sync_result = %{
+        total_files: length(content_admin_list),
+        successful: Enum.count(content_admin_list, &(&1.parse_status == :success)),
+        errors: Enum.count(content_admin_list, &(&1.parse_status == :error)),
+        duration_ms: duration_ms,
+        content_synced: length(content_list)
       }
 
       # Broadcast sync completed
@@ -410,5 +439,49 @@ defmodule CodeMySpec.ContentSync do
   @spec content_admin_topic(Scope.t()) :: String.t()
   defp content_admin_topic(%Scope{} = scope) do
     "account:#{scope.active_account_id}:project:#{scope.active_project_id}:content_admin"
+  end
+
+  # ============================================================================
+  # Private Functions - Content Sync
+  # ============================================================================
+
+  @spec sync_to_content([map()]) :: {:ok, [CodeMySpec.Content.Content.t()]} | {:error, term()}
+  defp sync_to_content(attrs_list) do
+    require Logger
+
+    # Filter to only successfully parsed content
+    valid_content =
+      attrs_list
+      |> Enum.filter(&(&1.parse_status == :success))
+      |> Enum.map(fn attrs ->
+        # Extract only Content schema fields (no parse_status, parse_errors, raw_content)
+        Map.take(attrs, [
+          :slug,
+          :title,
+          :content_type,
+          :processed_content,
+          :protected,
+          :publish_at,
+          :expires_at,
+          :meta_title,
+          :meta_description,
+          :og_image,
+          :og_title,
+          :og_description,
+          :metadata
+        ])
+      end)
+
+    Logger.info("Syncing #{length(valid_content)} valid content items to Content schema")
+
+    case CodeMySpec.Content.sync_content(valid_content) do
+      {:ok, content_list} ->
+        Logger.info("Successfully synced #{length(content_list)} items to Content")
+        {:ok, content_list}
+
+      {:error, reason} ->
+        Logger.error("Failed to sync to Content", reason: inspect(reason))
+        {:error, reason}
+    end
   end
 end

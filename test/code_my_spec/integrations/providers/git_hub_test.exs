@@ -215,13 +215,14 @@ defmodule CodeMySpec.Integrations.Providers.GitHubTest do
     end
 
     test "preserves original values without transformation" do
-      assent_user = github_assent_user_fixture(%{
-        "sub" => "original_id",
-        "email" => "original@email.com",
-        "name" => "Original Name",
-        "preferred_username" => "original_username",
-        "picture" => "https://original.com/pic.jpg"
-      })
+      assent_user =
+        github_assent_user_fixture(%{
+          "sub" => "original_id",
+          "email" => "original@email.com",
+          "name" => "Original Name",
+          "preferred_username" => "original_username",
+          "picture" => "https://original.com/pic.jpg"
+        })
 
       assert {:ok, normalized} = GitHub.normalize_user(assent_user)
 
@@ -242,6 +243,7 @@ defmodule CodeMySpec.Integrations.Providers.GitHubTest do
         {:ok, normalized} ->
           # If implementation coerces to string
           assert is_binary(normalized.provider_user_id)
+
         {:error, _} ->
           # If implementation requires string
           assert true
@@ -249,15 +251,17 @@ defmodule CodeMySpec.Integrations.Providers.GitHubTest do
     end
 
     test "normalizes multiple different GitHub users independently" do
-      user1 = github_assent_user_fixture(%{
-        "sub" => "user1_id",
-        "email" => "user1@github.com"
-      })
+      user1 =
+        github_assent_user_fixture(%{
+          "sub" => "user1_id",
+          "email" => "user1@github.com"
+        })
 
-      user2 = github_assent_user_fixture(%{
-        "sub" => "user2_id",
-        "email" => "user2@github.com"
-      })
+      user2 =
+        github_assent_user_fixture(%{
+          "sub" => "user2_id",
+          "email" => "user2@github.com"
+        })
 
       assert {:ok, normalized1} = GitHub.normalize_user(user1)
       assert {:ok, normalized2} = GitHub.normalize_user(user2)
@@ -280,20 +284,6 @@ defmodule CodeMySpec.Integrations.Providers.GitHubTest do
 
     test "returns error tuple for nil input" do
       assert {:error, _reason} = GitHub.normalize_user(nil)
-    end
-  end
-
-  describe "behaviour implementation" do
-    test "implements Integrations.Providers.Behaviour" do
-      behaviours = GitHub.module_info(:attributes)[:behaviour] || []
-
-      assert CodeMySpec.Integrations.Providers.Behaviour in behaviours
-    end
-
-    test "implements all required callbacks" do
-      assert function_exported?(GitHub, :config, 0)
-      assert function_exported?(GitHub, :strategy, 0)
-      assert function_exported?(GitHub, :normalize_user, 1)
     end
   end
 

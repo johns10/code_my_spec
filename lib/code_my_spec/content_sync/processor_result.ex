@@ -3,13 +3,12 @@ defmodule CodeMySpec.ContentSync.ProcessorResult do
   Shared result structure for all content processors.
 
   Contains raw and processed content along with parsing status and error details.
-  Used by MarkdownProcessor, HtmlProcessor, and HeexProcessor to return
-  consistent results to the sync pipeline.
+  Used by MarkdownProcessor and HtmlProcessor to return consistent results to the sync pipeline.
 
   ## Fields
 
     - `raw_content` - The original unprocessed content string
-    - `processed_content` - The processed content (HTML for markdown/html, nil for HEEx)
+    - `processed_content` - The processed content (HTML for markdown/html)
     - `parse_status` - Either `:success` or `:error`
     - `parse_errors` - Map containing error details when parse_status is `:error`, nil otherwise
 
@@ -73,7 +72,7 @@ defmodule CodeMySpec.ContentSync.ProcessorResult do
   ## Parameters
 
     - `raw_content` - The original content string
-    - `processed_content` - The processed content (can be nil for HEEx)
+    - `processed_content` - The processed content
 
   ## Returns
 

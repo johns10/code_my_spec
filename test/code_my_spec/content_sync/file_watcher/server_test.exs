@@ -47,7 +47,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ServerTest do
   end
 
   defp mock_sync_fn(test_pid) do
-    fn scope ->
+    fn scope, _directory ->
       send(test_pid, {:sync_called, scope})
       {:ok, %{total_files: 1, successful: 1, errors: 0, duration_ms: 10}}
     end
@@ -139,7 +139,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ServerTest do
     end
 
     test "stores custom sync_fn", %{dir: dir, scope: scope} do
-      sync_fn = fn _ -> {:ok, %{}} end
+      sync_fn = fn _, _ -> {:ok, %{}} end
 
       pid =
         start_supervised!(
@@ -488,7 +488,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ServerTest do
     test "passes correct scope to sync function", %{dir: dir, scope: scope} do
       test_pid = self()
 
-      sync_fn = fn received_scope ->
+      sync_fn = fn received_scope, _directory ->
         send(test_pid, {:scope_received, received_scope})
         {:ok, %{total_files: 1, successful: 1, errors: 0, duration_ms: 10}}
       end
@@ -521,7 +521,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ServerTest do
     test "multiple rapid events only trigger one sync", %{dir: dir, scope: scope} do
       test_pid = self()
 
-      sync_fn = fn _s ->
+      sync_fn = fn _s, _directory ->
         send(test_pid, :synced)
         {:ok, %{total_files: 1, successful: 1, errors: 0, duration_ms: 10}}
       end
@@ -555,7 +555,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ServerTest do
 
   describe "error handling" do
     test "continues running when sync fails", %{dir: dir, scope: scope} do
-      sync_fn = fn _scope ->
+      sync_fn = fn _scope, _directory ->
         {:error, :sync_failed}
       end
 

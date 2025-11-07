@@ -47,15 +47,6 @@ defmodule CodeMySpec.ContentSync.SyncTest do
     """
   end
 
-  defp valid_landing_metadata do
-    """
-    title: "Test Landing Page"
-    slug: "test-landing"
-    type: "landing"
-    protected: true
-    """
-  end
-
   defp invalid_metadata_missing_title do
     """
     slug: "missing-title"
@@ -76,15 +67,6 @@ defmodule CodeMySpec.ContentSync.SyncTest do
     <div>
       <h1>Hello HTML</h1>
       <p>This is HTML content.</p>
-    </div>
-    """
-  end
-
-  defp simple_heex_content do
-    """
-    <div>
-      <h1><%= @title %></h1>
-      <p><%= @content %></p>
     </div>
     """
   end
@@ -143,25 +125,6 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       cleanup_directory(dir)
     end
 
-    test "successfully processes single HEEx file" do
-      dir =
-        create_test_directory([
-          {"landing.heex", simple_heex_content(), valid_landing_metadata()}
-        ])
-
-      assert {:ok, attrs_list} = Sync.process_directory(dir)
-      assert length(attrs_list) == 1
-
-      [attrs] = attrs_list
-      assert attrs.slug == "test-landing"
-      assert attrs.content_type == :landing
-      assert attrs.raw_content == simple_heex_content()
-      assert attrs.parse_status == :success
-      assert attrs.protected == true
-
-      cleanup_directory(dir)
-    end
-
     test "stores metadata fields correctly" do
       dir =
         create_test_directory([
@@ -211,15 +174,14 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       dir =
         create_test_directory([
           {"post.md", simple_markdown_content(), valid_blog_metadata()},
-          {"page.html", simple_html_content(), valid_page_metadata()},
-          {"landing.heex", simple_heex_content(), valid_landing_metadata()}
+          {"page.html", simple_html_content(), valid_page_metadata()}
         ])
 
       assert {:ok, attrs_list} = Sync.process_directory(dir)
-      assert length(attrs_list) == 3
+      assert length(attrs_list) == 2
 
       slugs = Enum.map(attrs_list, & &1.slug) |> Enum.sort()
-      assert slugs == ["test-blog-post", "test-landing", "test-page"]
+      assert slugs == ["test-blog-post", "test-page"]
 
       cleanup_directory(dir)
     end
@@ -329,7 +291,7 @@ defmodule CodeMySpec.ContentSync.SyncTest do
         create_test_directory([
           {"good.md", simple_markdown_content(), valid_blog_metadata()},
           {"bad.html", invalid_html_with_script(), valid_page_metadata()},
-          {"good2.heex", simple_heex_content(), valid_landing_metadata()}
+          {"good2.html", simple_html_content(), valid_page_metadata()}
         ])
 
       on_exit(fn -> cleanup_directory(dir) end)
@@ -441,20 +403,6 @@ defmodule CodeMySpec.ContentSync.SyncTest do
       assert {:ok, [attrs]} = Sync.process_directory(dir)
       assert attrs.parse_status == :success
       assert attrs.processed_content == simple_html_content()
-
-      cleanup_directory(dir)
-    end
-
-    test "routes .heex files to HeexProcessor" do
-      dir =
-        create_test_directory([
-          {"landing.heex", simple_heex_content(), valid_landing_metadata()}
-        ])
-
-      assert {:ok, [attrs]} = Sync.process_directory(dir)
-      assert attrs.parse_status == :success
-      assert is_nil(attrs.processed_content)
-      assert attrs.raw_content == simple_heex_content()
 
       cleanup_directory(dir)
     end

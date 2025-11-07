@@ -39,6 +39,7 @@ defmodule CodeMySpecWeb.Router do
       live "/pages/:slug", ContentLive.Public, :page
       live "/landing/:slug", ContentLive.Public, :landing
       live "/documentation/:slug", ContentLive.Public, :documentation
+      live "/methodology", ContentLive.Pages.Methodology, :methodology
     end
   end
 

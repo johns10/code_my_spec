@@ -212,6 +212,9 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
     1. Receive scoped request
     2. Execute database operation with user filtering
     3. Return result or error
+
+    ## Test Assertions
+    1. It does the thing
     """
   end
 end

@@ -81,7 +81,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ImplTest do
   describe "build_config/1" do
     test "builds config from options with all fields provided" do
       scope = %Scope{active_account_id: 1, active_project_id: 2}
-      sync_fn = fn _scope -> {:ok, %{}} end
+      sync_fn = fn _scope, _directory -> {:ok, %{}} end
 
       opts = [
         directory: System.tmp_dir!(),
@@ -118,7 +118,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ImplTest do
       ]
 
       assert {:ok, config} = Impl.build_config(opts)
-      assert is_function(config.sync_fn, 1)
+      assert is_function(config.sync_fn, 2)
     end
 
     test "returns error when directory is missing" do
@@ -169,7 +169,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ImplTest do
   describe "new_state/1" do
     test "creates initial state from config" do
       scope = %Scope{active_account_id: 1, active_project_id: 2}
-      sync_fn = fn _scope -> {:ok, %{}} end
+      sync_fn = fn _scope, _directory -> {:ok, %{}} end
 
       config = %{
         directory: "/tmp/test",
@@ -195,7 +195,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ImplTest do
   describe "handle_file_event/3" do
     setup do
       scope = %Scope{active_account_id: 1, active_project_id: 2}
-      sync_fn = fn _scope -> {:ok, %{}} end
+      sync_fn = fn _scope, _directory -> {:ok, %{}} end
 
       state = %Impl{
         scope: scope,
@@ -271,7 +271,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.ImplTest do
   describe "handle_sync_trigger/1" do
     test "returns scope, sync_fn, and clears timer" do
       scope = %Scope{active_account_id: 1, active_project_id: 2}
-      sync_fn = fn _scope -> {:ok, %{}} end
+      sync_fn = fn _scope, _directory -> {:ok, %{}} end
       timer_ref = make_ref()
 
       state = %Impl{
