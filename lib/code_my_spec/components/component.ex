@@ -7,6 +7,7 @@ defmodule CodeMySpec.Components.Component do
   import Ecto.Changeset
 
   alias CodeMySpec.Components.Dependency
+  alias CodeMySpec.Components.SimilarComponent
   alias CodeMySpec.Components.ComponentType
   alias CodeMySpec.Projects.Project
   alias CodeMySpec.Components.Requirements.Requirement
@@ -31,6 +32,10 @@ defmodule CodeMySpec.Components.Component do
           incoming_dependencies: [Dependency.t()] | Ecto.Association.NotLoaded.t(),
           dependencies: [t()] | Ecto.Association.NotLoaded.t(),
           dependents: [t()] | Ecto.Association.NotLoaded.t(),
+          outgoing_similar_components: [SimilarComponent.t()] | Ecto.Association.NotLoaded.t(),
+          incoming_similar_components: [SimilarComponent.t()] | Ecto.Association.NotLoaded.t(),
+          similar_components: [t()] | Ecto.Association.NotLoaded.t(),
+          referenced_by_components: [t()] | Ecto.Association.NotLoaded.t(),
           stories: [CodeMySpec.Stories.Story.t()] | Ecto.Association.NotLoaded.t(),
           requirements: [Requirement.t()] | Ecto.Association.NotLoaded.t(),
           component_status: ComponentStatus.t() | nil,
@@ -58,6 +63,12 @@ defmodule CodeMySpec.Components.Component do
 
     has_many :dependencies, through: [:outgoing_dependencies, :target_component]
     has_many :dependents, through: [:incoming_dependencies, :source_component]
+
+    has_many :outgoing_similar_components, SimilarComponent, foreign_key: :component_id
+    has_many :incoming_similar_components, SimilarComponent, foreign_key: :similar_component_id
+    has_many :similar_components, through: [:outgoing_similar_components, :similar_component]
+    has_many :referenced_by_components, through: [:incoming_similar_components, :component]
+
     has_many :stories, CodeMySpec.Stories.Story
     has_many :requirements, Requirement
 

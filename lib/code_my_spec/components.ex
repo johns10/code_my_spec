@@ -7,6 +7,7 @@ defmodule CodeMySpec.Components do
     Component,
     ComponentRepository,
     DependencyRepository,
+    SimilarComponentRepository,
     Registry,
     RequirementsRepository
   }
@@ -156,4 +157,12 @@ defmodule CodeMySpec.Components do
   defdelegate delete_dependency(scope, dependency), to: DependencyRepository
   defdelegate validate_dependency_graph(scope), to: DependencyRepository
   defdelegate resolve_dependency_order(scope), to: DependencyRepository
+
+  # Similar Components
+  defdelegate list_similar_components(scope, component), to: SimilarComponentRepository
+  defdelegate add_similar_component(scope, component, similar_component), to: SimilarComponentRepository
+  defdelegate remove_similar_component(scope, component, similar_component), to: SimilarComponentRepository
+  defdelegate sync_similar_components(scope, component, similar_ids), to: SimilarComponentRepository
+  defdelegate preload_similar_components(scope, components), to: SimilarComponentRepository
+  defdelegate list_referenced_by(scope, component), to: SimilarComponentRepository
 end

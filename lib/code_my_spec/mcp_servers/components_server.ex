@@ -20,6 +20,10 @@ defmodule CodeMySpec.MCPServers.ComponentsServer do
   component(CodeMySpec.MCPServers.Components.Tools.CreateDependency)
   component(CodeMySpec.MCPServers.Components.Tools.DeleteDependency)
 
+  # Similar component management
+  component(CodeMySpec.MCPServers.Components.Tools.AddSimilarComponent)
+  component(CodeMySpec.MCPServers.Components.Tools.RemoveSimilarComponent)
+
   # Architecture and design tools
   component(CodeMySpec.MCPServers.Components.Tools.StartContextDesign)
   component(CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign)

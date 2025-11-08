@@ -13,6 +13,7 @@ defmodule CodeMySpec.Sessions.Session do
             CodeMySpec.ContextDesignSessions
             | CodeMySpec.ContextComponentsDesignSessions
             | CodeMySpec.ContextDesignReviewSessions
+            | CodeMySpec.ContextCodingSessions
             | CodeMySpec.ComponentDesignSessions
             | CodeMySpec.ComponentDesignReviewSessions
             | CodeMySpec.ComponentTestSessions
