@@ -76,7 +76,9 @@ defmodule CodeMySpecWeb.Router do
     pipe_through :api
 
     get "/oauth-protected-resource", OAuthController, :protected_resource_metadata
+    get "/oauth-protected-resource/*path", OAuthController, :protected_resource_metadata
     get "/oauth-authorization-server", OAuthController, :authorization_server_metadata
+    get "/oauth-authorization-server/*path", OAuthController, :authorization_server_metadata
   end
 
   # MCP Server routes

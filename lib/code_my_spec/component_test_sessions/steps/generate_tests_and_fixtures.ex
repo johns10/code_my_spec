@@ -80,6 +80,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       - Testing with valid and invalid data
       - Testing proper scoping and access patterns
       - Following test and fixture organization patterns from the rules
+      - Only implementing the test assertions from the design file
       """
 
     {:ok, prompt}
