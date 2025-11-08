@@ -190,10 +190,14 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       result = Result.success(%{message: "Review session complete"})
 
       assert {:ok, session_updates, updated_result} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
 
       assert session_updates == %{}
       assert updated_result.status == :ok
@@ -217,10 +221,14 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       result = Result.success(%{message: "Checking status"})
 
       assert {:ok, _session_updates, updated_result} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
 
       assert updated_result.status == :error
       assert updated_result.error_message =~ "Review session still"
@@ -244,10 +252,14 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       result = Result.success(%{message: "Checking status"})
 
       assert {:ok, _session_updates, updated_result} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
 
       assert updated_result.status == :error
       assert updated_result.error_message =~ "failed"
@@ -271,10 +283,14 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       result = Result.success(%{message: "Checking status"})
 
       assert {:ok, _session_updates, updated_result} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
 
       assert updated_result.status == :error
       assert updated_result.error_message =~ "cancelled"
@@ -295,10 +311,14 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       result = Result.success(%{message: "Checking status"})
 
       assert {:error, "Review session not found"} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
     end
 
     test "returns error when command metadata is missing child_session_ids", %{
@@ -313,10 +333,14 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       result = Result.success(%{message: "Checking status"})
 
       assert {:error, error_message} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
 
       assert error_message =~ "child_session_ids"
     end
@@ -336,11 +360,15 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         timestamp: DateTime.utc_now()
       }
 
+      # Add the command to the session's interactions
+      interaction = CodeMySpec.Sessions.Interaction.new_with_command(command)
+      parent_session_with_interaction = %{parent_session | interactions: [interaction]}
+
       original_data = %{message: "Review complete", extra_field: "preserved"}
       result = Result.success(original_data)
 
       assert {:ok, _session_updates, updated_result} =
-               SpawnReviewSession.handle_result(scope, parent_session, result, command: command)
+               SpawnReviewSession.handle_result(scope, parent_session_with_interaction, result, command: command)
 
       assert updated_result.status == :ok
       assert updated_result.data.message == "Review complete"

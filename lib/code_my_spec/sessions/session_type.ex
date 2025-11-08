@@ -4,20 +4,24 @@ defmodule CodeMySpec.Sessions.SessionType do
   @type t ::
           CodeMySpec.ContextDesignSessions
           | CodeMySpec.ContextComponentsDesignSessions
+          | CodeMySpec.ContextDesignReviewSessions
           | CodeMySpec.ComponentDesignSessions
           | CodeMySpec.ComponentDesignReviewSessions
           | CodeMySpec.ComponentTestSessions
           | CodeMySpec.ComponentCodingSessions
           | CodeMySpec.IntegrationSessions
+          | CodeMySpec.ContextDesignReviewSessions
 
   @valid_types [
     CodeMySpec.ContextDesignSessions,
     CodeMySpec.ContextComponentsDesignSessions,
+    CodeMySpec.ContextDesignReviewSessions,
     CodeMySpec.ComponentDesignSessions,
     CodeMySpec.ComponentDesignReviewSessions,
     CodeMySpec.ComponentTestSessions,
     CodeMySpec.ComponentCodingSessions,
-    CodeMySpec.IntegrationSessions
+    CodeMySpec.IntegrationSessions,
+    CodeMySpec.ContextDesignReviewSessions
   ]
 
   @spec type() :: :string

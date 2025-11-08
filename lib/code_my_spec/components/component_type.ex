@@ -13,6 +13,7 @@ defmodule CodeMySpec.Components.ComponentType do
     :task,
     :registry,
     :behaviour,
+    :liveview,
     :other
   ]
 
@@ -25,6 +26,7 @@ defmodule CodeMySpec.Components.ComponentType do
           | :task
           | :registry
           | :behaviour
+          | :liveview
           | :other
 
   @doc """

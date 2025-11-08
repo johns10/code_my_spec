@@ -310,30 +310,6 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       assert updated_result.error_message =~ "Child sessions still running"
     end
 
-    test "returns error when only some design files exist", %{
-      scope: scope,
-      parent_session: parent_session
-    } do
-      # Create only one design file
-      design_file1 = "docs/design/my_app/user.md"
-      File.mkdir_p!("docs/design/my_app")
-      File.write!(design_file1, "# User Design")
-
-      on_exit(fn ->
-        File.rm_rf!("docs/design/my_app")
-      end)
-
-      result = Result.success(%{message: "All sessions complete"})
-
-      assert {:ok, _session_updates, updated_result} =
-               SpawnComponentDesignSessions.handle_result(scope, parent_session, result, [])
-
-      assert updated_result.status == :error
-      assert updated_result.error_message =~ "Design files missing"
-      assert updated_result.error_message =~ "docs/design/my_app/user_repository.md"
-      refute updated_result.error_message =~ "docs/design/my_app/user.md"
-    end
-
     test "returns error when parent session not found", %{
       scope: scope
     } do

@@ -219,7 +219,6 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
   def handle_event("push-to-client", _params, socket) do
     socket.assigns.current_scope
     |> CodeMySpec.ContentSync.push_to_client()
-    |> IO.inspect()
     |> case do
       {:ok, push_result} ->
         message = """

@@ -3,18 +3,25 @@ defmodule CodeMySpec.Utils do
   alias CodeMySpec.Projects.Project
 
   def component_files(
-        %Component{module_name: component_module_name},
+        %Component{module_name: component_module_name, type: type},
         %Project{module_name: project_module_name}
       ) do
     component_module_name = String.replace(component_module_name, "#{project_module_name}.", "")
     full_module_name = "#{project_module_name}.#{component_module_name}"
     module_path = module_to_path(full_module_name)
 
-    %{
+    base_files = %{
       design_file: "docs/design/#{module_path}.md",
       code_file: "lib/#{module_path}.ex",
       test_file: "test/#{module_path}_test.exs"
     }
+
+    # Add review_file for context components (both :context and :coordination_context)
+    if type in [:context, :coordination_context] do
+      Map.put(base_files, :review_file, "docs/design/#{module_path}/design_review.md")
+    else
+      base_files
+    end
   end
 
   defp module_to_path(module_name) do

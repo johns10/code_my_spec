@@ -11,6 +11,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
           design_exists: boolean(),
           code_exists: boolean(),
           test_exists: boolean(),
+          review_exists: boolean(),
           test_status: :passing | :failing | :not_run,
           expected_files: %{atom() => String.t()},
           actual_files: [String.t()],
@@ -23,6 +24,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
     field :design_exists, :boolean, default: false
     field :code_exists, :boolean, default: false
     field :test_exists, :boolean, default: false
+    field :review_exists, :boolean, default: false
     field :test_status, Ecto.Enum, values: [:passing, :failing, :not_run], default: :not_run
     field :expected_files, :map, default: %{}
     field :actual_files, {:array, :string}, default: []
@@ -36,23 +38,29 @@ defmodule CodeMySpec.Components.ComponentStatus do
       :design_exists,
       :code_exists,
       :test_exists,
+      :review_exists,
       :test_status,
       :expected_files,
       :actual_files,
       :failing_tests,
       :computed_at
     ])
-    |> validate_required([:design_exists, :code_exists, :test_exists, :test_status])
+    |> validate_required([:design_exists, :code_exists, :test_exists, :review_exists, :test_status])
   end
 
   @doc """
   Creates a ComponentStatus from analysis data.
   """
   def from_analysis(expected_files, actual_files, failing_tests) do
+    # Check review_file only if it exists in expected_files (context components)
+    review_file = Map.get(expected_files, :review_file)
+    review_exists = review_file != nil and review_file in actual_files
+
     %__MODULE__{
       design_exists: expected_files.design_file in actual_files,
       code_exists: expected_files.code_file in actual_files,
       test_exists: expected_files.test_file in actual_files,
+      review_exists: review_exists,
       test_status: determine_test_status(failing_tests, actual_files, expected_files.test_file),
       expected_files: expected_files,
       actual_files: actual_files,

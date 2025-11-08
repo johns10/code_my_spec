@@ -14,6 +14,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
           | :manual_review
           | :dependencies_satisfied
           | :hierarchy
+          | :context_review
 
   @type requirement_spec :: %{
           name: atom(),
@@ -42,7 +43,8 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
         :cross_component,
         :manual_review,
         :dependencies_satisfied,
-        :hierarchy
+        :hierarchy,
+        :context_review
       ]
 
     field :description, :string
@@ -79,6 +81,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
   defp infer_type_from_name(:design_file), do: :file_existence
   defp infer_type_from_name(:implementation_file), do: :file_existence
   defp infer_type_from_name(:test_file), do: :file_existence
+  defp infer_type_from_name(:review_file), do: :context_review
   defp infer_type_from_name(:tests_passing), do: :test_status
   defp infer_type_from_name(:dependencies_satisfied), do: :dependencies_satisfied
   defp infer_type_from_name(_), do: :manual_review
@@ -86,6 +89,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
   defp generate_description(:design_file), do: "Component design documentation exists"
   defp generate_description(:implementation_file), do: "Component implementation file exists"
   defp generate_description(:test_file), do: "Component test file exists"
+  defp generate_description(:review_file), do: "Context design review documentation exists"
   defp generate_description(:tests_passing), do: "Component tests are passing"
 
   defp generate_description(:dependencies_satisfied),

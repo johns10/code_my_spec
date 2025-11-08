@@ -52,6 +52,12 @@ defmodule CodeMySpec.Components.Registry do
     satisfied_by: "ComponentTestSessions"
   }
 
+  @review_file %{
+    name: :review_file,
+    checker: CodeMySpec.Components.Requirements.ContextReviewFileChecker,
+    satisfied_by: "ContextDesignReviewSessions"
+  }
+
   @tests_passing %{
     name: :tests_passing,
     checker: CodeMySpec.Components.Requirements.TestStatusChecker,
@@ -78,9 +84,10 @@ defmodule CodeMySpec.Components.Registry do
       requirements: [
         @context_design_file,
         @child_designs,
+        @review_file,
         @dependencies,
-        @test_file,
         @implementation_file,
+        @test_file,
         @tests_passing
       ],
       display_name: "Context",
@@ -92,9 +99,10 @@ defmodule CodeMySpec.Components.Registry do
       requirements: [
         @context_design_file,
         @child_designs,
+        @review_file,
         @dependencies,
-        @test_file,
         @implementation_file,
+        @test_file,
         @tests_passing
       ],
       display_name: "Coordination Context",
