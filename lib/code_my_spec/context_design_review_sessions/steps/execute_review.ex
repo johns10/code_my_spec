@@ -197,7 +197,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview do
        - Document your findings, including what was reviewed
        - List any issues found and how they were fixed
        - Confirm architectural soundness and readiness for implementation
-       - Write your comprehensive review to: **#{review_file_path}**
+       - Write your concise review to: **#{review_file_path}**
 
     ## Expected Outcomes
 
@@ -205,7 +205,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview do
     - Integration between context and child components is sound
     - User stories can be satisfied by the proposed design
     - Any issues found are fixed in the design files
-    - A comprehensive review document is written to the specified path
+    - A concise review document is written to the specified path
 
     Please begin your review now.
     """

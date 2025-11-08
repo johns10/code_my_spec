@@ -59,7 +59,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSession do
   # Private Functions - get_command helpers
 
   defp get_parent_session(%Scope{} = scope, %Session{id: id}) do
-    case Sessions.SessionsRepository.get_session_with_children(scope, id) do
+    case Sessions.SessionsRepository.get_session(scope, id) do
       nil -> {:error, "Session not found"}
       session -> {:ok, session}
     end
@@ -73,7 +73,10 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSession do
     {:ok, component}
   end
 
-  defp get_or_create_review_session(%Scope{} = scope, %Session{child_sessions: child_sessions} = parent_session) do
+  defp get_or_create_review_session(
+         %Scope{} = scope,
+         %Session{child_sessions: child_sessions} = parent_session
+       ) do
     # Check if a review session already exists
     case find_review_session(child_sessions) do
       {:ok, review_session} ->
@@ -86,8 +89,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSession do
 
   defp find_review_session(child_sessions) do
     case Enum.find(child_sessions, fn session ->
-      session.type == CodeMySpec.ComponentDesignReviewSessions
-    end) do
+           session.type == CodeMySpec.ComponentDesignReviewSessions
+         end) do
       nil -> :not_found
       session -> {:ok, session}
     end
@@ -116,7 +119,9 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSession do
 
   # Private Functions - handle_result helpers
 
-  defp extract_review_session_id_from_session(%Session{interactions: [%{command: command, result: nil} | _]}) do
+  defp extract_review_session_id_from_session(%Session{
+         interactions: [%{command: command, result: nil} | _]
+       }) do
     extract_review_session_id(command)
   end
 

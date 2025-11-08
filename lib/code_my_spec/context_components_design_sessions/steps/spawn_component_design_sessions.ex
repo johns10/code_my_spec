@@ -22,7 +22,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
   def get_command(%Scope{} = scope, %Session{} = session, _opts) do
     with {:ok, context_component} <- get_context_component(scope, session),
          {:ok, parent_session} <- get_parent_session(scope, session),
-         {:ok, child_sessions} <- get_or_create_child_sessions(scope, parent_session, context_component) do
+         {:ok, child_sessions} <-
+           get_or_create_child_sessions(scope, parent_session, context_component) do
       child_session_ids = Enum.map(child_sessions, & &1.id)
 
       command =
@@ -51,7 +52,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
   # Private Functions
 
   defp get_parent_session(%Scope{} = scope, %Session{id: id}) do
-    case SessionsRepository.get_session_with_children(scope, id) do
+    case SessionsRepository.get_session(scope, id) do
       nil -> {:error, "Session not found"}
       session -> {:ok, session}
     end
@@ -65,7 +66,11 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
     {:ok, component}
   end
 
-  defp get_or_create_child_sessions(%Scope{} = scope, %Session{child_sessions: child_sessions} = parent_session, %Component{} = context_component) do
+  defp get_or_create_child_sessions(
+         %Scope{} = scope,
+         %Session{child_sessions: child_sessions} = parent_session,
+         %Component{} = context_component
+       ) do
     case child_sessions do
       [] ->
         # No child sessions exist, create them
@@ -91,11 +96,16 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
         :ok
 
       [session | _] ->
-        {:error, "Invalid child session type: expected ComponentDesignSessions, got #{inspect(session.type)}"}
+        {:error,
+         "Invalid child session type: expected ComponentDesignSessions, got #{inspect(session.type)}"}
     end
   end
 
-  defp create_new_child_sessions(%Scope{} = scope, %Session{} = parent_session, %Component{} = context_component) do
+  defp create_new_child_sessions(
+         %Scope{} = scope,
+         %Session{} = parent_session,
+         %Component{} = context_component
+       ) do
     with {:ok, child_components} <- get_child_components(scope, context_component),
          {:ok, context_design_path} <- get_context_design_path(context_component, parent_session) do
       create_child_sessions(
