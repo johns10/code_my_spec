@@ -162,7 +162,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Show do
           <div class="card bg-base-100 border border-base-300">
             <div class="card-body">
               <%= if @show_raw do %>
-                <pre class="text-sm whitespace-pre-wrap font-mono bg-base-200 p-4 rounded overflow-x-auto">{@content_admin.content}</pre>
+                <pre class="text-sm whitespace-pre-wrap font-mono bg-base-200 p-4 rounded overflow-x-auto">{@content_admin.processed_content}</pre>
               <% else %>
                 <%= if @content_admin.processed_content do %>
                   <div class="prose max-w-none">

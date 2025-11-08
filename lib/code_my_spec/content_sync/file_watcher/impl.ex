@@ -41,7 +41,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
     - `:directory` - Directory to watch (required)
     - `:scope` - Scope struct with account/project (required)
     - `:debounce_ms` - Debounce delay in milliseconds (default: 1000)
-    - `:sync_fn` - Function to call for sync (default: ContentSync.sync_directory_to_content_admin/2)
+    - `:sync_fn` - Function to call for sync (default: ContentSync.sync_directory_to_content_and_content_admin/2)
   """
   @spec build_config(keyword()) :: {:ok, map()} | {:error, atom()}
   def build_config(opts) do
@@ -51,7 +51,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
         directory: directory,
         scope: scope,
         debounce_ms: opts[:debounce_ms] || @default_debounce_ms,
-        sync_fn: opts[:sync_fn] || (&CodeMySpec.ContentSync.sync_directory_to_content_admin/2)
+        sync_fn: opts[:sync_fn] || (&CodeMySpec.ContentSync.sync_directory_to_content_and_content_admin/2)
       }
 
       {:ok, config}

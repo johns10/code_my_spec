@@ -168,6 +168,11 @@ defmodule CodeMySpecWeb.Layouts do
           <div class="navbar-end gap-2">
             <ul class="menu menu-horizontal px-1">
               <li>
+                <a href="/methodology" class="gap-2">
+                  <.icon name="hero-light-bulb" class="w-4 h-4" /> Methodology
+                </a>
+              </li>
+              <li>
                 <a href="/blog" class="gap-2">
                   <.icon name="hero-document-text" class="w-4 h-4" /> Blog
                 </a>
@@ -176,10 +181,10 @@ defmodule CodeMySpecWeb.Layouts do
             <.theme_toggle />
           </div>
         </div>
-
+        
     <!-- Content -->
         {render_slot(@inner_block)}
-
+        
     <!-- Footer -->
         <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded-box shadow-inner mt-20">
           <!--<nav class="grid grid-flow-col gap-6">
