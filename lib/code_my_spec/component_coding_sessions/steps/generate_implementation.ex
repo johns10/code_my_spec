@@ -1,7 +1,7 @@
 defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Rules, Utils}
+  alias CodeMySpec.{Rules, Utils, Components}
   alias CodeMySpec.Sessions.{Session, Steps.Helpers}
 
   def get_command(
@@ -10,7 +10,8 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
         opts \\ []
       ) do
     with {:ok, rules} <- get_implementation_rules(scope, component),
-         {:ok, prompt} <- build_implementation_prompt(project, component, rules),
+         similar_components <- Components.list_similar_components(scope, component),
+         {:ok, prompt} <- build_implementation_prompt(project, component, rules, similar_components),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -23,7 +24,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
     end
   end
 
-  def handle_result(_scope, _session, result, _opts \\ []) do
+  def handle_result(_scope, _session, result, _opts) do
     {:ok, %{}, result}
   end
 
@@ -38,7 +39,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
     end
   end
 
-  defp build_implementation_prompt(project, component, rules) do
+  defp build_implementation_prompt(project, component, rules, similar_components) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
 
     %{
@@ -46,6 +47,24 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
       code_file: code_file_path,
       test_file: test_file_path
     } = Utils.component_files(component, project)
+
+    similar_components_text =
+      case similar_components do
+        [] ->
+          ""
+
+        components ->
+          component_list =
+            components
+            |> Enum.map(fn c -> "- #{c.name} (#{c.type})" end)
+            |> Enum.join("\n")
+
+          """
+
+          Similar Components (for reference):
+          #{component_list}
+          """
+      end
 
     prompt =
       """
@@ -71,6 +90,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
 
       Coding Rules:
       #{rules_text}
+      #{similar_components_text}
 
       Write the implementation to #{code_file_path}
       """

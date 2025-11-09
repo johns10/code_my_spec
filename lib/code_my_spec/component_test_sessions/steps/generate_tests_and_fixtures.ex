@@ -1,7 +1,7 @@
 defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Rules, Utils}
+  alias CodeMySpec.{Rules, Utils, Components}
   alias CodeMySpec.Sessions.{Session, Steps.Helpers}
 
   def get_command(
@@ -10,7 +10,8 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
         opts \\ []
       ) do
     with {:ok, test_rules} <- get_test_rules(scope, component),
-         {:ok, prompt} <- build_prompt(project, component, test_rules),
+         similar_components <- Components.list_similar_components(scope, component),
+         {:ok, prompt} <- build_prompt(project, component, test_rules, similar_components),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -38,8 +39,9 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     end
   end
 
-  defp build_prompt(project, component, test_rules) do
+  defp build_prompt(project, component, test_rules, similar_components) do
     test_rules_text = Enum.map_join(test_rules, "\n\n", & &1.content)
+    similar_text = format_similar_components(project, similar_components)
 
     %{design_file: design_file_path, test_file: test_file_path} =
       Utils.component_files(component, project)
@@ -67,6 +69,9 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       Parent Context Design File: #{parent_design_file_path}
       Component Design File: #{design_file_path}
 
+      Similar Components (for test pattern inspiration):
+      #{similar_text}
+
       Test Rules:
       #{test_rules_text}
 
@@ -84,5 +89,24 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       """
 
     {:ok, prompt}
+  end
+
+  defp format_similar_components(_project, []), do: "No similar components provided"
+
+  defp format_similar_components(project, similar_components) do
+    similar_components
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n\n", fn {component, index} ->
+      files = Utils.component_files(component, project)
+
+      """
+      #{index}. #{component.name} (#{component.type})
+         Description: #{component.description || "No description"}
+         Design: #{files.design_file}
+         Implementation: #{files.code_file}
+         Test: #{files.test_file}
+      """
+      |> String.trim()
+    end)
   end
 end
