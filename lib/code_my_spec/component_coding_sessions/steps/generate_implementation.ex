@@ -11,7 +11,8 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
       ) do
     with {:ok, rules} <- get_implementation_rules(scope, component),
          similar_components <- Components.list_similar_components(scope, component),
-         {:ok, prompt} <- build_implementation_prompt(project, component, rules, similar_components),
+         {:ok, prompt} <-
+           build_implementation_prompt(project, component, rules, similar_components),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -24,7 +25,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
     end
   end
 
-  def handle_result(_scope, _session, result, _opts) do
+  def handle_result(_scope, _session, result, _opts \\ []) do
     {:ok, %{}, result}
   end
 
@@ -48,23 +49,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
       test_file: test_file_path
     } = Utils.component_files(component, project)
 
-    similar_components_text =
-      case similar_components do
-        [] ->
-          ""
-
-        components ->
-          component_list =
-            components
-            |> Enum.map(fn c -> "- #{c.name} (#{c.type})" end)
-            |> Enum.join("\n")
-
-          """
-
-          Similar Components (for reference):
-          #{component_list}
-          """
-      end
+    similar_components_text = format_similar_components(project, similar_components)
 
     prompt =
       """
@@ -88,13 +73,34 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
       6. Follow project patterns for similar components
       7. Create schemas, migrations, or supporting code as needed
 
+      Similar Components (for implementation pattern inspiration):
+      #{similar_components_text}
+
       Coding Rules:
       #{rules_text}
-      #{similar_components_text}
 
       Write the implementation to #{code_file_path}
       """
 
     {:ok, prompt}
+  end
+
+  defp format_similar_components(_project, []), do: "No similar components provided"
+
+  defp format_similar_components(project, similar_components) do
+    similar_components
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n\n", fn {component, index} ->
+      files = Utils.component_files(component, project)
+
+      """
+      #{index}. #{component.name} (#{component.type})
+         Description: #{component.description || "No description"}
+         Design: #{files.design_file}
+         Implementation: #{files.code_file}
+         Test: #{files.test_file}
+      """
+      |> String.trim()
+    end)
   end
 end

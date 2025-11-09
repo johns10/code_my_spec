@@ -3,11 +3,8 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
   alias CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessions
   alias CodeMySpec.Sessions.{Command, Result, Session}
-  alias CodeMySpec.Components.Component
-  alias CodeMySpec.Users.Scope
 
   import CodeMySpec.UsersFixtures
-  import CodeMySpec.ProjectsFixtures
   import CodeMySpec.ComponentsFixtures
   import CodeMySpec.SessionsFixtures
 
@@ -45,8 +42,6 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
   end
 
   defp create_parent_session(scope, context_component, opts \\ []) do
-    project = CodeMySpec.Repo.preload(context_component, :project).project
-
     session_fixture(scope, %{
       type: CodeMySpec.ContextCodingSessions,
       component_id: context_component.id,
@@ -54,10 +49,10 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       agent: Keyword.get(opts, :agent, :claude_code),
       state: Keyword.get(opts, :state, %{branch_name: "test-branch"})
     })
-    |> CodeMySpec.Repo.preload([component: :project])
+    |> CodeMySpec.Repo.preload(component: :project)
   end
 
-  defp create_child_session(scope, parent_session, component, opts \\ []) do
+  defp create_child_session(scope, parent_session, component, opts) do
     session_fixture(scope, %{
       type: Keyword.get(opts, :type, CodeMySpec.ComponentCodingSessions),
       component_id: component.id,
@@ -480,7 +475,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
       result = Result.success(%{})
 
-      assert {:error, error_message} =
+      assert {:ok, %{}, updated_result} =
                SpawnComponentCodingSessions.handle_result(
                  scope,
                  parent_session_reloaded,
@@ -488,10 +483,11 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
                  []
                )
 
-      assert error_message =~ "Child sessions still running:"
-      assert error_message =~ "ChildComponent0"
-      assert error_message =~ "ChildComponent1"
-      assert error_message =~ "ChildComponent2"
+      assert updated_result.status == :error
+      assert updated_result.error_message =~ "Child sessions still running:"
+      assert updated_result.error_message =~ "ChildComponent0"
+      assert updated_result.error_message =~ "ChildComponent1"
+      assert updated_result.error_message =~ "ChildComponent2"
     end
 
     test "returns error when any child session failed (with failure details)" do
@@ -509,7 +505,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
       result = Result.success(%{})
 
-      assert {:error, error_message} =
+      assert {:ok, %{}, updated_result} =
                SpawnComponentCodingSessions.handle_result(
                  scope,
                  parent_session_reloaded,
@@ -517,8 +513,9 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
                  []
                )
 
-      assert error_message =~ "Child sessions failed:"
-      assert error_message =~ "ChildComponent1"
+      assert updated_result.status == :error
+      assert updated_result.error_message =~ "Child sessions failed:"
+      assert updated_result.error_message =~ "ChildComponent1"
     end
 
     test "returns error when any child session cancelled (with component names)" do
@@ -536,7 +533,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
       result = Result.success(%{})
 
-      assert {:error, error_message} =
+      assert {:ok, %{}, updated_result} =
                SpawnComponentCodingSessions.handle_result(
                  scope,
                  parent_session_reloaded,
@@ -544,8 +541,9 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
                  []
                )
 
-      assert error_message =~ "Child sessions cancelled:"
-      assert error_message =~ "ChildComponent1"
+      assert updated_result.status == :error
+      assert updated_result.error_message =~ "Child sessions cancelled:"
+      assert updated_result.error_message =~ "ChildComponent1"
     end
 
     test "returns error when parent session not found" do
@@ -589,7 +587,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
       result = Result.success(%{})
 
-      assert {:error, error_message} =
+      assert {:ok, %{}, updated_result} =
                SpawnComponentCodingSessions.handle_result(
                  scope,
                  parent_session_reloaded,
@@ -597,8 +595,9 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
                  []
                )
 
-      assert is_binary(error_message)
-      assert error_message =~ "Child sessions failed:"
+      assert updated_result.status == :error
+      assert is_binary(updated_result.error_message)
+      assert updated_result.error_message =~ "Child sessions failed:"
     end
 
     test "includes detailed error messages with component names and reasons" do
@@ -615,7 +614,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
       result = Result.success(%{})
 
-      assert {:error, error_message} =
+      assert {:ok, %{}, updated_result} =
                SpawnComponentCodingSessions.handle_result(
                  scope,
                  parent_session_reloaded,
@@ -623,8 +622,9 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
                  []
                )
 
-      assert error_message =~ "Child sessions failed:"
-      assert error_message =~ "ChildComponent0"
+      assert updated_result.status == :error
+      assert updated_result.error_message =~ "Child sessions failed:"
+      assert updated_result.error_message =~ "ChildComponent0"
     end
 
     test "handles multiple failure types in single error message" do
@@ -643,7 +643,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
       result = Result.success(%{})
 
-      assert {:error, error_message} =
+      assert {:ok, %{}, updated_result} =
                SpawnComponentCodingSessions.handle_result(
                  scope,
                  parent_session_reloaded,
@@ -652,8 +652,9 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
                )
 
       # Should report active sessions first (as that's typically checked first)
-      assert error_message =~ "Child sessions still running:"
-      assert error_message =~ "ChildComponent0"
+      assert updated_result.status == :error
+      assert updated_result.error_message =~ "Child sessions still running:"
+      assert updated_result.error_message =~ "ChildComponent0"
     end
   end
 end

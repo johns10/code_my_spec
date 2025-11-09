@@ -37,15 +37,20 @@ defmodule CodeMySpec.Utils.Data do
       Logger.info("  - #{length(data.sessions)} sessions")
     else
       Repo.transaction(fn ->
-        account_id = data.account.id
+        account_id = Map.get(data.account, :id)
 
-        # Wipe existing data for this account
-        Logger.info("Wiping existing data for account #{account_id}...")
-        wipe_account_data(account_id)
+        # Wipe existing data for this account if it has an ID
+        if account_id do
+          Logger.info("Wiping existing data for account #{account_id}...")
+          wipe_account_data(account_id)
+        else
+          Logger.info("Creating new account...")
+        end
 
         # Insert fresh data in dependency order
         Logger.info("Inserting account data...")
-        insert_account(data.account)
+        inserted_account = insert_account(data.account)
+        account_id = inserted_account.id
         insert_users(data.users)
         insert_members(data.members)
         insert_projects(data.projects)
@@ -56,7 +61,7 @@ defmodule CodeMySpec.Utils.Data do
         insert_stories(data[:stories] || [])
         # Skip sessions - they're environment-specific and complex to sync
         # insert_sessions(data.sessions)
-        Logger.info("Skipped #{length(data.sessions)} sessions (environment-specific)")
+        Logger.info("Skipped #{length(data.sessions || [])} sessions (environment-specific)")
 
         # Reset sequences after manually setting IDs to prevent conflicts
         reset_sequences()
@@ -299,7 +304,14 @@ defmodule CodeMySpec.Utils.Data do
   # Insert functions - preserve IDs to maintain consistency across environments
   # This is important because account_id=4 should be the same account in all environments
   defp insert_account(account_data) do
-    %Account{id: account_data.id}
+    account_struct =
+      if Map.has_key?(account_data, :id) and not is_nil(account_data.id) do
+        %Account{id: account_data.id}
+      else
+        %Account{}
+      end
+
+    account_struct
     |> Account.changeset(account_data)
     |> Repo.insert!()
   end
@@ -358,8 +370,8 @@ defmodule CodeMySpec.Utils.Data do
   defp sort_components_by_dependency(components) do
     # Topological sort: repeatedly insert components with no parent or whose parent is already inserted
     {sorted, _remaining} =
-      Enum.reduce_while(1..length(components), {[], components}, fn _iteration,
-                                                                    {sorted, remaining} ->
+      Enum.reduce_while(1..length(components)//1, {[], components}, fn _iteration,
+                                                                       {sorted, remaining} ->
         # Find components that can be inserted (no parent or parent already sorted)
         sorted_ids = MapSet.new(sorted, & &1.id)
 

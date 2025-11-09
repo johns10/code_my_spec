@@ -3,7 +3,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
 
   alias CodeMySpec.{Rules, Utils, Stories, Components}
   alias CodeMySpec.Sessions.{Session, Steps.Helpers}
-  alias CodeMySpec.Documents.{ContextDesign, DocumentSpecProjector}
+  alias CodeMySpec.Documents.{DocumentSpecProjector}
 
   def get_command(scope, %Session{project: project, component: component}, opts \\ []) do
     with {:ok, rules} <- get_design_rules(scope),
