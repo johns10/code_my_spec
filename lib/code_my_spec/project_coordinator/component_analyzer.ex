@@ -14,7 +14,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   require Logger
 
   @dependency_checks [:dependencies_satisfied]
-  @hierarchy_checks [:children_designs]
+  @hierarchy_checks [:children_designs, :children_implementations, :children_tests]
 
   @spec analyze_components([Component.t()], [String.t()], [TestResult.t()], keyword()) ::
           [Component.t()]

@@ -22,6 +22,12 @@ defmodule CodeMySpec.Components.Registry do
     satisfied_by: "ContextComponentsDesignSessions"
   }
 
+  @child_implementations %{
+    name: :children_implementations,
+    checker: CodeMySpec.Components.Requirements.HierarchicalChecker,
+    satisfied_by: "ContextCodingSessions"
+  }
+
   @dependencies %{
     name: :dependencies_satisfied,
     checker: CodeMySpec.Components.Requirements.DependencyChecker,
@@ -85,6 +91,7 @@ defmodule CodeMySpec.Components.Registry do
         @context_design_file,
         @child_designs,
         @review_file,
+        @child_implementations,
         @dependencies,
         @implementation_file,
         @test_file,
@@ -100,6 +107,7 @@ defmodule CodeMySpec.Components.Registry do
         @context_design_file,
         @child_designs,
         @review_file,
+        @child_implementations,
         @dependencies,
         @implementation_file,
         @test_file,
