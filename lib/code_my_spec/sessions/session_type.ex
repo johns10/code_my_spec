@@ -6,6 +6,7 @@ defmodule CodeMySpec.Sessions.SessionType do
           | CodeMySpec.ContextComponentsDesignSessions
           | CodeMySpec.ContextDesignReviewSessions
           | CodeMySpec.ContextCodingSessions
+          | CodeMySpec.ContextTestingSessions
           | CodeMySpec.ComponentDesignSessions
           | CodeMySpec.ComponentDesignReviewSessions
           | CodeMySpec.ComponentTestSessions
@@ -17,6 +18,7 @@ defmodule CodeMySpec.Sessions.SessionType do
     CodeMySpec.ContextComponentsDesignSessions,
     CodeMySpec.ContextDesignReviewSessions,
     CodeMySpec.ContextCodingSessions,
+    CodeMySpec.ContextTestingSessions,
     CodeMySpec.ComponentDesignSessions,
     CodeMySpec.ComponentDesignReviewSessions,
     CodeMySpec.ComponentTestSessions,
