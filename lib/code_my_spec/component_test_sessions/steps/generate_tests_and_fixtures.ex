@@ -57,9 +57,11 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
 
     prompt =
       """
-      Generate comprehensive tests and fixtures for the following Phoenix component.
+      Generate tests and fixtures for the following Phoenix component.
       The component doesn't exist yet.
       You are to write the tests before we implement the module, TDD style.
+      Only write the tests defined in the Test Assertions section of the design
+      If you want to write more cases, you must modify the design first.
 
       Project: #{project.name}
       Project Description: #{project.description}
@@ -83,7 +85,6 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       - Testing all public API functions
       - Testing edge cases and error conditions
       - Testing with valid and invalid data
-      - Testing proper scoping and access patterns
       - Following test and fixture organization patterns from the rules
       - Only implementing the test assertions from the design file
       """
