@@ -121,7 +121,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp process_single_event(scope, session, event_attrs) do
     Repo.transaction(fn ->
-      with {:ok, event} <- build_and_validate_event(event_attrs),
+      with {:ok, event} <- build_and_validate_event(session.id, event_attrs),
            {:ok, session_updates} <- process_side_effects(session, event),
            {:ok, _event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
@@ -135,7 +135,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp process_batch_events(scope, session, events_attrs) do
     Repo.transaction(fn ->
-      with {:ok, events} <- build_and_validate_events(events_attrs),
+      with {:ok, events} <- build_and_validate_events(session.id, events_attrs),
            {:ok, session_updates} <- process_batch_side_effects(session, events),
            :ok <- insert_events(events),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
@@ -147,8 +147,9 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end)
   end
 
-  defp build_and_validate_event(event_attrs) do
-    changeset = SessionEvent.changeset(%SessionEvent{}, event_attrs)
+  defp build_and_validate_event(session_id, event_attrs) do
+    event_attrs_with_session = Map.put(event_attrs, :session_id, session_id)
+    changeset = SessionEvent.changeset(%SessionEvent{}, event_attrs_with_session)
 
     if changeset.valid? do
       {:ok, Ecto.Changeset.apply_changes(changeset)}
@@ -157,10 +158,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
-  defp build_and_validate_events(events_attrs) do
+  defp build_and_validate_events(session_id, events_attrs) do
     events_attrs
     |> Enum.reduce_while({:ok, []}, fn event_attrs, {:ok, acc} ->
-      case build_and_validate_event(event_attrs) do
+      case build_and_validate_event(session_id, event_attrs) do
         {:ok, event} -> {:cont, {:ok, [event | acc]}}
         {:error, changeset} -> {:halt, {:error, changeset}}
       end

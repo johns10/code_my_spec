@@ -32,11 +32,11 @@ defmodule CodeMySpec.Sessions.SessionEvent do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          session_id: integer(),
-          event_type: event_type(),
-          data: map(),
+          session_id: integer() | nil,
+          event_type: event_type() | nil,
+          data: map() | nil,
           metadata: map() | nil,
-          sent_at: DateTime.t(),
+          sent_at: DateTime.t() | nil,
           session: Session.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
