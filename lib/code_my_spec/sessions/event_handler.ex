@@ -189,9 +189,14 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp process_side_effects(session, event) do
     case apply_side_effect(session, event) do
-      {:ok, updates} -> {:ok, updates}
+      {:ok, updates} ->
+        {:ok, updates}
+
       {:error, reason} ->
-        Logger.warning("Side effect processing failed for event #{event.event_type}: #{inspect(reason)}")
+        Logger.warning(
+          "Side effect processing failed for event #{event.event_type}: #{inspect(reason)}"
+        )
+
         {:ok, %{}}
     end
   end
@@ -207,7 +212,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
           {:ok, updated_session, merged_updates}
 
         {:error, reason} ->
-          Logger.warning("Side effect processing failed for event #{event.event_type}: #{inspect(reason)}")
+          Logger.warning(
+            "Side effect processing failed for event #{event.event_type}: #{inspect(reason)}"
+          )
+
           {:ok, current_session, acc_updates}
       end
     end)
@@ -241,7 +249,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
-  defp apply_side_effect(%Session{} = _session, %SessionEvent{event_type: :session_status_changed, data: data}) do
+  defp apply_side_effect(%Session{} = _session, %SessionEvent{
+         event_type: :session_status_changed,
+         data: data
+       }) do
     new_status = Map.get(data, "new_status")
 
     case parse_status(new_status) do
@@ -297,6 +308,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
   end
 
   defp maybe_filter_by_event_type(query, nil), do: query
+
   defp maybe_filter_by_event_type(query, event_type) do
     where(query, [e], e.event_type == ^event_type)
   end
@@ -305,11 +317,13 @@ defmodule CodeMySpec.Sessions.EventHandler do
   defp order_by_timestamp(query, :desc), do: order_by(query, [e], desc: e.sent_at)
 
   defp maybe_apply_offset(query, 0), do: query
+
   defp maybe_apply_offset(query, offset) when is_integer(offset) and offset > 0 do
     offset(query, ^offset)
   end
 
   defp maybe_apply_limit(query, nil), do: query
+
   defp maybe_apply_limit(query, limit) when is_integer(limit) and limit > 0 do
     limit(query, ^limit)
   end

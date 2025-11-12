@@ -7,13 +7,21 @@
     <.live_title default="Code My Spec">
       {assigns[:page_title] || assigns[:meta_title]}
     </.live_title>
-
-    <!-- SEO Meta Tags -->
-    <meta :if={assigns[:meta_description]} name="description" content={assigns[:meta_description]} />
-
-    <!-- Open Graph Meta Tags -->
+    
+<!-- SEO Meta Tags -->
+    <meta
+      :if={assigns[:meta_description]}
+      name="description"
+      content={assigns[:meta_description]}
+    />
+    
+<!-- Open Graph Meta Tags -->
     <meta :if={assigns[:og_title]} property="og:title" content={assigns[:og_title]} />
-    <meta :if={assigns[:og_description]} property="og:description" content={assigns[:og_description]} />
+    <meta
+      :if={assigns[:og_description]}
+      property="og:description"
+      content={assigns[:og_description]}
+    />
     <meta :if={assigns[:og_image]} property="og:image" content={assigns[:og_image]} />
     <meta property="og:type" content="website" />
 

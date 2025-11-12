@@ -31,6 +31,9 @@ defmodule CodeMySpec.Repo.Migrations.CreateContents do
     create index(:contents, [:parse_status])
     create index(:contents, [:publish_at])
     create index(:contents, [:expires_at])
-    create unique_index(:contents, [:slug, :content_type, :project_id], name: :contents_slug_content_type_project_id_index)
+
+    create unique_index(:contents, [:slug, :content_type, :project_id],
+             name: :contents_slug_content_type_project_id_index
+           )
   end
 end

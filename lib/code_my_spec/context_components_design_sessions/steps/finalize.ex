@@ -23,14 +23,16 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.Finalize do
     pr_body = build_pr_body(component.name)
     commit_message = build_commit_message(component.name)
 
-    command_string = build_git_command(branch_name, review_file_path, pr_title, pr_body, commit_message)
+    command_string =
+      build_git_command(branch_name, review_file_path, pr_title, pr_body, commit_message)
 
-    command = Command.new(__MODULE__, command_string,
-      metadata: %{
-        branch_name: branch_name,
-        pr_url: nil
-      }
-    )
+    command =
+      Command.new(__MODULE__, command_string,
+        metadata: %{
+          branch_name: branch_name,
+          pr_url: nil
+        }
+      )
 
     {:ok, command}
   end
@@ -39,9 +41,10 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.Finalize do
   def handle_result(_scope, session, %Result{status: :error} = result, _opts) do
     session_updates = %{
       status: :failed,
-      state: Map.merge(session.state || %{}, %{
-        finalized_at: DateTime.utc_now()
-      })
+      state:
+        Map.merge(session.state || %{}, %{
+          finalized_at: DateTime.utc_now()
+        })
     }
 
     {:ok, session_updates, result}
@@ -52,10 +55,11 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.Finalize do
 
     session_updates = %{
       status: :complete,
-      state: Map.merge(session.state || %{}, %{
-        pr_url: pr_url,
-        finalized_at: DateTime.utc_now()
-      })
+      state:
+        Map.merge(session.state || %{}, %{
+          pr_url: pr_url,
+          finalized_at: DateTime.utc_now()
+        })
     }
 
     {:ok, session_updates, result}
@@ -66,10 +70,11 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.Finalize do
 
     session_updates = %{
       status: :complete,
-      state: Map.merge(session.state || %{}, %{
-        pr_url: pr_url,
-        finalized_at: DateTime.utc_now()
-      })
+      state:
+        Map.merge(session.state || %{}, %{
+          pr_url: pr_url,
+          finalized_at: DateTime.utc_now()
+        })
     }
 
     {:ok, session_updates, result}

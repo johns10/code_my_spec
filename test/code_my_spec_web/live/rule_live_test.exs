@@ -4,8 +4,18 @@ defmodule CodeMySpecWeb.RuleLiveTest do
   import Phoenix.LiveViewTest
   import CodeMySpec.RulesFixtures
 
-  @create_attrs %{name: "some name", session_type: "some session_type", content: "some content", component_type: "some component_type"}
-  @update_attrs %{name: "some updated name", session_type: "some updated session_type", content: "some updated content", component_type: "some updated component_type"}
+  @create_attrs %{
+    name: "some name",
+    session_type: "some session_type",
+    content: "some content",
+    component_type: "some component_type"
+  }
+  @update_attrs %{
+    name: "some updated name",
+    session_type: "some updated session_type",
+    content: "some updated content",
+    component_type: "some updated component_type"
+  }
   @invalid_attrs %{name: nil, session_type: nil, content: nil, component_type: nil}
 
   setup :register_log_in_setup_account

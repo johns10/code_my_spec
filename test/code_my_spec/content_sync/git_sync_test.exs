@@ -80,7 +80,10 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
     end
 
     test "trims whitespace from docs_repo URL" do
-      scope = scope_with_project(%{docs_repo: "  https://github.com/johns10/test_phoenix_project.git  "})
+      scope =
+        scope_with_project(%{
+          docs_repo: "  https://github.com/johns10/test_phoenix_project.git  "
+        })
 
       assert {:ok, temp_path} = GitSync.clone_to_temp(scope)
       assert is_binary(temp_path)

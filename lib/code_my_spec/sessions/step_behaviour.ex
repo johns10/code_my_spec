@@ -10,6 +10,11 @@ defmodule CodeMySpec.Sessions.StepBehaviour do
   @callback get_command(scope :: Scope.t(), session :: Session.t(), opts :: keyword()) ::
               {:ok, Command.t()} | {:error, String.t()}
 
-  @callback handle_result(scope :: Scope.t(), session :: Session.t(), result :: Result.t(), opts :: keyword()) ::
+  @callback handle_result(
+              scope :: Scope.t(),
+              session :: Session.t(),
+              result :: Result.t(),
+              opts :: keyword()
+            ) ::
               {:ok, session_updates :: map(), updated_result :: Result.t()} | {:error, String.t()}
 end

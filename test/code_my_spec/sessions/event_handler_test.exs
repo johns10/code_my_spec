@@ -1,6 +1,7 @@
 defmodule CodeMySpec.Sessions.EventHandlerTest do
   use CodeMySpec.DataCase
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures, SessionsFixtures}
+  import ExUnit.CaptureLog
   alias CodeMySpec.Sessions.EventHandler
   alias CodeMySpec.Repo
 
@@ -20,7 +21,10 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       %{scope: scope, session: session}
     end
 
-    test "valid event with all required fields passes validation", %{scope: scope, session: session} do
+    test "valid event with all required fields passes validation", %{
+      scope: scope,
+      session: session
+    } do
       event_attrs = valid_event_attrs(session.id)
 
       assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
@@ -205,13 +209,17 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Second event tries to change conversation_id
       # Should log warning but still process the event
       event_attrs2 = conversation_started_event_attrs(session.id, second_conversation_id)
-      assert {:ok, updated_session2} = EventHandler.handle_event(scope, session.id, event_attrs2)
 
-      # Session keeps original conversation_id (no change)
-      assert updated_session2.external_conversation_id == first_conversation_id
+      capture_log(fn ->
+        assert {:ok, updated_session2} =
+                 EventHandler.handle_event(scope, session.id, event_attrs2)
 
-      reloaded_session = CodeMySpec.Sessions.get_session!(scope, session.id)
-      assert reloaded_session.external_conversation_id == first_conversation_id
+        # Session keeps original conversation_id (no change)
+        assert updated_session2.external_conversation_id == first_conversation_id
+
+        reloaded_session = CodeMySpec.Sessions.get_session!(scope, session.id)
+        assert reloaded_session.external_conversation_id == first_conversation_id
+      end)
 
       # Event is still persisted
       events = Repo.all(CodeMySpec.Sessions.SessionEvent)
@@ -223,8 +231,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         valid_event_attrs(session.id, %{
           event_type: :session_status_changed,
           data: %{
-            old_status: "active",
-            new_status: "complete"
+            "old_status" => "active",
+            "new_status" => "complete"
           }
         })
 
@@ -288,7 +296,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         event_attrs =
           valid_event_attrs(session.id, %{
             event_type: event_type,
-            data: %{test: "data"}
+            data: %{"test" => "data"}
           })
 
         assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
@@ -327,7 +335,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         file_modified_event_attrs(session.id),
         valid_event_attrs(session.id, %{
           event_type: :command_started,
-          data: %{command: "mix test"}
+          data: %{"command" => "mix test"}
         })
       ]
 

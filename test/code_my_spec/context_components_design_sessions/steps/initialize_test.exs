@@ -23,7 +23,9 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.InitializeTest do
 
       assert {:ok, %Command{} = command} = Initialize.get_command(scope, session, [])
       assert command.module == Initialize
-      assert command.command =~ "git -C docs switch -C docs-context-components-design-session-for-accounts"
+
+      assert command.command =~
+               "git -C docs switch -C docs-context-components-design-session-for-accounts"
     end
 
     test "generates setup command for vscode environment" do

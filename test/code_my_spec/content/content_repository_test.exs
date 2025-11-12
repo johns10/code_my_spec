@@ -54,7 +54,6 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       assert List.first(blog_list).id == blog.id
     end
 
-
     test "includes content with publish_at in past and no expires_at" do
       scope = full_scope_fixture()
 
@@ -220,7 +219,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       created =
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "test-post",
-          publish_at: yesterday,
+          publish_at: yesterday
         })
 
       content = ContentRepository.get_content_by_slug(scope, "test-post", :blog)
@@ -246,7 +245,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       _blog =
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "test-slug",
-          publish_at: yesterday,
+          publish_at: yesterday
         })
 
       content = ContentRepository.get_content_by_slug(scope, "test-slug", :page)
@@ -262,7 +261,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       _scheduled =
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "scheduled-post",
-          publish_at: tomorrow,
+          publish_at: tomorrow
         })
 
       content = ContentRepository.get_content_by_slug(scope, "scheduled-post", :blog)
@@ -280,7 +279,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "expired-post",
           publish_at: week_ago,
-          expires_at: yesterday,
+          expires_at: yesterday
         })
 
       content = ContentRepository.get_content_by_slug(scope, "expired-post", :blog)
@@ -322,13 +321,13 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       blog =
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "shared-slug",
-          publish_at: yesterday,
+          publish_at: yesterday
         })
 
       page =
         page_fixture(scope.active_project, scope.active_account, %{
           slug: "shared-slug",
-          publish_at: yesterday,
+          publish_at: yesterday
         })
 
       blog_result = ContentRepository.get_content_by_slug(scope, "shared-slug", :blog)
@@ -400,7 +399,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       created =
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "test-post",
-          publish_at: yesterday,
+          publish_at: yesterday
         })
 
       content = ContentRepository.get_content_by_slug!(scope, "test-post", :blog)
@@ -425,7 +424,7 @@ defmodule CodeMySpec.Content.ContentRepositoryTest do
       _blog =
         blog_post_fixture(scope.active_project, scope.active_account, %{
           slug: "test-slug",
-          publish_at: yesterday,
+          publish_at: yesterday
         })
 
       assert_raise Ecto.NoResultsError, fn ->

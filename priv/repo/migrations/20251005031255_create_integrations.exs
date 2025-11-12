@@ -14,7 +14,10 @@ defmodule CodeMySpec.Repo.Migrations.CreateIntegrations do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create unique_index(:integrations, [:user_id, :provider], name: :integrations_user_id_provider_index)
+    create unique_index(:integrations, [:user_id, :provider],
+             name: :integrations_user_id_provider_index
+           )
+
     create index(:integrations, [:user_id])
     create index(:integrations, [:expires_at])
   end

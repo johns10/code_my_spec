@@ -45,7 +45,13 @@ defmodule CodeMySpec.Components.ComponentStatus do
       :failing_tests,
       :computed_at
     ])
-    |> validate_required([:design_exists, :code_exists, :test_exists, :review_exists, :test_status])
+    |> validate_required([
+      :design_exists,
+      :code_exists,
+      :test_exists,
+      :review_exists,
+      :test_status
+    ])
   end
 
   @doc """
@@ -87,10 +93,10 @@ defmodule CodeMySpec.Components.ComponentStatus do
   Returns true if all file requirements are satisfied (design, code, test exist and tests pass).
   """
   def fully_satisfied?(%__MODULE__{} = status) do
-    status.design_exists and 
-    status.code_exists and 
-    status.test_exists and 
-    status.test_status == :passing
+    status.design_exists and
+      status.code_exists and
+      status.test_exists and
+      status.test_status == :passing
   end
 
   @doc """
@@ -98,11 +104,16 @@ defmodule CodeMySpec.Components.ComponentStatus do
   """
   def ready_for_work?(%__MODULE__{} = status) do
     cond do
-      not status.design_exists -> true  # Ready for design
-      not status.code_exists -> status.design_exists  # Ready for coding if design exists
-      not status.test_exists -> status.code_exists  # Ready for testing if code exists
-      status.test_status == :failing -> true  # Ready for test fixing
-      true -> false  # All done
+      # Ready for design
+      not status.design_exists -> true
+      # Ready for coding if design exists
+      not status.code_exists -> status.design_exists
+      # Ready for testing if code exists
+      not status.test_exists -> status.code_exists
+      # Ready for test fixing
+      status.test_status == :failing -> true
+      # All done
+      true -> false
     end
   end
 

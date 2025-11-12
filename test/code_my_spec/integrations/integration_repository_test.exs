@@ -132,14 +132,15 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       scope = user_scope_fixture()
       attrs = valid_github_integration_attributes(scope.user)
 
-      assert {:ok, %Integration{} = integration} = IntegrationRepository.create_integration(scope, attrs)
+      assert {:ok, %Integration{} = integration} =
+               IntegrationRepository.create_integration(scope, attrs)
+
       assert integration.provider == :github
       assert integration.user_id == scope.user.id
       assert integration.access_token != nil
       assert integration.refresh_token != nil
       assert integration.expires_at != nil
     end
-
 
     test "returns error with invalid provider" do
       scope = user_scope_fixture()
@@ -220,7 +221,8 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       scope = user_scope_fixture()
       attrs = %{access_token: "new_token"}
 
-      assert {:error, :not_found} = IntegrationRepository.update_integration(scope, :github, attrs)
+      assert {:error, :not_found} =
+               IntegrationRepository.update_integration(scope, :github, attrs)
     end
 
     test "returns error when integration exists for different user" do
@@ -230,7 +232,8 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       _integration = github_integration_fixture(scope1.user)
       attrs = %{access_token: "new_token"}
 
-      assert {:error, :not_found} = IntegrationRepository.update_integration(scope2, :github, attrs)
+      assert {:error, :not_found} =
+               IntegrationRepository.update_integration(scope2, :github, attrs)
     end
 
     test "returns error with invalid attributes" do
@@ -242,7 +245,6 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       assert {:error, changeset} = IntegrationRepository.update_integration(scope, :github, attrs)
       assert %{provider: ["is invalid"]} = errors_on(changeset)
     end
-
 
     test "commonly used for token refresh operations" do
       scope = user_scope_fixture()
@@ -337,7 +339,8 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       _integration = gitlab_integration_fixture(scope.user)
 
       # Demonstrates semantic intent of the function
-      assert {:ok, %Integration{provider: :gitlab}} = IntegrationRepository.by_provider(scope, :gitlab)
+      assert {:ok, %Integration{provider: :gitlab}} =
+               IntegrationRepository.by_provider(scope, :gitlab)
     end
   end
 
@@ -461,8 +464,11 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       attrs1 = valid_github_integration_attributes(scope.user, %{access_token: "token1"})
       attrs2 = valid_github_integration_attributes(scope.user, %{access_token: "token2"})
 
-      assert {:ok, integration1} = IntegrationRepository.upsert_integration(scope, :github, attrs1)
-      assert {:ok, integration2} = IntegrationRepository.upsert_integration(scope, :github, attrs2)
+      assert {:ok, integration1} =
+               IntegrationRepository.upsert_integration(scope, :github, attrs1)
+
+      assert {:ok, integration2} =
+               IntegrationRepository.upsert_integration(scope, :github, attrs2)
 
       # Same integration was updated, not duplicated
       assert integration1.id == integration2.id
@@ -489,12 +495,15 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       existing = github_integration_fixture(scope.user)
 
       # Simulates OAuth callback reconnecting existing integration
-      new_attrs = valid_github_integration_attributes(scope.user, %{
-        access_token: "reconnected_token",
-        granted_scopes: ["repo", "user:email", "admin:org"]
-      })
+      new_attrs =
+        valid_github_integration_attributes(scope.user, %{
+          access_token: "reconnected_token",
+          granted_scopes: ["repo", "user:email", "admin:org"]
+        })
 
-      assert {:ok, integration} = IntegrationRepository.upsert_integration(scope, :github, new_attrs)
+      assert {:ok, integration} =
+               IntegrationRepository.upsert_integration(scope, :github, new_attrs)
+
       assert integration.id == existing.id
       assert integration.access_token == "reconnected_token"
       assert integration.granted_scopes == ["repo", "user:email", "admin:org"]
@@ -508,15 +517,17 @@ defmodule CodeMySpec.Integrations.IntegrationRepositoryTest do
       assert %{access_token: ["can't be blank"]} = errors_on(changeset)
     end
 
-
     test "allows different providers for same user" do
       scope = user_scope_fixture()
 
       github_attrs = valid_github_integration_attributes(scope.user)
       gitlab_attrs = valid_gitlab_integration_attributes(scope.user)
 
-      assert {:ok, github} = IntegrationRepository.upsert_integration(scope, :github, github_attrs)
-      assert {:ok, gitlab} = IntegrationRepository.upsert_integration(scope, :gitlab, gitlab_attrs)
+      assert {:ok, github} =
+               IntegrationRepository.upsert_integration(scope, :github, github_attrs)
+
+      assert {:ok, gitlab} =
+               IntegrationRepository.upsert_integration(scope, :gitlab, gitlab_attrs)
 
       assert github.id != gitlab.id
       assert github.provider == :github

@@ -14,8 +14,10 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   @spec list_similar_components(Scope.t(), Component.t()) :: [Component.t()]
   def list_similar_components(%Scope{active_project_id: project_id}, %Component{id: component_id}) do
     from(sc in SimilarComponent,
-      join: c in Component, on: sc.component_id == c.id,
-      join: similar in Component, on: sc.similar_component_id == similar.id,
+      join: c in Component,
+      on: sc.component_id == c.id,
+      join: similar in Component,
+      on: sc.similar_component_id == similar.id,
       where: sc.component_id == ^component_id and c.project_id == ^project_id,
       preload: [similar_component: similar]
     )
@@ -27,8 +29,13 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   Creates a similar component relationship.
   Validates that both components exist within the same project.
   """
-  @spec add_similar_component(Scope.t(), Component.t(), Component.t()) :: {:ok, SimilarComponent.t()} | {:error, Ecto.Changeset.t() | atom()}
-  def add_similar_component(%Scope{active_project_id: project_id}, %Component{id: component_id}, %Component{id: similar_component_id}) do
+  @spec add_similar_component(Scope.t(), Component.t(), Component.t()) ::
+          {:ok, SimilarComponent.t()} | {:error, Ecto.Changeset.t() | atom()}
+  def add_similar_component(
+        %Scope{active_project_id: project_id},
+        %Component{id: component_id},
+        %Component{id: similar_component_id}
+      ) do
     # Validate both components belong to same project
     case validate_same_project(component_id, similar_component_id, project_id) do
       :ok ->
@@ -47,13 +54,20 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   @doc """
   Removes a similar component relationship.
   """
-  @spec remove_similar_component(Scope.t(), Component.t(), Component.t()) :: {:ok, SimilarComponent.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def remove_similar_component(%Scope{active_project_id: project_id}, %Component{id: component_id}, %Component{id: similar_component_id}) do
+  @spec remove_similar_component(Scope.t(), Component.t(), Component.t()) ::
+          {:ok, SimilarComponent.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def remove_similar_component(
+        %Scope{active_project_id: project_id},
+        %Component{id: component_id},
+        %Component{id: similar_component_id}
+      ) do
     from(sc in SimilarComponent,
-      join: c in Component, on: sc.component_id == c.id,
-      where: sc.component_id == ^component_id and
-             sc.similar_component_id == ^similar_component_id and
-             c.project_id == ^project_id
+      join: c in Component,
+      on: sc.component_id == c.id,
+      where:
+        sc.component_id == ^component_id and
+          sc.similar_component_id == ^similar_component_id and
+          c.project_id == ^project_id
     )
     |> Repo.one()
     |> case do
@@ -66,8 +80,10 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   Syncs similar components for a component to match the given list of IDs.
   Removes relationships not in the list and adds new ones.
   """
-  @spec sync_similar_components(Scope.t(), Component.t(), [integer()]) :: {:ok, Component.t()} | {:error, any()}
-  def sync_similar_components(%Scope{} = scope, %Component{} = component, similar_ids) when is_list(similar_ids) do
+  @spec sync_similar_components(Scope.t(), Component.t(), [integer()]) ::
+          {:ok, Component.t()} | {:error, any()}
+  def sync_similar_components(%Scope{} = scope, %Component{} = component, similar_ids)
+      when is_list(similar_ids) do
     # Get current similar component IDs
     current_similar_ids =
       list_similar_components(scope, component)
@@ -112,7 +128,8 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
 
     similar_map =
       from(sc in SimilarComponent,
-        join: similar in Component, on: sc.similar_component_id == similar.id,
+        join: similar in Component,
+        on: sc.similar_component_id == similar.id,
         where: sc.component_id in ^component_ids,
         preload: [similar_component: similar]
       )
@@ -136,8 +153,10 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   @spec list_referenced_by(Scope.t(), Component.t()) :: [Component.t()]
   def list_referenced_by(%Scope{active_project_id: project_id}, %Component{id: component_id}) do
     from(sc in SimilarComponent,
-      join: c in Component, on: sc.component_id == c.id,
-      join: similar in Component, on: sc.similar_component_id == similar.id,
+      join: c in Component,
+      on: sc.component_id == c.id,
+      join: similar in Component,
+      on: sc.similar_component_id == similar.id,
       where: sc.similar_component_id == ^component_id and similar.project_id == ^project_id,
       preload: [component: c]
     )
@@ -147,7 +166,8 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
 
   # Private Functions
 
-  @spec validate_same_project(integer(), integer(), integer()) :: :ok | {:error, :components_not_in_same_project}
+  @spec validate_same_project(integer(), integer(), integer()) ::
+          :ok | {:error, :components_not_in_same_project}
   defp validate_same_project(component_id, similar_component_id, project_id) do
     components =
       from(c in Component,

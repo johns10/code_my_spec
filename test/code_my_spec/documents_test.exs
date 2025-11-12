@@ -117,10 +117,14 @@ defmodule CodeMySpec.DocumentsTest do
       | name | string | Yes | User full name |
       """
 
-      {:ok, document} = Documents.create_dynamic_document(markdown, ["purpose", "fields"], type: :schema)
+      {:ok, document} =
+        Documents.create_dynamic_document(markdown, ["purpose", "fields"], type: :schema)
 
       assert document.type == :schema
-      assert document.sections["purpose"] == "Represents user account entities with authentication credentials."
+
+      assert document.sections["purpose"] ==
+               "Represents user account entities with authentication credentials."
+
       assert String.contains?(document.sections["fields"], "email")
       assert String.contains?(document.sections["fields"], "string")
     end
@@ -139,11 +143,12 @@ defmodule CodeMySpec.DocumentsTest do
       Step by step process.
       """
 
-      {:ok, document} = Documents.create_dynamic_document(
-        markdown,
-        ["purpose", "public api", "execution flow"],
-        type: :genserver
-      )
+      {:ok, document} =
+        Documents.create_dynamic_document(
+          markdown,
+          ["purpose", "public api", "execution flow"],
+          type: :genserver
+        )
 
       assert document.type == :genserver
       assert document.sections["purpose"] == "Does something useful."

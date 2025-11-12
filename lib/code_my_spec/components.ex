@@ -160,9 +160,16 @@ defmodule CodeMySpec.Components do
 
   # Similar Components
   defdelegate list_similar_components(scope, component), to: SimilarComponentRepository
-  defdelegate add_similar_component(scope, component, similar_component), to: SimilarComponentRepository
-  defdelegate remove_similar_component(scope, component, similar_component), to: SimilarComponentRepository
-  defdelegate sync_similar_components(scope, component, similar_ids), to: SimilarComponentRepository
+
+  defdelegate add_similar_component(scope, component, similar_component),
+    to: SimilarComponentRepository
+
+  defdelegate remove_similar_component(scope, component, similar_component),
+    to: SimilarComponentRepository
+
+  defdelegate sync_similar_components(scope, component, similar_ids),
+    to: SimilarComponentRepository
+
   defdelegate preload_similar_components(scope, components), to: SimilarComponentRepository
   defdelegate list_referenced_by(scope, component), to: SimilarComponentRepository
 end

@@ -17,16 +17,16 @@ defmodule CodeMySpecWeb.ContentLive.Index do
           Insights on structured AI development, avoiding LLM-generated technical debt, and building production-ready Phoenix applications.
         </p>
       </div>
-          <!-- Blog Posts Grid -->
-          <div :if={@posts == []} class="text-center py-20">
-            <div class="avatar placeholder mb-4">
-              <div class="bg-base-300 text-base-content rounded-full w-20">
-                <.icon name="hero-document-text" class="w-10 h-10" />
-              </div>
-            </div>
-            <h2 class="text-2xl font-bold mb-2">No posts yet</h2>
-            <p class="text-base-content/70">Check back soon for new content!</p>
+      <!-- Blog Posts Grid -->
+      <div :if={@posts == []} class="text-center py-20">
+        <div class="avatar placeholder mb-4">
+          <div class="bg-base-300 text-base-content rounded-full w-20">
+            <.icon name="hero-document-text" class="w-10 h-10" />
           </div>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">No posts yet</h2>
+        <p class="text-base-content/70">Check back soon for new content!</p>
+      </div>
 
       <div :if={@posts != []} class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <%= for post <- @posts do %>
@@ -60,8 +60,7 @@ defmodule CodeMySpecWeb.ContentLive.Index do
                 <!-- Read More -->
                 <div class="card-actions justify-end mt-4">
                   <div class="btn btn-sm btn-ghost gap-2 group-hover:gap-3 transition-all">
-                    Read More
-                    <.icon name="hero-arrow-right" class="w-4 h-4" />
+                    Read More <.icon name="hero-arrow-right" class="w-4 h-4" />
                   </div>
                 </div>
               </div>
@@ -97,7 +96,10 @@ defmodule CodeMySpecWeb.ContentLive.Index do
      socket
      |> assign(:posts, sorted_posts)
      |> assign(:page_title, "Blog")
-     |> assign(:meta_description, "Insights on structured AI development and Phoenix applications")}
+     |> assign(
+       :meta_description,
+       "Insights on structured AI development and Phoenix applications"
+     )}
   end
 
   defp format_date(nil), do: "Draft"

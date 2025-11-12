@@ -1,7 +1,8 @@
 defmodule CodeMySpec.Agents.AgentTypes do
   alias CodeMySpec.Agents.AgentType
 
-  @type agent_type() :: :unit_coder | :context_designer | :context_reviewer | :component_designer | :test_writer
+  @type agent_type() ::
+          :unit_coder | :context_designer | :context_reviewer | :component_designer | :test_writer
 
   @spec get(agent_type()) :: {:ok, AgentType.t()} | {:error, :unknown_type}
   def get(agent_type) do
@@ -44,7 +45,8 @@ defmodule CodeMySpec.Agents.AgentTypes do
   defp get_agent_type(:context_reviewer) do
     %AgentType{
       name: "context_reviewer",
-      description: "Reviews Phoenix context designs and child component designs for architectural consistency.",
+      description:
+        "Reviews Phoenix context designs and child component designs for architectural consistency.",
       prompt: """
       You are a Phoenix context design reviewer. Perform comprehensive architectural reviews of context designs and their child components.
 

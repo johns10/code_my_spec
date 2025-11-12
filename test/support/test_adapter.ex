@@ -162,6 +162,7 @@ defmodule CodeMySpec.Support.TestAdapter do
       # Now generate failing test cache
       IO.puts("[TestAdapter] Setting up failing test...")
       failing_test_content = File.read!("test/fixtures/component_coding/blog_repository_test._ex")
+
       test_path =
         Path.join([
           @code_repo_fixture_path,
@@ -187,6 +188,7 @@ defmodule CodeMySpec.Support.TestAdapter do
       # Copy failing test results to cache location
       IO.puts("[TestAdapter] Caching failing test results...")
       File.mkdir_p!(Path.dirname(@test_results_failing_cache))
+
       File.cp!(
         Path.join(@code_repo_fixture_path, test_results_failing_file),
         @test_results_failing_cache

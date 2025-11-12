@@ -21,7 +21,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.UtilsTest do
         component: %Component{name: "UserManagement"}
       }
 
-      assert Utils.branch_name(session) == "docs-context-components-design-session-for-usermanagement"
+      assert Utils.branch_name(session) ==
+               "docs-context-components-design-session-for-usermanagement"
     end
 
     test "replaces spaces with hyphens" do
@@ -30,7 +31,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.UtilsTest do
         component: %Component{name: "User Management"}
       }
 
-      assert Utils.branch_name(session) == "docs-context-components-design-session-for-user-management"
+      assert Utils.branch_name(session) ==
+               "docs-context-components-design-session-for-user-management"
     end
 
     test "replaces special characters with hyphens" do
@@ -39,7 +41,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.UtilsTest do
         component: %Component{name: "API::Handler"}
       }
 
-      assert Utils.branch_name(session) == "docs-context-components-design-session-for-api-handler"
+      assert Utils.branch_name(session) ==
+               "docs-context-components-design-session-for-api-handler"
     end
 
     test "replaces multiple special characters with single hyphen" do
@@ -57,7 +60,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.UtilsTest do
         component: %Component{name: "User---Management"}
       }
 
-      assert Utils.branch_name(session) == "docs-context-components-design-session-for-user-management"
+      assert Utils.branch_name(session) ==
+               "docs-context-components-design-session-for-user-management"
     end
 
     test "trims leading and trailing hyphens" do
@@ -75,7 +79,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.UtilsTest do
         component: %Component{name: "user-auth_handler"}
       }
 
-      assert Utils.branch_name(session) == "docs-context-components-design-session-for-user-auth_handler"
+      assert Utils.branch_name(session) ==
+               "docs-context-components-design-session-for-user-auth_handler"
     end
 
     test "handles complex names with mixed characters" do
@@ -84,7 +89,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.UtilsTest do
         component: %Component{name: "User Management & Auth (v2)"}
       }
 
-      assert Utils.branch_name(session) == "docs-context-components-design-session-for-user-management-auth-v2"
+      assert Utils.branch_name(session) ==
+               "docs-context-components-design-session-for-user-management-auth-v2"
     end
   end
 end

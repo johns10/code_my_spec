@@ -8,7 +8,8 @@ defmodule CodeMySpec.Sessions.ResultHandler do
          {:ok, interaction} <- find_interaction(session, interaction_id),
          {:ok, session_attrs, final_result} <-
            interaction.command.module.handle_result(scope, session, result, opts),
-         enriched_attrs <- maybe_add_completion_status(session, interaction, session_attrs, final_result),
+         enriched_attrs <-
+           maybe_add_completion_status(session, interaction, session_attrs, final_result),
          {:ok, final_session} <-
            Sessions.complete_session_interaction(
              scope,

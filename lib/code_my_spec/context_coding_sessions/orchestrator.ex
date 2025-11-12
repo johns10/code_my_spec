@@ -57,7 +57,10 @@ defmodule CodeMySpec.ContextCodingSessions.Orchestrator do
   # On success, all child sessions completed and validated successfully -> Finalize
   # On error, validation failed (child sessions failed/cancelled or still running) -> retry SpawnComponentCodingSessions
   defp route(Steps.SpawnComponentCodingSessions, :ok), do: {:ok, Steps.Finalize}
-  defp route(Steps.SpawnComponentCodingSessions, :error), do: {:ok, Steps.SpawnComponentCodingSessions}
+
+  defp route(Steps.SpawnComponentCodingSessions, :error),
+    do: {:ok, Steps.SpawnComponentCodingSessions}
+
   defp route(Steps.SpawnComponentCodingSessions, _), do: {:ok, Steps.SpawnComponentCodingSessions}
 
   # Finalize routes

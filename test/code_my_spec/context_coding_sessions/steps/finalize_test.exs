@@ -50,7 +50,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.FinalizeTest do
       agent: Keyword.get(opts, :agent, :claude_code),
       state: state
     })
-    |> CodeMySpec.Repo.preload([component: :project])
+    |> CodeMySpec.Repo.preload(component: :project)
   end
 
   defp create_child_session(scope, parent_session, component, opts \\ []) do

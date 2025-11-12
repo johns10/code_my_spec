@@ -72,6 +72,7 @@ defmodule CodeMySpec.Documents.ContextDesignParser do
   end
 
   defp extract_type_from_table(nil), do: nil
+
   defp extract_type_from_table(table) when is_map(table) do
     # Check if table has direct "type" key (single row table with field/value columns)
     case {Map.get(table, "field"), Map.get(table, "value")} do

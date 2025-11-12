@@ -84,9 +84,14 @@ defmodule CodeMySpec.Projects.Project do
 
   defp maybe_validate_url(changeset, field) do
     case get_field(changeset, field) do
-      nil -> changeset
-      "" -> changeset
-      _url -> validate_format(changeset, field, ~r/^https?:\/\/.+/, message: "must be a valid URL")
+      nil ->
+        changeset
+
+      "" ->
+        changeset
+
+      _url ->
+        validate_format(changeset, field, ~r/^https?:\/\/.+/, message: "must be a valid URL")
     end
   end
 end
