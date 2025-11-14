@@ -172,7 +172,7 @@
         ],
         guide: %{
           title: "How to Write Design Documents for AI",
-          url: "/content/writing-design-documents",
+          url: "/pages/writing-design-documents",
           status: :published
         }
       },
@@ -187,7 +187,7 @@
         ],
         guide: %{
           title: "Design Sessions - AI-Generated Specifications",
-          url: "/content/design-sessions-feature",
+          url: "/pages/design-sessions-feature",
           status: :published
         }
       },
