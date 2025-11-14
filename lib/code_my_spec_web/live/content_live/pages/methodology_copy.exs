@@ -172,16 +172,23 @@
         ],
         guide: %{
           title: "How to Write Design Documents for AI",
-          url: "/content/writing_design_documents",
-          status: :planned
+          url: "/content/writing-design-documents",
+          status: :published
         }
       },
       automated: %{
-        description: "Context Design Sessions orchestrator generates designs from stories",
+        description: "Design Sessions orchestrator generates validated designs from architecture",
+        steps: [
+          "AI generates context design from architecture and user stories",
+          "System validates design against schema (required sections, dependencies)",
+          "AI revises if validation fails, loops until design passes",
+          "System spawns parallel component design sessions",
+          "All designs committed to git with clear audit trail"
+        ],
         guide: %{
-          title: "Session Orchestration - Design Generation",
-          url: "/content/session_orchestration",
-          status: :planned
+          title: "Design Sessions - AI-Generated Specifications",
+          url: "/content/design-sessions-feature",
+          status: :published
         }
       },
       example: %{
@@ -363,18 +370,18 @@
     main_quest: [
       %{
         title: "Managing User Stories",
-        url: "/content/managing_user_stories",
+        url: "/content/managing-user-stories",
         status: :published
       },
       %{
         title: "Context Mapping for AI Development",
-        url: "/content/context_mapping",
-        status: :planned
+        url: "/content/managing-architecture",
+        status: :published
       },
       %{
         title: "Writing Design Documents for AI",
-        url: "/content/writing_design_documents",
-        status: :planned
+        url: "/content/writing-design-documents",
+        status: :published
       },
       %{
         title: "Complete Workflow Walkthrough",
@@ -385,7 +392,17 @@
     side_quest: [
       %{
         title: "Stories - AI-Managed Requirements",
-        url: "/content/stories-feature",
+        url: "/content/product-manager-mcp-feature",
+        status: :published
+      },
+      %{
+        title: "Architect - AI-Guided Context Design",
+        url: "/content/architect-mcp-feature",
+        status: :published
+      },
+      %{
+        title: "Design Sessions - AI-Generated Specifications",
+        url: "/content/design-sessions-feature",
         status: :published
       },
       %{
