@@ -125,7 +125,6 @@ defmodule CodeMySpec.Sessions.EventHandler do
            {:ok, session_updates} <- process_side_effects(session, event),
            {:ok, _event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        broadcast_event_notification(scope, updated_session.id, 1)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -139,7 +138,6 @@ defmodule CodeMySpec.Sessions.EventHandler do
            {:ok, session_updates} <- process_batch_side_effects(session, events),
            :ok <- insert_events(events),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        broadcast_event_notification(scope, updated_session.id, length(events))
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -278,19 +276,58 @@ defmodule CodeMySpec.Sessions.EventHandler do
   end
 
   defp apply_session_updates(scope, session, updates) do
-    session
-    |> Session.changeset(updates, scope)
-    |> Repo.update()
+    case Session.changeset(session, updates, scope) |> Repo.update() do
+      {:ok, updated_session} ->
+        broadcast_session_updates(scope, session.id, updates)
+        {:ok, updated_session}
+
+      error ->
+        error
+    end
   end
 
-  defp broadcast_event_notification(scope, session_id, event_count) do
+  defp broadcast_session_updates(scope, session_id, updates) do
     account_key = scope.active_account_id
     user_id = scope.user.id
 
-    message = {:session_events, %{session_id: session_id, event_count: event_count}}
+    Enum.each(updates, fn {field, value} ->
+      message = build_update_message(session_id, field, value)
 
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{account_key}:sessions", message)
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{user_id}:sessions", message)
+      channels =
+        build_update_channels(field, %{
+          session_id: session_id,
+          account_key: account_key,
+          user_id: user_id
+        })
+
+      Enum.map(channels, fn channel ->
+        Phoenix.PubSub.broadcast(CodeMySpec.PubSub, channel, message)
+      end)
+    end)
+  end
+
+  defp build_update_message(session_id, :external_conversation_id, conversation_id) do
+    {:conversation_id_set, %{session_id: session_id, conversation_id: conversation_id}}
+  end
+
+  defp build_update_message(session_id, :status, status) do
+    {:session_status_changed, %{session_id: session_id, status: status}}
+  end
+
+  defp build_update_message(session_id, field, value) do
+    {:session_updated, %{session_id: session_id, field: field, value: value}}
+  end
+
+  defp build_update_channels(_field, %{
+         session_id: session_id,
+         account_key: account_key,
+         user_id: user_id
+       }) do
+    [
+      "account:#{account_key}:sessions",
+      "user:#{user_id}:sessions",
+      "session:#{session_id}"
+    ]
   end
 
   defp query_events(session_id, opts) do

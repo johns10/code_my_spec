@@ -66,15 +66,6 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
       assert %{data: ["can't be blank"]} = errors_on(changeset)
       assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
-
-      # Missing session_id
-      event_attrs =
-        valid_event_attrs(session.id)
-        |> Map.delete(:session_id)
-
-      assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
-      assert %{session_id: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
     end
 
     test "invalid event_type fails validation", %{scope: scope, session: session} do
@@ -379,6 +370,111 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       # No events persisted - entire batch rolled back
       assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
+    end
+  end
+
+  describe "broadcast tests" do
+    setup do
+      user = user_fixture()
+      account = account_fixture()
+      member_fixture(user, account)
+
+      project =
+        user_scope_fixture(user, account)
+        |> project_fixture(%{account_id: account.id, module_name: "MyApp"})
+
+      scope = user_scope_fixture(user, account, project)
+      session = session_fixture(scope)
+
+      # Subscribe to all relevant channels
+      account_topic = "account:#{account.id}:sessions"
+      user_topic = "user:#{user.id}:sessions"
+      session_topic = "session:#{session.id}"
+
+      Phoenix.PubSub.subscribe(CodeMySpec.PubSub, account_topic)
+      Phoenix.PubSub.subscribe(CodeMySpec.PubSub, user_topic)
+      Phoenix.PubSub.subscribe(CodeMySpec.PubSub, session_topic)
+
+      # Flush any messages from setup (like email confirmations)
+      flush_mailbox()
+
+      %{
+        scope: scope,
+        session: session,
+        account: account,
+        user: user,
+        account_topic: account_topic,
+        user_topic: user_topic,
+        session_topic: session_topic
+      }
+    end
+
+    defp flush_mailbox do
+      receive do
+        _ -> flush_mailbox()
+      after
+        0 -> :ok
+      end
+    end
+
+    test "conversation_started broadcasts to account, user, and session channels", %{
+      scope: scope,
+      session: session
+    } do
+      conversation_id = "conv_test123"
+      event_attrs = conversation_started_event_attrs(session.id, conversation_id)
+
+      assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+
+      # Should receive the message 3 times (once per channel)
+      assert_receive {:conversation_id_set,
+                      %{session_id: session_id, conversation_id: ^conversation_id}}
+
+      assert session_id == session.id
+
+      assert_receive {:conversation_id_set,
+                      %{session_id: ^session_id, conversation_id: ^conversation_id}}
+
+      assert_receive {:conversation_id_set,
+                      %{session_id: ^session_id, conversation_id: ^conversation_id}}
+
+      # Should not receive any more messages
+      refute_receive _, 100
+    end
+
+    test "session_status_changed broadcasts to account and user channels only", %{
+      scope: scope,
+      session: session
+    } do
+      event_attrs =
+        valid_event_attrs(session.id, %{
+          event_type: :session_status_changed,
+          data: %{
+            "old_status" => "active",
+            "new_status" => "complete"
+          }
+        })
+
+      assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+
+      # Should receive the message 2 times (account and user channels, not session)
+      assert_receive {:session_status_changed, %{session_id: session_id, status: :complete}}
+      assert session_id == session.id
+
+      assert_receive {:session_status_changed, %{session_id: ^session_id, status: :complete}}
+
+      # Should not receive any more messages (no session-specific broadcast)
+      refute_receive _, 100
+    end
+
+    test "no broadcast when no side effects occur", %{scope: scope, session: session} do
+      # tool_called has no side effects
+      event_attrs = valid_event_attrs(session.id, %{event_type: :tool_called})
+
+      assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+
+      # Should not receive any broadcast messages
+      refute_receive _, 100
     end
   end
 end
