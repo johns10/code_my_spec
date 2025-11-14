@@ -10,17 +10,17 @@ defmodule CodeMySpecWeb.VSCodeChannel do
   alias CodeMySpec.Sessions
 
   @impl true
-  def join("vscode:user:" <> user_id_str, _payload, socket) do
-    # Parse user_id from the topic
-    case Integer.parse(user_id_str) do
-      {user_id, ""} ->
+  def join("vscode:user", _payload, socket) do
+    # Get user_id from socket assigns (set during authentication)
+    case socket.assigns[:user_id] do
+      user_id when is_integer(user_id) ->
         # Subscribe to session updates for this user
         Sessions.subscribe_user_sessions(user_id)
 
-        {:ok, assign(socket, :user_id, user_id)}
+        {:ok, socket}
 
       _ ->
-        {:error, %{reason: "invalid user_id"}}
+        {:error, %{reason: "not authenticated"}}
     end
   end
 

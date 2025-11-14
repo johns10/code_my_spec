@@ -1,6 +1,9 @@
 defmodule CodeMySpecWeb.UserSocket do
   use Phoenix.Socket
 
+  alias CodeMySpec.Users.UserToken
+  alias CodeMySpec.Repo
+
   # A Socket handler
   #
   # It's possible to control the websocket connection and
@@ -24,8 +27,20 @@ defmodule CodeMySpecWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   @impl true
-  def connect(_params, socket, _connect_info) do
-    {:ok, socket}
+  def connect(%{"token" => token}, socket, _connect_info) do
+    {:ok, query} = UserToken.verify_session_token_query(token)
+
+    case Repo.one(query) do
+      {%{id: user_id}, _inserted_at} ->
+        {:ok, assign(socket, :user_id, user_id)}
+
+      nil ->
+        :error
+    end
+  end
+
+  def connect(_params, _socket, _connect_info) do
+    :error
   end
 
   # Socket IDs are topics that allow you to identify all sockets for a given user:
