@@ -487,10 +487,12 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
       [interaction | _] = session.interactions
       assert interaction.command.module == Initialize
 
+      IO.inspect(interaction.command)
+
       # Verify command contains branch name generation logic
       assert String.contains?(
                interaction.command.command,
-               "code-context-testing-session-for-accounts"
+               "test-context-testing-session-for-accounts"
              )
 
       # Mock git branch creation
