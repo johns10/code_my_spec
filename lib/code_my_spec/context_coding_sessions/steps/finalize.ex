@@ -35,7 +35,12 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.Finalize do
     {:ok, session_updates, result}
   end
 
-  def handle_result(_scope, session, %Result{status: :error, error_message: error_message} = result, _opts) do
+  def handle_result(
+        _scope,
+        session,
+        %Result{status: :error, error_message: error_message} = result,
+        _opts
+      ) do
     updated_state =
       Map.merge(session.state || %{}, %{
         finalized_at: DateTime.utc_now(),
@@ -52,8 +57,12 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.Finalize do
 
   # Private Functions
 
-  defp get_context_component(%{component_id: nil}), do: {:error, "Context component not found in session"}
-  defp get_context_component(%{component: nil}), do: {:error, "Context component not found in session"}
+  defp get_context_component(%{component_id: nil}),
+    do: {:error, "Context component not found in session"}
+
+  defp get_context_component(%{component: nil}),
+    do: {:error, "Context component not found in session"}
+
   defp get_context_component(%{component: component}), do: {:ok, component}
 
   defp get_child_sessions(%{child_sessions: []}), do: {:error, "No child sessions found"}
@@ -64,7 +73,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.Finalize do
     files =
       child_sessions
       |> Enum.flat_map(fn child_session ->
-        component = CodeMySpec.Repo.preload(child_session, [component: :project]).component
+        component = CodeMySpec.Repo.preload(child_session, component: :project).component
         project = component.project
 
         %{code_file: code_file, test_file: test_file} =

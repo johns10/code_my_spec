@@ -137,7 +137,11 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
 
       # Create unit test files
       File.mkdir_p!("test/my_app/accounts")
-      File.write!("test/my_app/accounts/user_test.exs", "defmodule MyApp.Accounts.UserTest do\nend")
+
+      File.write!(
+        "test/my_app/accounts/user_test.exs",
+        "defmodule MyApp.Accounts.UserTest do\nend"
+      )
 
       File.write!(
         "test/my_app/accounts/user_repository_test.exs",
@@ -250,7 +254,11 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
 
       # Create all test files
       File.mkdir_p!("test/my_app/accounts")
-      File.write!("test/my_app/accounts/user_test.exs", "defmodule MyApp.Accounts.UserTest do\nend")
+
+      File.write!(
+        "test/my_app/accounts/user_test.exs",
+        "defmodule MyApp.Accounts.UserTest do\nend"
+      )
 
       File.write!(
         "test/my_app/accounts/user_repository_test.exs",
@@ -375,7 +383,11 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
 
       # Create test files but simulate test failure in validation
       File.mkdir_p!("test/my_app/accounts")
-      File.write!("test/my_app/accounts/user_test.exs", "defmodule MyApp.Accounts.UserTest do\nend")
+
+      File.write!(
+        "test/my_app/accounts/user_test.exs",
+        "defmodule MyApp.Accounts.UserTest do\nend"
+      )
 
       File.write!(
         "test/my_app/accounts/user_repository_test.exs",
@@ -615,7 +627,11 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
       File.write!("lib/my_app/accounts_live.ex", "defmodule MyApp.AccountsLive do\nend")
 
       File.mkdir_p!("test/my_app/accounts")
-      File.write!("test/my_app/accounts/user_test.exs", "defmodule MyApp.Accounts.UserTest do\nend")
+
+      File.write!(
+        "test/my_app/accounts/user_test.exs",
+        "defmodule MyApp.Accounts.UserTest do\nend"
+      )
 
       File.write!(
         "test/my_app/accounts/user_repository_test.exs",
