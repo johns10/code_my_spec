@@ -17,7 +17,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.Finalize do
          {:ok, child_sessions} <- get_child_sessions(session),
          {:ok, test_files} <- collect_test_files(child_sessions),
          {:ok, branch_name} <- get_branch_name(session) do
-      command_string = build_git_command(context_component, child_sessions, test_files, branch_name)
+      command_string =
+        build_git_command(context_component, child_sessions, test_files, branch_name)
 
       metadata = %{
         branch_name: branch_name,

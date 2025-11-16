@@ -377,7 +377,9 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.SpawnComponentTestingSessionsT
 
       # Manually create child sessions with wrong type
       Enum.each(children, fn child ->
-        create_child_session(scope, parent_session, child, type: CodeMySpec.ComponentCodingSessions)
+        create_child_session(scope, parent_session, child,
+          type: CodeMySpec.ComponentCodingSessions
+        )
       end)
 
       # Reload parent session with children

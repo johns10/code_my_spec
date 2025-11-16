@@ -86,7 +86,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       assert command.module == Finalize
       assert is_binary(command.command)
@@ -108,7 +109,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # Check commit message structure
       assert command.command =~ "Generate tests for TestContext context"
@@ -131,7 +133,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # Branch name is derived from component name using Utils.branch_name/1
       assert command.command =~ "git push -u origin test-context-testing-session-for-testcontext"
@@ -220,7 +223,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # Branch name is derived from component name
       assert command.metadata.branch_name == "test-context-testing-session-for-testcontext"
@@ -241,7 +245,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # Check for all test files (uses MyApp from project fixture)
       assert command.command =~ "test/my_app/child_component0_test.exs"
@@ -266,7 +271,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # If associations weren't preloaded, the command generation would fail
       # Verify command was successfully generated with test file paths
@@ -287,7 +293,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # Check for heredoc pattern
       assert command.command =~ "git commit -m \"$(cat <<'EOF'"
@@ -306,7 +313,8 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
       # Reload parent session with children
       parent_session_reloaded = CodeMySpec.Sessions.get_session(scope, parent_session.id)
 
-      assert {:ok, %Command{} = command} = Finalize.get_command(scope, parent_session_reloaded, [])
+      assert {:ok, %Command{} = command} =
+               Finalize.get_command(scope, parent_session_reloaded, [])
 
       # Files should be relative paths, not absolute
       refute command.command =~ "/Users/"
