@@ -29,7 +29,7 @@ defmodule CodeMySpec.SessionsFixtures do
   def valid_event_attrs(session_id, attrs \\ %{}) do
     Enum.into(attrs, %{
       session_id: session_id,
-      event_type: :tool_called,
+      event_type: :proxy_response,
       sent_at: DateTime.utc_now(),
       data: %{
         "tool_name" => "Read",
@@ -44,60 +44,12 @@ defmodule CodeMySpec.SessionsFixtures do
   def conversation_started_event_attrs(session_id, conversation_id, attrs \\ %{}) do
     Enum.into(attrs, %{
       session_id: session_id,
-      event_type: :conversation_started,
+      event_type: :session_start,
       sent_at: DateTime.utc_now(),
       data: %{
         "conversation_id" => conversation_id,
         "agent" => "claude_code",
         "model" => "claude-sonnet-4"
-      }
-    })
-  end
-
-  @doc """
-  Generate a tool_called event.
-  """
-  def tool_called_event_attrs(session_id, attrs \\ %{}) do
-    Enum.into(attrs, %{
-      session_id: session_id,
-      event_type: :tool_called,
-      sent_at: DateTime.utc_now(),
-      data: %{
-        "tool_name" => "Read",
-        "parameters" => %{"file_path" => "/path/to/file.ex"}
-      }
-    })
-  end
-
-  @doc """
-  Generate a file_modified event.
-  """
-  def file_modified_event_attrs(session_id, attrs \\ %{}) do
-    Enum.into(attrs, %{
-      session_id: session_id,
-      event_type: :file_modified,
-      sent_at: DateTime.utc_now(),
-      data: %{
-        "file_path" => "/path/to/file.ex",
-        "lines_added" => 10,
-        "lines_removed" => 5
-      }
-    })
-  end
-
-  @doc """
-  Generate an error_occurred event.
-  """
-  def error_occurred_event_attrs(session_id, attrs \\ %{}) do
-    Enum.into(attrs, %{
-      session_id: session_id,
-      event_type: :error_occurred,
-      sent_at: DateTime.utc_now(),
-      data: %{
-        error_type: "compilation_error",
-        message: "Undefined function foo/1",
-        file: "/path/to/file.ex",
-        line: 42
       }
     })
   end
