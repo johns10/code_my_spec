@@ -104,6 +104,7 @@ defmodule CodeMySpecWeb.Router do
       post "/submit-result/:interaction_id", SessionsController, :submit_result
       post "/cancel", SessionsController, :cancel
       put "/external_conversation_id", SessionsController, :update_external_conversation_id
+      post "/events", SessionsController, :add_event
     end
 
     post "/project-coordinator/sync-requirements",

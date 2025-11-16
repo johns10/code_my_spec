@@ -35,7 +35,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       event = List.first(events)
       assert event.session_id == session.id
-      assert event.event_type == :tool_called
+      assert event.event_type == :proxy_response
       assert event.data["tool_name"] == "Read"
     end
 
@@ -159,7 +159,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       events = Repo.all(CodeMySpec.Sessions.SessionEvent)
       assert length(events) == 1
-      assert List.first(events).event_type == :conversation_started
+      assert List.first(events).event_type == :session_start
     end
 
     test "conversation_started no-ops when already set to same value", %{
@@ -220,7 +220,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
     test "session_status_changed updates session status", %{scope: scope, session: session} do
       event_attrs =
         valid_event_attrs(session.id, %{
-          event_type: :session_status_changed,
+          event_type: :proxy_request,
           data: %{
             "old_status" => "active",
             "new_status" => "complete"
@@ -237,47 +237,12 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       events = Repo.all(CodeMySpec.Sessions.SessionEvent)
       assert length(events) == 1
-      assert List.first(events).event_type == :session_status_changed
-    end
-
-    test "error_occurred logs error but doesn't update session", %{scope: scope, session: session} do
-      event_attrs = error_occurred_event_attrs(session.id)
-
-      original_status = session.status
-      original_state = session.state
-
-      assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
-
-      # Session should not be changed
-      assert updated_session.status == original_status
-      assert updated_session.state == original_state
-
-      # Event is still persisted
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
-      assert length(events) == 1
-      assert List.first(events).event_type == :error_occurred
-      assert List.first(events).data["error_type"] == "compilation_error"
+      assert List.first(events).event_type == :proxy_request
     end
 
     test "unknown event types have no side effects", %{scope: scope, session: session} do
       # Test various event types that should have no side effects
-      event_types = [
-        :conversation_message_sent,
-        :conversation_message_received,
-        :conversation_ended,
-        :tool_called,
-        :tool_result,
-        :file_created,
-        :file_modified,
-        :file_deleted,
-        :command_started,
-        :command_output,
-        :command_completed,
-        :hook_triggered,
-        :hook_completed,
-        :session_paused,
-        :session_resumed
-      ]
+      event_types = [:proxy_request, :proxy_response, :session_start]
 
       original_status = session.status
       original_state = session.state
@@ -322,10 +287,10 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
     test "multiple valid events insert successfully", %{scope: scope, session: session} do
       events_attrs = [
-        tool_called_event_attrs(session.id),
-        file_modified_event_attrs(session.id),
+        conversation_started_event_attrs(session.id, "conversation-id"),
+        valid_event_attrs(session.id),
         valid_event_attrs(session.id, %{
-          event_type: :command_started,
+          event_type: :proxy_request,
           data: %{"command" => "mix test"}
         })
       ]
@@ -337,17 +302,16 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       assert length(events) == 3
 
       event_types = Enum.map(events, & &1.event_type)
-      assert :tool_called in event_types
-      assert :file_modified in event_types
-      assert :command_started in event_types
+      assert :proxy_response in event_types
+      assert :proxy_request in event_types
+      assert :session_start in event_types
     end
 
     test "first invalid event fails entire batch", %{scope: scope, session: session} do
       events_attrs = [
-        tool_called_event_attrs(session.id),
-        # Second event is invalid (missing required field)
+        valid_event_attrs(session.id),
         valid_event_attrs(session.id) |> Map.delete(:sent_at),
-        file_modified_event_attrs(session.id)
+        valid_event_attrs(session.id)
       ]
 
       assert {:error, changeset} = EventHandler.handle_events(scope, session.id, events_attrs)
@@ -359,8 +323,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
     test "transaction rolls back on error", %{scope: scope, session: session} do
       events_attrs = [
-        tool_called_event_attrs(session.id),
-        file_modified_event_attrs(session.id),
+        valid_event_attrs(session.id),
+        valid_event_attrs(session.id),
         # Last event is invalid
         valid_event_attrs(session.id) |> Map.put(:event_type, :invalid_type)
       ]
@@ -438,6 +402,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       assert_receive {:conversation_id_set,
                       %{session_id: ^session_id, conversation_id: ^conversation_id}}
 
+      assert_receive {:session_event_received, %{session_id: ^session_id}}
+
       # Should not receive any more messages
       refute_receive _, 100
     end
@@ -448,7 +414,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
     } do
       event_attrs =
         valid_event_attrs(session.id, %{
-          event_type: :session_status_changed,
+          event_type: :proxy_response,
           data: %{
             "old_status" => "active",
             "new_status" => "complete"
@@ -457,23 +423,18 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
 
-      # Should receive the message 2 times (account and user channels, not session)
+      # Should receive the message 3 times (account, user, and session channels)
       assert_receive {:session_status_changed, %{session_id: session_id, status: :complete}}
       assert session_id == session.id
 
       assert_receive {:session_status_changed, %{session_id: ^session_id, status: :complete}}
 
-      # Should not receive any more messages (no session-specific broadcast)
-      refute_receive _, 100
-    end
+      assert_receive {:session_status_changed, %{session_id: ^session_id, status: :complete}}
 
-    test "no broadcast when no side effects occur", %{scope: scope, session: session} do
-      # tool_called has no side effects
-      event_attrs = valid_event_attrs(session.id, %{event_type: :tool_called})
+      # Should also receive session_event_received on session channel
+      assert_receive {:session_event_received, %{session_id: ^session_id}}
 
-      assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
-
-      # Should not receive any broadcast messages
+      # Should not receive any more messages
       refute_receive _, 100
     end
   end

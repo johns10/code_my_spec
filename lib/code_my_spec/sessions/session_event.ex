@@ -11,24 +11,9 @@ defmodule CodeMySpec.Sessions.SessionEvent do
   alias CodeMySpec.Sessions.Session
 
   @type event_type ::
-          :conversation_started
-          | :conversation_message_sent
-          | :conversation_message_received
-          | :conversation_ended
-          | :tool_called
-          | :tool_result
-          | :file_created
-          | :file_modified
-          | :file_deleted
-          | :command_started
-          | :command_output
-          | :command_completed
-          | :hook_triggered
-          | :hook_completed
-          | :session_status_changed
-          | :session_paused
-          | :session_resumed
-          | :error_occurred
+          :proxy_request
+          | :proxy_response
+          | :session_start
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -43,34 +28,7 @@ defmodule CodeMySpec.Sessions.SessionEvent do
         }
 
   schema "session_events" do
-    field :event_type, Ecto.Enum,
-      values: [
-        # Conversation Events
-        :conversation_started,
-        :conversation_message_sent,
-        :conversation_message_received,
-        :conversation_ended,
-        # Tool Events
-        :tool_called,
-        :tool_result,
-        # File Events
-        :file_created,
-        :file_modified,
-        :file_deleted,
-        # Command Events
-        :command_started,
-        :command_output,
-        :command_completed,
-        # Hook Events
-        :hook_triggered,
-        :hook_completed,
-        # State Events
-        :session_status_changed,
-        :session_paused,
-        :session_resumed,
-        # Error Events
-        :error_occurred
-      ]
+    field :event_type, CodeMySpec.Sessions.EventType
 
     field :data, :map
     field :metadata, :map

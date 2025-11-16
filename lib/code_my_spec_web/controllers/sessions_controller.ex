@@ -2,6 +2,7 @@ defmodule CodeMySpecWeb.SessionsController do
   use CodeMySpecWeb, :controller
 
   alias CodeMySpec.Sessions
+  alias CodeMySpec.Sessions.EventHandler
 
   action_fallback CodeMySpecWeb.FallbackController
 
@@ -123,6 +124,29 @@ defmodule CodeMySpecWeb.SessionsController do
         conn
         |> put_status(:not_found)
         |> json(%{status: "not_found", error: "Session not found"})
+    end
+  end
+
+  def add_event(conn, %{"sessions_id" => session_id} = params) do
+    scope = conn.assigns.current_scope
+    event_attrs = Map.drop(params, ["sessions_id"])
+
+    case EventHandler.handle_event(scope, session_id, event_attrs) do
+      {:ok, session} ->
+        render(conn, :show, session: session)
+
+      {:error, :session_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Session not found"})
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        IO.inspect(changeset)
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(json: CodeMySpecWeb.ChangesetJSON)
+        |> render(:error, changeset: changeset)
     end
   end
 end

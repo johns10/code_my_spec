@@ -1,8 +1,8 @@
 defmodule CodeMySpecWeb.UserSocket do
   use Phoenix.Socket
 
-  alias CodeMySpec.Users.UserToken
-  alias CodeMySpec.Repo
+  alias CodeMySpec.Users
+  alias ExOauth2Provider.AccessTokens
 
   # A Socket handler
   #
@@ -11,6 +11,7 @@ defmodule CodeMySpecWeb.UserSocket do
 
   ## Channels
   channel "vscode:*", CodeMySpecWeb.VSCodeChannel
+  channel "session:*", CodeMySpecWeb.SessionChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -28,11 +29,14 @@ defmodule CodeMySpecWeb.UserSocket do
   # performing token verification on connect.
   @impl true
   def connect(%{"token" => token}, socket, _connect_info) do
-    {:ok, query} = UserToken.verify_session_token_query(token)
-
-    case Repo.one(query) do
-      {%{id: user_id}, _inserted_at} ->
-        {:ok, assign(socket, :user_id, user_id)}
+    case AccessTokens.get_by_token(token, otp_app: :code_my_spec) do
+      %{resource_owner_id: user_id} = access_token ->
+        if AccessTokens.is_accessible?(access_token) do
+          user = Users.get_user!(user_id)
+          {:ok, assign(socket, :user_id, user.id)}
+        else
+          :error
+        end
 
       nil ->
         :error

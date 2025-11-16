@@ -121,10 +121,11 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp process_single_event(scope, session, event_attrs) do
     Repo.transaction(fn ->
-      with {:ok, event} <- build_and_validate_event(session.id, event_attrs),
+      with {:ok, event} <- build_and_validate_event(event_attrs),
            {:ok, session_updates} <- process_side_effects(session, event),
-           {:ok, _event} <- insert_event(event),
+           {:ok, inserted_event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
+        broadcast_event_received(session.id, inserted_event)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -134,10 +135,11 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp process_batch_events(scope, session, events_attrs) do
     Repo.transaction(fn ->
-      with {:ok, events} <- build_and_validate_events(session.id, events_attrs),
+      with {:ok, events} <- build_and_validate_events(events_attrs),
            {:ok, session_updates} <- process_batch_side_effects(session, events),
-           :ok <- insert_events(events),
+           {:ok, inserted_events} <- insert_events_with_return(events),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
+        broadcast_events_received(session.id, inserted_events)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -145,9 +147,8 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end)
   end
 
-  defp build_and_validate_event(session_id, event_attrs) do
-    event_attrs_with_session = Map.put(event_attrs, :session_id, session_id)
-    changeset = SessionEvent.changeset(%SessionEvent{}, event_attrs_with_session)
+  defp build_and_validate_event(event_attrs) do
+    changeset = SessionEvent.changeset(%SessionEvent{}, event_attrs)
 
     if changeset.valid? do
       {:ok, Ecto.Changeset.apply_changes(changeset)}
@@ -156,10 +157,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
-  defp build_and_validate_events(session_id, events_attrs) do
+  defp build_and_validate_events(events_attrs) do
     events_attrs
     |> Enum.reduce_while({:ok, []}, fn event_attrs, {:ok, acc} ->
-      case build_and_validate_event(session_id, event_attrs) do
+      case build_and_validate_event(event_attrs) do
         {:ok, event} -> {:cont, {:ok, [event | acc]}}
         {:error, changeset} -> {:halt, {:error, changeset}}
       end
@@ -176,14 +177,18 @@ defmodule CodeMySpec.Sessions.EventHandler do
     |> Repo.insert()
   end
 
-  defp insert_events(events) do
+  defp insert_events_with_return(events) do
     events
-    |> Enum.reduce_while(:ok, fn event, :ok ->
+    |> Enum.reduce_while({:ok, []}, fn event, {:ok, acc} ->
       case insert_event(event) do
-        {:ok, _event} -> {:cont, :ok}
+        {:ok, inserted_event} -> {:cont, {:ok, [inserted_event | acc]}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
+    |> case do
+      {:ok, inserted_events} -> {:ok, Enum.reverse(inserted_events)}
+      error -> error
+    end
   end
 
   defp process_side_effects(session, event) do
@@ -223,9 +228,21 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
+  # Check for status change first (based on data content, not event type)
+  defp apply_side_effect(%Session{} = _session, %SessionEvent{data: data})
+       when is_map_key(data, "new_status") do
+    new_status = Map.get(data, "new_status")
+
+    case parse_status(new_status) do
+      {:ok, status_atom} -> {:ok, %{status: status_atom}}
+      {:error, _} = error -> error
+    end
+  end
+
+  # Check for conversation_id (session_start event)
   defp apply_side_effect(
          %Session{external_conversation_id: nil} = _session,
-         %SessionEvent{event_type: :conversation_started, data: data}
+         %SessionEvent{event_type: :session_start, data: data}
        ) do
     conversation_id = Map.get(data, "conversation_id")
     {:ok, %{external_conversation_id: conversation_id}}
@@ -233,7 +250,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp apply_side_effect(
          %Session{external_conversation_id: existing_id} = session,
-         %SessionEvent{event_type: :conversation_started, data: data}
+         %SessionEvent{event_type: :session_start, data: data}
        ) do
     conversation_id = Map.get(data, "conversation_id")
 
@@ -248,18 +265,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
-  defp apply_side_effect(%Session{} = _session, %SessionEvent{
-         event_type: :session_status_changed,
-         data: data
-       }) do
-    new_status = Map.get(data, "new_status")
-
-    case parse_status(new_status) do
-      {:ok, status_atom} -> {:ok, %{status: status_atom}}
-      {:error, _} = error -> error
-    end
-  end
-
+  # Default: no side effects
   defp apply_side_effect(%Session{} = _session, %SessionEvent{} = _event) do
     {:ok, %{}}
   end
@@ -364,5 +370,26 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp maybe_apply_limit(query, limit) when is_integer(limit) and limit > 0 do
     limit(query, ^limit)
+  end
+
+  defp broadcast_event_received(session_id, event) do
+    message = {:session_event_received, %{session_id: session_id, event: serialize_event(event)}}
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "session:#{session_id}", message)
+  end
+
+  defp broadcast_events_received(session_id, events) do
+    serialized_events = Enum.map(events, &serialize_event/1)
+    message = {:session_events_received, %{session_id: session_id, events: serialized_events}}
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "session:#{session_id}", message)
+  end
+
+  defp serialize_event(%SessionEvent{} = event) do
+    %{
+      id: event.id,
+      session_id: event.session_id,
+      event_type: event.event_type,
+      sent_at: event.sent_at,
+      data: event.data
+    }
   end
 end
