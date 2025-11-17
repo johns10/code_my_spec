@@ -73,6 +73,7 @@ defmodule CodeMySpec.MixProject do
 
       # Normal deps
       {:mox, "~> 1.2"},
+      {:exvcr, "~> 0.15", only: :test},
       {:paper_trail, "~> 1.1"},
       {:hermes_mcp, "~> 0.14"},
       {:oban, "~> 2.19.4"},
@@ -81,14 +82,16 @@ defmodule CodeMySpec.MixProject do
       {:earmark, "~> 1.4"},
       {:floki, "~> 0.38"},
       {:yaml_elixir, "~> 2.11"},
-      {:faker, "~> 0.18", only: :test},
+      {:faker, "~> 0.18"},
       {:dir_walker, "~> 0.0.8"},
       {:assent, "~> 0.3.1"},
       {:cloak_ecto, "~> 1.3.0"},
       {:git_cli, "~> 0.3.0"},
       {:dotenvy, "~> 1.1.0"},
       {:google_api_analytics_admin, "~> 0.26.0"},
-      {:recase, "~> 0.8"}
+      {:recase, "~> 0.8"},
+      {:oapi_github, "~> 0.3.3"},
+      {:httpoison, "~> 2.0"}
     ]
   end
 
