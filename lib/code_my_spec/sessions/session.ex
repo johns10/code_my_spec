@@ -15,6 +15,7 @@ defmodule CodeMySpec.Sessions.Session do
             | CodeMySpec.ContextComponentsDesignSessions
             | CodeMySpec.ContextDesignReviewSessions
             | CodeMySpec.ContextCodingSessions
+            | CodeMySpec.ContextTestingSessions
             | CodeMySpec.ComponentDesignSessions
             | CodeMySpec.ComponentDesignReviewSessions
             | CodeMySpec.ComponentTestSessions
@@ -26,6 +27,7 @@ defmodule CodeMySpec.Sessions.Session do
           execution_mode: :manual | :auto | :agentic | nil,
           status: :active | :complete | :failed | :cancelled | nil,
           state: map() | nil,
+          display_name: String.t() | nil,
           project_id: integer() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
           account_id: integer() | nil,
@@ -51,6 +53,7 @@ defmodule CodeMySpec.Sessions.Session do
     field :execution_mode, Ecto.Enum, values: [:manual, :auto, :agentic], default: :manual
     field :status, Ecto.Enum, values: [:active, :complete, :failed, :cancelled], default: :active
     field :external_conversation_id, :string
+    field :display_name, :string, virtual: true
 
     field :state, :map
 
@@ -87,6 +90,7 @@ defmodule CodeMySpec.Sessions.Session do
     |> put_change(:account_id, user_scope.active_account.id)
     |> put_change(:project_id, user_scope.active_project.id)
     |> put_change(:user_id, user_scope.user.id)
+    |> put_display_name()
   end
 
   def complete_interaction_changeset(session, session_attrs, interaction_id, result) do
@@ -128,4 +132,24 @@ defmodule CodeMySpec.Sessions.Session do
     change(session)
     |> put_embed(:interactions, [interaction | session.interactions])
   end
+
+  defp put_display_name(%{changes: %{type: type}} = changeset) when not is_nil(type) do
+    put_change(changeset, :display_name, format_display_name(type))
+  end
+
+  defp put_display_name(%{data: %{type: type}} = changeset) when not is_nil(type) do
+    put_change(changeset, :display_name, format_display_name(type))
+  end
+
+  defp put_display_name(changeset), do: changeset
+
+  defp format_display_name(type) when is_atom(type) do
+    type
+    |> Module.split()
+    |> List.last()
+    |> String.replace_suffix("Sessions", "")
+    |> Recase.to_title()
+  end
+
+  defp format_display_name(_), do: nil
 end

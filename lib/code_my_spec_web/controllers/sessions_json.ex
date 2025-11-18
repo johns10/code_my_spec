@@ -19,6 +19,7 @@ defmodule CodeMySpecWeb.SessionsJSON do
     %{
       id: session.id,
       type: session.type |> Atom.to_string() |> String.split(".") |> List.last(),
+      display_name: session.display_name,
       agent: session.agent,
       environment: session.environment,
       execution_mode: session.execution_mode,

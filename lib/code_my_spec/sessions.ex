@@ -156,6 +156,7 @@ defmodule CodeMySpec.Sessions do
              result
            ) do
       broadcast(scope, {:updated, session})
+      broadcast(scope, {:session_activity, %{session_id: session.id}})
       {:ok, session}
     end
   end

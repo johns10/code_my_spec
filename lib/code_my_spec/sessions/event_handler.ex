@@ -123,9 +123,9 @@ defmodule CodeMySpec.Sessions.EventHandler do
     Repo.transaction(fn ->
       with {:ok, event} <- build_and_validate_event(event_attrs),
            {:ok, session_updates} <- process_side_effects(session, event),
-           {:ok, inserted_event} <- insert_event(event),
+           {:ok, _inserted_event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        broadcast_event_received(session.id, inserted_event)
+        broadcast_activity(scope, session.id)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -137,9 +137,9 @@ defmodule CodeMySpec.Sessions.EventHandler do
     Repo.transaction(fn ->
       with {:ok, events} <- build_and_validate_events(events_attrs),
            {:ok, session_updates} <- process_batch_side_effects(session, events),
-           {:ok, inserted_events} <- insert_events_with_return(events),
+           {:ok, _inserted_events} <- insert_events_with_return(events),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        broadcast_events_received(session.id, inserted_events)
+        broadcast_activity(scope, session.id)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -325,14 +325,12 @@ defmodule CodeMySpec.Sessions.EventHandler do
   end
 
   defp build_update_channels(_field, %{
-         session_id: session_id,
          account_key: account_key,
          user_id: user_id
        }) do
     [
       "account:#{account_key}:sessions",
-      "user:#{user_id}:sessions",
-      "session:#{session_id}"
+      "user:#{user_id}:sessions"
     ]
   end
 
@@ -372,24 +370,11 @@ defmodule CodeMySpec.Sessions.EventHandler do
     limit(query, ^limit)
   end
 
-  defp broadcast_event_received(session_id, event) do
-    message = {:session_event_received, %{session_id: session_id, event: serialize_event(event)}}
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "session:#{session_id}", message)
-  end
-
-  defp broadcast_events_received(session_id, events) do
-    serialized_events = Enum.map(events, &serialize_event/1)
-    message = {:session_events_received, %{session_id: session_id, events: serialized_events}}
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "session:#{session_id}", message)
-  end
-
-  defp serialize_event(%SessionEvent{} = event) do
-    %{
-      id: event.id,
-      session_id: event.session_id,
-      event_type: event.event_type,
-      sent_at: event.sent_at,
-      data: event.data
-    }
+  defp broadcast_activity(%Scope{} = scope, session_id) do
+    account_key = scope.active_account_id
+    user_id = scope.user.id
+    message = {:session_activity, %{session_id: session_id}}
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{account_key}:sessions", message)
+    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{user_id}:sessions", message)
   end
 end
