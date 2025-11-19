@@ -186,11 +186,11 @@ defmodule CodeMySpec.Projects do
       iex> create_github_repo(scope, project, :code_repo, "-code")
       {:error, :github_not_connected}
   """
-  def create_github_repo(%Scope{} = scope, %Project{} = project, repo_type, repo_suffix)
+  def create_github_repo(%Scope{} = scope, %Project{} = project, repo_type, attrs, repo_suffix)
       when repo_type in [:code_repo, :docs_repo] do
     # Sanitize project name for GitHub (replace spaces with hyphens, lowercase)
     sanitized_name =
-      project.name
+      (project.name || attrs["name"])
       |> String.downcase()
       |> String.replace(~r/[^a-z0-9-_]/, "-")
       |> String.replace(~r/-+/, "-")
