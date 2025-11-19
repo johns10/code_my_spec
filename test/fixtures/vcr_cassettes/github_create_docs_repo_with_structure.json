@@ -1,0 +1,292 @@
+[
+  {
+    "request": {
+      "options": [],
+      "body": "{\"name\":\"test-project-docs\",\"private\":true,\"description\":\"A test project for setup wizard\"}",
+      "url": "https://api.github.com/user/repos",
+      "headers": {
+        "User-Agent": "CodeMySpec via oapi_github 0.3.3; Elixir 1.18.2 / OTP 27",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      "method": "post",
+      "request_body": ""
+    },
+    "response": {
+      "binary": false,
+      "type": "ok",
+      "body": "{\"id\":1097991887,\"node_id\":\"R_kgDOQXIGzw\",\"name\":\"test-project-docs\",\"full_name\":\"johns10/test-project-docs\",\"private\":true,\"owner\":{\"login\":\"johns10\",\"id\":3057629,\"node_id\":\"MDQ6VXNlcjMwNTc2Mjk=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3057629?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/johns10\",\"html_url\":\"https://github.com/johns10\",\"followers_url\":\"https://api.github.com/users/johns10/followers\",\"following_url\":\"https://api.github.com/users/johns10/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/johns10/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/johns10/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/johns10/subscriptions\",\"organizations_url\":\"https://api.github.com/users/johns10/orgs\",\"repos_url\":\"https://api.github.com/users/johns10/repos\",\"events_url\":\"https://api.github.com/users/johns10/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/johns10/received_events\",\"type\":\"User\",\"user_view_type\":\"public\",\"site_admin\":false},\"html_url\":\"https://github.com/johns10/test-project-docs\",\"description\":\"A test project for setup wizard\",\"fork\":false,\"url\":\"https://api.github.com/repos/johns10/test-project-docs\",\"forks_url\":\"https://api.github.com/repos/johns10/test-project-docs/forks\",\"keys_url\":\"https://api.github.com/repos/johns10/test-project-docs/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/johns10/test-project-docs/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/johns10/test-project-docs/teams\",\"hooks_url\":\"https://api.github.com/repos/johns10/test-project-docs/hooks\",\"issue_events_url\":\"https://api.github.com/repos/johns10/test-project-docs/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/johns10/test-project-docs/events\",\"assignees_url\":\"https://api.github.com/repos/johns10/test-project-docs/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/johns10/test-project-docs/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/johns10/test-project-docs/tags\",\"blobs_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/johns10/test-project-docs/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/johns10/test-project-docs/languages\",\"stargazers_url\":\"https://api.github.com/repos/johns10/test-project-docs/stargazers\",\"contributors_url\":\"https://api.github.com/repos/johns10/test-project-docs/contributors\",\"subscribers_url\":\"https://api.github.com/repos/johns10/test-project-docs/subscribers\",\"subscription_url\":\"https://api.github.com/repos/johns10/test-project-docs/subscription\",\"commits_url\":\"https://api.github.com/repos/johns10/test-project-docs/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/johns10/test-project-docs/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/johns10/test-project-docs/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/johns10/test-project-docs/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/johns10/test-project-docs/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/johns10/test-project-docs/merges\",\"archive_url\":\"https://api.github.com/repos/johns10/test-project-docs/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/johns10/test-project-docs/downloads\",\"issues_url\":\"https://api.github.com/repos/johns10/test-project-docs/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/johns10/test-project-docs/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/johns10/test-project-docs/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/johns10/test-project-docs/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/johns10/test-project-docs/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/johns10/test-project-docs/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/johns10/test-project-docs/deployments\",\"created_at\":\"2025-11-17T05:42:21Z\",\"updated_at\":\"2025-11-17T05:42:21Z\",\"pushed_at\":\"2025-11-17T05:42:21Z\",\"git_url\":\"git://github.com/johns10/test-project-docs.git\",\"ssh_url\":\"git@github.com:johns10/test-project-docs.git\",\"clone_url\":\"https://github.com/johns10/test-project-docs.git\",\"svn_url\":\"https://github.com/johns10/test-project-docs\",\"homepage\":null,\"size\":0,\"stargazers_count\":0,\"watchers_count\":0,\"language\":null,\"has_issues\":true,\"has_projects\":true,\"has_downloads\":true,\"has_wiki\":false,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":0,\"license\":null,\"allow_forking\":true,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":0,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":true,\"maintain\":true,\"push\":true,\"triage\":true,\"pull\":true},\"allow_squash_merge\":true,\"allow_merge_commit\":true,\"allow_rebase_merge\":true,\"allow_auto_merge\":false,\"delete_branch_on_merge\":false,\"allow_update_branch\":false,\"use_squash_pr_title_as_default\":false,\"squash_merge_commit_message\":\"COMMIT_MESSAGES\",\"squash_merge_commit_title\":\"COMMIT_OR_PR_TITLE\",\"merge_commit_message\":\"PR_TITLE\",\"merge_commit_title\":\"MERGE_MESSAGE\",\"network_count\":0,\"subscribers_count\":0}",
+      "headers": {
+        "Date": "Mon, 17 Nov 2025 05:42:21 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "5700",
+        "Cache-Control": "private, max-age=60, s-maxage=60",
+        "Vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+        "ETag": "\"19d1bffb388562da6bea316b2db0fc88cd805bcd635eb8733c6a58d6398fa491\"",
+        "X-OAuth-Scopes": "delete_repo, repo, user:email",
+        "X-Accepted-OAuth-Scopes": "public_repo, repo",
+        "x-oauth-client-id": "Ov23liFpnT7j3bK5OC1L",
+        "Location": "https://api.github.com/repos/johns10/test-project-docs",
+        "X-GitHub-Media-Type": "github.v3; format=json",
+        "x-github-api-version-selected": "2022-11-28",
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Remaining": "4770",
+        "X-RateLimit-Reset": "1763361023",
+        "X-RateLimit-Used": "230",
+        "X-RateLimit-Resource": "core",
+        "Access-Control-Expose-Headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+        "Access-Control-Allow-Origin": "*",
+        "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
+        "X-Frame-Options": "deny",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "0",
+        "Referrer-Policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'none'",
+        "X-GitHub-Request-Id": "F609:673BD:BEA85B:345D5A8:691AB5BC",
+        "Server": "github.com"
+      },
+      "status_code": 201
+    }
+  },
+  {
+    "request": {
+      "options": [],
+      "body": "{\"message\":\"Initialize content/README.md\",\"content\":\"IyBDb250ZW50CgpQcm9qZWN0LXNwZWNpZmljIGNvbnRlbnQgZ29lcyBoZXJlLgoKVGhpcyBkaXJlY3RvcnkgaXMgZm9yIGNvbnRlbnQgdGhhdCBpcyBzcGVjaWZpYyB0byB5b3VyIHByb2plY3QsIHN1Y2ggYXM6Ci0gTWFya2V0aW5nIGNvcHkKLSBVc2VyIGd1aWRlcwotIERvY3VtZW50YXRpb24gcmVzb3VyY2VzCg==\"}",
+      "url": "https://api.github.com/repos/johns10/test-project-docs/contents/content/README.md",
+      "headers": {
+        "User-Agent": "CodeMySpec via oapi_github 0.3.3; Elixir 1.18.2 / OTP 27",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      "method": "put",
+      "request_body": ""
+    },
+    "response": {
+      "binary": false,
+      "type": "ok",
+      "body": "{\"content\":{\"name\":\"README.md\",\"path\":\"content/README.md\",\"sha\":\"b1d4ce7a51137dc884d429118b6a635f0d93a9e1\",\"size\":178,\"url\":\"https://api.github.com/repos/johns10/test-project-docs/contents/content/README.md?ref=main\",\"html_url\":\"https://github.com/johns10/test-project-docs/blob/main/content/README.md\",\"git_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/b1d4ce7a51137dc884d429118b6a635f0d93a9e1\",\"download_url\":\"https://raw.githubusercontent.com/johns10/test-project-docs/main/content/README.md?token=AAXKPXMA43RFPMX33MULK23JDK27U\",\"type\":\"file\",\"_links\":{\"self\":\"https://api.github.com/repos/johns10/test-project-docs/contents/content/README.md?ref=main\",\"git\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/b1d4ce7a51137dc884d429118b6a635f0d93a9e1\",\"html\":\"https://github.com/johns10/test-project-docs/blob/main/content/README.md\"}},\"commit\":{\"sha\":\"58a0acb47cfad53719cdf5bd09b195154dd794a5\",\"node_id\":\"C_kwDOQXIGz9oAKDU4YTBhY2I0N2NmYWQ1MzcxOWNkZjViZDA5YjE5NTE1NGRkNzk0YTU\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/58a0acb47cfad53719cdf5bd09b195154dd794a5\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/58a0acb47cfad53719cdf5bd09b195154dd794a5\",\"author\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:22Z\"},\"committer\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:22Z\"},\"tree\":{\"sha\":\"1458af6fd7c2c9270e58ed7e9233fccb98d8516e\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/trees/1458af6fd7c2c9270e58ed7e9233fccb98d8516e\"},\"message\":\"Initialize content/README.md\",\"parents\":[],\"verification\":{\"verified\":false,\"reason\":\"unsigned\",\"signature\":null,\"payload\":null,\"verified_at\":null}}}",
+      "headers": {
+        "Date": "Mon, 17 Nov 2025 05:42:22 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "1787",
+        "Cache-Control": "private, max-age=60, s-maxage=60",
+        "Vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+        "ETag": "\"18545721e13b119ce3f4b4458776994960ecedd1fcc974560ab8a2e18a303341\"",
+        "X-OAuth-Scopes": "delete_repo, repo, user:email",
+        "X-Accepted-OAuth-Scopes": "",
+        "x-oauth-client-id": "Ov23liFpnT7j3bK5OC1L",
+        "X-GitHub-Media-Type": "github.v3; format=json",
+        "x-github-api-version-selected": "2022-11-28",
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Remaining": "4769",
+        "X-RateLimit-Reset": "1763361023",
+        "X-RateLimit-Used": "231",
+        "X-RateLimit-Resource": "core",
+        "Access-Control-Expose-Headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+        "Access-Control-Allow-Origin": "*",
+        "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
+        "X-Frame-Options": "deny",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "0",
+        "Referrer-Policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'none'",
+        "X-GitHub-Request-Id": "F609:673BD:BEABDD:345E6A3:691AB5BD",
+        "Server": "github.com"
+      },
+      "status_code": 201
+    }
+  },
+  {
+    "request": {
+      "options": [],
+      "body": "{\"message\":\"Initialize design/README.md\",\"content\":\"IyBEZXNpZ24KCkNvbXBvbmVudCBkZXNpZ24gZG9jdW1lbnRzIGdvIGhlcmUuCgpUaGlzIGRpcmVjdG9yeSBjb250YWlucyBhcmNoaXRlY3R1cmFsIGRlc2lnbnMgZm9yIFBob2VuaXggY29tcG9uZW50czoKLSBDb250ZXh0IGRlc2lnbnMKLSBTY2hlbWEgZGVmaW5pdGlvbnMKLSBBUEkgc3BlY2lmaWNhdGlvbnMKLSBEYXRhIGZsb3cgZGlhZ3JhbXMK\"}",
+      "url": "https://api.github.com/repos/johns10/test-project-docs/contents/design/README.md",
+      "headers": {
+        "User-Agent": "CodeMySpec via oapi_github 0.3.3; Elixir 1.18.2 / OTP 27",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      "method": "put",
+      "request_body": ""
+    },
+    "response": {
+      "binary": false,
+      "type": "ok",
+      "body": "{\"content\":{\"name\":\"README.md\",\"path\":\"design/README.md\",\"sha\":\"73b52cc8d5f929f636fac8664abaccf26c67f2b5\",\"size\":198,\"url\":\"https://api.github.com/repos/johns10/test-project-docs/contents/design/README.md?ref=main\",\"html_url\":\"https://github.com/johns10/test-project-docs/blob/main/design/README.md\",\"git_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/73b52cc8d5f929f636fac8664abaccf26c67f2b5\",\"download_url\":\"https://raw.githubusercontent.com/johns10/test-project-docs/main/design/README.md?token=AAXKPXKSAHCIOUVMFETBVU3JDK27U\",\"type\":\"file\",\"_links\":{\"self\":\"https://api.github.com/repos/johns10/test-project-docs/contents/design/README.md?ref=main\",\"git\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/73b52cc8d5f929f636fac8664abaccf26c67f2b5\",\"html\":\"https://github.com/johns10/test-project-docs/blob/main/design/README.md\"}},\"commit\":{\"sha\":\"81b774eaf4f28dbf657b12ad4a79d97a45e33bd8\",\"node_id\":\"C_kwDOQXIGz9oAKDgxYjc3NGVhZjRmMjhkYmY2NTdiMTJhZDRhNzlkOTdhNDVlMzNiZDg\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/81b774eaf4f28dbf657b12ad4a79d97a45e33bd8\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/81b774eaf4f28dbf657b12ad4a79d97a45e33bd8\",\"author\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:22Z\"},\"committer\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:22Z\"},\"tree\":{\"sha\":\"887113c098fcb989c1053ae64ec92cd87d82f6f7\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/trees/887113c098fcb989c1053ae64ec92cd87d82f6f7\"},\"message\":\"Initialize design/README.md\",\"parents\":[{\"sha\":\"58a0acb47cfad53719cdf5bd09b195154dd794a5\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/58a0acb47cfad53719cdf5bd09b195154dd794a5\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/58a0acb47cfad53719cdf5bd09b195154dd794a5\"}],\"verification\":{\"verified\":false,\"reason\":\"unsigned\",\"signature\":null,\"payload\":null,\"verified_at\":null}}}",
+      "headers": {
+        "Date": "Mon, 17 Nov 2025 05:42:22 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "2052",
+        "Cache-Control": "private, max-age=60, s-maxage=60",
+        "Vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+        "ETag": "\"6180931bb7e6d0c45e856b7a937083a8147ab6e6a151cf85fdcc0daf1c9e7167\"",
+        "X-OAuth-Scopes": "delete_repo, repo, user:email",
+        "X-Accepted-OAuth-Scopes": "",
+        "x-oauth-client-id": "Ov23liFpnT7j3bK5OC1L",
+        "X-GitHub-Media-Type": "github.v3; format=json",
+        "x-github-api-version-selected": "2022-11-28",
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Remaining": "4768",
+        "X-RateLimit-Reset": "1763361023",
+        "X-RateLimit-Used": "232",
+        "X-RateLimit-Resource": "core",
+        "Access-Control-Expose-Headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+        "Access-Control-Allow-Origin": "*",
+        "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
+        "X-Frame-Options": "deny",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "0",
+        "Referrer-Policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'none'",
+        "X-GitHub-Request-Id": "F609:673BD:BEAD74:345ED03:691AB5BE",
+        "Server": "github.com"
+      },
+      "status_code": 201
+    }
+  },
+  {
+    "request": {
+      "options": [],
+      "body": "{\"message\":\"Initialize rules/README.md\",\"content\":\"IyBSdWxlcwoKUHJvamVjdCBjb2RpbmcgcnVsZXMgYW5kIGNvbnZlbnRpb25zIGdvIGhlcmUuCgpUaGlzIGRpcmVjdG9yeSBjb250YWluczoKLSBDb2Rpbmcgc3RhbmRhcmRzCi0gQXJjaGl0ZWN0dXJlIGRlY2lzaW9uIHJlY29yZHMKLSBEZXZlbG9wbWVudCB3b3JrZmxvd3MKLSBTdHlsZSBndWlkZXMK\"}",
+      "url": "https://api.github.com/repos/johns10/test-project-docs/contents/rules/README.md",
+      "headers": {
+        "User-Agent": "CodeMySpec via oapi_github 0.3.3; Elixir 1.18.2 / OTP 27",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      "method": "put",
+      "request_body": ""
+    },
+    "response": {
+      "binary": false,
+      "type": "ok",
+      "body": "{\"content\":{\"name\":\"README.md\",\"path\":\"rules/README.md\",\"sha\":\"1a6b5149f8265bd8b1a85b30b8e17d07d93b1bfd\",\"size\":171,\"url\":\"https://api.github.com/repos/johns10/test-project-docs/contents/rules/README.md?ref=main\",\"html_url\":\"https://github.com/johns10/test-project-docs/blob/main/rules/README.md\",\"git_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/1a6b5149f8265bd8b1a85b30b8e17d07d93b1bfd\",\"download_url\":\"https://raw.githubusercontent.com/johns10/test-project-docs/main/rules/README.md?token=AAXKPXKHTRQOC67DLKLPQILJDK27W\",\"type\":\"file\",\"_links\":{\"self\":\"https://api.github.com/repos/johns10/test-project-docs/contents/rules/README.md?ref=main\",\"git\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/1a6b5149f8265bd8b1a85b30b8e17d07d93b1bfd\",\"html\":\"https://github.com/johns10/test-project-docs/blob/main/rules/README.md\"}},\"commit\":{\"sha\":\"dd71c56861fc6b22721489b211a92b9dc20e4ef1\",\"node_id\":\"C_kwDOQXIGz9oAKGRkNzFjNTY4NjFmYzZiMjI3MjE0ODliMjExYTkyYjlkYzIwZTRlZjE\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/dd71c56861fc6b22721489b211a92b9dc20e4ef1\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/dd71c56861fc6b22721489b211a92b9dc20e4ef1\",\"author\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:23Z\"},\"committer\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:23Z\"},\"tree\":{\"sha\":\"f91deffd2978ff90a1884029f25e5b13392e4cea\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/trees/f91deffd2978ff90a1884029f25e5b13392e4cea\"},\"message\":\"Initialize rules/README.md\",\"parents\":[{\"sha\":\"81b774eaf4f28dbf657b12ad4a79d97a45e33bd8\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/81b774eaf4f28dbf657b12ad4a79d97a45e33bd8\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/81b774eaf4f28dbf657b12ad4a79d97a45e33bd8\"}],\"verification\":{\"verified\":false,\"reason\":\"unsigned\",\"signature\":null,\"payload\":null,\"verified_at\":null}}}",
+      "headers": {
+        "Date": "Mon, 17 Nov 2025 05:42:23 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "2045",
+        "Cache-Control": "private, max-age=60, s-maxage=60",
+        "Vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+        "ETag": "\"25e5597b85b6c733aae039fc1f756434f2fddfa07a0219b64b165bfed6876c3c\"",
+        "X-OAuth-Scopes": "delete_repo, repo, user:email",
+        "X-Accepted-OAuth-Scopes": "",
+        "x-oauth-client-id": "Ov23liFpnT7j3bK5OC1L",
+        "X-GitHub-Media-Type": "github.v3; format=json",
+        "x-github-api-version-selected": "2022-11-28",
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Remaining": "4767",
+        "X-RateLimit-Reset": "1763361023",
+        "X-RateLimit-Used": "233",
+        "X-RateLimit-Resource": "core",
+        "Access-Control-Expose-Headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+        "Access-Control-Allow-Origin": "*",
+        "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
+        "X-Frame-Options": "deny",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "0",
+        "Referrer-Policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'none'",
+        "X-GitHub-Request-Id": "F609:673BD:BEB0AA:345FB88:691AB5BE",
+        "Server": "github.com"
+      },
+      "status_code": 201
+    }
+  },
+  {
+    "request": {
+      "options": [],
+      "body": "{\"message\":\"Initialize .gitignore\",\"content\":\"IyBMb2NhbCBkZXZlbG9wbWVudCBmaWxlcwpsb2NhbC8KCiMgbWFjT1Mgc3lzdGVtIGZpbGVzCi5EU19TdG9yZQoKIyBFZGl0b3IgdGVtcG9yYXJ5IGZpbGVzCip+Ci4qLnN3cAo=\"}",
+      "url": "https://api.github.com/repos/johns10/test-project-docs/contents/.gitignore",
+      "headers": {
+        "User-Agent": "CodeMySpec via oapi_github 0.3.3; Elixir 1.18.2 / OTP 27",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      "method": "put",
+      "request_body": ""
+    },
+    "response": {
+      "binary": false,
+      "type": "ok",
+      "body": "{\"content\":{\"name\":\".gitignore\",\"path\":\".gitignore\",\"sha\":\"7e5d235818e80f669023a53540b78afc8656bab6\",\"size\":101,\"url\":\"https://api.github.com/repos/johns10/test-project-docs/contents/.gitignore?ref=main\",\"html_url\":\"https://github.com/johns10/test-project-docs/blob/main/.gitignore\",\"git_url\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/7e5d235818e80f669023a53540b78afc8656bab6\",\"download_url\":\"https://raw.githubusercontent.com/johns10/test-project-docs/main/.gitignore?token=AAXKPXKBJ3RAUMH7OC5ZSRTJDK27W\",\"type\":\"file\",\"_links\":{\"self\":\"https://api.github.com/repos/johns10/test-project-docs/contents/.gitignore?ref=main\",\"git\":\"https://api.github.com/repos/johns10/test-project-docs/git/blobs/7e5d235818e80f669023a53540b78afc8656bab6\",\"html\":\"https://github.com/johns10/test-project-docs/blob/main/.gitignore\"}},\"commit\":{\"sha\":\"e649d0beacea2ec32761f112a8c97202df0d8635\",\"node_id\":\"C_kwDOQXIGz9oAKGU2NDlkMGJlYWNlYTJlYzMyNzYxZjExMmE4Yzk3MjAyZGYwZDg2MzU\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/e649d0beacea2ec32761f112a8c97202df0d8635\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/e649d0beacea2ec32761f112a8c97202df0d8635\",\"author\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:23Z\"},\"committer\":{\"name\":\"John Davenport\",\"email\":\"john.davenport@funnelcloud.io\",\"date\":\"2025-11-17T05:42:23Z\"},\"tree\":{\"sha\":\"9c5f8b416d22d03abac0d21c855d38e61819d195\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/trees/9c5f8b416d22d03abac0d21c855d38e61819d195\"},\"message\":\"Initialize .gitignore\",\"parents\":[{\"sha\":\"dd71c56861fc6b22721489b211a92b9dc20e4ef1\",\"url\":\"https://api.github.com/repos/johns10/test-project-docs/git/commits/dd71c56861fc6b22721489b211a92b9dc20e4ef1\",\"html_url\":\"https://github.com/johns10/test-project-docs/commit/dd71c56861fc6b22721489b211a92b9dc20e4ef1\"}],\"verification\":{\"verified\":false,\"reason\":\"unsigned\",\"signature\":null,\"payload\":null,\"verified_at\":null}}}",
+      "headers": {
+        "Date": "Mon, 17 Nov 2025 05:42:23 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "2011",
+        "Cache-Control": "private, max-age=60, s-maxage=60",
+        "Vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+        "ETag": "\"90160344a1d759ca8e2c0b20af4a5635645ba1cf6f932eec98e603fa84fa5542\"",
+        "X-OAuth-Scopes": "delete_repo, repo, user:email",
+        "X-Accepted-OAuth-Scopes": "",
+        "x-oauth-client-id": "Ov23liFpnT7j3bK5OC1L",
+        "X-GitHub-Media-Type": "github.v3; format=json",
+        "x-github-api-version-selected": "2022-11-28",
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Remaining": "4766",
+        "X-RateLimit-Reset": "1763361023",
+        "X-RateLimit-Used": "234",
+        "X-RateLimit-Resource": "core",
+        "Access-Control-Expose-Headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+        "Access-Control-Allow-Origin": "*",
+        "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
+        "X-Frame-Options": "deny",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "0",
+        "Referrer-Policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'none'",
+        "X-GitHub-Request-Id": "F609:673BD:BEB27D:34603B0:691AB5BF",
+        "Server": "github.com"
+      },
+      "status_code": 201
+    }
+  },
+  {
+    "request": {
+      "options": [],
+      "body": "",
+      "url": "https://api.github.com/repos/johns10/test-project-docs",
+      "headers": {
+        "User-Agent": "CodeMySpec via oapi_github 0.3.3; Elixir 1.18.2 / OTP 27",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": "Bearer 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"
+      },
+      "method": "delete",
+      "request_body": ""
+    },
+    "response": {
+      "binary": false,
+      "type": "ok",
+      "body": "",
+      "headers": {
+        "Date": "Mon, 17 Nov 2025 05:42:24 GMT",
+        "X-OAuth-Scopes": "delete_repo, repo, user:email",
+        "X-Accepted-OAuth-Scopes": "",
+        "x-oauth-client-id": "Ov23liFpnT7j3bK5OC1L",
+        "X-GitHub-Media-Type": "github.v3; format=json",
+        "x-github-api-version-selected": "2022-11-28",
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Remaining": "4765",
+        "X-RateLimit-Reset": "1763361023",
+        "X-RateLimit-Used": "235",
+        "X-RateLimit-Resource": "core",
+        "Access-Control-Expose-Headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+        "Access-Control-Allow-Origin": "*",
+        "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
+        "X-Frame-Options": "deny",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "0",
+        "Referrer-Policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'none'",
+        "Vary": "Accept-Encoding, Accept, X-Requested-With",
+        "X-GitHub-Request-Id": "F609:673BD:BEB4BF:3460E21:691AB5BF",
+        "Server": "github.com"
+      },
+      "status_code": 204
+    }
+  }
+]

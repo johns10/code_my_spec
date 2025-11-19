@@ -147,12 +147,12 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
     {:noreply, assign(socket, deploy_key_value: deploy_key)}
   end
 
-  def handle_event("create_code_repo", _params, socket) do
-    create_github_repo(socket, :code_repo, "")
+  def handle_event("create_code_repo", params, socket) do
+    create_github_repo(socket, :code_repo, params, "")
   end
 
-  def handle_event("create_docs_repo", _params, socket) do
-    create_github_repo(socket, :docs_repo, "-docs")
+  def handle_event("create_docs_repo", params, socket) do
+    create_github_repo(socket, :docs_repo, params, "-docs")
   end
 
   def handle_event("save", %{"project" => project_params}, socket) do
@@ -196,10 +196,17 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
   defp return_path(_scope, "index", _project), do: ~p"/projects"
   defp return_path(_scope, "show", project), do: ~p"/projects/#{project}"
 
-  defp create_github_repo(socket, repo_type, suffix) do
+  defp create_github_repo(socket, repo_type, params, suffix) do
     project = socket.assigns.project
+    IO.inspect(params)
 
-    case Projects.create_github_repo(socket.assigns.current_scope, project, repo_type, suffix) do
+    case Projects.create_github_repo(
+           socket.assigns.current_scope,
+           project,
+           repo_type,
+           params,
+           suffix
+         ) do
       {:ok, repo_url} ->
         # Update the form with the new repo URL
         attrs = Map.put(%{}, repo_type, repo_url)
@@ -220,11 +227,6 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
         {:noreply,
          socket
          |> put_flash(:error, "Please connect your GitHub account first")}
-
-      {:error, reason} when is_binary(reason) ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to create repository: #{reason}")}
 
       {:error, reason} ->
         require Logger

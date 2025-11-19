@@ -154,7 +154,13 @@ defmodule CodeMySpec.GitHub do
       {:ok, 200, %GitHub.ContentFile{}}
   """
   @spec get_content(Scope.t(), String.t(), String.t(), String.t(), keyword()) ::
-          {:ok, integer(), GitHub.ContentFile.t()} | {:error, term()}
+          {:ok, integer(),
+           GitHub.Content.File.t()
+           | GitHub.Content.Submodule.t()
+           | GitHub.Content.Symlink.t()
+           | GitHub.Content.Tree.t()
+           | [map()]}
+          | {:error, term()}
   def get_content(%Scope{} = scope, owner, repo, path, opts \\ []) do
     with {:ok, token} <- get_auth(scope) do
       GitHub.Repos.get_content(owner, repo, path, opts ++ [auth: token])

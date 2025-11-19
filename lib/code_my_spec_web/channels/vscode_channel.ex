@@ -47,6 +47,12 @@ defmodule CodeMySpecWeb.VSCodeChannel do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_info({:session_activity, %{session_id: session_id}}, socket) do
+    push(socket, "session_activity", %{session_id: session_id})
+    {:noreply, socket}
+  end
+
   # Convert session to a JSON-friendly payload
   defp session_payload(session) do
     %{
