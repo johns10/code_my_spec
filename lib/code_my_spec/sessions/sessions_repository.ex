@@ -28,6 +28,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       [child_sessions: [component: :project]]
     ])
     |> Repo.get_by!(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
+    |> populate_display_name()
   end
 
   def get_session(%Scope{} = scope, id) do
@@ -39,6 +40,10 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       [child_sessions: [component: :project]]
     ])
     |> Repo.get_by(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
+    |> case do
+      nil -> nil
+      session -> populate_display_name(session)
+    end
   end
 
   def complete_session_interaction(

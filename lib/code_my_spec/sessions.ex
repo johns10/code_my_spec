@@ -82,6 +82,7 @@ defmodule CodeMySpec.Sessions do
     |> where([s], s.status in ^status_filter)
     |> preload([:project, :component])
     |> Repo.all()
+    |> SessionsRepository.populate_display_names()
   end
 
   defdelegate get_session!(scope, id), to: SessionsRepository

@@ -143,7 +143,10 @@ defmodule CodeMySpec.Sessions.Session do
 
   defp put_display_name(changeset), do: changeset
 
-  defp format_display_name(type) when is_atom(type) do
+  def format_display_name(%__MODULE__{type: type}) when is_atom(type),
+    do: format_display_name(type)
+
+  def format_display_name(type) when is_atom(type) do
     type
     |> Module.split()
     |> List.last()
@@ -151,5 +154,5 @@ defmodule CodeMySpec.Sessions.Session do
     |> Recase.to_title()
   end
 
-  defp format_display_name(_), do: nil
+  def format_display_name(_), do: nil
 end
