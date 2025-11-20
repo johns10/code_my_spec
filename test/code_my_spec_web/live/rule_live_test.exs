@@ -18,7 +18,7 @@ defmodule CodeMySpecWeb.RuleLiveTest do
   }
   @invalid_attrs %{name: nil, session_type: nil, content: nil, component_type: nil}
 
-  setup :register_log_in_setup_account
+  setup [:register_log_in_setup_account, :setup_active_account, :setup_active_project]
 
   defp create_rule(%{scope: scope}) do
     rule = rule_fixture(scope)

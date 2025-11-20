@@ -207,7 +207,7 @@ defmodule CodeMySpec.ProjectsTest do
 
       # Without GitHub integration, should return error
       assert {:error, :github_not_connected} =
-               Projects.create_github_repo(scope, project, :code_repo, "-code")
+               Projects.create_github_repo(scope, project, :code_repo, %{}, "-code")
     end
   end
 end

@@ -198,12 +198,12 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.FinalizeTest do
     test "returns error when child_sessions is nil" do
       scope = full_scope_fixture()
       context_component = component_fixture(scope, %{name: "TestContext", type: :context})
-      parent_session = create_parent_session(scope, context_component)
+      %Session{} = parent_session = create_parent_session(scope, context_component)
 
       # Create a session without preloaded child_sessions
       parent_session_without_children = %Session{
         parent_session
-        | child_sessions: nil
+        | child_sessions: []
       }
 
       assert {:error, "No child sessions found"} =

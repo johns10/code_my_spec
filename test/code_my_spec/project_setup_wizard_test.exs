@@ -210,13 +210,6 @@ defmodule CodeMySpec.ProjectSetupWizardTest do
 
   describe "vscode_extension_connected?/1" do
     test "returns true when extension present for project", %{project: project} do
-      # Mock Presence.list to return a non-empty map
-      presence_list = %{
-        "extension_1" => %{
-          metas: [%{project_id: project.id, phx_ref: "ref1"}]
-        }
-      }
-
       # We'll need to mock Phoenix.Presence.list/1
       # Since this is a stateless check, we can test the logic directly
       # In implementation, this will query Presence

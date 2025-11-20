@@ -487,8 +487,6 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
       [interaction | _] = session.interactions
       assert interaction.command.module == Initialize
 
-      IO.inspect(interaction.command)
-
       # Verify command contains branch name generation logic
       assert String.contains?(
                interaction.command.command,

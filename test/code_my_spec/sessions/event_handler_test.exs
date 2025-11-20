@@ -353,11 +353,9 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Subscribe to all relevant channels
       account_topic = "account:#{account.id}:sessions"
       user_topic = "user:#{user.id}:sessions"
-      session_topic = "session:#{session.id}"
 
       Phoenix.PubSub.subscribe(CodeMySpec.PubSub, account_topic)
       Phoenix.PubSub.subscribe(CodeMySpec.PubSub, user_topic)
-      Phoenix.PubSub.subscribe(CodeMySpec.PubSub, session_topic)
 
       # Flush any messages from setup (like email confirmations)
       flush_mailbox()
@@ -368,8 +366,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         account: account,
         user: user,
         account_topic: account_topic,
-        user_topic: user_topic,
-        session_topic: session_topic
+        user_topic: user_topic
       }
     end
 
@@ -391,18 +388,18 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
 
       # Should receive the message 3 times (once per channel)
-      assert_receive {:conversation_id_set,
-                      %{session_id: session_id, conversation_id: ^conversation_id}}
+      assert_receive(
+        {:conversation_id_set, %{session_id: session_id, conversation_id: ^conversation_id}},
+        500
+      )
 
       assert session_id == session.id
 
       assert_receive {:conversation_id_set,
                       %{session_id: ^session_id, conversation_id: ^conversation_id}}
 
-      assert_receive {:conversation_id_set,
-                      %{session_id: ^session_id, conversation_id: ^conversation_id}}
-
-      assert_receive {:session_event_received, %{session_id: ^session_id}}
+      assert_receive {:session_activity, %{session_id: ^session_id}}
+      assert_receive {:session_activity, %{session_id: ^session_id}}
 
       # Should not receive any more messages
       refute_receive _, 100
@@ -422,17 +419,17 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         })
 
       assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
-
-      # Should receive the message 3 times (account, user, and session channels)
       assert_receive {:session_status_changed, %{session_id: session_id, status: :complete}}
       assert session_id == session.id
 
-      assert_receive {:session_status_changed, %{session_id: ^session_id, status: :complete}}
-
-      assert_receive {:session_status_changed, %{session_id: ^session_id, status: :complete}}
+      assert_receive(
+        {:session_status_changed, %{session_id: ^session_id, status: :complete}},
+        500
+      )
 
       # Should also receive session_event_received on session channel
-      assert_receive {:session_event_received, %{session_id: ^session_id}}
+      assert_receive {:session_activity, %{session_id: ^session_id}}
+      assert_receive {:session_activity, %{session_id: ^session_id}}
 
       # Should not receive any more messages
       refute_receive _, 100

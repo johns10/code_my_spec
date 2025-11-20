@@ -198,7 +198,6 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
 
   defp create_github_repo(socket, repo_type, params, suffix) do
     project = socket.assigns.project
-    IO.inspect(params)
 
     case Projects.create_github_repo(
            socket.assigns.current_scope,
