@@ -11,7 +11,8 @@ defmodule CodeMySpec.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}, flags: [:incremental]]
     ]
   end
 
