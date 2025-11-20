@@ -88,8 +88,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def list_contexts_with_dependencies(%Scope{active_project_id: project_id}) do
     Component
     |> where([c], c.project_id == ^project_id)
-    |> where([c], c.type == :context)
-    |> or_where([c], c.type == :coordination_context)
+    |> where([c], c.type == :context or c.type == :coordination_context)
     |> preload([
       :project,
       :dependencies,
