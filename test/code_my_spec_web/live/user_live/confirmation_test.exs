@@ -5,6 +5,9 @@ defmodule CodeMySpecWeb.UserLive.ConfirmationTest do
   import CodeMySpec.UsersFixtures
 
   alias CodeMySpec.Users
+  alias CodeMySpec.Users.Scope
+  alias CodeMySpec.Accounts
+  alias CodeMySpec.Accounts.Account
 
   setup do
     %{unconfirmed_user: unconfirmed_user_fixture(), confirmed_user: user_fixture()}
@@ -100,6 +103,25 @@ defmodule CodeMySpecWeb.UserLive.ConfirmationTest do
         |> follow_redirect(conn, ~p"/users/log-in")
 
       assert html =~ "Magic link is invalid or it has expired"
+    end
+
+    test "creates personal account on confirmation", %{
+      conn: conn,
+      confirmed_user: user
+    } do
+      token =
+        extract_user_token(fn url ->
+          Users.deliver_login_instructions(user, url)
+        end)
+
+      {:ok, lv, _html} = live(conn, ~p"/users/log-in/#{token}")
+
+      form = form(lv, "#login_form", %{"user" => %{"token" => token}})
+      render_submit(form)
+
+      user = Users.get_user!(user.id)
+
+      assert %Account{} = Accounts.get_personal_account(%Scope{user: user})
     end
   end
 end

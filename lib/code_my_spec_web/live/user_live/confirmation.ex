@@ -2,6 +2,8 @@ defmodule CodeMySpecWeb.UserLive.Confirmation do
   use CodeMySpecWeb, :live_view
 
   alias CodeMySpec.Users
+  alias CodeMySpec.Users.Scope
+  alias CodeMySpec.Accounts
 
   def render(assigns) do
     ~H"""
@@ -86,6 +88,8 @@ defmodule CodeMySpecWeb.UserLive.Confirmation do
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
+    scope = Map.put(%Scope{}, :user, socket.assigns.user)
+    {:ok, _} = Accounts.create_personal_account(scope)
     {:noreply, assign(socket, form: to_form(params, as: "user"), trigger_submit: true)}
   end
 end
