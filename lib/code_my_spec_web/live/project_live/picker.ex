@@ -27,7 +27,7 @@ defmodule CodeMySpecWeb.ProjectLive.Picker do
               >
                 <div class="flex-1">
                   <div class="font-semibold">{project.name}</div>
-                  <div class="text-sm opacity-70">
+                  <div class="text-sm opacity-70 line-clamp-3">
                     {if project.description, do: project.description, else: "No description"}
                   </div>
                   <div class="text-xs opacity-50">

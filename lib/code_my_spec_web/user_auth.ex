@@ -194,6 +194,14 @@ defmodule CodeMySpecWeb.UserAuth do
       on user_token.
       Redirects to login page if there's no logged user.
 
+    * `:require_active_account` - Requires that the user has an active
+      account selected in their scope. Redirects to account picker if not.
+      Must be used after `:require_authenticated`.
+
+    * `:require_active_project` - Requires that the user has an active
+      project selected in their scope. Redirects to project picker if not.
+      Must be used after `:require_authenticated`.
+
   ## Examples
 
   Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
@@ -243,6 +251,36 @@ defmodule CodeMySpecWeb.UserAuth do
         |> Phoenix.LiveView.redirect(to: ~p"/users/log-in")
 
       {:halt, socket}
+    end
+  end
+
+  def on_mount(:require_active_account, _params, _session, socket) do
+    scope = socket.assigns.current_scope
+
+    if is_nil(scope.active_account) do
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:info, "Please select an account to continue.")
+        |> Phoenix.LiveView.redirect(to: ~p"/accounts/picker?#{[return_to: "/accounts"]}")
+
+      {:halt, socket}
+    else
+      {:cont, socket}
+    end
+  end
+
+  def on_mount(:require_active_project, _params, _session, socket) do
+    scope = socket.assigns.current_scope
+
+    if is_nil(scope.active_project) do
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:info, "Please select a project to continue.")
+        |> Phoenix.LiveView.redirect(to: ~p"/projects/picker?#{[return_to: "/projects"]}")
+
+      {:halt, socket}
+    else
+      {:cont, socket}
     end
   end
 

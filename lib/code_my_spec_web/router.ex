@@ -145,8 +145,8 @@ defmodule CodeMySpecWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [
-        {CodeMySpecWeb.UserAuth, :require_authenticated},
-        {CodeMySpecWeb.Live.CurrentPathHook, :default}
+        {CodeMySpecWeb.Live.CurrentPathHook, :default},
+        {CodeMySpecWeb.UserAuth, :require_authenticated}
       ] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
@@ -157,12 +157,28 @@ defmodule CodeMySpecWeb.Router do
       live "/accounts/:id/manage", AccountLive.Manage, :show
       live "/accounts/:id/members", AccountLive.Members, :show
       live "/accounts/:id/invitations", AccountLive.Invitations, :show
+    end
+
+    live_session :require_active_account,
+      on_mount: [
+        {CodeMySpecWeb.Live.CurrentPathHook, :default},
+        {CodeMySpecWeb.UserAuth, :require_authenticated},
+        {CodeMySpecWeb.UserAuth, :require_active_account}
+      ] do
       live "/projects", ProjectLive.Index, :index
       live "/projects/picker", ProjectLive.Picker, :index
       live "/projects/new", ProjectLive.Form, :new
       live "/projects/:id", ProjectLive.Show, :show
       live "/projects/:id/edit", ProjectLive.Form, :edit
+    end
 
+    live_session :require_active_project,
+      on_mount: [
+        {CodeMySpecWeb.Live.CurrentPathHook, :default},
+        {CodeMySpecWeb.UserAuth, :require_authenticated},
+        {CodeMySpecWeb.UserAuth, :require_active_account},
+        {CodeMySpecWeb.UserAuth, :require_active_project}
+      ] do
       live "/stories", StoryLive.Index, :index
       live "/stories/new", StoryLive.Form, :new
       live "/stories/import", StoryLive.Import, :import
