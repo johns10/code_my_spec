@@ -8,7 +8,7 @@ defmodule CodeMySpec.Sessions do
   alias CodeMySpec.Sessions.SessionsRepository
   alias CodeMySpec.Repo
 
-  alias CodeMySpec.Sessions.{Session, ResultHandler, Orchestrator}
+  alias CodeMySpec.Sessions.{Session, ResultHandler, Orchestrator, SessionsBroadcaster}
   alias CodeMySpec.Users.Scope
 
   @doc """
@@ -47,14 +47,6 @@ defmodule CodeMySpec.Sessions do
 
   def subscribe_user_sessions(user_id) when is_integer(user_id) do
     Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "user:#{user_id}:sessions")
-  end
-
-  defp broadcast(%Scope{} = scope, message) do
-    account_key = scope.active_account_id
-    user_id = scope.user.id
-
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{account_key}:sessions", message)
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{user_id}:sessions", message)
   end
 
   @doc """
@@ -108,7 +100,7 @@ defmodule CodeMySpec.Sessions do
            %Session{}
            |> Session.changeset(attrs, scope)
            |> Repo.insert() do
-      broadcast(scope, {:created, session})
+      SessionsBroadcaster.broadcast_created(scope, session)
       {:ok, session}
     end
   end
@@ -133,7 +125,7 @@ defmodule CodeMySpec.Sessions do
            session
            |> Session.changeset(attrs, scope)
            |> Repo.update() do
-      broadcast(scope, {:updated, session})
+      SessionsBroadcaster.broadcast_updated(scope, session)
       {:ok, session}
     end
   end
@@ -156,8 +148,8 @@ defmodule CodeMySpec.Sessions do
              interaction_id,
              result
            ) do
-      broadcast(scope, {:updated, session})
-      broadcast(scope, {:session_activity, %{session_id: session.id}})
+      SessionsBroadcaster.broadcast_updated(scope, session)
+      SessionsBroadcaster.broadcast_activity(scope, session.id)
       {:ok, session}
     end
   end
@@ -180,7 +172,7 @@ defmodule CodeMySpec.Sessions do
 
     with {:ok, session = %Session{}} <-
            Repo.delete(session) do
-      broadcast(scope, {:deleted, session})
+      SessionsBroadcaster.broadcast_deleted(scope, session)
       {:ok, session}
     end
   end
@@ -204,7 +196,7 @@ defmodule CodeMySpec.Sessions do
   def handle_result(%Scope{} = scope, session_id, interaction_id, result, opts \\ []) do
     with {:ok, %Session{} = session} <-
            ResultHandler.handle_result(scope, session_id, interaction_id, result, opts) do
-      broadcast(scope, {:updated, session})
+      SessionsBroadcaster.broadcast_updated(scope, session)
       {:ok, session}
     end
   end
@@ -212,7 +204,7 @@ defmodule CodeMySpec.Sessions do
   def next_command(%Scope{} = scope, session_id, opts \\ []) do
     with {:ok, %Session{} = session} <-
            Orchestrator.next_command(scope, session_id, opts) do
-      broadcast(scope, {:updated, session})
+      SessionsBroadcaster.broadcast_updated(scope, session)
       {:ok, session}
     end
   end
@@ -227,5 +219,19 @@ defmodule CodeMySpec.Sessions do
     result
     |> Result.changeset(result_attrs)
     |> Ecto.Changeset.apply_action(:update)
+  end
+
+  @doc """
+  Updates a session's execution mode and regenerates pending command if needed.
+
+  If the session has a pending interaction (command without result), the command
+  will be regenerated with the new execution mode settings.
+  """
+  def update_execution_mode(%Scope{} = scope, session_id, mode) when is_binary(mode) do
+    with {:ok, session} <- SessionsRepository.update_execution_mode(scope, session_id, mode) do
+      SessionsBroadcaster.broadcast_updated(scope, session)
+      SessionsBroadcaster.broadcast_mode_change(scope, session_id, session.execution_mode)
+      {:ok, session}
+    end
   end
 end

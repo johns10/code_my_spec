@@ -13,7 +13,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   alias CodeMySpec.Repo
   alias CodeMySpec.Users.Scope
-  alias CodeMySpec.Sessions.{Session, SessionEvent, SessionsRepository}
+  alias CodeMySpec.Sessions.{Session, SessionEvent, SessionsRepository, SessionsBroadcaster}
 
   @doc """
   Processes a single event for a session.
@@ -125,7 +125,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
            {:ok, session_updates} <- process_side_effects(session, event),
            {:ok, _inserted_event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        broadcast_activity(scope, session.id)
+        SessionsBroadcaster.broadcast_activity(scope, session.id)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -139,7 +139,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
            {:ok, session_updates} <- process_batch_side_effects(session, events),
            {:ok, _inserted_events} <- insert_events_with_return(events),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        broadcast_activity(scope, session.id)
+        SessionsBroadcaster.broadcast_activity(scope, session.id)
         updated_session
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -265,6 +265,32 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
+  # Handle notification_hook - broadcast to clients
+  defp apply_side_effect(%Session{} = session, %SessionEvent{
+         event_type: :notification_hook,
+         data: data
+       }) do
+    payload = %{
+      session_id: session.id,
+      notification_type: Map.get(data, "notification_type"),
+      data: data
+    }
+
+    Phoenix.PubSub.broadcast(
+      CodeMySpec.PubSub,
+      "account:#{session.account_id}:sessions",
+      {:notification_hook, payload}
+    )
+
+    Phoenix.PubSub.broadcast(
+      CodeMySpec.PubSub,
+      "user:#{session.user_id}:sessions",
+      {:notification_hook, payload}
+    )
+
+    {:ok, %{}}
+  end
+
   # Default: no side effects
   defp apply_side_effect(%Session{} = _session, %SessionEvent{} = _event) do
     {:ok, %{}}
@@ -368,13 +394,5 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   defp maybe_apply_limit(query, limit) when is_integer(limit) and limit > 0 do
     limit(query, ^limit)
-  end
-
-  defp broadcast_activity(%Scope{} = scope, session_id) do
-    account_key = scope.active_account_id
-    user_id = scope.user.id
-    message = {:session_activity, %{session_id: session_id}}
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "account:#{account_key}:sessions", message)
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{user_id}:sessions", message)
   end
 end
