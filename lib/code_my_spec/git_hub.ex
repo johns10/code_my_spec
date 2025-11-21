@@ -201,7 +201,7 @@ defmodule CodeMySpec.GitHub do
       {:ok, 200, %GitHub.FileCommit{}}
   """
   @spec create_or_update_file_contents(Scope.t(), String.t(), String.t(), String.t(), map()) ::
-          {:ok, integer(), GitHub.FileCommit.t()} | {:error, term()}
+          {:ok, GitHub.FileCommit.t()} | {:error, term()}
   def create_or_update_file_contents(%Scope{} = scope, owner, repo, path, params) do
     with {:ok, token} <- get_auth(scope) do
       GitHub.Repos.create_or_update_file_contents(owner, repo, path, params, auth: token)
