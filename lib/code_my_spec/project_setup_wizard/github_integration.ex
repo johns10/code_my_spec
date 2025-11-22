@@ -140,8 +140,8 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegration do
          repo_name <- sanitized_name <> "-docs",
          repo_attrs <- build_repo_attrs(project, repo_name),
          {:ok, response} <- GitHub.create_repository(scope, repo_attrs),
-         owner_and_repo <- extract_owner_and_repo(response.html_url),
-         :ok <- initialize_docs_structure(scope, owner_and_repo),
+         {owner, repo} <- extract_owner_and_repo(response.html_url),
+         :ok <- initialize_docs_structure(scope, {owner, repo}),
          {:ok, updated_project} <-
            Projects.update_project(scope, project, %{docs_repo: response.html_url}) do
       {:ok, updated_project}
@@ -200,7 +200,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegration do
       }
 
       case GitHub.create_or_update_file_contents(scope, owner, repo, path, params) do
-        {:ok, _status} -> {:cont, :ok}
+        {:ok, _file_commit} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)

@@ -6,7 +6,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
 
   def get_command(
         scope,
-        %Session{project: project, component: component},
+        %Session{project: project, component: component} = session,
         opts \\ []
       ) do
     with {:ok, test_rules} <- get_test_rules(scope, component),
@@ -15,6 +15,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :test_writer,
              "component-test-and-fixture-generator",
              prompt,

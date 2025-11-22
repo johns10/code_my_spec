@@ -10,6 +10,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.FixTestFailures do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :unit_coder,
              "component-code-reviser",
              prompt,

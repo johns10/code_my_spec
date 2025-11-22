@@ -244,15 +244,17 @@ defmodule CodeMySpec.Sessions.EventHandler do
          %Session{external_conversation_id: nil} = _session,
          %SessionEvent{event_type: :session_start, data: data}
        ) do
-    conversation_id = Map.get(data, "conversation_id")
-    {:ok, %{external_conversation_id: conversation_id}}
+    case Map.get(data, "session_id", nil) do
+      nil -> {:error, :session_id_not_found}
+      conversation_id -> {:ok, %{external_conversation_id: conversation_id}}
+    end
   end
 
   defp apply_side_effect(
          %Session{external_conversation_id: existing_id} = session,
          %SessionEvent{event_type: :session_start, data: data}
        ) do
-    conversation_id = Map.get(data, "conversation_id")
+    conversation_id = Map.get(data, "session_id")
 
     if existing_id == conversation_id do
       {:ok, %{}}

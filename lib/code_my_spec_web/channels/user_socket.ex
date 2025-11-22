@@ -2,6 +2,7 @@ defmodule CodeMySpecWeb.UserSocket do
   use Phoenix.Socket
 
   alias CodeMySpec.Users
+  alias CodeMySpec.Users.Scope
   alias ExOauth2Provider.AccessTokens
 
   # A Socket handler
@@ -33,7 +34,12 @@ defmodule CodeMySpecWeb.UserSocket do
       %{resource_owner_id: user_id} = access_token ->
         if AccessTokens.is_accessible?(access_token) do
           user = Users.get_user!(user_id)
-          {:ok, assign(socket, :user_id, user.id)}
+          scope = Scope.for_user(user)
+
+          {:ok,
+           socket
+           |> assign(:user_id, user.id)
+           |> assign(:scope, scope)}
         else
           :error
         end

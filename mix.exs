@@ -92,7 +92,8 @@ defmodule CodeMySpec.MixProject do
       {:google_api_analytics_admin, "~> 0.26.0"},
       {:recase, "~> 0.8"},
       {:oapi_github, "~> 0.3.3"},
-      {:httpoison, "~> 2.0"}
+      {:httpoison, "~> 2.0"},
+      {:credo, "~> 1.7.13"}
     ]
   end
 

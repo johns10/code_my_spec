@@ -265,8 +265,6 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
          )}
 
       {:error, {:http_error, status_code, response_body}} ->
-        IO.puts("here")
-
         {:noreply,
          assign_push_error(
            socket,

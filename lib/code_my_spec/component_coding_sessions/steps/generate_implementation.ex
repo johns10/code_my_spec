@@ -6,7 +6,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
 
   def get_command(
         scope,
-        %Session{project: project, component: component},
+        %Session{project: project, component: component} = session,
         opts \\ []
       ) do
     with {:ok, rules} <- get_implementation_rules(scope, component),
@@ -16,6 +16,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :unit_coder,
              "implementation-generator",
              prompt,

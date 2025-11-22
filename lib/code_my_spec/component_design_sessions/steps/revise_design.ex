@@ -12,10 +12,11 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :component_designer,
              "component-design-reviser",
              prompt,
-             Keyword.put(opts, :continue, true)
+             opts
            ) do
       {:ok, command}
     else

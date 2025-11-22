@@ -118,5 +118,93 @@ defmodule CodeMySpec.SessionsTest do
       session = session_fixture(scope)
       assert %Ecto.Changeset{} = Sessions.change_session(scope, session)
     end
+
+    test "update_execution_mode/3 updates session execution mode" do
+      scope = full_scope_fixture()
+      session = session_fixture(scope, %{execution_mode: :manual})
+
+      assert session.execution_mode == :manual
+
+      assert {:ok, updated_session} = Sessions.update_execution_mode(scope, session.id, "auto")
+      assert updated_session.execution_mode == :auto
+      assert updated_session.id == session.id
+    end
+
+    test "update_execution_mode/3 with invalid mode returns error" do
+      scope = full_scope_fixture()
+      session = session_fixture(scope)
+
+      assert {:error, %Ecto.Changeset{}} = Sessions.update_execution_mode(scope, session.id, "invalid")
+    end
+
+    test "update_execution_mode/3 with non-existent session returns error" do
+      scope = full_scope_fixture()
+
+      assert {:error, :session_not_found} = Sessions.update_execution_mode(scope, 99999, "auto")
+    end
+
+    test "update_execution_mode/3 regenerates pending command with new mode" do
+      scope = full_scope_fixture()
+
+      # Create a component for ContextDesignSessions
+      {:ok, component} = CodeMySpec.Components.create_component(scope, %{
+        name: "TestContext",
+        type: :context,
+        module_name: "TestContext",
+        description: "Test context"
+      })
+
+      # Create session
+      session = session_fixture(scope, %{
+        type: ContextDesignSessions,
+        execution_mode: :manual,
+        component_id: component.id
+      })
+
+      # Complete the Initialize step first
+      {:ok, session_after_init} = Sessions.next_command(scope, session.id)
+      [init_interaction] = session_after_init.interactions
+
+      {:ok, session_init_complete} =
+        Sessions.handle_result(scope, session.id, init_interaction.id, %{
+          status: :ok,
+          code: 0
+        })
+
+      # Now get the GenerateContextDesign command
+      {:ok, session_with_command} = Sessions.next_command(scope, session_init_complete.id)
+      [pending_interaction, _init] = session_with_command.interactions
+
+      assert pending_interaction.result == nil
+      assert pending_interaction.command.command == "claude"
+
+      # Change execution mode to auto
+      assert {:ok, updated_session} =
+               Sessions.update_execution_mode(scope, session_with_command.id, "auto")
+
+      assert updated_session.execution_mode == :auto
+
+      # Refetch from database to get properly serialized metadata
+      refetched_session = Sessions.get_session!(scope, updated_session.id)
+      [updated_interaction, _init] = refetched_session.interactions
+
+      # Command should be regenerated with auto mode
+      assert updated_interaction.id == pending_interaction.id
+      updated_command_metadata = updated_interaction.command.metadata
+
+      # The auto flag should be in the options (after DB round-trip, keys are strings)
+      options = Map.get(updated_command_metadata, "options", %{})
+      assert options["auto"] == true
+    end
+
+    test "update_execution_mode/3 does not regenerate if no pending interaction" do
+      scope = full_scope_fixture()
+      session = session_fixture(scope, %{execution_mode: :manual})
+
+      # No interactions, so no command to regenerate
+      assert {:ok, updated_session} = Sessions.update_execution_mode(scope, session.id, "auto")
+      assert updated_session.execution_mode == :auto
+      assert updated_session.interactions == []
+    end
   end
 end

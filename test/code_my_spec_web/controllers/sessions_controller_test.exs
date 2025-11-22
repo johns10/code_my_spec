@@ -83,11 +83,14 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
   end
 
   describe "create/2" do
-    test "creates session with valid params", %{conn: conn} do
+    test "creates session with valid params", %{conn: conn, scope: scope} do
+      component = component_fixture(scope)
+
       session_params = %{
         agent: "claude_code",
         environment: "local",
-        type: "ContextDesignSessions"
+        type: "ContextDesignSessions",
+        component_id: component.id
       }
 
       conn = post(conn, ~p"/api/sessions", session: session_params)

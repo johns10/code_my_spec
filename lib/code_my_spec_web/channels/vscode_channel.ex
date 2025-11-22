@@ -31,13 +31,13 @@ defmodule CodeMySpecWeb.VSCodeChannel do
 
   @impl true
   def handle_info({:created, session}, socket) do
-    push(socket, "session_created", session_payload(session))
+    push(socket, "session_created", CodeMySpecWeb.SessionsJSON.show(%{session: session}))
     {:noreply, socket}
   end
 
   @impl true
   def handle_info({:updated, session}, socket) do
-    push(socket, "session_updated", session_payload(session))
+    push(socket, "session_updated", CodeMySpecWeb.SessionsJSON.show(%{session: session}))
     {:noreply, socket}
   end
 
@@ -53,64 +53,128 @@ defmodule CodeMySpecWeb.VSCodeChannel do
     {:noreply, socket}
   end
 
-  # Convert session to a JSON-friendly payload
-  defp session_payload(session) do
-    %{
-      id: session.id,
-      type: session.type,
-      agent: session.agent,
-      environment: session.environment,
-      execution_mode: session.execution_mode,
-      status: session.status,
-      state: session.state,
-      project_id: session.project_id,
-      account_id: session.account_id,
-      user_id: session.user_id,
-      component_id: session.component_id,
-      session_id: session.session_id,
-      external_conversation_id: session.external_conversation_id,
-      interactions: Enum.map(session.interactions || [], &interaction_payload/1),
-      inserted_at: session.inserted_at,
-      updated_at: session.updated_at
-    }
+  @impl true
+  def handle_info({:notification_hook, payload}, socket) do
+    push(socket, "notification_hook", payload)
+    {:noreply, socket}
   end
 
-  defp interaction_payload(interaction) do
-    %{
-      id: interaction.id,
-      step_name: interaction.step_name,
-      command: command_payload(interaction.command),
-      result: result_payload(interaction.result),
-      completed_at: interaction.completed_at
-    }
+  @impl true
+  def handle_info({:session_mode_updated, payload}, socket) do
+    push(socket, "session_mode_updated", payload)
+    {:noreply, socket}
   end
 
-  defp command_payload(nil), do: nil
-
-  defp command_payload(command) do
-    %{
-      id: command.id,
-      module: command.module,
-      command: command.command,
-      metadata: command.metadata,
-      pipe: command.pipe,
-      timestamp: command.timestamp
-    }
+  @impl true
+  def handle_info({:conversation_id_set, _payload}, socket) do
+    {:noreply, socket}
   end
 
-  defp result_payload(nil), do: nil
+  # Handle chunked sync-requirements upload
+  @impl true
+  def handle_in("sync_requirements:start", %{"upload_id" => upload_id}, socket) do
+    # Create a temporary file for this upload
+    case Briefly.create() do
+      {:ok, path} ->
+        socket = assign(socket, :upload_temp_path, path)
+        {:reply, {:ok, %{upload_id: upload_id, status: "ready"}}, socket}
 
-  defp result_payload(result) do
+      {:error, reason} ->
+        {:reply, {:error, %{reason: inspect(reason)}}, socket}
+    end
+  end
+
+  @impl true
+  def handle_in("sync_requirements:chunk", payload, socket) do
     %{
-      id: result.id,
-      status: result.status,
-      data: result.data,
-      code: result.code,
-      error_message: result.error_message,
-      stdout: result.stdout,
-      stderr: result.stderr,
-      duration_ms: result.duration_ms,
-      timestamp: result.timestamp
-    }
+      "chunk_index" => chunk_index,
+      "data" => chunk_data
+    } = payload
+
+    temp_path = socket.assigns[:upload_temp_path]
+
+    if temp_path do
+      # Append chunk to temp file
+      case File.write(temp_path, chunk_data, [:append]) do
+        :ok ->
+          {:reply, {:ok, %{chunk_index: chunk_index, status: "received"}}, socket}
+
+        {:error, reason} ->
+          {:reply, {:error, %{reason: inspect(reason)}}, socket}
+      end
+    else
+      {:reply, {:error, %{reason: "No upload in progress. Call sync_requirements:start first"}},
+       socket}
+    end
+  end
+
+  @impl true
+  def handle_in("sync_requirements:complete", payload, socket) do
+    persist = Map.get(payload, "persist", false)
+    temp_path = socket.assigns[:upload_temp_path]
+
+    if temp_path do
+      # Read the complete payload from temp file
+      case File.read(temp_path) do
+        {:ok, json_data} ->
+          case Jason.decode(json_data) do
+            {:ok, data} ->
+              scope = socket.assigns[:scope]
+              result = process_sync_requirements(data, persist, scope)
+              socket = assign(socket, :upload_temp_path, nil)
+              {:reply, {:ok, result}, socket}
+
+            {:error, reason} ->
+              {:reply, {:error, %{reason: "JSON decode error: #{inspect(reason)}"}}, socket}
+          end
+
+        {:error, reason} ->
+          {:reply, {:error, %{reason: "File read error: #{inspect(reason)}"}}, socket}
+      end
+    else
+      {:reply, {:error, %{reason: "No upload in progress"}}, socket}
+    end
+  end
+
+  @impl true
+  def handle_in("list_sessions", payload, socket) do
+    scope = socket.assigns[:scope]
+
+    if scope do
+      opts = parse_list_sessions_opts(payload)
+      sessions = Sessions.list_sessions(scope, opts)
+      response = CodeMySpecWeb.SessionsJSON.index(%{sessions: sessions})
+      {:reply, {:ok, response}, socket}
+    else
+      {:reply, {:error, %{reason: "not authenticated"}}, socket}
+    end
+  end
+
+  defp process_sync_requirements(data, persist, scope) do
+    file_list = Map.get(data, "file_list", [])
+    test_results_data = Map.get(data, "test_results", %{})
+
+    changeset = CodeMySpec.Tests.TestRun.changeset(test_results_data)
+    test_run = Ecto.Changeset.apply_changes(changeset)
+
+    opts = [persist: persist]
+
+    components =
+      CodeMySpec.ProjectCoordinator.sync_project_requirements(scope, file_list, test_run, opts)
+
+    # Use the JSON view to serialize components properly
+    CodeMySpecWeb.ProjectCoordinatorJSON.sync_requirements(%{
+      components: components,
+      next_components: []
+    })
+  end
+
+  defp parse_list_sessions_opts(payload) do
+    case Map.get(payload, "status") do
+      nil -> []
+      status when is_binary(status) -> [status: [String.to_existing_atom(status)]]
+      statuses when is_list(statuses) -> [status: Enum.map(statuses, &String.to_existing_atom/1)]
+      _ -> []
+    end
   end
 end

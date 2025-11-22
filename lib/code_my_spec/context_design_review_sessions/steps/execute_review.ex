@@ -41,6 +41,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :context_reviewer,
              "context-design-reviewer",
              prompt,

@@ -8,7 +8,13 @@ defmodule CodeMySpec.Sessions.EventType do
 
   use Ecto.Type
 
-  @valid_types [:proxy_request, :proxy_response, :session_start]
+  @valid_types [
+    :proxy_request,
+    :proxy_response,
+    :session_start,
+    :notification_hook,
+    :session_stop_hook
+  ]
 
   def type, do: :string
 

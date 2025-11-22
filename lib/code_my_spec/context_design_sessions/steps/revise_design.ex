@@ -9,14 +9,14 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ReviseDesign do
          {:ok, validation_errors} <-
            get_validation_errors_from_previous_interaction(scope, session),
          prompt <- build_revision_prompt(context_design, validation_errors),
-         opts_with_continue <- Keyword.put(opts, :continue, true),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :context_designer,
              "context-design-reviser",
              prompt,
-             opts_with_continue
+             opts
            ) do
       {:ok, command}
     else

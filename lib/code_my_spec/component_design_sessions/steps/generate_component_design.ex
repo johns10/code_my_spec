@@ -7,7 +7,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
 
   def get_command(
         scope,
-        %Session{project: project, component: component, state: state},
+        %Session{project: project, component: component, state: state} = session,
         opts \\ []
       ) do
     with {:ok, rules} <- get_design_rules(scope, component),
@@ -15,6 +15,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :component_designer,
              "component-design-generator",
              prompt,

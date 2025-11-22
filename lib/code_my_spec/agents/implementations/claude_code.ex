@@ -28,6 +28,7 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
 
   Returns a Command with:
   - command: "claude"
+  - args: List of CLI arguments
   - metadata: %{prompt: prompt, options: merged_config}
 
   The step module should be set by the caller.
@@ -41,6 +42,9 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
     opts_map = if is_list(opts), do: Enum.into(opts, %{}), else: opts
     final_config = Map.merge(merged_config, opts_map)
 
+    # Build CLI args using the same logic as build_command_string
+    cli_args = build_cli_args(final_config)
+
     {:ok,
      %Command{
        # Caller should set this to their step module
@@ -48,6 +52,7 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
        command: "claude",
        metadata: %{
          prompt: prompt,
+         args: cli_args,
          options: final_config
        },
        timestamp: DateTime.utc_now()
@@ -83,9 +88,30 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
     ["--allowedTools", tools_str]
   end
 
+  defp format_cli_arg({:resume, value}) when is_binary(value),
+    do: format_cli_arg({"resume", value})
+
   defp format_cli_arg({"resume", value}) when is_binary(value), do: ["--resume", value]
   defp format_cli_arg({"continue", true}), do: ["--continue"]
   defp format_cli_arg({"continue", false}), do: []
+
+  # Auto mode: uses dontAsk permission mode with whitelisted tools
+  defp format_cli_arg({:auto, true}), do: format_cli_arg({"auto", true})
+
+  defp format_cli_arg({"auto", true}) do
+    [
+      "--permission-mode",
+      "dontAsk",
+      "--allowedTools",
+      "'Read,Write,Edit,Grep,Glob,WebFetch,WebSearch,Bash(mix:*)'"
+    ]
+  end
+
+  defp format_cli_arg({"auto", false}), do: []
+
+  # Allow explicit permission_mode override
+  defp format_cli_arg({"permission_mode", value}) when is_binary(value),
+    do: ["--permission-mode", value]
 
   defp format_cli_arg(_), do: []
 end

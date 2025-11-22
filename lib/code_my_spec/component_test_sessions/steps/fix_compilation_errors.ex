@@ -10,10 +10,11 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.FixCompilationErrors do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :test_writer,
              "component-test-error-fixer",
              prompt,
-             Keyword.put(opts, :continue, true)
+             opts
            ) do
       {:ok, command}
     else

@@ -66,7 +66,7 @@ defmodule CodeMySpec.Sessions.Session do
     has_many :child_sessions, __MODULE__, foreign_key: :session_id
     has_many :session_events, SessionEvent
 
-    embeds_many :interactions, Interaction
+    embeds_many :interactions, Interaction, on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end

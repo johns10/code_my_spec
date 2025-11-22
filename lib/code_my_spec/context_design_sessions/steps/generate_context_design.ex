@@ -5,7 +5,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   alias CodeMySpec.Sessions.{Session, Steps.Helpers}
   alias CodeMySpec.Documents.{DocumentSpecProjector}
 
-  def get_command(scope, %Session{project: project, component: component}, opts \\ []) do
+  def get_command(scope, %Session{project: project, component: component} = session, opts \\ []) do
     with {:ok, rules} <- get_design_rules(scope),
          similar_components <- Components.list_similar_components(scope, component),
          stories <- Stories.list_component_stories(scope, component.id),
@@ -14,6 +14,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
+             session,
              :context_designer,
              "context-design-generator",
              prompt,
@@ -42,27 +43,35 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
     %{design_file: design_file_path} = Utils.component_files(context, project)
 
     prompt = """
-    Generate a Phoenix context design for the following:
+    Your task is to generate a Phoenix bounded context design.
+
+    # Project
 
     Project: #{project.name}
     Project Description: #{project.description}
+
+    # Bounded context
+
     Context Name: #{context.name}
     Context Description: #{context.description || "No description provided"}
     Type: #{context.type}
 
-    User Stories this context satisfies:
+    # User Stories this context satisfies
     #{stories_text}
 
-    Similar Components (for design inspiration):
+    # Similar Components (for design inspiration)
     #{similar_text}
 
-    Document Specification:
+    # How to write the document
     #{document_spec}
 
-    Design Rules:
+    # Design Rules
     #{rules_text}
 
     Please write the design documentation to: #{design_file_path}
+
+    Your design should be as concise as possible, while accurately describing the module.
+    Try to make it dense, without including any unnecessary information.
     """
 
     {:ok, prompt}

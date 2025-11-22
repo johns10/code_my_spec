@@ -42,7 +42,8 @@ defmodule CodeMySpecWeb.SessionsController do
   def create(conn, %{"session" => session_params}) do
     scope = conn.assigns.current_scope
 
-    with {:ok, session} <- Sessions.create_session(scope, session_params) do
+    with {:ok, session} <- Sessions.create_session(scope, session_params),
+         {:ok, session} <- Sessions.next_command(scope, session.id) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", ~p"/api/sessions/#{session}")
@@ -141,8 +142,31 @@ defmodule CodeMySpecWeb.SessionsController do
         |> json(%{status: "not_found", error: "Session not found"})
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        IO.inspect(changeset)
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(json: CodeMySpecWeb.ChangesetJSON)
+        |> render(:error, changeset: changeset)
+    end
+  end
 
+  def update_execution_mode(conn, %{"sessions_id" => id, "mode" => mode}) do
+    scope = conn.assigns.current_scope
+
+    case Sessions.update_execution_mode(scope, id, mode) do
+      {:ok, session} ->
+        render(conn, :show, session: session)
+
+      {:error, :session_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{status: "not_found", error: "Session not found"})
+
+      {:error, :invalid_mode} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{status: "error", error: "Invalid execution mode"})
+
+      {:error, %Ecto.Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(json: CodeMySpecWeb.ChangesetJSON)

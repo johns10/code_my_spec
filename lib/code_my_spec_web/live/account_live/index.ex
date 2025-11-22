@@ -110,7 +110,7 @@ defmodule CodeMySpecWeb.AccountLive.Index do
   def mount(_params, _session, socket) do
     current_scope = socket.assigns.current_scope
     accounts = Accounts.list_accounts(current_scope)
-    personal_account = Accounts.ensure_personal_account(current_scope)
+    personal_account = Accounts.get_personal_account(current_scope)
 
     # Subscribe to account updates
     Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "accounts:#{current_scope.user.id}")

@@ -24,7 +24,6 @@ defmodule CodeMySpec.Sessions.SessionsBroadcaster do
     outbound_session =
       SessionsRepository.preload_session(scope, session)
       |> SessionsRepository.populate_display_name()
-      |> IO.inspect()
 
     broadcast_to_channels(scope, {:updated, outbound_session})
   end

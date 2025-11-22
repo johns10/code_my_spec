@@ -103,7 +103,7 @@ defmodule CodeMySpecWeb.Router do
       get "/next-command", SessionsController, :next_command
       post "/submit-result/:interaction_id", SessionsController, :submit_result
       post "/cancel", SessionsController, :cancel
-      put "/external_conversation_id", SessionsController, :update_external_conversation_id
+      put "/execution_mode/:mode", SessionsController, :update_execution_mode
       post "/events", SessionsController, :add_event
     end
 
