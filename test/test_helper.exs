@@ -1,6 +1,9 @@
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(CodeMySpec.Repo, :manual)
 
+# Configure ExVCR to filter sensitive data
+ExVCR.Config.filter_sensitive_data("Bearer .+", "Bearer FILTERED_TOKEN")
+
 # Define mock for environments in tests
 Mox.defmock(CodeMySpec.MockEnvironment, for: CodeMySpec.Environments.EnvironmentsBehaviour)
 
