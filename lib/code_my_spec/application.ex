@@ -23,6 +23,9 @@ defmodule CodeMySpec.Application do
         {CodeMySpec.MCPServers.AnalyticsAdminServer, transport: :streamable_http},
         # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
         # {CodeMySpec.Worker, arg},
+        # CLI Components
+        {Registry, keys: :unique, name: CodeMySpecCli.SessionRegistry},
+        CodeMySpecCli.SessionManager,
         # Start to serve requests, typically the last entry
         CodeMySpecWeb.Endpoint
       ]

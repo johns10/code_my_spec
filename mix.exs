@@ -12,7 +12,9 @@ defmodule CodeMySpec.MixProject do
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
-      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}, flags: [:incremental]]
+      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}, flags: [:incremental]],
+      escript: escript(),
+      releases: releases()
     ]
   end
 
@@ -93,7 +95,12 @@ defmodule CodeMySpec.MixProject do
       {:google_api_analytics_admin, "~> 0.26.0"},
       {:recase, "~> 0.8"},
       {:oapi_github, "~> 0.3.3"},
-      {:httpoison, "~> 2.0"}
+      {:httpoison, "~> 2.0"},
+
+      # CLI deps
+      {:optimus, "~> 0.5"},
+      {:ratatouille, "~> 0.5"},
+      {:burrito, "~> 1.5"}
     ]
   end
 
@@ -115,6 +122,34 @@ defmodule CodeMySpec.MixProject do
         "tailwind code_my_spec --minify",
         "esbuild code_my_spec --minify",
         "phx.digest"
+      ]
+    ]
+  end
+
+  defp escript do
+    [
+      main_module: CodeMySpecCli,
+      name: "codemyspec"
+    ]
+  end
+
+  defp releases do
+    [
+      code_my_spec: [
+        include_executables_for: [:unix],
+        applications: [
+          code_my_spec: :permanent
+        ]
+      ],
+      code_my_spec_cli: [
+        steps: [:assemble, &Burrito.wrap/1],
+        burrito: [
+          targets: [
+            macos_arm: [os: :darwin, cpu: :aarch64],
+            macos: [os: :darwin, cpu: :x86_64],
+            linux: [os: :linux, cpu: :x86_64]
+          ]
+        ]
       ]
     ]
   end
