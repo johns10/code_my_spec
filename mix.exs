@@ -65,14 +65,15 @@ defmodule CodeMySpec.MixProject do
       {:bandit, "~> 1.5"},
 
       # Added by codemyspec
-      {:file_system, "~> 1.0"},
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
       {:exunit_json_formatter,
        git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
       # {:exunit_formatter_json, "~> 0.1.0"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7.13"},
 
       # Normal deps
+      {:file_system, "~> 1.0"},
       {:mox, "~> 1.2"},
       {:exvcr, "~> 0.15", only: :test},
       {:paper_trail, "~> 1.1"},
@@ -92,8 +93,7 @@ defmodule CodeMySpec.MixProject do
       {:google_api_analytics_admin, "~> 0.26.0"},
       {:recase, "~> 0.8"},
       {:oapi_github, "~> 0.3.3"},
-      {:httpoison, "~> 2.0"},
-      {:credo, "~> 1.7.13"}
+      {:httpoison, "~> 2.0"}
     ]
   end
 

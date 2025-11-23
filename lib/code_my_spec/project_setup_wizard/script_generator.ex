@@ -64,12 +64,16 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGenerator do
   defp build_setup_script(%Project{} = project) do
     header = build_script_header()
     validation = build_validation_section()
+    phx_new_check = build_phx_new_check_section()
     submodules = build_submodule_section(project)
     phoenix_project = build_phoenix_project_section(project)
+    deps_update = build_deps_update_section()
+    custom_deps = build_custom_deps_section()
+    phx_gen_auth = build_phx_gen_auth_section(project)
     submodule_init = build_submodule_init_section()
     success = build_success_section()
 
-    [header, validation, submodules, phoenix_project, submodule_init, success]
+    [header, validation, phx_new_check, submodules, phoenix_project, deps_update, custom_deps, phx_gen_auth, submodule_init, success]
     |> Enum.reject(&is_nil/1)
     |> Enum.join("\n\n")
   end
@@ -98,9 +102,22 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGenerator do
     """
   end
 
+  defp build_phx_new_check_section do
+    """
+    # Check if phx.new is installed
+    if ! mix archive | grep -q "phx_new"; then
+      echo "Installing Phoenix project generator..."
+      mix archive.install hex phx_new --force
+      echo "✓ Phoenix generator installed"
+    else
+      echo "✓ Phoenix generator already installed"
+    fi
+    """
+  end
+
   defp build_submodule_section(%Project{code_repo: nil, docs_repo: nil}), do: nil
 
-  defp build_submodule_section(%Project{code_repo: code_repo, docs_repo: docs_repo}) do
+  defp build_submodule_section(%Project{code_repo: _code_repo, docs_repo: docs_repo}) do
     docs_section = build_docs_submodule(docs_repo)
 
     [docs_section]
@@ -148,6 +165,59 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGenerator do
       echo "✓ Phoenix project created"
     else
       echo "✓ Phoenix project already exists"
+    fi
+    """
+  end
+
+  defp build_deps_update_section do
+    """
+    # Get dependencies
+    echo "Getting dependencies..."
+    mix deps.get
+    echo "✓ Dependencies installed"
+    """
+  end
+
+  defp build_custom_deps_section do
+    """
+    # Custom dependencies to add to mix.exs
+    echo ""
+    echo "📦 Add these custom dependencies to your mix.exs file:"
+    echo ""
+    echo '  {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},'
+    echo '  {:exunit_json_formatter, git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},'
+    echo '  {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},'
+    echo '  {:credo, "~> 1.7.13"},'
+    echo ""
+    echo "After adding, run: mix deps.get"
+    """
+  end
+
+  defp build_phx_gen_auth_section(%Project{module_name: module_name})
+       when not is_nil(module_name) do
+    """
+    # Generate authentication with phx.gen.auth
+    if ! grep -q "#{module_name}.Accounts" lib/*/accounts.ex 2>/dev/null; then
+      echo "Generating authentication system..."
+      mix phx.gen.auth Accounts User users
+      echo "✓ Authentication system generated"
+    else
+      echo "✓ Authentication system already exists"
+    fi
+    """
+  end
+
+  defp build_phx_gen_auth_section(%Project{name: name}) do
+    module_name = name |> Macro.camelize()
+
+    """
+    # Generate authentication with phx.gen.auth
+    if ! grep -q "#{module_name}.Accounts" lib/*/accounts.ex 2>/dev/null; then
+      echo "Generating authentication system..."
+      mix phx.gen.auth Accounts User users
+      echo "✓ Authentication system generated"
+    else
+      echo "✓ Authentication system already exists"
     fi
     """
   end
