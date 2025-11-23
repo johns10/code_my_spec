@@ -101,27 +101,11 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGenerator do
   defp build_submodule_section(%Project{code_repo: nil, docs_repo: nil}), do: nil
 
   defp build_submodule_section(%Project{code_repo: code_repo, docs_repo: docs_repo}) do
-    code_section = build_code_submodule(code_repo)
     docs_section = build_docs_submodule(docs_repo)
 
-    [code_section, docs_section]
+    [docs_section]
     |> Enum.reject(&is_nil/1)
     |> Enum.join("\n\n")
-  end
-
-  defp build_code_submodule(nil), do: nil
-
-  defp build_code_submodule(code_repo) do
-    """
-    # Add code repository submodule (if not already added)
-    if [ ! -d "code/.git" ]; then
-      echo "Adding code repository submodule..."
-      git submodule add #{code_repo} code
-      echo "✓ Code submodule added"
-    else
-      echo "✓ Code submodule already exists"
-    fi
-    """
   end
 
   defp build_docs_submodule(nil), do: nil

@@ -17,6 +17,13 @@ defmodule CodeMySpecWeb.VSCodeChannel do
         # Subscribe to session updates for this user
         Sessions.subscribe_user_sessions(user_id)
 
+        # Track this user's presence
+        {:ok, _} =
+          CodeMySpecWeb.Presence.track(socket, "user:#{user_id}", %{
+            online_at: inspect(System.system_time(:second)),
+            user_id: user_id
+          })
+
         {:ok, socket}
 
       _ ->
@@ -67,6 +74,12 @@ defmodule CodeMySpecWeb.VSCodeChannel do
 
   @impl true
   def handle_info({:conversation_id_set, _payload}, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", payload: diff}, socket) do
+    push(socket, "presence_diff", diff)
     {:noreply, socket}
   end
 

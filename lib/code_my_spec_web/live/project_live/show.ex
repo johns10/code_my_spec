@@ -14,6 +14,9 @@ defmodule CodeMySpecWeb.ProjectLive.Show do
           <.button navigate={~p"/app/projects"}>
             <.icon name="hero-arrow-left" />
           </.button>
+          <.button navigate={~p"/app/projects/#{@project}/setup?return_to=show"}>
+            <.icon name="hero-cog-6-tooth" /> Setup project
+          </.button>
           <.button navigate={~p"/app/projects/#{@project}/edit?return_to=show"}>
             <.icon name="hero-pencil-square" /> Edit project
           </.button>

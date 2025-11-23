@@ -82,7 +82,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegration do
   ## Examples
 
       iex> create_code_repo(scope, project)
-      {:ok, %Project{code_repo: "https://github.com/username/my-project-code"}}
+      {:ok, %Project{code_repo: "https://github.com/username/my-project"}}
 
       iex> create_code_repo(scope, project)
       {:error, :github_not_connected}
@@ -91,7 +91,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegration do
   def create_code_repo(%Scope{} = scope, %Project{} = project) do
     with true <- connected?(scope) || {:error, :github_not_connected},
          sanitized_name <- sanitize_repo_name(project.name),
-         repo_name <- sanitized_name <> "-code",
+         repo_name <- sanitized_name <> "",
          repo_attrs <- build_repo_attrs(project, repo_name),
          {:ok, response} <- GitHub.create_repository(scope, repo_attrs),
          {:ok, updated_project} <-

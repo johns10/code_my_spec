@@ -84,13 +84,13 @@ defmodule CodeMySpec.ProjectSetupWizard do
   # ============================================================================
 
   @doc """
-  Checks if VS Code extension is connected for project.
+  Checks if VS Code extension is connected for user.
 
   Queries Phoenix.Presence for real-time extension presence.
   No database persistence - entirely in-memory via Presence.
 
   ## Parameters
-  - `project` - Project to check extension presence for
+  - `scope` - User scope to check extension presence for
 
   ## Returns
   - `true` - Extension is connected and tracking presence
@@ -98,21 +98,25 @@ defmodule CodeMySpec.ProjectSetupWizard do
 
   ## Examples
 
-      iex> vscode_extension_connected?(project)
+      iex> vscode_extension_connected?(scope)
       false
 
-      iex> vscode_extension_connected?(project)
+      iex> vscode_extension_connected?(scope)
       true
   """
-  @spec vscode_extension_connected?(Project.t()) :: boolean()
-  def vscode_extension_connected?(%Project{} = project) do
-    # Check Presence for vscode:project:#{project.id} topic
+  @spec vscode_extension_connected?(Scope.t()) :: boolean()
+  def vscode_extension_connected?(%Scope{user: %{id: user_id}}) do
+    # Check Presence for user:#{user_id} topic
     # Phoenix.Presence.list returns empty map if no presences
-    topic = "vscode:project:#{project.id}"
+    topic = "vscode:user"
 
     case CodeMySpecWeb.Presence.list(topic) do
-      presences when map_size(presences) > 0 -> true
-      _empty -> false
+      presences when map_size(presences) > 0 ->
+        # Check if this specific user is present
+        Map.has_key?(presences, "user:#{user_id}")
+
+      empty ->
+        false
     end
   rescue
     # If Presence module doesn't exist or errors, return false
@@ -166,7 +170,7 @@ defmodule CodeMySpec.ProjectSetupWizard do
     github_connected = github_connected?(scope)
     code_repo_configured = not is_nil(project.code_repo)
     docs_repo_configured = not is_nil(project.docs_repo)
-    vscode_extension_connected = vscode_extension_connected?(project)
+    vscode_extension_connected = vscode_extension_connected?(scope)
 
     setup_complete =
       github_connected and code_repo_configured and docs_repo_configured and
