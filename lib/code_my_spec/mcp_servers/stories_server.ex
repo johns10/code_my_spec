@@ -6,7 +6,7 @@ defmodule CodeMySpec.MCPServers.StoriesServer do
 
   # Tool components
   component(CodeMySpec.MCPServers.Stories.Tools.CreateStory)
-  component(CodeMySpec.MCPServers.Stories.Tools.CreateStories)
+  # component(CodeMySpec.MCPServers.Stories.Tools.CreateStories)
   component(CodeMySpec.MCPServers.Stories.Tools.UpdateStory)
   component(CodeMySpec.MCPServers.Stories.Tools.DeleteStory)
   component(CodeMySpec.MCPServers.Stories.Tools.GetStory)

@@ -13,8 +13,8 @@ defmodule CodeMySpec.MCPServers.ComponentsServer do
   component(CodeMySpec.MCPServers.Stories.Tools.ListStories)
 
   # Batch operations
-  component(CodeMySpec.MCPServers.Components.Tools.CreateComponents)
-  component(CodeMySpec.MCPServers.Components.Tools.CreateDependencies)
+  # component(CodeMySpec.MCPServers.Components.Tools.CreateComponents)
+  # component(CodeMySpec.MCPServers.Components.Tools.CreateDependencies)
 
   # Dependency management
   component(CodeMySpec.MCPServers.Components.Tools.CreateDependency)
