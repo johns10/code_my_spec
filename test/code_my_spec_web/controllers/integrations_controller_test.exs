@@ -35,7 +35,7 @@ defmodule CodeMySpecWeb.IntegrationsControllerTest do
       # For now, we'll just test the error path since mocking Assent is complex
       conn = get(conn, ~p"/auth/github/callback", %{"error" => "access_denied"})
 
-      assert redirected_to(conn) == ~p"/users/settings"
+      assert redirected_to(conn) == ~p"/app/users/settings"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "denied access"
     end
 
@@ -49,7 +49,7 @@ defmodule CodeMySpecWeb.IntegrationsControllerTest do
 
       conn = get(conn, ~p"/auth/github/callback", %{"error" => "access_denied"})
 
-      assert redirected_to(conn) == ~p"/users/settings"
+      assert redirected_to(conn) == ~p"/app/users/settings"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "denied"
     end
 
@@ -81,7 +81,7 @@ defmodule CodeMySpecWeb.IntegrationsControllerTest do
 
       conn = delete(conn, ~p"/auth/github")
 
-      assert redirected_to(conn) == ~p"/users/settings"
+      assert redirected_to(conn) == ~p"/app/users/settings"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Disconnected"
       assert {:error, :not_found} = Integrations.get_integration(scope, :github)
     end
@@ -89,7 +89,7 @@ defmodule CodeMySpecWeb.IntegrationsControllerTest do
     test "handles non-existent integration", %{conn: conn} do
       conn = delete(conn, ~p"/auth/github")
 
-      assert redirected_to(conn) == ~p"/users/settings"
+      assert redirected_to(conn) == ~p"/app/users/settings"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "No connection found"
     end
 

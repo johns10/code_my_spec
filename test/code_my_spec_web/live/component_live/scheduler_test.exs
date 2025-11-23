@@ -45,7 +45,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       medium_priority: medium_priority,
       no_priority: no_priority
     } do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       assert html =~ "Component Scheduler"
       assert html =~ "Drag and drop to prioritize components"
@@ -60,7 +60,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       medium_priority: medium_priority,
       no_priority: no_priority
     } do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       # Check that priorities are displayed correctly
       # High priority
@@ -83,7 +83,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       conn: conn,
       high_priority: high_priority
     } do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       assert html =~ high_priority.name
       assert html =~ high_priority.type |> Atom.to_string()
@@ -91,7 +91,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
     end
 
     test "shows drag handle and priority for each component", %{conn: conn} do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       # Drag cursor class
       assert html =~ "cursor-move"
@@ -104,7 +104,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
     end
 
     test "includes SortableJS hook configuration", %{conn: conn} do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       # The hook name appears in the phx-hook attribute
       assert html =~ "ComponentScheduler"
@@ -118,7 +118,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       medium_priority: medium_priority,
       no_priority: no_priority
     } do
-      {:ok, scheduler_live, _html} = live(conn, ~p"/components/scheduler")
+      {:ok, scheduler_live, _html} = live(conn, ~p"/app/components/scheduler")
 
       # Simulate reordering components
       new_order = [
@@ -157,7 +157,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       scope: scope,
       high_priority: high_priority
     } do
-      {:ok, scheduler_live, _html} = live(conn, ~p"/components/scheduler")
+      {:ok, scheduler_live, _html} = live(conn, ~p"/app/components/scheduler")
 
       # Include a non-existent component ID
       new_order = [
@@ -180,7 +180,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       conn: conn,
       high_priority: _high_priority
     } do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       assert html =~ "Deps:"
       assert html =~ "Stories:"
@@ -192,7 +192,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       conn: conn,
       scope: scope
     } do
-      {:ok, scheduler_live, _html} = live(conn, ~p"/components/scheduler")
+      {:ok, scheduler_live, _html} = live(conn, ~p"/app/components/scheduler")
 
       # Create a new component
       new_component =
@@ -208,14 +208,14 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
     end
 
     test "maintains proper stream attributes", %{conn: conn} do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       assert html =~ "phx-update=\"stream\""
       assert html =~ "id=\"scheduler-list\""
     end
 
     test "includes proper CSS classes for drag and drop", %{conn: conn} do
-      {:ok, _scheduler_live, html} = live(conn, ~p"/components/scheduler")
+      {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       # Prevents text selection
       assert html =~ "select-none"

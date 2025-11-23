@@ -40,54 +40,68 @@ defmodule CodeMySpecWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar bg-base-100 shadow-sm">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <div class="flex items-center space-x-2">
-          <ul class="menu menu-horizontal px-1">
-            <li><.link href={~p"/accounts"} class="btn btn-ghost">Accounts</.link></li>
-            <li><.link href={~p"/projects"} class="btn btn-ghost">Projects</.link></li>
-            <li><.link href={~p"/stories"} class="btn btn-ghost">Stories</.link></li>
-            <li>
-              <details>
-                <summary>Components</summary>
-                <ul class="bg-base-100 rounded-t-none p-2">
-                  <li><.link href={~p"/components"} class="text-sm">Components</.link></li>
-                  <li><.link href={~p"/components/scheduler"} class="text-sm">Scheduler</.link></li>
-                </ul>
-              </details>
-            </li>
-            <li><.link href={~p"/content_admin"} class="btn btn-ghost">Content</.link></li>
-            <li>
-              <.link href={~p"/architecture"} class="btn btn-ghost">Architecture</.link>
-            </li>
-          </ul>
-          <.theme_toggle />
+    <div class="drawer lg:drawer-open min-h-screen">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+      <div class="drawer-content flex flex-col bg-base-100">
+        <div class="navbar bg-base-200 border-b border-base-300">
+          <div class="flex-none lg:hidden">
+            <label for="drawer-toggle" class="btn btn-square btn-ghost">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                class="inline-block w-5 h-5 stroke-current"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                >
+                </path>
+              </svg>
+            </label>
+          </div>
+          <div class="flex-1">
+            <div class="breadcrumbs text-sm px-8">
+              <ul>
+                <%= if @current_scope do %>
+                  <li><.account_breadcrumb scope={@current_scope} current_path={@current_path} /></li>
+                  <li><.project_breadcrumb scope={@current_scope} current_path={@current_path} /></li>
+                <% end %>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
 
-    <%= if @current_scope do %>
-      <div class="breadcrumbs text-sm px-8">
-        <ul>
-          <li><.account_breadcrumb scope={@current_scope} current_path={@current_path} /></li>
-          <li><.project_breadcrumb scope={@current_scope} current_path={@current_path} /></li>
-        </ul>
+        <main class="flex-1 p-6">
+          {render_slot(@inner_block)}
+        </main>
       </div>
-    <% end %>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
+      <div class="drawer-side">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside class="w-64 min-h-full bg-base-200">
+          <div class="p-6 border-b border-base-300">
+            <a href={~p"/app"} class="flex items-center gap-3">
+              <img src={~p"/images/logo.svg"} alt="CodeMySpec" class="h-6 w-6" />
+              <span class="text-lg font-heading font-semibold">CodeMySpec</span>
+            </a>
+          </div>
+          <ul class="menu p-4 w-64 min-h-full text-base-content">
+            <li><a href={~p"/app"}>Overview</a></li>
+            <li><a href={~p"/app/projects"}>Projects</a></li>
+            <li><a href={~p"/app/stories"}>Stories</a></li>
+            <li><a href={~p"/app/components"}>Components</a></li>
+            <li><a href={~p"/app/architecture"}>Architecture</a></li>
+            <li><a href={~p"/app/content_admin"}>Content</a></li>
+            <li class="mt-auto"><a href={~p"/app/users/settings"}>Settings</a></li>
+          </ul>
+        </aside>
       </div>
-    </main>
-
-    <.flash_group flash={@flash} />
+      <.flash_group flash={@flash} />
+    </div>
     """
   end
 
@@ -157,64 +171,45 @@ defmodule CodeMySpecWeb.Layouts do
 
   def marketing(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-      <div class="max-w-7xl mx-auto px-4 py-8">
-        <!-- Navbar -->
-        <div class="navbar bg-base-100/50 backdrop-blur-lg rounded-box shadow-xl mb-20">
-          <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl font-bold normal-case">CodeMySpec</a>
+    <div class="min-h-screen flex flex-col">
+      <!-- Navbar -->
+      <header class="border-b border-base-300">
+        <nav class="navbar max-w-7xl mx-auto">
+          <div class="flex-1">
+            <a href={~p"/"} class="btn btn-ghost text-xl">
+              <img src={~p"/images/logo.svg"} alt="CodeMySpec" class="h-8 w-8" /> CodeMySpec
+            </a>
           </div>
-
-          <div class="navbar-end gap-2">
+          <div class="flex-none">
             <ul class="menu menu-horizontal px-1">
-              <li>
-                <a href="/methodology" class="gap-2">
-                  <.icon name="hero-light-bulb" class="w-4 h-4" /> Methodology
-                </a>
-              </li>
-              <li>
-                <a href="/blog" class="gap-2">
-                  <.icon name="hero-document-text" class="w-4 h-4" /> Blog
-                </a>
-              </li>
+              <li><.link href={~p"/"}>Product</.link></li>
+              <li><.link href={~p"/methodology"}>Method</.link></li>
+              <li><.link href={~p"/blog"}>Blog</.link></li>
             </ul>
-            <.theme_toggle />
           </div>
-        </div>
-        
-    <!-- Content -->
-        {render_slot(@inner_block)}
-        
-    <!-- Footer -->
-        <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded-box shadow-inner mt-20">
-          <!--<nav class="grid grid-flow-col gap-6">
-            <a href="/blog" class="link link-hover inline-flex items-center gap-2">
-              <.icon name="hero-document-text" class="w-4 h-4" />
-              Blog
-            </a>
-            <a
-              href="https://github.com/phoenixframework/phoenix"
-              class="link link-hover inline-flex items-center gap-2"
-            >
-              <.icon name="hero-code-bracket" class="w-4 h-4" />
-              GitHub
-            </a>
-            <a href="/users/register" class="link link-hover inline-flex items-center gap-2">
-              <.icon name="hero-user-plus" class="w-4 h-4" />
-              Get Started
-            </a>
-          </nav>-->
+          <div class="flex-none">
+            <%= if @current_scope do %>
+              <span class="hidden"><%= @current_scope.user.email %></span>
+              <.link href={~p"/users/log-out"} method="delete" class="btn btn-ghost">Log out</.link>
+              <.link href={~p"/app"} class="btn btn-primary">Open workspace</.link>
+            <% else %>
+              <.link href={~p"/users/log-in"} class="btn btn-ghost">Log in</.link>
+              <.link href={~p"/users/register"} class="btn btn-primary">Register</.link>
+            <% end %>
+          </div>
+        </nav>
+      </header>
 
-          <aside class="items-center grid-flow-col">
-            <div>
-              <p class="font-bold text-lg">CodeMySpec</p>
-              <p class="text-sm text-base-content/70">
-                Process-guided AI development for Phoenix applications
-              </p>
-            </div>
-          </aside>
-        </footer>
-      </div>
+      <main class="flex-1">
+        {render_slot(@inner_block)}
+      </main>
+
+      <footer class="border-t border-base-300">
+        <div class="max-w-7xl mx-auto px-6 py-6 text-sm text-base-content/70">
+          <div>© {Date.utc_today().year} CodeMySpec</div>
+          <div>Built for Phoenix devs who actually care about architecture.</div>
+        </div>
+      </footer>
 
       <.flash_group flash={@flash} />
     </div>

@@ -11,10 +11,10 @@ defmodule CodeMySpecWeb.StoryLive.Show do
         Story {@story.id}
         <:subtitle>This is a story record from your database.</:subtitle>
         <:actions>
-          <.button navigate={~p"/stories"}>
+          <.button navigate={~p"/app/stories"}>
             <.icon name="hero-arrow-left" />
           </.button>
-          <.button navigate={~p"/stories/#{@story}/edit?return_to=show"}>
+          <.button navigate={~p"/app/stories/#{@story}/edit?return_to=show"}>
             <.icon name="hero-pencil-square" /> Edit story
           </.button>
         </:actions>
@@ -59,7 +59,7 @@ defmodule CodeMySpecWeb.StoryLive.Show do
     {:noreply,
      socket
      |> put_flash(:error, "The current story was deleted.")
-     |> push_navigate(to: ~p"/stories")}
+     |> push_navigate(to: ~p"/app/stories")}
   end
 
   def handle_info({type, %CodeMySpec.Stories.Story{}}, socket)

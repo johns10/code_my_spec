@@ -7,7 +7,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
 
   describe "mount/3" do
     test "initializes import page with correct content", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/stories/import")
+      {:ok, _live, html} = live(conn, ~p"/app/stories/import")
 
       assert html =~ "Import Stories from Markdown"
       assert html =~ "Upload a markdown file or paste content"
@@ -16,7 +16,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
 
   describe "validate event" do
     test "updates markdown content on change", %{conn: conn} do
-      {:ok, live, _html} = live(conn, ~p"/stories/import")
+      {:ok, live, _html} = live(conn, ~p"/app/stories/import")
 
       content = "## Test Story\nTest description"
 
@@ -28,7 +28,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
 
   describe "import event" do
     test "imports stories from markdown content successfully", %{conn: conn, scope: scope} do
-      {:ok, live, _html} = live(conn, ~p"/stories/import")
+      {:ok, live, _html} = live(conn, ~p"/app/stories/import")
 
       markdown_content = """
       ## First Story
@@ -47,7 +47,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
       - Another criterion
       """
 
-      assert {:error, {:live_redirect, %{to: "/stories"}}} =
+      assert {:error, {:live_redirect, %{to: "/app/stories"}}} =
                live
                |> form("form", %{"markdown_content" => markdown_content})
                |> render_submit()
@@ -63,7 +63,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
     end
 
     test "shows error for invalid markdown", %{conn: conn} do
-      {:ok, live, _html} = live(conn, ~p"/stories/import")
+      {:ok, live, _html} = live(conn, ~p"/app/stories/import")
 
       invalid_content = "This is not valid markdown format"
 
@@ -75,7 +75,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
     end
 
     test "shows error for empty content", %{conn: conn} do
-      {:ok, live, _html} = live(conn, ~p"/stories/import")
+      {:ok, live, _html} = live(conn, ~p"/app/stories/import")
 
       live
       |> form("form", %{"markdown_content" => ""})
@@ -85,7 +85,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
     end
 
     test "handles story creation failures gracefully", %{conn: conn} do
-      {:ok, live, _html} = live(conn, ~p"/stories/import")
+      {:ok, live, _html} = live(conn, ~p"/app/stories/import")
 
       markdown_content = """
       ##
@@ -101,7 +101,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
     end
 
     test "shows success message on successful import", %{conn: conn} do
-      {:ok, live, _html} = live(conn, ~p"/stories/import")
+      {:ok, live, _html} = live(conn, ~p"/app/stories/import")
 
       markdown_content = """
       ## Test Story
@@ -112,7 +112,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
       - Test criterion
       """
 
-      assert {:error, {:live_redirect, %{to: "/stories"}}} =
+      assert {:error, {:live_redirect, %{to: "/app/stories"}}} =
                live
                |> form("form", %{"markdown_content" => markdown_content})
                |> render_submit()
@@ -121,7 +121,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
 
   describe "UI elements" do
     test "displays upload area and form elements", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/stories/import")
+      {:ok, _live, html} = live(conn, ~p"/app/stories/import")
 
       assert html =~ "Upload Markdown File"
       assert html =~ "Drop your .md file here"
@@ -131,7 +131,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
     end
 
     test "shows placeholder content in textarea", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/stories/import")
+      {:ok, _live, html} = live(conn, ~p"/app/stories/import")
 
       assert html =~ "## Story Title"
       assert html =~ "**Acceptance Criteria**"
@@ -140,7 +140,7 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
 
   describe "file upload configuration" do
     test "displays file upload input with correct accept types", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/stories/import")
+      {:ok, _live, html} = live(conn, ~p"/app/stories/import")
 
       assert html =~ "accept=\".md,.markdown,.txt\""
       assert html =~ "type=\"file\""
@@ -149,9 +149,9 @@ defmodule CodeMySpecWeb.StoryLive.ImportTest do
 
   describe "navigation" do
     test "cancel button links to stories index", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/stories/import")
+      {:ok, _live, html} = live(conn, ~p"/app/stories/import")
 
-      assert html =~ "href=\"/stories\""
+      assert html =~ "href=\"/app/stories\""
       assert html =~ "Cancel"
     end
   end

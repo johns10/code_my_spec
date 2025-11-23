@@ -89,7 +89,9 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
         <.table
           id="content_admin"
           rows={@streams.content_admin}
-          row_click={fn {_id, content_admin} -> JS.navigate(~p"/content_admin/#{content_admin}") end}
+          row_click={
+            fn {_id, content_admin} -> JS.navigate(~p"/app/content_admin/#{content_admin}") end
+          }
         >
           <:col :let={{_id, content_admin}} label="Slug">
             <div class="truncate max-w-sm">
@@ -117,9 +119,9 @@ defmodule CodeMySpecWeb.ContentAdminLive.Index do
           </:col>
           <:action :let={{_id, content_admin}}>
             <div class="sr-only">
-              <.link navigate={~p"/content_admin/#{content_admin}"}>Show</.link>
+              <.link navigate={~p"/app/content_admin/#{content_admin}"}>Show</.link>
             </div>
-            <.link navigate={~p"/content_admin/#{content_admin}"}>View</.link>
+            <.link navigate={~p"/app/content_admin/#{content_admin}"}>View</.link>
           </:action>
           <:action :let={{id, content_admin}}>
             <.link

@@ -14,20 +14,20 @@ defmodule CodeMySpecWeb.AccountLive.Components.Navigation do
       <div class="mt-8">
         <div class="tabs tabs-boxed">
           <.link
-            patch={~p"/accounts/#{@account.id}/manage"}
+            patch={~p"/app/accounts/#{@account.id}/manage"}
             class={["tab", if(@active_tab == :manage, do: "tab-active")]}
           >
             Manage
           </.link>
           <.link
-            patch={~p"/accounts/#{@account.id}/members"}
+            patch={~p"/app/accounts/#{@account.id}/members"}
             class={["tab", if(@active_tab == :members, do: "tab-active")]}
           >
             Members
           </.link>
           <.link
             :if={can_manage_members?(@current_scope, @account)}
-            patch={~p"/accounts/#{@account.id}/invitations"}
+            patch={~p"/app/accounts/#{@account.id}/invitations"}
             class={["tab", if(@active_tab == :invitations, do: "tab-active")]}
           >
             Invitations

@@ -8,9 +8,9 @@ defmodule CodeMySpecWeb.ProjectLive.Index do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <.header>
-        Listing Projects
+        Projects
         <:actions>
-          <.button navigate={~p"/projects/new"}>
+          <.button navigate={~p"/app/projects/new"}>
             <.icon name="hero-plus" /> New Project
           </.button>
         </:actions>
@@ -19,7 +19,7 @@ defmodule CodeMySpecWeb.ProjectLive.Index do
       <.table
         id="projects"
         rows={@streams.projects}
-        row_click={fn {_id, project} -> JS.navigate(~p"/projects/#{project}") end}
+        row_click={fn {_id, project} -> JS.navigate(~p"/app/projects/#{project}") end}
       >
         <:col :let={{_id, project}} label="Name">{project.name}</:col>
         <:col :let={{_id, project}} label="Code repo">{project.code_repo}</:col>
@@ -28,9 +28,9 @@ defmodule CodeMySpecWeb.ProjectLive.Index do
         <:col :let={{_id, project}} label="Setup error">{project.setup_error}</:col>
         <:action :let={{_id, project}}>
           <div class="sr-only">
-            <.link navigate={~p"/projects/#{project}"}>Show</.link>
+            <.link navigate={~p"/app/projects/#{project}"}>Show</.link>
           </div>
-          <.link navigate={~p"/projects/#{project}/edit"}>Edit</.link>
+          <.link navigate={~p"/app/projects/#{project}/edit"}>Edit</.link>
         </:action>
         <:action :let={{id, project}}>
           <.link

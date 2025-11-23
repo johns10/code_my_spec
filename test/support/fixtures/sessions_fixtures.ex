@@ -29,10 +29,10 @@ defmodule CodeMySpec.SessionsFixtures do
   """
   def valid_event_attrs(session_id, attrs \\ %{}) do
     Enum.into(attrs, %{
-      session_id: session_id,
-      event_type: :proxy_response,
-      sent_at: DateTime.utc_now(),
-      data: %{
+      "session_id" => session_id,
+      "event_type" => :proxy_response,
+      "sent_at" => DateTime.utc_now(),
+      "data" => %{
         "tool_name" => "Read",
         "file_path" => "/path/to/file.ex"
       }
@@ -44,10 +44,10 @@ defmodule CodeMySpec.SessionsFixtures do
   """
   def conversation_started_event_attrs(session_id, conversation_id, attrs \\ %{}) do
     Enum.into(attrs, %{
-      session_id: session_id,
-      event_type: :session_start,
-      sent_at: DateTime.utc_now(),
-      data: %{
+      "session_id" => session_id,
+      "event_type" => :session_start,
+      "sent_at" => DateTime.utc_now(),
+      "data" => %{
         "conversation_id" => conversation_id,
         "agent" => "claude_code",
         "model" => "claude-sonnet-4"

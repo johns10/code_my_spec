@@ -43,7 +43,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Missing event_type
       event_attrs =
         valid_event_attrs(session.id)
-        |> Map.delete(:event_type)
+        |> Map.delete("event_type")
 
       assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
       assert %{event_type: ["can't be blank"]} = errors_on(changeset)
@@ -52,7 +52,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Missing sent_at
       event_attrs =
         valid_event_attrs(session.id)
-        |> Map.delete(:sent_at)
+        |> Map.delete("sent_at")
 
       assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
       assert %{sent_at: ["can't be blank"]} = errors_on(changeset)
@@ -61,7 +61,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Missing data
       event_attrs =
         valid_event_attrs(session.id)
-        |> Map.delete(:data)
+        |> Map.delete("data")
 
       assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
       assert %{data: ["can't be blank"]} = errors_on(changeset)
@@ -71,7 +71,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
     test "invalid event_type fails validation", %{scope: scope, session: session} do
       event_attrs =
         valid_event_attrs(session.id)
-        |> Map.put(:event_type, :invalid_event_type)
+        |> Map.put("event_type", :invalid_event_type)
 
       assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
       assert %{event_type: ["is invalid"]} = errors_on(changeset)
@@ -82,7 +82,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Simple map
       event_attrs =
         valid_event_attrs(session.id, %{
-          data: %{"simple" => "value"}
+          "data" => %{"simple" => "value"}
         })
 
       assert {:ok, _} = EventHandler.handle_event(scope, session.id, event_attrs)
@@ -90,7 +90,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Nested map
       event_attrs =
         valid_event_attrs(session.id, %{
-          data: %{
+          "data" => %{
             "nested" => %{
               "deeply" => %{
                 "structured" => ["data", "with", "arrays"]
@@ -104,7 +104,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Mixed types
       event_attrs =
         valid_event_attrs(session.id, %{
-          data: %{
+          "data" => %{
             "numbers" => 42,
             "booleans" => true,
             "strings" => "test",
@@ -118,7 +118,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # Empty map
       event_attrs =
         valid_event_attrs(session.id, %{
-          data: %{}
+          "data" => %{}
         })
 
       assert {:ok, _} = EventHandler.handle_event(scope, session.id, event_attrs)
@@ -220,8 +220,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
     test "session_status_changed updates session status", %{scope: scope, session: session} do
       event_attrs =
         valid_event_attrs(session.id, %{
-          event_type: :proxy_request,
-          data: %{
+          "event_type" => :proxy_request,
+          "data" => %{
             "old_status" => "active",
             "new_status" => "complete"
           }
@@ -251,8 +251,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       for event_type <- event_types do
         event_attrs =
           valid_event_attrs(session.id, %{
-            event_type: event_type,
-            data: %{"test" => "data"}
+            "event_type" => event_type,
+            "data" => %{"test" => "data"}
           })
 
         assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
@@ -290,8 +290,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         conversation_started_event_attrs(session.id, "conversation-id"),
         valid_event_attrs(session.id),
         valid_event_attrs(session.id, %{
-          event_type: :proxy_request,
-          data: %{"command" => "mix test"}
+          "event_type" => :proxy_request,
+          "data" => %{"command" => "mix test"}
         })
       ]
 
@@ -310,7 +310,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
     test "first invalid event fails entire batch", %{scope: scope, session: session} do
       events_attrs = [
         valid_event_attrs(session.id),
-        valid_event_attrs(session.id) |> Map.delete(:sent_at),
+        valid_event_attrs(session.id) |> Map.delete("sent_at"),
         valid_event_attrs(session.id)
       ]
 
@@ -326,7 +326,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
         valid_event_attrs(session.id),
         valid_event_attrs(session.id),
         # Last event is invalid
-        valid_event_attrs(session.id) |> Map.put(:event_type, :invalid_type)
+        valid_event_attrs(session.id) |> Map.put("event_type", :invalid_type)
       ]
 
       assert {:error, changeset} = EventHandler.handle_events(scope, session.id, events_attrs)
@@ -411,8 +411,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
     } do
       event_attrs =
         valid_event_attrs(session.id, %{
-          event_type: :proxy_response,
-          data: %{
+          "event_type" => :proxy_response,
+          "data" => %{
             "old_status" => "active",
             "new_status" => "complete"
           }

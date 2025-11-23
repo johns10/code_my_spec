@@ -9,7 +9,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Show do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <.header>
-        <.link navigate={~p"/content_admin"} class="link link-primary">
+        <.link navigate={~p"/app/content_admin"} class="link link-primary">
           ← Back to ContentAdmin
         </.link>
       </.header>
@@ -236,7 +236,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Show do
     {:noreply,
      socket
      |> put_flash(:info, "ContentAdmin deleted. Will re-sync on next Git sync.")
-     |> push_navigate(to: ~p"/content_admin")}
+     |> push_navigate(to: ~p"/app/content_admin")}
   end
 
   @impl true
@@ -255,7 +255,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Show do
     {:noreply,
      socket
      |> put_flash(:info, "ContentAdmin was deleted")
-     |> push_navigate(to: ~p"/content_admin")}
+     |> push_navigate(to: ~p"/app/content_admin")}
   end
 
   def handle_info({:sync_completed, _sync_result}, socket) do
@@ -272,7 +272,7 @@ defmodule CodeMySpecWeb.ContentAdminLive.Show do
       {:noreply,
        socket
        |> put_flash(:info, "ContentAdmin was removed during sync")
-       |> push_navigate(to: ~p"/content_admin")}
+       |> push_navigate(to: ~p"/app/content_admin")}
   end
 
   def handle_info(_msg, socket) do

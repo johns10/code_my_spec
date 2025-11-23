@@ -34,20 +34,20 @@ defmodule CodeMySpecWeb.StoryLiveTest do
     setup [:create_story]
 
     test "lists all stories", %{conn: conn, story: story} do
-      {:ok, _index_live, html} = live(conn, ~p"/stories")
+      {:ok, _index_live, html} = live(conn, ~p"/app/stories")
 
       assert html =~ "Listing Stories"
       assert html =~ story.title
     end
 
     test "saves new story", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/stories")
+      {:ok, index_live, _html} = live(conn, ~p"/app/stories")
 
       assert {:ok, form_live, _} =
                index_live
                |> element("a", "New Story")
                |> render_click()
-               |> follow_redirect(conn, ~p"/stories/new")
+               |> follow_redirect(conn, ~p"/app/stories/new")
 
       assert render(form_live) =~ "New Story"
 
@@ -61,7 +61,7 @@ defmodule CodeMySpecWeb.StoryLiveTest do
                form_live
                |> form("#story-form", story: attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/stories")
+               |> follow_redirect(conn, ~p"/app/stories")
 
       html = render(index_live)
       assert html =~ "Story created successfully"
@@ -69,13 +69,13 @@ defmodule CodeMySpecWeb.StoryLiveTest do
     end
 
     test "updates story in listing", %{conn: conn, story: story} do
-      {:ok, index_live, _html} = live(conn, ~p"/stories")
+      {:ok, index_live, _html} = live(conn, ~p"/app/stories")
 
       assert {:ok, form_live, _html} =
                index_live
                |> element("#stories-#{story.id} a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/stories/#{story}/edit")
+               |> follow_redirect(conn, ~p"/app/stories/#{story}/edit")
 
       assert render(form_live) =~ "Edit Story"
 
@@ -87,7 +87,7 @@ defmodule CodeMySpecWeb.StoryLiveTest do
                form_live
                |> form("#story-form", story: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/stories")
+               |> follow_redirect(conn, ~p"/app/stories")
 
       html = render(index_live)
       assert html =~ "Story updated successfully"
@@ -95,7 +95,7 @@ defmodule CodeMySpecWeb.StoryLiveTest do
     end
 
     test "deletes story in listing", %{conn: conn, story: story} do
-      {:ok, index_live, _html} = live(conn, ~p"/stories")
+      {:ok, index_live, _html} = live(conn, ~p"/app/stories")
 
       assert index_live |> element("#stories-#{story.id} a", "Delete") |> render_click()
       refute has_element?(index_live, "#stories-#{story.id}")
@@ -106,20 +106,20 @@ defmodule CodeMySpecWeb.StoryLiveTest do
     setup [:create_story]
 
     test "displays story", %{conn: conn, story: story} do
-      {:ok, _show_live, html} = live(conn, ~p"/stories/#{story}")
+      {:ok, _show_live, html} = live(conn, ~p"/app/stories/#{story}")
 
       assert html =~ "Show Story"
       assert html =~ story.title
     end
 
     test "updates story and returns to show", %{conn: conn, story: story} do
-      {:ok, show_live, _html} = live(conn, ~p"/stories/#{story}")
+      {:ok, show_live, _html} = live(conn, ~p"/app/stories/#{story}")
 
       assert {:ok, form_live, _} =
                show_live
                |> element("a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/stories/#{story}/edit?return_to=show")
+               |> follow_redirect(conn, ~p"/app/stories/#{story}/edit?return_to=show")
 
       assert render(form_live) =~ "Edit Story"
 
@@ -131,7 +131,7 @@ defmodule CodeMySpecWeb.StoryLiveTest do
                form_live
                |> form("#story-form", story: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/stories/#{story}")
+               |> follow_redirect(conn, ~p"/app/stories/#{story}")
 
       html = render(show_live)
       assert html =~ "Story updated successfully"

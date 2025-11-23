@@ -8,7 +8,7 @@ defmodule CodeMySpecWeb.UserLive.Confirmation do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.marketing flash={@flash} current_scope={@current_scope}>
       <div class="mx-auto max-w-sm">
         <div class="text-center">
           <.header>Welcome {@user.email}</.header>
@@ -70,7 +70,7 @@ defmodule CodeMySpecWeb.UserLive.Confirmation do
           Tip: If you prefer passwords, you can enable them in the user settings.
         </p>
       </div>
-    </Layouts.app>
+    </Layouts.marketing>
     """
   end
 

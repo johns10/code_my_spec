@@ -170,8 +170,8 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
     end
   end
 
-  defp return_path(_scope, "index", _component), do: ~p"/components"
-  defp return_path(_scope, "show", _component), do: ~p"/components"
+  defp return_path(_scope, "index", _component), do: ~p"/app/components"
+  defp return_path(_scope, "show", _component), do: ~p"/app/components"
 
   defp update_similar_components(scope, component, similar_ids) when is_list(similar_ids) do
     # Sync the similar_components join table to match the selected IDs

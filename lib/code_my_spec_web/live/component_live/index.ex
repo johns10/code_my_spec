@@ -11,7 +11,7 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
       <.header>
         Listing Components
         <:actions>
-          <.button navigate={~p"/components/new"}>
+          <.button navigate={~p"/app/components/new"}>
             <.icon name="hero-plus" /> New Component
           </.button>
         </:actions>
@@ -22,7 +22,7 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
           <div class="card-body">
             <h2
               class="card-title text-2xl mb-4 cursor-pointer hover:text-primary"
-              phx-click={JS.navigate(~p"/components/#{component}/edit")}
+              phx-click={JS.navigate(~p"/app/components/#{component}/edit")}
             >
               {component.name}
             </h2>
@@ -49,7 +49,7 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
               <div class="flex flex-wrap gap-2">
                 <.link
                   :for={story <- component.stories}
-                  navigate={~p"/stories/#{story}"}
+                  navigate={~p"/app/stories/#{story}"}
                   class="badge badge-outline badge-info hover:badge-info"
                 >
                   {story.title}
@@ -62,7 +62,7 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
               <div class="flex flex-wrap gap-2">
                 <.link
                   :for={dep <- component.dependencies}
-                  navigate={~p"/components/#{dep}/edit"}
+                  navigate={~p"/app/components/#{dep}/edit"}
                   class="badge badge-outline badge-secondary hover:badge-secondary"
                 >
                   {dep.name}
@@ -78,7 +78,7 @@ defmodule CodeMySpecWeb.ComponentLive.Index do
               </div>
 
               <div class="card-actions">
-                <.link navigate={~p"/components/#{component}/edit"} class="btn btn-sm btn-outline">
+                <.link navigate={~p"/app/components/#{component}/edit"} class="btn btn-sm btn-outline">
                   Edit
                 </.link>
                 <.link

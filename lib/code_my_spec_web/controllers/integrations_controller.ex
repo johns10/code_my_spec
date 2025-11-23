@@ -45,7 +45,7 @@ defmodule CodeMySpecWeb.IntegrationsController do
 
         conn
         |> put_flash(:error, "Failed to connect to #{provider_name(provider)}")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/app/users/settings")
     end
   end
 
@@ -69,14 +69,14 @@ defmodule CodeMySpecWeb.IntegrationsController do
       {:ok, _integration} ->
         conn
         |> put_flash(:info, "Successfully connected to #{provider_name(provider)}")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/app/users/settings")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         Logger.error("Failed to persist integration: #{inspect(changeset)}")
 
         conn
         |> put_flash(:error, "Failed to save integration")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/app/users/settings")
 
       {:error, reason} ->
         Logger.error("OAuth callback failed for #{provider}: #{inspect(reason)}")
@@ -85,7 +85,7 @@ defmodule CodeMySpecWeb.IntegrationsController do
 
         conn
         |> put_flash(:error, error_message)
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/app/users/settings")
     end
   end
 
@@ -100,12 +100,12 @@ defmodule CodeMySpecWeb.IntegrationsController do
       {:ok, _integration} ->
         conn
         |> put_flash(:info, "Disconnected from #{provider_name(provider)}")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/app/users/settings")
 
       {:error, :not_found} ->
         conn
         |> put_flash(:error, "No connection found for #{provider_name(provider)}")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/app/users/settings")
     end
   end
 

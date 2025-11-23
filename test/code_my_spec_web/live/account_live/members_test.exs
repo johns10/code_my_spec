@@ -13,7 +13,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member_fixture(member_user, account, :admin)
 
-      {:ok, _members_live, html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, _members_live, html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert html =~ account.name
       assert html =~ "Members"
@@ -26,7 +26,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :admin)
 
-      {:ok, _members_live, html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, _members_live, html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert html =~ account.name
       assert html =~ "Members"
@@ -39,7 +39,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, _members_live, html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, _members_live, html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert html =~ account.name
       assert html =~ "Members"
@@ -48,16 +48,18 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
     end
 
     test "redirects when account not found", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/accounts", flash: %{"error" => "Account not found"}}}} =
-               live(conn, ~p"/accounts/999/members")
+      assert {:error,
+              {:redirect, %{to: "/app/accounts", flash: %{"error" => "Account not found"}}}} =
+               live(conn, ~p"/app/accounts/999/members")
     end
 
     test "redirects when user has no access to account", %{conn: conn} do
       other_user = user_fixture()
       account = account_with_owner_fixture(other_user)
 
-      assert {:error, {:redirect, %{to: "/accounts", flash: %{"error" => "Account not found"}}}} =
-               live(conn, ~p"/accounts/#{account.id}/members")
+      assert {:error,
+              {:redirect, %{to: "/app/accounts", flash: %{"error" => "Account not found"}}}} =
+               live(conn, ~p"/app/accounts/#{account.id}/members")
     end
   end
 
@@ -67,7 +69,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member_fixture(member_user, account, :admin)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(members_live, "table")
       assert has_element?(members_live, "th", "Email")
@@ -83,7 +85,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member_fixture(member_user, account, :admin)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Should show both users as members
       assert has_element?(members_live, "td", user.email)
@@ -95,7 +97,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
     test "shows role badges for current user", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(members_live, "span.badge", "Owner")
       refute has_element?(members_live, "select")
@@ -106,7 +108,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(members_live, "select[name='role']")
       assert has_element?(members_live, "option[value='member']")
@@ -119,7 +121,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(members_live, "span.badge", "Owner")
       assert has_element?(members_live, "span.badge", "Member")
@@ -131,7 +133,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(members_live, "button", "Remove")
     end
@@ -141,7 +143,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Should have remove button for the member but not for self
       assert has_element?(members_live, "button", "Remove")
@@ -154,7 +156,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       refute has_element?(members_live, "th", "Actions")
       refute has_element?(members_live, "button", "Remove")
@@ -167,7 +169,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member = member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       members_live
       |> element("form[phx-change='update-member-role']")
@@ -182,7 +184,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       _member = member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Test with invalid member ID to trigger nil member error
       members_live
@@ -197,7 +199,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       refute has_element?(members_live, "select[name='role']")
       refute has_element?(members_live, "form[phx-change='update-member-role']")
@@ -210,7 +212,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member = member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       members_live
       |> element("button[phx-click='remove-member'][phx-value-member-id='#{member.id}']")
@@ -225,7 +227,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       refute has_element?(members_live, "button[phx-click='remove-member']")
     end
@@ -235,7 +237,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
     test "updates member list when member added", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Simulate member added event
       new_user = user_fixture()
@@ -251,7 +253,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member = member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Verify member is there
       assert has_element?(members_live, "td", member_user.email)
@@ -270,7 +272,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       member_user = user_fixture()
       member = member_fixture(member_user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Simulate role updated event
       send(members_live.pid, {:member_role_updated, member})
@@ -282,7 +284,7 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
     test "updates account when account updated", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       # Simulate account updated event
       updated_account = %{account | name: "Updated Name"}
@@ -296,20 +298,20 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
     test "displays navigation component with members tab active", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(members_live, "a.tab-active", "Members")
-      assert has_element?(members_live, "a[href='/accounts/#{account.id}/manage']", "Manage")
+      assert has_element?(members_live, "a[href='/app/accounts/#{account.id}/manage']", "Manage")
     end
 
     test "shows invitations tab for users who can manage members", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       assert has_element?(
                members_live,
-               "a[href='/accounts/#{account.id}/invitations']",
+               "a[href='/app/accounts/#{account.id}/invitations']",
                "Invitations"
              )
     end
@@ -319,11 +321,11 @@ defmodule CodeMySpecWeb.AccountLive.MembersTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, members_live, _html} = live(conn, ~p"/accounts/#{account.id}/members")
+      {:ok, members_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/members")
 
       refute has_element?(
                members_live,
-               "a[href='/accounts/#{account.id}/invitations']",
+               "a[href='/app/accounts/#{account.id}/invitations']",
                "Invitations"
              )
     end

@@ -81,7 +81,7 @@ defmodule CodeMySpecWeb.StoryLive.Import do
           <.button type="submit" phx-disable-with="Importing...">
             Import Stories
           </.button>
-          <.button navigate={~p"/stories"} class="btn btn-secondary">
+          <.button navigate={~p"/app/stories"} class="btn btn-secondary">
             Cancel
           </.button>
         </footer>
@@ -159,7 +159,7 @@ defmodule CodeMySpecWeb.StoryLive.Import do
         {:noreply,
          socket
          |> put_flash(:info, "Successfully imported #{count} stories")
-         |> push_navigate(to: ~p"/stories")}
+         |> push_navigate(to: ~p"/app/stories")}
 
       false ->
         {:noreply, put_flash(socket, :error, "Failed to import some stories")}

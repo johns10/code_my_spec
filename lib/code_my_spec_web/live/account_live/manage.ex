@@ -68,7 +68,7 @@ defmodule CodeMySpecWeb.AccountLive.Manage do
         {:ok,
          socket
          |> put_flash(:error, "Account not found")
-         |> redirect(to: ~p"/accounts")}
+         |> redirect(to: ~p"/app/accounts")}
 
       account ->
         Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "account:#{account.id}")
@@ -112,7 +112,7 @@ defmodule CodeMySpecWeb.AccountLive.Manage do
         {:noreply,
          socket
          |> put_flash(:info, "Account deleted successfully")
-         |> redirect(to: ~p"/accounts")}
+         |> redirect(to: ~p"/app/accounts")}
 
       {:error, _reason} ->
         {:noreply,

@@ -16,7 +16,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     setup [:create_component]
 
     test "lists all components", %{conn: conn, component: component} do
-      {:ok, _index_live, html} = live(conn, ~p"/components")
+      {:ok, _index_live, html} = live(conn, ~p"/app/components")
 
       assert html =~ "Listing Components"
       assert html =~ component.name
@@ -24,7 +24,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     end
 
     test "displays component type badge", %{conn: conn, component: component} do
-      {:ok, _index_live, html} = live(conn, ~p"/components")
+      {:ok, _index_live, html} = live(conn, ~p"/app/components")
 
       assert html =~ to_string(component.type)
     end
@@ -32,31 +32,31 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     test "displays component priority", %{conn: conn, scope: scope} do
       _priority_component = component_fixture(scope, %{priority: 5})
 
-      {:ok, _index_live, html} = live(conn, ~p"/components")
+      {:ok, _index_live, html} = live(conn, ~p"/app/components")
 
       assert html =~ "Priority: 5"
     end
 
     test "saves new component via new button", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/components")
+      {:ok, index_live, _html} = live(conn, ~p"/app/components")
 
       assert {:ok, form_live, _} =
                index_live
                |> element("a", "New Component")
                |> render_click()
-               |> follow_redirect(conn, ~p"/components/new")
+               |> follow_redirect(conn, ~p"/app/components/new")
 
       assert render(form_live) =~ "New Component"
     end
 
     test "updates component in listing", %{conn: conn, component: component} do
-      {:ok, index_live, _html} = live(conn, ~p"/components")
+      {:ok, index_live, _html} = live(conn, ~p"/app/components")
 
       assert {:ok, form_live, _html} =
                index_live
                |> element("#components-#{component.id} a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/components/#{component}/edit")
+               |> follow_redirect(conn, ~p"/app/components/#{component}/edit")
 
       assert render(form_live) =~ "Edit Component"
 
@@ -69,7 +69,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
                form_live
                |> form("#component-form", component: update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/components")
+               |> follow_redirect(conn, ~p"/app/components")
 
       html = render(index_live)
       assert html =~ "Component updated successfully"
@@ -77,7 +77,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     end
 
     test "deletes component in listing", %{conn: conn, component: component} do
-      {:ok, index_live, _html} = live(conn, ~p"/components")
+      {:ok, index_live, _html} = live(conn, ~p"/app/components")
 
       assert index_live |> element("#components-#{component.id} a", "Delete") |> render_click()
       refute has_element?(index_live, "#components-#{component.id}")
@@ -86,7 +86,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     test "displays component relationships", %{conn: conn, scope: scope} do
       {_parent, _child} = component_with_dependencies_fixture(scope)
 
-      {:ok, _index_live, html} = live(conn, ~p"/components")
+      {:ok, _index_live, html} = live(conn, ~p"/app/components")
 
       assert html =~ "Dependencies: 1"
     end
@@ -95,7 +95,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       component = component_fixture(scope, %{name: "UserService"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
-      {:ok, _index_live, html} = live(conn, ~p"/components")
+      {:ok, _index_live, html} = live(conn, ~p"/app/components")
 
       # Component should be listed
       assert html =~ "UserService"
@@ -109,7 +109,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       # no priority
       component_fixture(scope, %{name: "BComponent"})
 
-      {:ok, index_live, _html} = live(conn, ~p"/components")
+      {:ok, index_live, _html} = live(conn, ~p"/app/components")
 
       # Get all component names in order they appear
       component_elements = index_live |> element("div[class*='space-y-8']") |> render()
@@ -122,7 +122,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       component = component_fixture(scope, %{name: "UserService"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
-      {:ok, index_live, _html} = live(conn, ~p"/components")
+      {:ok, index_live, _html} = live(conn, ~p"/app/components")
 
       # Check if there's a link to the story (may not be visible if associations aren't loaded)
       # This tests the general structure rather than exact behavior
@@ -135,7 +135,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     } do
       {_parent, child} = component_with_dependencies_fixture(scope)
 
-      {:ok, index_live, _html} = live(conn, ~p"/components")
+      {:ok, index_live, _html} = live(conn, ~p"/app/components")
 
       assert index_live
              |> element("a[href*='/components/#{child.id}/edit']")
@@ -147,7 +147,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     setup [:create_component]
 
     test "updates list when component is created", %{conn: conn, scope: scope} do
-      {:ok, index_live, html} = live(conn, ~p"/components")
+      {:ok, index_live, html} = live(conn, ~p"/app/components")
 
       # Initially should not see the new component
       refute html =~ "NewComponent"
@@ -164,7 +164,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
       component: component,
       scope: scope
     } do
-      {:ok, index_live, html} = live(conn, ~p"/components")
+      {:ok, index_live, html} = live(conn, ~p"/app/components")
 
       # Should see original name
       original_name = component.name
@@ -184,7 +184,7 @@ defmodule CodeMySpecWeb.ComponentLive.IndexTest do
     end
 
     test "removes component when deleted", %{conn: conn, component: component, scope: scope} do
-      {:ok, index_live, html} = live(conn, ~p"/components")
+      {:ok, index_live, html} = live(conn, ~p"/app/components")
 
       # Should see the component initially
       assert html =~ component.name

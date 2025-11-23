@@ -134,7 +134,8 @@ defmodule CodeMySpec.SessionsTest do
       scope = full_scope_fixture()
       session = session_fixture(scope)
 
-      assert {:error, %Ecto.Changeset{}} = Sessions.update_execution_mode(scope, session.id, "invalid")
+      assert {:error, %Ecto.Changeset{}} =
+               Sessions.update_execution_mode(scope, session.id, "invalid")
     end
 
     test "update_execution_mode/3 with non-existent session returns error" do
@@ -147,19 +148,21 @@ defmodule CodeMySpec.SessionsTest do
       scope = full_scope_fixture()
 
       # Create a component for ContextDesignSessions
-      {:ok, component} = CodeMySpec.Components.create_component(scope, %{
-        name: "TestContext",
-        type: :context,
-        module_name: "TestContext",
-        description: "Test context"
-      })
+      {:ok, component} =
+        CodeMySpec.Components.create_component(scope, %{
+          name: "TestContext",
+          type: :context,
+          module_name: "TestContext",
+          description: "Test context"
+        })
 
       # Create session
-      session = session_fixture(scope, %{
-        type: ContextDesignSessions,
-        execution_mode: :manual,
-        component_id: component.id
-      })
+      session =
+        session_fixture(scope, %{
+          type: ContextDesignSessions,
+          execution_mode: :manual,
+          component_id: component.id
+        })
 
       # Complete the Initialize step first
       {:ok, session_after_init} = Sessions.next_command(scope, session.id)
@@ -189,7 +192,7 @@ defmodule CodeMySpec.SessionsTest do
       [updated_interaction, _init] = refetched_session.interactions
 
       # Command should be regenerated with auto mode
-      assert updated_interaction.id == pending_interaction.id
+      assert updated_interaction.id != pending_interaction.id
       updated_command_metadata = updated_interaction.command.metadata
 
       # The auto flag should be in the options (after DB round-trip, keys are strings)

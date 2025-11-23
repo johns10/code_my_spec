@@ -11,7 +11,7 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
 
   describe "UserPreference form" do
     test "renders user preferences form", %{conn: conn} do
-      {:ok, _form_live, html} = live(conn, ~p"/users/preferences")
+      {:ok, _form_live, html} = live(conn, ~p"/app/users/preferences")
 
       assert html =~ "User Preferences"
       assert html =~ "Active account"
@@ -20,7 +20,7 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
     end
 
     test "saves user preferences when none exist", %{conn: conn} do
-      {:ok, form_live, _html} = live(conn, ~p"/users/preferences")
+      {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 
       assert form_live
              |> form("#user_preferences-form", user_preference: @create_attrs)
@@ -33,7 +33,7 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
 
     test "updates existing user preferences", %{conn: conn, scope: scope} do
       user_preference_fixture(scope)
-      {:ok, form_live, _html} = live(conn, ~p"/users/preferences")
+      {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 
       assert form_live
              |> form("#user_preferences-form", user_preference: @update_attrs)
@@ -46,7 +46,7 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
 
     test "generates new token", %{conn: conn, scope: scope} do
       user_preference_fixture(scope)
-      {:ok, form_live, _html} = live(conn, ~p"/users/preferences")
+      {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 
       form_live
       |> element("button", "Generate New Token")
@@ -57,7 +57,7 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
     end
 
     test "validates user preference input", %{conn: conn} do
-      {:ok, form_live, _html} = live(conn, ~p"/users/preferences")
+      {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 
       form_live
       |> form("#user_preferences-form", user_preference: %{active_account_id: "invalid"})

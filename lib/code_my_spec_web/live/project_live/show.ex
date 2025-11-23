@@ -11,10 +11,10 @@ defmodule CodeMySpecWeb.ProjectLive.Show do
         Project {@project.id}
         <:subtitle>This is a project record from your database.</:subtitle>
         <:actions>
-          <.button navigate={~p"/projects"}>
+          <.button navigate={~p"/app/projects"}>
             <.icon name="hero-arrow-left" />
           </.button>
-          <.button navigate={~p"/projects/#{@project}/edit?return_to=show"}>
+          <.button navigate={~p"/app/projects/#{@project}/edit?return_to=show"}>
             <.icon name="hero-pencil-square" /> Edit project
           </.button>
         </:actions>
@@ -58,7 +58,7 @@ defmodule CodeMySpecWeb.ProjectLive.Show do
     {:noreply,
      socket
      |> put_flash(:error, "The current project was deleted.")
-     |> push_navigate(to: ~p"/projects")}
+     |> push_navigate(to: ~p"/app/projects")}
   end
 
   def handle_info({type, %CodeMySpec.Projects.Project{}}, socket)

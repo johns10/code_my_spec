@@ -32,7 +32,7 @@ defmodule CodeMySpecWeb.ProjectLive.Components.ProjectBreadcrumb do
     <div class="breadcrumbs text-sm">
       <ul>
         <li>
-          <.link navigate={~p"/projects/picker?return_to=#{@current_path}"}>
+          <.link navigate={~p"/app/projects/picker?return_to=#{@current_path}"}>
             <%= if @current_project do %>
               {@current_project.name}
             <% else %>

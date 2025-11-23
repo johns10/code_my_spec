@@ -6,7 +6,7 @@ defmodule CodeMySpecWeb.ContentLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.marketing flash={@flash}>
+    <Layouts.marketing flash={@flash} current_scope={@current_scope}>
       <!-- Header -->
       <div class="text-center mb-16">
         <div class="badge badge-primary badge-lg mb-4">Blog</div>

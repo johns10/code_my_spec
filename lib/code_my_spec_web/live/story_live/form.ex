@@ -163,6 +163,6 @@ defmodule CodeMySpecWeb.StoryLive.Form do
     end
   end
 
-  defp return_path(_scope, "index", _story), do: ~p"/stories"
-  defp return_path(_scope, "show", story), do: ~p"/stories/#{story}"
+  defp return_path(_scope, "index", _story), do: ~p"/app/stories"
+  defp return_path(_scope, "show", story), do: ~p"/app/stories/#{story}"
 end

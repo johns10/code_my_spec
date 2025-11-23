@@ -14,10 +14,10 @@ defmodule CodeMySpecWeb.StoryLive.Index do
           <button phx-click="export_markdown" class="btn btn-outline mr-3">
             <.icon name="hero-arrow-down-tray" /> Export
           </button>
-          <.button navigate={~p"/stories/import"} class="btn btn-outline mr-3">
+          <.button navigate={~p"/app/stories/import"} class="btn btn-outline mr-3">
             <.icon name="hero-arrow-up-tray" /> Import
           </.button>
-          <.button navigate={~p"/stories/new"}>
+          <.button navigate={~p"/app/stories/new"}>
             <.icon name="hero-plus" /> New Story
           </.button>
         </:actions>
@@ -28,7 +28,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
           <div class="card-body">
             <h2
               class="card-title text-2xl mb-4 cursor-pointer hover:text-primary"
-              phx-click={JS.navigate(~p"/stories/#{story}")}
+              phx-click={JS.navigate(~p"/app/stories/#{story}")}
             >
               {story.title}
             </h2>
@@ -48,7 +48,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
 
             <div class="flex items-center justify-between">
               <div class="card-actions">
-                <.link navigate={~p"/stories/#{story}/edit"} class="btn btn-sm btn-outline">
+                <.link navigate={~p"/app/stories/#{story}/edit"} class="btn btn-sm btn-outline">
                   Edit
                 </.link>
                 <.link

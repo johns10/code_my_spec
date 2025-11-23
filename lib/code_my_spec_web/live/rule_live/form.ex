@@ -96,6 +96,6 @@ defmodule CodeMySpecWeb.RuleLive.Form do
     end
   end
 
-  defp return_path(_scope, "index", _rule), do: ~p"/rules"
-  defp return_path(_scope, "show", rule), do: ~p"/rules/#{rule}"
+  defp return_path(_scope, "index", _rule), do: ~p"/app/rules"
+  defp return_path(_scope, "show", rule), do: ~p"/app/rules/#{rule}"
 end

@@ -22,206 +22,199 @@ defmodule CodeMySpecWeb.ArchitectureLive.Index do
             {validation_result_message(@validation_result)}
           </div>
         </div>
+        <.header>
+          Project Architecture
+        </.header>
 
-        <div class="card bg-base-100 shadow-lg">
-          <div class="card-body">
-            <h2 class="card-title mb-4">Project Architecture</h2>
+        <div>
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <.icon name="hero-document-text" class="size-5" /> Stories & Components
+          </h3>
 
-            <div class="gap-6">
-              <div>
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <.icon name="hero-document-text" class="size-5" /> Stories & Components
-                </h3>
-
-                <ul class="menu bg-base-200 rounded-box w-full">
-                  <li :for={story <- @architecture_data.unsatisfied}>
-                    <details>
-                      <summary class="text-warning font-medium">
-                        <.icon name="hero-exclamation-triangle" class="size-4" />
-                        {story.title}
-                        <span class="text-xs opacity-60">(no component)</span>
-                      </summary>
-                      <ul>
-                        <li>
-                          <div class="flex justify-between items-center">
-                            <span class="text-sm text-warning">Needs component assignment</span>
-                            <div class="dropdown dropdown-end">
-                              <div tabindex="0" role="button" class="btn btn-xs btn-primary">
-                                Assign
-                              </div>
-                              <ul
-                                tabindex="0"
-                                class="dropdown-content menu bg-base-100 rounded-box z-[1] w-64 p-2 shadow"
-                              >
-                                <li :for={component <- @available_components}>
-                                  <a
-                                    phx-click="assign_component"
-                                    phx-value-story-id={story.id}
-                                    phx-value-component-id={component.id}
-                                  >
-                                    {component.name} ({component.type})
-                                  </a>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
-                    </details>
-                  </li>
-
-                  <li :for={component <- @architecture_data.orphaned}>
-                    <details>
-                      <summary class="text-warning font-medium">
-                        <.icon name="hero-cube" class="size-4" />
-                        {component.name} ({component.type})
-                        <span class="text-xs opacity-60">(no stories)</span>
-                      </summary>
-                      <ul>
-                        <li>
-                          <div class="flex justify-between items-center">
-                            <span class="text-sm text-warning">Needs story assignment</span>
-                            <.live_component
-                              module={CodeMySpecWeb.TypeaheadComponent}
-                              id={"assign-story-#{component.id}"}
-                              items={@architecture_data.unsatisfied}
-                              on_select={:assign_story_to_component}
-                              extra_params={%{"component_id" => component.id}}
-                              placeholder="Assign Story"
-                              search_placeholder="Search stories..."
-                              button_class="btn btn-xs btn-primary"
-                              class="ml-2"
-                            >
-                              <:item :let={story}>
-                                {story.title}
-                              </:item>
-                            </.live_component>
-                          </div>
-                        </li>
-                      </ul>
-                    </details>
-                  </li>
-
-                  <li :for={%{component: component} <- @architecture_data.satisfied}>
-                    <details open={MapSet.member?(@expanded_components, component.id)}>
-                      <summary
-                        class="text-success font-medium"
-                        phx-click="toggle_component"
-                        phx-value-component-id={component.id}
-                      >
-                        <.icon name="hero-cube" class="size-4" />
-                        {component.name} ({length(component.stories)} stories)
-                      </summary>
-                      <ul>
-                        <li>
-                          <details open={MapSet.member?(@expanded_stories, component.id)}>
-                            <summary phx-click="toggle_stories" phx-value-component-id={component.id}>
-                              Stories
-                            </summary>
-                            <ul>
-                              <li
-                                :for={story <- component.stories}
-                                class="flex flex-row justify-between items-center"
-                              >
-                                <.link
-                                  navigate={~p"/stories/#{story}/edit"}
-                                  class="link link-hover text-sm flex-1"
-                                >
-                                  {story.title}
-                                </.link>
-                                <.live_component
-                                  module={CodeMySpecWeb.TypeaheadComponent}
-                                  id={"move-story-#{story.id}"}
-                                  items={get_other_components(component, @available_components)}
-                                  on_select={:move_story}
-                                  extra_params={%{"story_id" => story.id}}
-                                  placeholder="Move"
-                                  search_placeholder="Search components..."
-                                  button_class="btn btn-xs btn-ghost"
-                                  class="ml-2"
-                                >
-                                  <:item :let={comp}>
-                                    {comp.name} ({comp.type})
-                                  </:item>
-                                </.live_component>
-                              </li>
-                            </ul>
-                          </details>
-                        </li>
-
-                        <li>
-                          <details open={MapSet.member?(@expanded_dependencies, component.id)}>
-                            <summary
-                              phx-click="toggle_dependencies"
+          <ul class="menu bg-base-200 rounded-box w-full">
+            <li :for={story <- @architecture_data.unsatisfied}>
+              <details>
+                <summary class="text-warning font-medium">
+                  <.icon name="hero-exclamation-triangle" class="size-4" />
+                  {story.title}
+                  <span class="text-xs opacity-60">(no component)</span>
+                </summary>
+                <ul>
+                  <li>
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm text-warning">Needs component assignment</span>
+                      <div class="dropdown dropdown-end">
+                        <div tabindex="0" role="button" class="btn btn-xs btn-primary">
+                          Assign
+                        </div>
+                        <ul
+                          tabindex="0"
+                          class="dropdown-content menu bg-base-100 rounded-box z-[1] w-64 p-2 shadow"
+                        >
+                          <li :for={component <- @available_components}>
+                            <a
+                              phx-click="assign_component"
+                              phx-value-story-id={story.id}
                               phx-value-component-id={component.id}
                             >
-                              Dependencies
-                            </summary>
-                            <ul>
-                              <li
-                                :for={dep <- get_component_dependencies(component)}
-                                class="flex flex-row justify-between items-center"
-                              >
-                                <.link
-                                  navigate={~p"/components/#{dep}/edit"}
-                                  class="link link-hover text-sm flex-1"
-                                >
-                                  {dep.name} ({dep.type})
-                                </.link>
-                                <button
-                                  phx-click="remove_dependency"
-                                  phx-value-source={component.id}
-                                  phx-value-target={dep.id}
-                                  class="btn btn-xs btn-ghost ml-2"
-                                  title="Remove dependency"
-                                >
-                                  <.icon name="hero-minus-circle" class="size-3" />
-                                </button>
-                              </li>
-                              <li class="mt-2">
-                                <.live_component
-                                  module={CodeMySpecWeb.TypeaheadComponent}
-                                  id={"add-dependency-#{component.id}"}
-                                  items={get_available_dependencies(component, @available_components)}
-                                  on_select={:add_dependency}
-                                  extra_params={%{"source" => component.id}}
-                                  placeholder="+ Add"
-                                  search_placeholder="Search components..."
-                                  button_class="btn btn-xs btn-primary"
-                                  class="w-full"
-                                >
-                                  <:item :let={comp}>
-                                    {comp.name} ({comp.type})
-                                  </:item>
-                                </.live_component>
-                              </li>
-                            </ul>
-                          </details>
-                        </li>
-                      </ul>
-                    </details>
-                  </li>
-
-                  <li :if={
-                    @architecture_data.satisfied == [] and @architecture_data.unsatisfied == []
-                  }>
-                    <div class="text-center py-8">
-                      <.icon name="hero-cube-transparent" class="size-12 opacity-30 mx-auto mb-2" />
-                      <p class="text-base-content/60 mb-4">No stories or components</p>
-                      <div class="flex gap-2 justify-center">
-                        <.link navigate={~p"/stories/new"} class="btn btn-sm btn-primary">
-                          Create Story
-                        </.link>
-                        <.link navigate={~p"/components/new"} class="btn btn-sm btn-outline">
-                          Create Component
-                        </.link>
+                              {component.name} ({component.type})
+                            </a>
+                          </li>
+                        </ul>
                       </div>
                     </div>
                   </li>
                 </ul>
+              </details>
+            </li>
+
+            <li :for={component <- @architecture_data.orphaned}>
+              <details>
+                <summary class="text-warning font-medium">
+                  <.icon name="hero-cube" class="size-4" />
+                  {component.name} ({component.type})
+                  <span class="text-xs opacity-60">(no stories)</span>
+                </summary>
+                <ul>
+                  <li>
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm text-warning">Needs story assignment</span>
+                      <.live_component
+                        module={CodeMySpecWeb.TypeaheadComponent}
+                        id={"assign-story-#{component.id}"}
+                        items={@architecture_data.unsatisfied}
+                        on_select={:assign_story_to_component}
+                        extra_params={%{"component_id" => component.id}}
+                        placeholder="Assign Story"
+                        search_placeholder="Search stories..."
+                        button_class="btn btn-xs btn-primary"
+                        class="ml-2"
+                      >
+                        <:item :let={story}>
+                          {story.title}
+                        </:item>
+                      </.live_component>
+                    </div>
+                  </li>
+                </ul>
+              </details>
+            </li>
+
+            <li :for={%{component: component} <- @architecture_data.satisfied}>
+              <details open={MapSet.member?(@expanded_components, component.id)}>
+                <summary
+                  class="text-success font-medium"
+                  phx-click="toggle_component"
+                  phx-value-component-id={component.id}
+                >
+                  <.icon name="hero-cube" class="size-4" />
+                  {component.name} ({length(component.stories)} stories)
+                </summary>
+                <ul>
+                  <li>
+                    <details open={MapSet.member?(@expanded_stories, component.id)}>
+                      <summary phx-click="toggle_stories" phx-value-component-id={component.id}>
+                        Stories
+                      </summary>
+                      <ul>
+                        <li
+                          :for={story <- component.stories}
+                          class="flex flex-row justify-between items-center"
+                        >
+                          <.link
+                            navigate={~p"/app/stories/#{story}/edit"}
+                            class="link link-hover text-sm flex-1"
+                          >
+                            {story.title}
+                          </.link>
+                          <.live_component
+                            module={CodeMySpecWeb.TypeaheadComponent}
+                            id={"move-story-#{story.id}"}
+                            items={get_other_components(component, @available_components)}
+                            on_select={:move_story}
+                            extra_params={%{"story_id" => story.id}}
+                            placeholder="Move"
+                            search_placeholder="Search components..."
+                            button_class="btn btn-xs btn-ghost"
+                            class="ml-2"
+                          >
+                            <:item :let={comp}>
+                              {comp.name} ({comp.type})
+                            </:item>
+                          </.live_component>
+                        </li>
+                      </ul>
+                    </details>
+                  </li>
+
+                  <li>
+                    <details open={MapSet.member?(@expanded_dependencies, component.id)}>
+                      <summary
+                        phx-click="toggle_dependencies"
+                        phx-value-component-id={component.id}
+                      >
+                        Dependencies
+                      </summary>
+                      <ul>
+                        <li
+                          :for={dep <- get_component_dependencies(component)}
+                          class="flex flex-row justify-between items-center"
+                        >
+                          <.link
+                            navigate={~p"/app/components/#{dep}/edit"}
+                            class="link link-hover text-sm flex-1"
+                          >
+                            {dep.name} ({dep.type})
+                          </.link>
+                          <button
+                            phx-click="remove_dependency"
+                            phx-value-source={component.id}
+                            phx-value-target={dep.id}
+                            class="btn btn-xs btn-ghost ml-2"
+                            title="Remove dependency"
+                          >
+                            <.icon name="hero-minus-circle" class="size-3" />
+                          </button>
+                        </li>
+                        <li class="mt-2">
+                          <.live_component
+                            module={CodeMySpecWeb.TypeaheadComponent}
+                            id={"add-dependency-#{component.id}"}
+                            items={get_available_dependencies(component, @available_components)}
+                            on_select={:add_dependency}
+                            extra_params={%{"source" => component.id}}
+                            placeholder="+ Add"
+                            search_placeholder="Search components..."
+                            button_class="btn btn-xs btn-primary"
+                            class="w-full"
+                          >
+                            <:item :let={comp}>
+                              {comp.name} ({comp.type})
+                            </:item>
+                          </.live_component>
+                        </li>
+                      </ul>
+                    </details>
+                  </li>
+                </ul>
+              </details>
+            </li>
+
+            <li :if={@architecture_data.satisfied == [] and @architecture_data.unsatisfied == []}>
+              <div class="text-center py-8">
+                <.icon name="hero-cube-transparent" class="size-12 opacity-30 mx-auto mb-2" />
+                <p class="text-base-content/60 mb-4">No stories or components</p>
+                <div class="flex gap-2 justify-center">
+                  <.link navigate={~p"/app/stories/new"} class="btn btn-sm btn-primary">
+                    Create Story
+                  </.link>
+                  <.link navigate={~p"/app/components/new"} class="btn btn-sm btn-outline">
+                    Create Component
+                  </.link>
+                </div>
               </div>
-            </div>
-          </div>
+            </li>
+          </ul>
         </div>
 
         <div id="architecture-export" class="hidden">

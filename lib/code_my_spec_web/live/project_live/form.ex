@@ -193,8 +193,8 @@ defmodule CodeMySpecWeb.ProjectLive.Form do
     end
   end
 
-  defp return_path(_scope, "index", _project), do: ~p"/projects"
-  defp return_path(_scope, "show", project), do: ~p"/projects/#{project}"
+  defp return_path(_scope, "index", _project), do: ~p"/app/projects"
+  defp return_path(_scope, "show", project), do: ~p"/app/projects/#{project}"
 
   defp create_github_repo(socket, repo_type, params, suffix) do
     project = socket.assigns.project

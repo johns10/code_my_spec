@@ -35,7 +35,7 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
 
   describe "New" do
     test "saves new component", %{conn: conn} do
-      {:ok, form_live, _html} = live(conn, ~p"/components/new")
+      {:ok, form_live, _html} = live(conn, ~p"/app/components/new")
 
       assert render(form_live) =~ "New Component"
 
@@ -47,7 +47,7 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
                form_live
                |> form("#component-form", component: @create_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/components")
+               |> follow_redirect(conn, ~p"/app/components")
 
       assert html =~ "Component created successfully"
       assert html =~ "UserService"
@@ -58,14 +58,14 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
     setup [:create_component]
 
     test "displays edit form", %{conn: conn, component: component} do
-      {:ok, _form_live, html} = live(conn, ~p"/components/#{component}/edit")
+      {:ok, _form_live, html} = live(conn, ~p"/app/components/#{component}/edit")
 
       assert html =~ "Edit Component"
       assert html =~ component.name
     end
 
     test "updates component", %{conn: conn, component: component} do
-      {:ok, form_live, _html} = live(conn, ~p"/components/#{component}/edit")
+      {:ok, form_live, _html} = live(conn, ~p"/app/components/#{component}/edit")
 
       assert form_live
              |> form("#component-form", component: @invalid_attrs)
@@ -75,14 +75,14 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
                form_live
                |> form("#component-form", component: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/components")
+               |> follow_redirect(conn, ~p"/app/components")
 
       assert html =~ "Component updated successfully"
       assert html =~ "UpdatedUserService"
     end
 
     test "validates module name format", %{conn: conn, component: component} do
-      {:ok, form_live, _html} = live(conn, ~p"/components/#{component}/edit")
+      {:ok, form_live, _html} = live(conn, ~p"/app/components/#{component}/edit")
 
       assert form_live
              |> form("#component-form", component: %{module_name: "invalid_module_name"})
@@ -92,7 +92,7 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
     test "validates unique module name", %{conn: conn, component: component, scope: scope} do
       existing_component = component_fixture(scope, %{module_name: "MyApp.ExistingModule"})
 
-      {:ok, form_live, _html} = live(conn, ~p"/components/#{component}/edit")
+      {:ok, form_live, _html} = live(conn, ~p"/app/components/#{component}/edit")
 
       assert form_live
              |> form("#component-form", component: %{module_name: existing_component.module_name})

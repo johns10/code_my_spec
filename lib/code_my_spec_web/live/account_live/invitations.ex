@@ -56,7 +56,7 @@ defmodule CodeMySpecWeb.AccountLive.Invitations do
         {:ok,
          socket
          |> put_flash(:error, "Account not found")
-         |> redirect(to: ~p"/accounts")}
+         |> redirect(to: ~p"/app/accounts")}
 
       account ->
         pending_invitations = Invitations.list_pending_invitations(current_scope, account.id)

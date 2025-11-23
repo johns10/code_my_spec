@@ -140,7 +140,7 @@ defmodule CodeMySpecWeb.Router do
 
   ## Authentication routes
 
-  scope "/", CodeMySpecWeb do
+  scope "/app", CodeMySpecWeb do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
@@ -148,6 +148,7 @@ defmodule CodeMySpecWeb.Router do
         {CodeMySpecWeb.Live.CurrentPathHook, :default},
         {CodeMySpecWeb.UserAuth, :require_authenticated}
       ] do
+      live "/", AppLive.Overview
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/users/preferences", UserPreferenceLive.Form, :edit

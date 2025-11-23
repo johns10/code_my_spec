@@ -30,20 +30,20 @@ defmodule CodeMySpecWeb.RuleLiveTest do
     setup [:create_rule]
 
     test "lists all rules", %{conn: conn, rule: rule} do
-      {:ok, _index_live, html} = live(conn, ~p"/rules")
+      {:ok, _index_live, html} = live(conn, ~p"/app/rules")
 
       assert html =~ "Listing Rules"
       assert html =~ rule.name
     end
 
     test "saves new rule", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/rules")
+      {:ok, index_live, _html} = live(conn, ~p"/app/rules")
 
       assert {:ok, form_live, _} =
                index_live
                |> element("a", "New Rule")
                |> render_click()
-               |> follow_redirect(conn, ~p"/rules/new")
+               |> follow_redirect(conn, ~p"/app/rules/new")
 
       assert render(form_live) =~ "New Rule"
 
@@ -55,7 +55,7 @@ defmodule CodeMySpecWeb.RuleLiveTest do
                form_live
                |> form("#rule-form", rule: @create_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/rules")
+               |> follow_redirect(conn, ~p"/app/rules")
 
       html = render(index_live)
       assert html =~ "Rule created successfully"
@@ -63,13 +63,13 @@ defmodule CodeMySpecWeb.RuleLiveTest do
     end
 
     test "updates rule in listing", %{conn: conn, rule: rule} do
-      {:ok, index_live, _html} = live(conn, ~p"/rules")
+      {:ok, index_live, _html} = live(conn, ~p"/app/rules")
 
       assert {:ok, form_live, _html} =
                index_live
                |> element("#rules-#{rule.id} a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/rules/#{rule}/edit")
+               |> follow_redirect(conn, ~p"/app/rules/#{rule}/edit")
 
       assert render(form_live) =~ "Edit Rule"
 
@@ -81,7 +81,7 @@ defmodule CodeMySpecWeb.RuleLiveTest do
                form_live
                |> form("#rule-form", rule: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/rules")
+               |> follow_redirect(conn, ~p"/app/rules")
 
       html = render(index_live)
       assert html =~ "Rule updated successfully"
@@ -89,7 +89,7 @@ defmodule CodeMySpecWeb.RuleLiveTest do
     end
 
     test "deletes rule in listing", %{conn: conn, rule: rule} do
-      {:ok, index_live, _html} = live(conn, ~p"/rules")
+      {:ok, index_live, _html} = live(conn, ~p"/app/rules")
 
       assert index_live |> element("#rules-#{rule.id} a", "Delete") |> render_click()
       refute has_element?(index_live, "#rules-#{rule.id}")
@@ -100,20 +100,20 @@ defmodule CodeMySpecWeb.RuleLiveTest do
     setup [:create_rule]
 
     test "displays rule", %{conn: conn, rule: rule} do
-      {:ok, _show_live, html} = live(conn, ~p"/rules/#{rule}")
+      {:ok, _show_live, html} = live(conn, ~p"/app/rules/#{rule}")
 
       assert html =~ "Show Rule"
       assert html =~ rule.name
     end
 
     test "updates rule and returns to show", %{conn: conn, rule: rule} do
-      {:ok, show_live, _html} = live(conn, ~p"/rules/#{rule}")
+      {:ok, show_live, _html} = live(conn, ~p"/app/rules/#{rule}")
 
       assert {:ok, form_live, _} =
                show_live
                |> element("a", "Edit")
                |> render_click()
-               |> follow_redirect(conn, ~p"/rules/#{rule}/edit?return_to=show")
+               |> follow_redirect(conn, ~p"/app/rules/#{rule}/edit?return_to=show")
 
       assert render(form_live) =~ "Edit Rule"
 
@@ -125,7 +125,7 @@ defmodule CodeMySpecWeb.RuleLiveTest do
                form_live
                |> form("#rule-form", rule: @update_attrs)
                |> render_submit()
-               |> follow_redirect(conn, ~p"/rules/#{rule}")
+               |> follow_redirect(conn, ~p"/app/rules/#{rule}")
 
       html = render(show_live)
       assert html =~ "Rule updated successfully"

@@ -15,20 +15,20 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
 
   describe "Index" do
     test "displays architecture overview header", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       assert html =~ "Architecture Overview"
     end
 
     test "displays navigation buttons", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       assert html =~ "Components"
       assert html =~ "Stories"
     end
 
     test "displays empty state when no stories exist", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       assert html =~ "No stories or components"
       assert html =~ "Create Story"
@@ -38,7 +38,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     test "displays unsatisfied stories section", %{conn: conn, scope: scope} do
       _story = story_fixture(scope, %{title: "Password Reset", component_id: nil})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       assert html =~ "Password Reset"
       assert html =~ "no component"
@@ -49,7 +49,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       component = component_fixture(scope, %{name: "UserService", type: :genserver})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       assert html =~ "UserService (1 stories)"
       assert html =~ "Stories"
@@ -63,7 +63,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       _story1 = story_fixture(scope, %{title: "User Login", component_id: genserver.id})
       _story2 = story_fixture(scope, %{title: "User Data", component_id: repository.id})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       assert html =~ "UserService (genserver)"
       assert html =~ "UserRepo (repository)"
@@ -73,7 +73,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       component = component_fixture(scope, %{name: "UserService", type: :genserver})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should have collapsible menu elements
       assert html =~ "<details>"
@@ -92,7 +92,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
           target_component_id: component2.id
         })
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Check for dependency edit link
       assert html =~ "/components/#{component2.id}/edit"
@@ -102,18 +102,18 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       component = component_fixture(scope, %{name: "UserService", type: :genserver})
       story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Check for story edit link in HTML
       assert html =~ "/stories/#{story.id}/edit"
     end
 
     test "has navigation buttons", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Check that navigation buttons exist
-      assert html =~ "href=\"/components\""
-      assert html =~ "href=\"/stories\""
+      assert html =~ "href=\"/app/components\""
+      assert html =~ "href=\"/app/stories\""
     end
 
     test "displays component with story count", %{conn: conn, scope: scope} do
@@ -121,7 +121,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       _story1 = story_fixture(scope, %{title: "User Login", component_id: component.id})
       _story2 = story_fixture(scope, %{title: "User Logout", component_id: component.id})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should show component with story count
       assert html =~ "UserService (2 stories)"
@@ -132,7 +132,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     setup [:create_story_with_component]
 
     test "updates when component is created", %{conn: conn, scope: scope} do
-      {:ok, live, html} = live(conn, ~p"/architecture")
+      {:ok, live, html} = live(conn, ~p"/app/architecture")
 
       # Initially should not see the new component
       refute html =~ "EmailService"
@@ -147,7 +147,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "updates when story is created", %{conn: conn, scope: scope} do
-      {:ok, live, html} = live(conn, ~p"/architecture")
+      {:ok, live, html} = live(conn, ~p"/app/architecture")
 
       # Initially should not see the new story
       refute html =~ "New Feature"
@@ -165,7 +165,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       # Create unsatisfied story first
       story = story_fixture(scope, %{title: "Feature Request", component_id: nil})
 
-      {:ok, live, html} = live(conn, ~p"/architecture")
+      {:ok, live, html} = live(conn, ~p"/app/architecture")
 
       # Should see story in unsatisfied section
       assert html =~ "Feature Request"
@@ -193,7 +193,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
         })
 
       # Load the architecture page and verify the updated name appears
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Check that the updated name appears
       assert html =~ updated_component.name
@@ -206,7 +206,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       story: story,
       scope: scope
     } do
-      {:ok, live, html} = live(conn, ~p"/architecture")
+      {:ok, live, html} = live(conn, ~p"/app/architecture")
 
       # Should see the component initially
       assert html =~ component.name
@@ -238,7 +238,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
           dependency_type: :uses
         })
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should show both components under the same story
       assert html =~ "User Authentication"
@@ -247,7 +247,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "handles empty architecture data gracefully", %{conn: conn} do
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should not crash and should show empty state
       assert html =~ "No stories or components"
@@ -257,7 +257,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       # Create component without story
       _component = component_fixture(scope, %{name: "OrphanComponent"})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should show the orphan component with warning styling
       assert html =~ "OrphanComponent"
@@ -271,7 +271,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       component = component_fixture(scope, %{name: "SimpleService"})
       _story = story_fixture(scope, %{title: "Simple Feature", component_id: component.id})
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should use proper menu formatting
       assert html =~ "<details>"
@@ -290,7 +290,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
           target_component_id: component2.id
         })
 
-      {:ok, _live, html} = live(conn, ~p"/architecture")
+      {:ok, _live, html} = live(conn, ~p"/app/architecture")
 
       # Should have Stories and Dependencies submenus
       assert html =~ "Stories"

@@ -10,7 +10,7 @@ defmodule CodeMySpecWeb.RuleLive.Index do
       <.header>
         Listing Rules
         <:actions>
-          <.button navigate={~p"/rules/new"}>
+          <.button navigate={~p"/app/rules/new"}>
             <.icon name="hero-plus" /> New Rule
           </.button>
         </:actions>
@@ -19,7 +19,7 @@ defmodule CodeMySpecWeb.RuleLive.Index do
       <.table
         id="rules"
         rows={@streams.rules}
-        row_click={fn {_id, rule} -> JS.navigate(~p"/rules/#{rule}") end}
+        row_click={fn {_id, rule} -> JS.navigate(~p"/app/rules/#{rule}") end}
       >
         <:col :let={{_id, rule}} label="Name">{rule.name}</:col>
         <:col :let={{_id, rule}} label="Content">{rule.content}</:col>
@@ -27,9 +27,9 @@ defmodule CodeMySpecWeb.RuleLive.Index do
         <:col :let={{_id, rule}} label="Session type">{rule.session_type}</:col>
         <:action :let={{_id, rule}}>
           <div class="sr-only">
-            <.link navigate={~p"/rules/#{rule}"}>Show</.link>
+            <.link navigate={~p"/app/rules/#{rule}"}>Show</.link>
           </div>
-          <.link navigate={~p"/rules/#{rule}/edit"}>Edit</.link>
+          <.link navigate={~p"/app/rules/#{rule}/edit"}>Edit</.link>
         </:action>
         <:action :let={{id, rule}}>
           <.link

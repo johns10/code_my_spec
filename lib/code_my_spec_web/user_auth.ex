@@ -261,7 +261,7 @@ defmodule CodeMySpecWeb.UserAuth do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(:info, "Please select an account to continue.")
-        |> Phoenix.LiveView.redirect(to: ~p"/accounts/picker?#{[return_to: "/accounts"]}")
+        |> Phoenix.LiveView.redirect(to: ~p"/app/accounts/picker?#{[return_to: "/app/accounts"]}")
 
       {:halt, socket}
     else
@@ -276,7 +276,7 @@ defmodule CodeMySpecWeb.UserAuth do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(:info, "Please select a project to continue.")
-        |> Phoenix.LiveView.redirect(to: ~p"/projects/picker?#{[return_to: "/projects"]}")
+        |> Phoenix.LiveView.redirect(to: ~p"/app/projects/picker?#{[return_to: "/projects"]}")
 
       {:halt, socket}
     else
@@ -298,7 +298,7 @@ defmodule CodeMySpecWeb.UserAuth do
   @doc "Returns the path to redirect to after log in."
   # the user was already logged in, redirect to settings
   def signed_in_path(%Plug.Conn{assigns: %{current_scope: %Scope{user: %Users.User{}}}}) do
-    ~p"/users/settings"
+    ~p"/app/users/settings"
   end
 
   def signed_in_path(_), do: ~p"/"

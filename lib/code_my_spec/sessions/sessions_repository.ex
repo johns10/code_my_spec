@@ -161,11 +161,9 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   defp regenerate_pending_command(scope, session, pending_interaction) do
     session_module = session.type
     opts = build_opts_from_execution_mode(session.execution_mode)
-    IO.inspect(session.execution_mode, label: :em)
 
     with {:ok, step_module} <- session_module.get_next_interaction(session),
          {:ok, new_command} <- step_module.get_command(scope, session, opts),
-         IO.inspect(new_command, label: :command),
          {:ok, session} <- remove_interaction(scope, session, pending_interaction.id),
          interaction <- Interaction.new_with_command(new_command),
          {:ok, updated_session} <- add_interaction(scope, session, interaction) do

@@ -11,10 +11,10 @@ defmodule CodeMySpecWeb.RuleLive.Show do
         Rule {@rule.id}
         <:subtitle>This is a rule record from your database.</:subtitle>
         <:actions>
-          <.button navigate={~p"/rules"}>
+          <.button navigate={~p"/app/rules"}>
             <.icon name="hero-arrow-left" />
           </.button>
-          <.button navigate={~p"/rules/#{@rule}/edit?return_to=show"}>
+          <.button navigate={~p"/app/rules/#{@rule}/edit?return_to=show"}>
             <.icon name="hero-pencil-square" /> Edit rule
           </.button>
         </:actions>
@@ -57,7 +57,7 @@ defmodule CodeMySpecWeb.RuleLive.Show do
     {:noreply,
      socket
      |> put_flash(:error, "The current rule was deleted.")
-     |> push_navigate(to: ~p"/rules")}
+     |> push_navigate(to: ~p"/app/rules")}
   end
 
   def handle_info({type, %CodeMySpec.Rules.Rule{}}, socket)

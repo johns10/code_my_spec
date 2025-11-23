@@ -13,7 +13,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "renders invitations page for owner", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, _invitations_live, html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, _invitations_live, html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert html =~ account.name
       assert html =~ "Account settings and member management"
@@ -26,7 +26,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :admin)
 
-      {:ok, _invitations_live, html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, _invitations_live, html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert html =~ account.name
       assert html =~ "Invitations"
@@ -41,7 +41,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, _invitations_live, html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, _invitations_live, html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert html =~ account.name
       assert html =~ "Invitations"
@@ -49,16 +49,18 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     end
 
     test "redirects when account not found", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/accounts", flash: %{"error" => "Account not found"}}}} =
-               live(conn, ~p"/accounts/999/invitations")
+      assert {:error,
+              {:redirect, %{to: "/app/accounts", flash: %{"error" => "Account not found"}}}} =
+               live(conn, ~p"/app/accounts/999/invitations")
     end
 
     test "redirects when user has no access to account", %{conn: conn} do
       other_user = user_fixture()
       account = account_with_owner_fixture(other_user)
 
-      assert {:error, {:redirect, %{to: "/accounts", flash: %{"error" => "Account not found"}}}} =
-               live(conn, ~p"/accounts/#{account.id}/invitations")
+      assert {:error,
+              {:redirect, %{to: "/app/accounts", flash: %{"error" => "Account not found"}}}} =
+               live(conn, ~p"/app/accounts/#{account.id}/invitations")
     end
   end
 
@@ -68,7 +70,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       invitation = invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert has_element?(invitations_live, "td", invitation.email)
       assert has_element?(invitations_live, "td", to_string(invitation.role))
@@ -78,7 +80,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "displays no invitations message when empty", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert has_element?(invitations_live, "div", "No pending invitations")
     end
@@ -88,7 +90,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       invitation = invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert has_element?(
                invitations_live,
@@ -106,7 +108,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       expired_invitation = expired_invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       refute has_element?(
                invitations_live,
@@ -122,7 +124,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       invitation = invitation_fixture(account, owner)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       refute has_element?(
                invitations_live,
@@ -136,7 +138,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "shows invite form when clicked", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")
@@ -152,7 +154,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "hides invite form when cancelled", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")
@@ -170,7 +172,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "validates invitation form", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")
@@ -187,7 +189,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(user)
       user_preference_fixture(scope, %{active_account_id: account.id})
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")
@@ -211,7 +213,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       member_scope = %CodeMySpec.Users.Scope{user: existing_member}
       assert CodeMySpec.Accounts.user_has_account_access?(member_scope, account.id)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")
@@ -232,7 +234,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       refute has_element?(invitations_live, "button", "Invite Member")
     end
@@ -244,7 +246,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       invitation = invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button[phx-value-invitation-id='#{invitation.id}']", "Cancel")
@@ -259,7 +261,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       # Send the cancel message directly to simulate cancelling a non-existent invitation
       send(invitations_live.pid, {:cancel_invitation, 999_999})
@@ -274,7 +276,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       invitation = invitation_fixture(account, owner)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button[phx-value-invitation-id='#{invitation.id}']", "Cancel")
@@ -288,14 +290,19 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "displays navigation tabs", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert has_element?(invitations_live, "a.tab-active", "Invitations")
-      assert has_element?(invitations_live, "a[href='/accounts/#{account.id}/manage']", "Manage")
 
       assert has_element?(
                invitations_live,
-               "a[href='/accounts/#{account.id}/members']",
+               "a[href='/app/accounts/#{account.id}/manage']",
+               "Manage"
+             )
+
+      assert has_element?(
+               invitations_live,
+               "a[href='/app/accounts/#{account.id}/members']",
                "Members"
              )
     end
@@ -303,7 +310,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "highlights invitations tab as active", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       assert has_element?(invitations_live, "a.tab-active", "Invitations")
       refute has_element?(invitations_live, "a.tab-active", "Manage")
@@ -315,7 +322,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(owner)
       member_fixture(user, account, :member)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       refute has_element?(invitations_live, "a", "Invitations")
     end
@@ -330,7 +337,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(user)
       user_preference_fixture(scope, %{active_account_id: account.id})
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       # Simulate invitation creation via PubSub
       invitation = invitation_fixture(account, user)
@@ -343,7 +350,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(user)
       invitation = invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       # Simulate invitation cancellation via PubSub
       cancelled_invitation = %{invitation | cancelled_at: DateTime.utc_now()}
@@ -355,7 +362,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "updates account info when account updated", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       # Simulate account update via PubSub
       updated_account = %{account | name: "Updated Account Name"}
@@ -375,7 +382,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       expired_invitation = expired_invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       # Expired invitations should not be displayed in the pending invitations list
       refute has_element?(invitations_live, "td", expired_invitation.email)
@@ -391,7 +398,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       user_preference_fixture(scope, %{active_account_id: account.id})
       expired_invitation = expired_invitation_fixture(account, user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       refute has_element?(
                invitations_live,
@@ -404,7 +411,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     test "shows all available roles in select", %{conn: conn, user: user} do
       account = account_with_owner_fixture(user)
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")
@@ -419,7 +426,7 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
       account = account_with_owner_fixture(user)
       user_preference_fixture(scope, %{active_account_id: account.id})
 
-      {:ok, invitations_live, _html} = live(conn, ~p"/accounts/#{account.id}/invitations")
+      {:ok, invitations_live, _html} = live(conn, ~p"/app/accounts/#{account.id}/invitations")
 
       invitations_live
       |> element("button", "Invite Member")

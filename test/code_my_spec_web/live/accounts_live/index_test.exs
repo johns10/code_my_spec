@@ -23,7 +23,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
       conn: conn,
       team_account: team_account
     } do
-      {:ok, _index_live, html} = live(conn, ~p"/accounts")
+      {:ok, _index_live, html} = live(conn, ~p"/app/accounts")
 
       assert html =~ "Your Accounts"
       assert html =~ "Personal Account"
@@ -32,7 +32,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "shows create team account form", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/accounts")
+      {:ok, index_live, _html} = live(conn, ~p"/app/accounts")
 
       # Initially form should be hidden
       refute has_element?(index_live, "#create-team-form")
@@ -49,7 +49,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "hides create team account form", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/accounts")
+      {:ok, index_live, _html} = live(conn, ~p"/app/accounts")
 
       # Show the form first
       index_live
@@ -67,7 +67,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "validates team account creation", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/accounts")
+      {:ok, index_live, _html} = live(conn, ~p"/app/accounts")
 
       # Show create form
       index_live
@@ -81,7 +81,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "creates new team account", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/accounts")
+      {:ok, index_live, _html} = live(conn, ~p"/app/accounts")
 
       # Show create form
       index_live
@@ -101,7 +101,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "handles form validation errors", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/accounts")
+      {:ok, index_live, _html} = live(conn, ~p"/app/accounts")
 
       # Show create form
       index_live
@@ -119,7 +119,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "cancels team account creation", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/accounts")
+      {:ok, index_live, _html} = live(conn, ~p"/app/accounts")
 
       # Show create form
       index_live
@@ -138,7 +138,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "shows personal account prominently", %{conn: conn} do
-      {:ok, _index_live, html} = live(conn, ~p"/accounts")
+      {:ok, _index_live, html} = live(conn, ~p"/app/accounts")
 
       # Personal account should be in a primary colored card
       assert html =~ "card bg-primary text-primary-content"
@@ -147,7 +147,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
     end
 
     test "shows team accounts in grid", %{conn: conn, team_account: team_account} do
-      {:ok, _index_live, html} = live(conn, ~p"/accounts")
+      {:ok, _index_live, html} = live(conn, ~p"/app/accounts")
 
       # Team accounts should be in a grid
       assert html =~ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
@@ -161,7 +161,7 @@ defmodule CodeMySpecWeb.AccountsLive.IndexTest do
       _personal_account = personal_account_with_owner_fixture(user)
       conn = log_in_user(conn, user)
 
-      {:ok, _index_live, html} = live(conn, ~p"/accounts")
+      {:ok, _index_live, html} = live(conn, ~p"/app/accounts")
 
       # Should not show team accounts section
       refute html =~ "Team Accounts"

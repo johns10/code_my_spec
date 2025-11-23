@@ -29,7 +29,7 @@ defmodule CodeMySpecWeb.AccountLive.Components.AccountsBreadcrumb do
     <div class="breadcrumbs text-sm">
       <ul>
         <li>
-          <.link navigate={~p"/accounts/picker?return_to=#{@current_path}"}>
+          <.link navigate={~p"/app/accounts/picker?return_to=#{@current_path}"}>
             <%= if @current_account do %>
               {@current_account.name}
             <% else %>
