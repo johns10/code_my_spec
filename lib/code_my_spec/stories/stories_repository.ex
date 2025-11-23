@@ -15,6 +15,20 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     Repo.all_by(Story, project_id: scope.active_project.id)
   end
 
+  def list_project_stories_by_component_priority(%Scope{} = scope) do
+    from(s in Story,
+      left_join: c in assoc(s, :component),
+      where: s.project_id == ^scope.active_project.id,
+      order_by: [
+        asc: fragment("CASE WHEN ? IS NULL THEN 1 ELSE 0 END", c.id),
+        asc_nulls_last: c.priority,
+        asc: s.title
+      ],
+      preload: [:component]
+    )
+    |> Repo.all()
+  end
+
   def list_unsatisfied_stories(%Scope{} = scope) do
     from(s in Story,
       where: s.project_id == ^scope.active_project.id and is_nil(s.component_id)

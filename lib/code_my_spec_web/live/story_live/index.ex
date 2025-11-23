@@ -26,12 +26,21 @@ defmodule CodeMySpecWeb.StoryLive.Index do
       <div class="space-y-8">
         <div :for={{id, story} <- @streams.stories} id={id} class="card bg-base-100 shadow-md">
           <div class="card-body">
-            <h2
-              class="card-title text-2xl mb-4 cursor-pointer hover:text-primary"
-              phx-click={JS.navigate(~p"/app/stories/#{story}")}
-            >
-              {story.title}
-            </h2>
+            <div class="flex items-start justify-between mb-4">
+              <h2
+                class="card-title text-2xl cursor-pointer hover:text-primary flex-1"
+                phx-click={JS.navigate(~p"/app/stories/#{story}")}
+              >
+                {story.title}
+              </h2>
+              <div
+                :if={is_nil(story.component)}
+                class="alert alert-warning py-1 px-3 flex items-center gap-2"
+              >
+                <.icon name="hero-exclamation-triangle" class="h-4 w-4" />
+                <span class="text-sm">No Component</span>
+              </div>
+            </div>
 
             <p class="text-base-content/80 mb-4 leading-relaxed">
               {story.description}
@@ -44,6 +53,13 @@ defmodule CodeMySpecWeb.StoryLive.Index do
                   {criterion}
                 </li>
               </ul>
+            </div>
+
+            <div :if={!is_nil(story.component)} class="mb-4">
+              <div class="text-sm text-base-content/60">
+                <span class="font-semibold">Component:</span>
+                {story.component.name}
+              </div>
             </div>
 
             <div class="flex items-center justify-between">
@@ -78,8 +94,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
      |> assign(:page_title, "Listing Stories")
      |> stream(
        :stories,
-       Stories.list_project_stories(socket.assigns.current_scope)
-       |> Enum.sort_by(& &1.title)
+       Stories.list_project_stories_by_component_priority(socket.assigns.current_scope)
      )}
   end
 
@@ -120,8 +135,7 @@ defmodule CodeMySpecWeb.StoryLive.Index do
      stream(
        socket,
        :stories,
-       Stories.list_project_stories(socket.assigns.current_scope)
-       |> Enum.sort_by(& &1.title),
+       Stories.list_project_stories_by_component_priority(socket.assigns.current_scope),
        reset: true
      )}
   end
