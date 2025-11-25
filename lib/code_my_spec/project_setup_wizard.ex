@@ -115,7 +115,7 @@ defmodule CodeMySpec.ProjectSetupWizard do
         # Check if this specific user is present
         Map.has_key?(presences, "user:#{user_id}")
 
-      empty ->
+      _empty ->
         false
     end
   rescue
