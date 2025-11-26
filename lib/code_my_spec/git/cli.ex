@@ -158,8 +158,10 @@ defmodule CodeMySpec.Git.CLI do
     # Remove credentials from URL
     # e.g., "https://token@github.com/owner/repo.git" -> "https://github.com/owner/repo.git"
     case URI.parse(url) do
-      %URI{scheme: scheme, host: host, path: path} when is_binary(host) ->
-        {:ok, URI.to_string(%URI{scheme: scheme, host: host, path: path})}
+      %URI{host: host} = uri when is_binary(host) ->
+        # Remove userinfo (credentials) by setting it to nil
+        clean_uri = %{uri | userinfo: nil}
+        {:ok, URI.to_string(clean_uri)}
 
       _ ->
         {:error, :invalid_url}
