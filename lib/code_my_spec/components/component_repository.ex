@@ -147,6 +147,16 @@ defmodule CodeMySpec.Components.ComponentRepository do
     |> Repo.all()
   end
 
+  @spec search_components_by_module_name(Scope.t(), String.t()) :: [Component.t()]
+  def search_components_by_module_name(%Scope{active_project_id: project_id}, module_name_pattern) do
+    search_term = "%#{module_name_pattern}%"
+
+    Component
+    |> where([c], c.project_id == ^project_id)
+    |> where([c], ilike(c.module_name, ^search_term))
+    |> Repo.all()
+  end
+
   @spec show_architecture(Scope.t()) :: [%{component: Component.t(), depth: integer()}]
   def show_architecture(%Scope{active_project_id: project_id}) do
     root_components =
