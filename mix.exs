@@ -104,7 +104,8 @@ defmodule CodeMySpec.MixProject do
       # CLI deps,
       {:burrito, "~> 1.5"},
       {:optimus, "~> 0.5"},
-      {:owl, "~> 0.13"}
+      {:owl, "~> 0.13"},
+      {:oauth2, "~> 2.0"}
     ]
   end
 

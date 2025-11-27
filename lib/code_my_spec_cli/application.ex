@@ -3,30 +3,22 @@ defmodule CodeMySpecCli.Application do
   use Application
 
   def start(_type, _args) do
-    IO.puts("start")
-    # Get command-line arguments from Burrito
-    args = Burrito.Util.Args.get_arguments()
-
-    # Start required services
     ensure_db_directory()
+    Application.ensure_all_started(:telemetry)
 
-    # Start supervisor for background services
-    children = []
+    children = [
+      CodeMySpecCli.WebServer.Telemetry,
+      # Registry for OAuth callback coordination
+      {Registry, keys: :unique, name: CodeMySpecCli.Registry},
+      # Finch HTTP client (required by Req)
+      {Finch, name: Req.Finch},
+      # Local HTTP server for OAuth callbacks and Anthropic proxying
+      {CodeMySpecCli.WebServer, port: 8314},
+      # The REPL interface
+      CodeMySpecCli.Cli.TuiServer
+    ]
 
-    IO.puts("after ensure all started")
-
-    result =
-      Supervisor.start_link(children, strategy: :one_for_one, name: CodeMySpecCli.Supervisor)
-
-    IO.inspect(result)
-
-    # Run the CLI (this blocks until CLI completes)
-    CodeMySpecCli.main(args)
-
-    IO.puts("after main")
-
-    # Exit when CLI is done
-    result
+    Supervisor.start_link(children, strategy: :one_for_one, name: CodeMySpecCli.Supervisor)
   end
 
   defp ensure_db_directory do

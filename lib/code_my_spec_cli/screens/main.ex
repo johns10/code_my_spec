@@ -1,10 +1,11 @@
 defmodule CodeMySpecCli.Screens.Main do
   @moduledoc """
-  Main screen with splash screen and navigation menu.
+  Main REPL screen with splash and command prompt.
   """
 
   alias CodeMySpecCli.Layouts.Root
-  alias CodeMySpecCli.Components.Navigation
+  alias CodeMySpecCli.Commands.Registry, as: CommandRegistry
+  alias CodeMySpecCli.Auth.OAuthClient
 
   @logo """
           TPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPW
@@ -29,7 +30,7 @@ defmodule CodeMySpecCli.Screens.Main do
   """
 
   @doc """
-  Display the main screen with splash and menu.
+  Display the main screen with splash and start the REPL.
   """
   def show do
     Root.clear_screen()
@@ -38,43 +39,54 @@ defmodule CodeMySpecCli.Screens.Main do
     logo_colored = Owl.Data.tag(@logo, [:red, :bright])
     Owl.IO.puts(logo_colored)
 
-    # Show menu
-    show_menu()
+    Owl.IO.puts(["\n", Owl.Data.tag("Welcome to CodeMySpec!", [:cyan, :bright])])
+    Owl.IO.puts([Owl.Data.tag("Type /help to see available commands.\n", :faint)])
+
+    # Start the REPL
+    repl()
   end
 
   @doc """
-  Show the navigation menu.
+  Main REPL loop - read, eval, print, loop.
   """
-  def show_menu do
-    Owl.IO.puts("\n")
+  def repl do
+    # Show authentication status in prompt
+    prompt = build_prompt()
 
-    options = [
-      {"Generate Project", :generate},
-      {"Run Tests", :test},
-      {"View Stories", :stories},
-      {"Settings", :settings},
-      {"Exit", :exit}
-    ]
+    # Read input
+    input = Owl.IO.input(label: prompt) |> String.trim()
 
-    selected = Navigation.menu(options, title: "What would you like to do?")
+    # Skip empty input
+    if input != "" do
+      # Execute command
+      case CommandRegistry.execute(input) do
+        :ok ->
+          # Command succeeded, continue
+          repl()
 
-    handle_selection(selected)
+        :exit ->
+          # Exit command was run
+          System.halt(0)
+
+        {:error, message} ->
+          # Command failed, show error and continue
+          Owl.IO.puts(["\n", Owl.Data.tag("Error: #{message}", [:red, :bright]), "\n"])
+          repl()
+      end
+    else
+      # Empty input, just show prompt again
+      repl()
+    end
   end
 
-  defp handle_selection({_label, :exit}) do
-    Owl.IO.puts(["\n", Owl.Data.tag("Goodbye! 👋", :green)])
-    System.halt(0)
-  end
+  defp build_prompt do
+    auth_indicator =
+      if OAuthClient.authenticated?() do
+        Owl.Data.tag("●", :green)
+      else
+        Owl.Data.tag("○", :red)
+      end
 
-  defp handle_selection({label, action}) do
-    Owl.IO.puts(["\n", Owl.Data.tag("You selected: #{label}", :yellow)])
-    Owl.IO.puts([Owl.Data.tag("Action: #{action} (not yet implemented)", :cyan)])
-
-    # Wait for user to press enter
-    Owl.IO.puts(["\n", Owl.Data.tag("Press Enter to continue...", :dim)])
-    IO.gets("")
-
-    # Return to menu
-    show()
+    [auth_indicator, " ", Owl.Data.tag("codemyspec>", [:cyan, :bright])]
   end
 end

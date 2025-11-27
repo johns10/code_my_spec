@@ -13,10 +13,8 @@ defmodule Mix.Tasks.Cli do
 
   @impl Mix.Task
   def run(_args) do
-    # Start the application
-    Mix.Task.run("app.start")
+    # Start the CLI application - the REPL is automatically started as a supervised child
+    {:ok, _} = CodeMySpecCli.Application.start(:normal, [])
 
-    # Run the main screen
-    CodeMySpecCli.Screens.Main.show()
   end
 end
