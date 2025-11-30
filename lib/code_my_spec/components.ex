@@ -26,13 +26,13 @@ defmodule CodeMySpec.Components do
 
   """
   def subscribe_components(%Scope{} = scope) do
-    key = scope.active_account.id
+    key = scope.user.id
 
     Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "user:#{key}:components")
   end
 
   defp broadcast(%Scope{} = scope, message) do
-    key = scope.active_account.id
+    key = scope.user.id
 
     Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{key}:components", message)
   end
@@ -48,7 +48,9 @@ defmodule CodeMySpec.Components do
   defdelegate get_component(scope, id), to: ComponentRepository
   defdelegate show_architecture(scope), to: ComponentRepository
   defdelegate upsert_component(scope, attrs), to: ComponentRepository
-  defdelegate search_components_by_module_name(scope, module_name_pattern), to: ComponentRepository
+
+  defdelegate search_components_by_module_name(scope, module_name_pattern),
+    to: ComponentRepository
 
   defdelegate create_components_with_dependencies(scope, component_attrs_list, dependencies),
     to: ComponentRepository

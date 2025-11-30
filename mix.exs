@@ -106,7 +106,9 @@ defmodule CodeMySpec.MixProject do
       {:burrito, "~> 1.5"},
       {:optimus, "~> 0.5"},
       {:owl, "~> 0.13"},
-      {:oauth2, "~> 2.0"}
+      {:oauth2, "~> 2.0"},
+      {:logger_backends, "~> 1.0"},
+      {:logger_file_backend, "~> 0.0.14"}
     ]
   end
 

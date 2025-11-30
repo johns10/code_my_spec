@@ -65,19 +65,13 @@ defmodule CodeMySpecCli.Components.JobStatus do
     # Subscribe to file watcher status changes
     Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "file_watcher:status")
 
-    # Get initial status from FileWatcherServer
-    file_watcher_running =
-      try do
-        CodeMySpec.ProjectSync.FileWatcherServer.running?()
-      rescue
-        _ -> false
-      end
-
-    Logger.info("JobStatus component started, file_watcher_running: #{file_watcher_running}")
+    # Start with false - we'll get the actual status via PubSub events
+    # This avoids blocking on FileWatcherServer during startup
+    Logger.info("JobStatus component started, waiting for file watcher status events")
 
     {:ok,
      %{
-       file_watcher_running: file_watcher_running,
+       file_watcher_running: false,
        subscribers: []
      }}
   end
