@@ -11,8 +11,8 @@ defmodule CodeMySpec.Stories.Story do
           locked_at: DateTime.t() | nil,
           lock_expires_at: DateTime.t() | nil,
           locked_by: integer() | nil,
-          project_id: integer() | nil,
-          component_id: integer() | nil,
+          project_id: Ecto.UUID.t() | nil,
+          component_id: Ecto.UUID.t() | nil,
           account_id: integer() | nil,
           first_version: PaperTrail.Version.t() | nil,
           current_version: PaperTrail.Version.t() | nil,
@@ -28,12 +28,12 @@ defmodule CodeMySpec.Stories.Story do
     field :locked_at, :utc_datetime
     field :lock_expires_at, :utc_datetime
     field :locked_by, :id
-    field :project_id, :id
+    field :project_id, :binary_id
     field :account_id, :id
 
     belongs_to :first_version, PaperTrail.Version
     belongs_to :current_version, PaperTrail.Version, on_replace: :update
-    belongs_to :component, CodeMySpec.Components.Component
+    belongs_to :component, CodeMySpec.Components.Component, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end

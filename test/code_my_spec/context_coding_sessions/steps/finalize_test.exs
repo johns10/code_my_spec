@@ -259,7 +259,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.FinalizeTest do
       parent_session = %Session{
         id: 1,
         type: CodeMySpec.ContextCodingSessions,
-        component_id: 999_999,
+        component_id: Ecto.UUID.generate(),
         component: nil,
         environment: :local,
         agent: :claude_code,

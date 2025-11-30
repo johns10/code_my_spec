@@ -253,7 +253,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       parent_session = %Session{
         id: 1,
         type: CodeMySpec.ContextCodingSessions,
-        component_id: 999_999,
+        component_id: Ecto.UUID.generate(),
         component: nil,
         environment: :local,
         agent: :claude_code,
@@ -553,7 +553,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       fake_session = %Session{
         id: 999_999,
         type: CodeMySpec.ContextCodingSessions,
-        component_id: 999_999,
+        component_id: Ecto.UUID.generate(),
         component: nil,
         environment: :local,
         agent: :claude_code,

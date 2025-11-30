@@ -37,6 +37,9 @@ defmodule CodeMySpecCli.Commands.Help do
           module in [CodeMySpecCli.Commands.Login, CodeMySpecCli.Commands.Logout, CodeMySpecCli.Commands.Whoami] ->
             "Authentication"
 
+          module == CodeMySpecCli.Commands.Components ->
+            "Project"
+
           module == CodeMySpecCli.Commands.Exit ->
             "System"
 

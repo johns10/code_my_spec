@@ -101,7 +101,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
       # Create session with invalid component_id
       invalid_session = %Session{
         type: CodeMySpec.ContextComponentsDesignSessions,
-        component_id: 999_999,
+        component_id: Ecto.UUID.generate(),
         project: project,
         component: nil,
         agent: :claude_code,

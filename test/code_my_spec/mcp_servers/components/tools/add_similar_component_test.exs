@@ -51,7 +51,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.AddSimilarComponentTest do
 
       params = %{
         component_id: component.id,
-        similar_component_id: 99999
+        similar_component_id: "00000000-0000-0000-0000-000000000000"
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}

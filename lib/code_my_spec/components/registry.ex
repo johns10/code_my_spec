@@ -72,7 +72,6 @@ defmodule CodeMySpec.Components.Registry do
 
   @default_requirements [
     @design_file,
-    @child_designs,
     @test_file,
     @implementation_file,
     @tests_passing
@@ -171,8 +170,21 @@ defmodule CodeMySpec.Components.Registry do
   @spec get_type(Component.component_type()) :: type_definition()
   def get_type(component_type) do
     case Map.get(@type_definitions, component_type) do
-      nil -> raise "Unknown component type: #{component_type}"
-      type_def -> type_def
+      nil when is_nil(component_type) ->
+        # Return default requirements for components without a type
+        %{
+          requirements: @default_requirements,
+          display_name: "Unknown",
+          description: "Component type not yet defined",
+          icon: "question-mark-circle",
+          color: "gray"
+        }
+
+      nil ->
+        raise "Unknown component type: #{component_type}"
+
+      type_def ->
+        type_def
     end
   end
 

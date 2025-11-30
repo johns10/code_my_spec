@@ -11,8 +11,8 @@ defmodule CodeMySpec.Components.SimilarComponent do
 
   @type t :: %__MODULE__{
           id: integer(),
-          component_id: integer(),
-          similar_component_id: integer(),
+          component_id: Ecto.UUID.t(),
+          similar_component_id: Ecto.UUID.t(),
           component: Component.t() | Ecto.Association.NotLoaded.t(),
           similar_component: Component.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t(),
@@ -20,8 +20,8 @@ defmodule CodeMySpec.Components.SimilarComponent do
         }
 
   schema "similar_components" do
-    belongs_to :component, Component
-    belongs_to :similar_component, Component
+    belongs_to :component, Component, type: :binary_id
+    belongs_to :similar_component, Component, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end

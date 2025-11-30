@@ -238,7 +238,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.SpawnComponentTestingSessionsT
       parent_session = %Session{
         id: 1,
         type: CodeMySpec.ContextTestingSessions,
-        component_id: 999_999,
+        component_id: Ecto.UUID.generate(),
         component: nil,
         environment: :local,
         agent: :claude_code,
@@ -545,7 +545,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.SpawnComponentTestingSessionsT
       fake_session = %Session{
         id: 999_999,
         type: CodeMySpec.ContextTestingSessions,
-        component_id: 999_999,
+        component_id: Ecto.UUID.generate(),
         component: nil,
         environment: :local,
         agent: :claude_code,

@@ -1,9 +1,8 @@
 import Config
 
 config :code_my_spec, CodeMySpecWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "uQsFkBLrXNG5yxrQkMHNLOAi5NcrEzpZut3YYEOlAFiuhpoynMd+/rJBgz6FSWsg",
-  server: false
+  server: false,
+  pubsub_server: CodeMySpecCli.PubSub
 
 config :code_my_spec, adapter: Ecto.Adapters.SQLite3
 

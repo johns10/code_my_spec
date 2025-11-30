@@ -73,7 +73,8 @@ defmodule CodeMySpec.Utils.Data do
 
   # Reset all table sequences after manual ID insertion
   defp reset_sequences do
-    tables = ~w(accounts users members projects components versions stories sessions)
+    # Exclude tables that use UUID primary keys (no sequence): components, projects
+    tables = ~w(accounts users members versions stories sessions)
 
     Enum.each(tables, fn table ->
       Repo.query!("""

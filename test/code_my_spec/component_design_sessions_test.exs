@@ -40,9 +40,9 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
       # Create test component to design (PostService)
       {:ok, post_service} =
         Components.create_component(scope, %{
-          name: "BlogRepository",
+          name: "PostRepository",
           type: :repository,
-          module_name: "TestPhoenixProject.Blog.BlogRepository",
+          module_name: "TestPhoenixProject.Blog.PostRepository",
           description: "Repository for blog persistence",
           parent_component_id: blog_context.id
         })
@@ -56,7 +56,8 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
       scope: scope,
       post_service: post_service
     } do
-      project_dir = "test_repos/component_design_session_#{System.unique_integer([:positive])}"
+      project_dir =
+        "../code_my_spec_test_repos/component_design_session_#{System.unique_integer([:positive])}"
 
       # Setup test project using TestAdapter
       {:ok, ^project_dir} =
@@ -83,7 +84,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
             scope,
             session.id,
             GenerateComponentDesign,
-            mock_output: "Generated component design for BlogRepository"
+            mock_output: "Generated component design for PostRepository"
           )
 
         # Create the design file that would have been created by Claude
@@ -94,11 +95,11 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
             "design",
             "test_phoenix_project",
             "blog",
-            "blog_repository.md"
+            "post_repository.md"
           ])
 
         File.mkdir_p!(Path.dirname(design_file))
-        File.write!(design_file, invalid_blog_repository_content())
+        File.write!(design_file, invalid_post_repository_content())
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
@@ -106,7 +107,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         # Step 4: Validate Design
         {_, _, session} =
           execute_step(scope, session.id, ValidateDesign,
-            mock_output: invalid_blog_repository_content()
+            mock_output: invalid_post_repository_content()
           )
 
         assert_received {:updated,
@@ -117,7 +118,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
         # Step 5: Revise Design
         {_, _, session} =
           execute_step(scope, session.id, ReviseDesign,
-            mock_output: "Revised component design for BlogRepository"
+            mock_output: "Revised component design for PostRepository"
           )
 
         assert_received {:updated,
@@ -125,7 +126,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         # Step 6: Revalidate Design
         {_, _, session} =
-          execute_step(scope, session.id, ValidateDesign, mock_output: blog_repository_content())
+          execute_step(scope, session.id, ValidateDesign, mock_output: post_repository_content())
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -177,36 +178,36 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
     {final_interaction, final_result, updated_session}
   end
 
-  defp invalid_blog_repository_content() do
+  defp invalid_post_repository_content() do
     """
-    # BlogRepository Component Design
+    # PostRepository Component Design
 
     ## Purpose
     Repository for managing blog persistence in the blog context.
 
     ## Interface
-    - get_blog/1
-    - create_blog/1
-    - update_blog/2
-    - delete_blog/1
+    - get_post/1
+    - create_post/1
+    - update_post/2
+    - delete_post/1
 
     ## Implementation Notes
-    Generated component design for BlogRepository
+    Generated component design for PostRepository
     """
   end
 
-  defp blog_repository_content() do
+  defp post_repository_content() do
     """
-    # BlogRepository Component Design
+    # PostRepository Component Design
 
     ## Purpose
     Repository for managing blog persistence in the blog context.
 
     ## Public API
-    - get_blog/1
-    - create_blog/1
-    - update_blog/2
-    - delete_blog/1
+    - get_post/1
+    - create_post/1
+    - update_post/2
+    - delete_post/1
 
     ## Execution Flow
     1. Receive scoped request

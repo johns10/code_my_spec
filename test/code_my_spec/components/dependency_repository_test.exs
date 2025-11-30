@@ -145,8 +145,8 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       scope = full_scope_fixture()
 
       attrs = %{
-        source_component_id: 999,
-        target_component_id: 998,
+        source_component_id: "00000000-0000-0000-0000-000000000001",
+        target_component_id: "00000000-0000-0000-0000-000000000002",
         type: :import
       }
 

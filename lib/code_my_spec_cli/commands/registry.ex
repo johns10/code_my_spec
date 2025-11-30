@@ -10,9 +10,11 @@ defmodule CodeMySpecCli.Commands.Registry do
 
   # All available command modules
   @command_modules [
+    CodeMySpecCli.Commands.Init,
     CodeMySpecCli.Commands.Login,
     CodeMySpecCli.Commands.Logout,
     CodeMySpecCli.Commands.Whoami,
+    CodeMySpecCli.Commands.Components,
     CodeMySpecCli.Commands.Help,
     CodeMySpecCli.Commands.Exit
   ]

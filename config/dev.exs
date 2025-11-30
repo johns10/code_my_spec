@@ -102,5 +102,5 @@ config :code_my_spec,
   content_watch_scope: %{
     user_id: 1,
     account_id: 4,
-    project_id: 4
+    project_id: "708492f9-454e-482f-a2eb-be64f0356b87"
   }

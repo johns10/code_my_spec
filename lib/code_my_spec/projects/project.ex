@@ -2,8 +2,10 @@ defmodule CodeMySpec.Projects.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+
   @type t :: %__MODULE__{
-          id: integer() | nil,
+          id: Ecto.UUID.t() | nil,
           name: String.t(),
           description: String.t() | nil,
           module_name: String.t() | nil,

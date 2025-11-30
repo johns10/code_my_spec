@@ -54,7 +54,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
     field :checked_at, :utc_datetime
     field :details, :map, default: %{}
 
-    belongs_to :component, CodeMySpec.Components.Component
+    belongs_to :component, CodeMySpec.Components.Component, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end

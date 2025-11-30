@@ -11,8 +11,8 @@ defmodule CodeMySpec.Components.Dependency do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          source_component_id: integer(),
-          target_component_id: integer(),
+          source_component_id: Ecto.UUID.t(),
+          target_component_id: Ecto.UUID.t(),
           source_component: Component.t() | Ecto.Association.NotLoaded.t(),
           target_component: Component.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t() | nil,
@@ -20,8 +20,8 @@ defmodule CodeMySpec.Components.Dependency do
         }
 
   schema "dependencies" do
-    belongs_to :source_component, Component
-    belongs_to :target_component, Component
+    belongs_to :source_component, Component, type: :binary_id
+    belongs_to :target_component, Component, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end

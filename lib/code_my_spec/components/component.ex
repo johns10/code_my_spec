@@ -6,6 +6,11 @@ defmodule CodeMySpec.Components.Component do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: false}
+
+  # Namespace UUID for components (randomly generated, should remain constant)
+  @component_namespace_uuid "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
   alias CodeMySpec.Components.Dependency
   alias CodeMySpec.Components.SimilarComponent
   alias CodeMySpec.Components.ComponentType
@@ -15,15 +20,15 @@ defmodule CodeMySpec.Components.Component do
   alias CodeMySpec.Accounts.Account
 
   @type t :: %__MODULE__{
-          id: integer(),
+          id: Ecto.UUID.t(),
           name: String.t(),
           type: atom(),
           module_name: String.t(),
           description: String.t() | nil,
           priority: integer() | nil,
           account_id: integer(),
-          project_id: integer(),
-          parent_component_id: integer() | nil,
+          project_id: Ecto.UUID.t(),
+          parent_component_id: Ecto.UUID.t() | nil,
           account: Account.t() | Ecto.Association.NotLoaded.t(),
           project: Project.t() | Ecto.Association.NotLoaded.t(),
           parent_component: t() | Ecto.Association.NotLoaded.t() | nil,
@@ -54,8 +59,8 @@ defmodule CodeMySpec.Components.Component do
     field :priority, :integer
 
     belongs_to :account, Account
-    belongs_to :project, Project
-    belongs_to :parent_component, __MODULE__
+    belongs_to :project, Project, type: :binary_id
+    belongs_to :parent_component, __MODULE__, type: :binary_id
 
     has_many :child_components, __MODULE__, foreign_key: :parent_component_id
     has_many :outgoing_dependencies, Dependency, foreign_key: :source_component_id
@@ -80,7 +85,7 @@ defmodule CodeMySpec.Components.Component do
   def changeset(component, attrs, %CodeMySpec.Users.Scope{} = scope) do
     component
     |> cast(attrs, [:name, :type, :module_name, :description, :priority, :parent_component_id])
-    |> validate_required([:name, :type, :module_name])
+    |> validate_required([:name, :module_name])
     |> validate_length(:name, min: 1, max: 255)
     |> validate_length(:module_name, min: 1, max: 255)
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
@@ -88,8 +93,35 @@ defmodule CodeMySpec.Components.Component do
     )
     |> validate_no_self_parent()
     |> put_scope_associations(scope)
+    |> generate_deterministic_id()
+    |> unique_constraint(:id, name: :components_pkey, message: "component already exists")
     |> unique_constraint([:module_name, :project_id])
     |> foreign_key_constraint(:parent_component_id)
+  end
+
+  # Generates a deterministic UUID v5 based on the module_name and project_id.
+  # This ensures the same module in the same project always gets the same ID.
+  @spec generate_deterministic_id(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  defp generate_deterministic_id(changeset) do
+    # Only generate ID for new records (inserts)
+    if changeset.data.__meta__.state == :built do
+      module_name = get_field(changeset, :module_name)
+      project_id = get_field(changeset, :project_id)
+
+      if module_name && project_id do
+        # Create a unique name combining project_id and module_name
+        unique_name = "project:#{project_id}:module:#{module_name}"
+
+        # Generate UUID v5 from namespace and unique name using the UUID library
+        uuid = UUID.uuid5(@component_namespace_uuid, unique_name)
+
+        put_change(changeset, :id, uuid)
+      else
+        changeset
+      end
+    else
+      changeset
+    end
   end
 
   @spec validate_no_self_parent(Ecto.Changeset.t()) :: Ecto.Changeset.t()
@@ -111,6 +143,17 @@ defmodule CodeMySpec.Components.Component do
   defp put_scope_associations(changeset, %{
          active_account: %{id: account_id},
          active_project: %{id: project_id}
+       }) do
+    changeset
+    |> put_change(:account_id, account_id)
+    |> put_change(:project_id, project_id)
+  end
+
+  @spec put_scope_associations(Ecto.Changeset.t(), CodeMySpec.Users.Scope.t()) ::
+          Ecto.Changeset.t()
+  defp put_scope_associations(changeset, %{
+         active_account_id: account_id,
+         active_project_id: project_id
        }) do
     changeset
     |> put_change(:account_id, account_id)

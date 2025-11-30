@@ -24,6 +24,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def get_component!(%Scope{active_project_id: project_id}, id) do
     Component
     |> where([c], c.id == ^id and c.project_id == ^project_id)
+    |> preload(:project)
     |> Repo.one!()
   end
 
@@ -31,6 +32,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def get_component(%Scope{active_project_id: project_id}, id) do
     Component
     |> where([c], c.id == ^id and c.project_id == ^project_id)
+    |> preload(:project)
     |> Repo.one()
   end
 

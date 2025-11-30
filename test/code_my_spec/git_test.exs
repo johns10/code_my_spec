@@ -115,7 +115,7 @@ defmodule CodeMySpec.GitTest do
       test_repo = "https://github.com/johns10/test_phoenix_project.git"
       assert {:ok, ^clone_path} = Git.clone(scope, test_repo, clone_path)
       assert File.exists?(clone_path)
-      assert File.exists?(Path.join(clone_path, ".git"))
+      assert File.exists?(Path.join(clone_path, "mix.exs"))
 
       # Test pull
       assert :ok = Git.pull(scope, clone_path)

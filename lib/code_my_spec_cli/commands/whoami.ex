@@ -26,7 +26,7 @@ defmodule CodeMySpecCli.Commands.Whoami do
 
         :ok
 
-      {:error, :not_authenticated} ->
+      {:error, :needs_authentication} ->
         Owl.IO.puts([
           "\n",
           Owl.Data.tag("✗ Not authenticated", [:red, :bright]),

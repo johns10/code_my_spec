@@ -11,6 +11,7 @@ defmodule CodeMySpecCli.Layouts.Root do
     [
       header(),
       "\n",
+      job_status(),
       content,
       "\n",
       footer()
@@ -19,6 +20,17 @@ defmodule CodeMySpecCli.Layouts.Root do
 
   defp header do
     Owl.Data.tag(String.duplicate("═", 80), :cyan)
+  end
+
+  defp job_status do
+    # Render the job status component
+    status = CodeMySpecCli.Components.JobStatus.render()
+
+    if status != "" do
+      [status, "\n"]
+    else
+      ""
+    end
   end
 
   defp footer do

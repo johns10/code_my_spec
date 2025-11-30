@@ -112,7 +112,7 @@ defmodule CodeMySpec.ContentSyncTest do
 
     test "returns error when project does not exist" do
       scope = scope_with_project()
-      invalid_scope = %{scope | active_project_id: 999_999}
+      invalid_scope = %{scope | active_project_id: Ecto.UUID.generate()}
 
       assert {:error, :project_not_found} = ContentSync.sync_to_content_admin(invalid_scope)
     end

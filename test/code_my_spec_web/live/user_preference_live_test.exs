@@ -3,11 +3,22 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
 
   import Phoenix.LiveViewTest
   import CodeMySpec.UserPreferencesFixtures
-
-  @create_attrs %{token: "some token", active_account_id: 42, active_project_id: 42}
-  @update_attrs %{token: "some updated token", active_account_id: 43, active_project_id: 43}
+  import CodeMySpec.AccountsFixtures
+  import CodeMySpec.ProjectsFixtures
 
   setup :register_and_log_in_user
+
+  setup %{scope: scope} do
+    account = account_fixture()
+    project = project_fixture(scope)
+
+    %{
+      create_attrs: %{token: "some token", active_account_id: account.id, active_project_id: project.id},
+      update_attrs: %{token: "some updated token", active_account_id: account.id, active_project_id: project.id},
+      account: account,
+      project: project
+    }
+  end
 
   describe "UserPreference form" do
     test "renders user preferences form", %{conn: conn} do
@@ -19,11 +30,11 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
       assert html =~ "Token"
     end
 
-    test "saves user preferences when none exist", %{conn: conn} do
+    test "saves user preferences when none exist", %{conn: conn, create_attrs: create_attrs} do
       {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 
       assert form_live
-             |> form("#user_preferences-form", user_preference: @create_attrs)
+             |> form("#user_preferences-form", user_preference: create_attrs)
              |> render_submit()
 
       html = render(form_live)
@@ -31,12 +42,12 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
       assert html =~ "some token"
     end
 
-    test "updates existing user preferences", %{conn: conn, scope: scope} do
+    test "updates existing user preferences", %{conn: conn, scope: scope, update_attrs: update_attrs} do
       user_preference_fixture(scope)
       {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 
       assert form_live
-             |> form("#user_preferences-form", user_preference: @update_attrs)
+             |> form("#user_preferences-form", user_preference: update_attrs)
              |> render_submit()
 
       html = render(form_live)

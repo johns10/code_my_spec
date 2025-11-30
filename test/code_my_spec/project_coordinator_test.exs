@@ -5,7 +5,6 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
 
   alias CodeMySpec.ProjectCoordinator
   alias CodeMySpec.Components
-  alias CodeMySpec.Git
 
   @test_repo_url "https://github.com/johns10/test_phoenix_project.git"
 
@@ -79,11 +78,12 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
 
     @tag :integration
     test "syncs project requirements with real test project", %{scope: scope} do
-      temp_dir = System.tmp_dir!()
-      project_dir = Path.join(temp_dir, "test_phoenix_project_#{:rand.uniform(999_999)}")
+      project_dir =
+        "../code_my_spec_test_repos/component_coding_session_#{System.unique_integer([:positive])}"
 
-      # Clone using Git module (uses TestAdapter for speed)
-      {:ok, ^project_dir} = Git.clone(scope, @test_repo_url, project_dir)
+      # Setup test project using TestAdapter
+      {:ok, ^project_dir} =
+        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
 
       file_list =
         DirWalker.stream(project_dir)

@@ -28,8 +28,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponent do
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, id} <- parse_id(params.id),
-         {:ok, component} <- find_component(scope, id),
+         {:ok, component} <- find_component(scope, params.id),
          {:ok, component} <-
            Components.update_component(scope, component, Map.drop(params, [:id])) do
       {:reply, ComponentsMapper.component_response(component), frame}
@@ -51,15 +50,4 @@ defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponent do
       component -> {:ok, component}
     end
   end
-
-  defp parse_id(id) when is_integer(id), do: {:ok, id}
-
-  defp parse_id(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {int_id, ""} -> {:ok, int_id}
-      _ -> {:error, :invalid_id}
-    end
-  end
-
-  defp parse_id(_), do: {:error, :invalid_id}
 end

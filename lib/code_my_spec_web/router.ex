@@ -99,6 +99,9 @@ defmodule CodeMySpecWeb.Router do
   scope "/api", CodeMySpecWeb do
     pipe_through [:api, :require_oauth_token]
 
+    get "/me", UserController, :me
+    get "/projects", ProjectController, :index
+
     resources "/sessions", SessionsController, except: [:edit, :new, :update, :delete] do
       get "/next-command", SessionsController, :next_command
       post "/submit-result/:interaction_id", SessionsController, :submit_result

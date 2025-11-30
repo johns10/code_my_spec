@@ -8,10 +8,16 @@ defmodule CodeMySpecCli.Application do
 
     children = [
       CodeMySpecCli.WebServer.Telemetry,
+      CodeMySpec.Repo,
+      CodeMySpec.Vault,
+      CodeMySpecCli.Migrator,
+      {Phoenix.PubSub, name: CodeMySpec.PubSub},
       # Registry for OAuth callback coordination
       {Registry, keys: :unique, name: CodeMySpecCli.Registry},
-      # Finch HTTP client (required by Req)
-      {Finch, name: Req.Finch},
+      # File watcher for automatic project sync
+      CodeMySpec.ProjectSync.FileWatcherServer,
+      # Job status component for UI
+      CodeMySpecCli.Components.JobStatus,
       # Local HTTP server for OAuth callbacks and Anthropic proxying
       {CodeMySpecCli.WebServer, port: 8314},
       # The REPL interface

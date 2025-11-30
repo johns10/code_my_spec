@@ -29,7 +29,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.DeleteComponentTest do
 
     test "returns error for non-existent component" do
       scope = full_scope_fixture()
-      params = %{id: 999_999}
+      params = %{id: "00000000-0000-0000-0000-000000000000"}
 
       frame = %Frame{assigns: %{current_scope: scope}}
 

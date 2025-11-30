@@ -28,13 +28,13 @@ defmodule CodeMySpec.Sessions.Session do
           status: :active | :complete | :failed | :cancelled | nil,
           state: map() | nil,
           display_name: String.t() | nil,
-          project_id: integer() | nil,
+          project_id: Ecto.UUID.t() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
           account_id: integer() | nil,
           account: Account.t() | Ecto.Association.NotLoaded.t() | nil,
           user_id: integer() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t() | nil,
-          component_id: integer() | nil,
+          component_id: Ecto.UUID.t() | nil,
           component: Component.t() | Ecto.Association.NotLoaded.t() | nil,
           session_id: integer() | nil,
           parent_session: t() | Ecto.Association.NotLoaded.t() | nil,
@@ -57,10 +57,10 @@ defmodule CodeMySpec.Sessions.Session do
 
     field :state, :map
 
-    belongs_to :project, Project
+    belongs_to :project, Project, type: :binary_id
     belongs_to :account, Account
     belongs_to :user, User
-    belongs_to :component, Component
+    belongs_to :component, Component, type: :binary_id
     belongs_to :parent_session, __MODULE__, foreign_key: :session_id
 
     has_many :child_sessions, __MODULE__, foreign_key: :session_id

@@ -32,7 +32,7 @@ defmodule CodeMySpec.Users.Scope do
           active_account: Account.t() | nil,
           active_account_id: integer() | nil,
           active_project: Project.t() | nil,
-          active_project_id: integer() | nil
+          active_project_id: Ecto.UUID.t() | nil
         }
 
   @doc """
@@ -59,4 +59,55 @@ defmodule CodeMySpec.Users.Scope do
   end
 
   def for_user(nil), do: nil
+
+  @doc """
+  Creates a scope for CLI context using local project from database.
+
+  In CLI mode:
+  - User is loaded from client_users table (or default struct if not logged in)
+  - Account is nil (CLI doesn't use accounts)
+  - Project ID comes from local .code_my_spec/config.yml file
+  - Project struct is loaded from the database
+
+  Returns nil if no project is configured. Run `/init` to set up a project.
+  """
+  def for_cli do
+    with {:ok, project_id} <- CodeMySpecCli.Config.get_project_id(),
+         %Project{} = project <- CodeMySpec.Repo.get(Project, project_id) do
+      %__MODULE__{
+        user: get_cli_user(),
+        active_account: nil,
+        active_account_id: nil,
+        active_project: project,
+        active_project_id: project_id
+      }
+    else
+      _error ->
+        nil
+    end
+  end
+
+  # Get the CLI user (authenticated client_user or default struct)
+  defp get_cli_user do
+    case CodeMySpecCli.Config.get_current_user_email() do
+      {:ok, email} ->
+        # Try to find client_user by email
+        CodeMySpec.Repo.get_by(CodeMySpec.ClientUsers.ClientUser, email: email) ||
+          default_cli_user()
+
+      {:error, _} ->
+        default_cli_user()
+    end
+  end
+
+  # Return a default CLI user struct (not inserted into DB)
+  defp default_cli_user do
+    %CodeMySpec.ClientUsers.ClientUser{
+      id: 0,
+      email: "cli@localhost",
+      oauth_token: nil,
+      oauth_refresh_token: nil,
+      oauth_expires_at: nil
+    }
+  end
 end

@@ -6,7 +6,7 @@
     ],
     "exit_code": 0,
     "output": "goodbye world\n",
-    "recorded_at": "2025-09-27T18:18:05.006296Z"
+    "recorded_at": "2025-11-28T17:43:17.538617Z"
   },
   "echo hello world": {
     "command": [
@@ -15,7 +15,7 @@
     ],
     "exit_code": 0,
     "output": "hello world\n",
-    "recorded_at": "2025-09-27T18:18:04.992596Z"
+    "recorded_at": "2025-11-28T17:43:17.531453Z"
   },
   "pwd": {
     "command": [
@@ -23,6 +23,6 @@
     ],
     "output": "/Users/johndavenport/Documents/github/code_my_spec\n",
     "exit_code": 0,
-    "recorded_at": "2025-09-27T18:18:05.013953Z"
+    "recorded_at": "2025-11-28T17:43:17.546501Z"
   }
 }

@@ -59,7 +59,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
 
     test "raises when component doesn't exist", %{scope: scope} do
       assert_raise Ecto.NoResultsError, fn ->
-        ComponentRepository.get_component!(scope, 999)
+        ComponentRepository.get_component!(scope, "00000000-0000-0000-0000-000000000000")
       end
     end
 
@@ -89,7 +89,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     end
 
     test "returns nil when component doesn't exist", %{scope: scope} do
-      result = ComponentRepository.get_component(scope, 999)
+      result = ComponentRepository.get_component(scope, "00000000-0000-0000-0000-000000000000")
       assert is_nil(result)
     end
 
@@ -135,8 +135,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
 
       assert errors_on(changeset) == %{
                name: ["can't be blank"],
-               module_name: ["can't be blank"],
-               type: ["can't be blank"]
+               module_name: ["can't be blank"]
              }
     end
 
@@ -161,7 +160,8 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       }
 
       assert {:error, changeset} = ComponentRepository.create_component(scope, attrs)
-      assert errors_on(changeset) == %{module_name: ["has already been taken"]}
+      # With deterministic UUIDs, duplicate module_name generates same ID, hitting primary key constraint
+      assert errors_on(changeset) == %{id: ["component already exists"]}
     end
 
     test "allows duplicate names across different projects", %{scope: scope} do
@@ -277,7 +277,12 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     end
 
     test "returns nil when component doesn't exist", %{scope: scope} do
-      result = ComponentRepository.get_component_with_dependencies(scope, 999)
+      result =
+        ComponentRepository.get_component_with_dependencies(
+          scope,
+          "00000000-0000-0000-0000-000000000000"
+        )
+
       assert is_nil(result)
     end
   end
@@ -569,7 +574,8 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
                  []
                )
 
-      assert errors_on(changeset) == %{module_name: ["has already been taken"]}
+      # With deterministic UUIDs, duplicate module_name generates same ID, hitting primary key constraint
+      assert errors_on(changeset) == %{id: ["component already exists"]}
     end
   end
 

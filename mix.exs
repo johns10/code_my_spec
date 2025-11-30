@@ -5,7 +5,7 @@ defmodule CodeMySpec.MixProject do
     [
       app: :code_my_spec,
       version: "0.1.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -100,6 +100,7 @@ defmodule CodeMySpec.MixProject do
       {:recase, "~> 0.8"},
       {:oapi_github, "~> 0.3.3"},
       {:httpoison, "~> 2.0"},
+      {:uuid, "~> 1.1.8"},
 
       # CLI deps,
       {:burrito, "~> 1.5"},
@@ -127,7 +128,8 @@ defmodule CodeMySpec.MixProject do
         "tailwind code_my_spec --minify",
         "esbuild code_my_spec --minify",
         "phx.digest"
-      ]
+      ],
+      cli: ["run --no-halt"]
     ]
   end
 
