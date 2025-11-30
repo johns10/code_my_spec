@@ -8,9 +8,16 @@ defmodule CodeMySpecCli.Auth.Strategy do
     OAuth2.Strategy.AuthCode.authorize_url(client, params)
   end
 
-  def get_token(client, params, headers) do
-    client
-    |> put_header("accept", "application/json")
-    |> OAuth2.Strategy.AuthCode.get_token(params, headers)
+  # Handle refresh token flow
+  def get_token(client, params, headers) when is_list(params) do
+    client = put_header(client, "accept", "application/json")
+
+    case Keyword.get(params, :grant_type) do
+      "refresh_token" ->
+        OAuth2.Strategy.Refresh.get_token(client, params, headers)
+
+      _ ->
+        OAuth2.Strategy.AuthCode.get_token(client, params, headers)
+    end
   end
 end
