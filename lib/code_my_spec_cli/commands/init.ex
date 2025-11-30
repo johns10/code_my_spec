@@ -51,6 +51,13 @@ defmodule CodeMySpecCli.Commands.Init do
           {:ok, selected_project} ->
             save_project(selected_project)
 
+            # Broadcast project initialization event
+            Phoenix.PubSub.broadcast(
+              CodeMySpec.PubSub,
+              "user:*",
+              {:project_initialized, %{project_id: selected_project.id}}
+            )
+
             Owl.IO.puts([
               "\n",
               Owl.Data.tag("✓ Project initialized: #{selected_project.name}", [:green, :bright]),
@@ -103,6 +110,13 @@ defmodule CodeMySpecCli.Commands.Init do
     }
 
     save_project(project)
+
+    # Broadcast project initialization event
+    Phoenix.PubSub.broadcast(
+      CodeMySpec.PubSub,
+      "user:*",
+      {:project_initialized, %{project_id: project.id}}
+    )
 
     Owl.IO.puts([
       "\n",

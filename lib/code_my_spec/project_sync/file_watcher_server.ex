@@ -48,6 +48,9 @@ defmodule CodeMySpec.ProjectSync.FileWatcherServer do
       {:ok, watcher_pid} ->
         FileSystem.subscribe(watcher_pid)
 
+        # Subscribe to user channel to listen for project initialization events
+        Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "user:*")
+
         Logger.info("FileWatcherServer started, watching: #{spec_dir}, #{lib_dir}")
 
         {:ok,
@@ -120,6 +123,21 @@ defmodule CodeMySpec.ProjectSync.FileWatcherServer do
 
     # Clear pending changes and timer
     {:noreply, %{state | pending_changes: MapSet.new(), debounce_timer: nil}}
+  end
+
+  @impl true
+  def handle_info({:project_initialized, _data}, state) do
+    Logger.info("FileWatcherServer received project_initialized event, syncing project")
+    broadcast_status_change(true)
+
+    with %Scope{} = scope <- Scope.for_cli(),
+         {:ok, _result} <- Sync.sync_all(scope, persist: true) do
+      Logger.info("Project sync completed for project #{scope.active_project_id}")
+    end
+
+    broadcast_status_change(false)
+
+    {:noreply, %{state | running: false}}
   end
 
   @impl true
