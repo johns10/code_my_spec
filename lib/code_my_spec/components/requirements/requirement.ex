@@ -113,6 +113,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
       :details
     ])
     |> validate_required([:name, :type, :description, :checker_module, :satisfied])
+    |> unique_constraint([:component_id, :name], name: :requirements_component_id_name_index)
   end
 
   @doc """
