@@ -18,16 +18,21 @@ defmodule CodeMySpecCli.Application do
       # Registry for OAuth callback coordination
       {Registry, keys: :unique, name: CodeMySpecCli.Registry},
       # File watcher for automatic project sync
-      CodeMySpec.ProjectSync.FileWatcherServer,
-      # Job status component for UI
-      CodeMySpecCli.Components.JobStatus,
+      # CodeMySpec.ProjectSync.FileWatcherServer,
+      # # Job status component for UI
+      # CodeMySpecCli.Components.JobStatus,
       # Local HTTP server for OAuth callbacks and Anthropic proxying
-      {CodeMySpecCli.WebServer, port: 8314},
-      # The REPL interface
-      CodeMySpecCli.Cli.TuiServer
+      {CodeMySpecCli.WebServer, port: 8314}
     ]
 
-    Supervisor.start_link(children, strategy: :one_for_one, name: CodeMySpecCli.Supervisor)
+    {:ok, supervisor} =
+      Supervisor.start_link(children, strategy: :one_for_one, name: CodeMySpecCli.Supervisor)
+
+    # Start the TUI after all services are running
+    # This blocks until the user quits
+    Ratatouille.run(CodeMySpecCli.Screens.Main, interval: 100)
+
+    {:ok, supervisor}
   end
 
   defp ensure_db_directory do

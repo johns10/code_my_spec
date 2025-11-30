@@ -8,7 +8,7 @@ defmodule CodeMySpecCli.CLI do
   def run(argv) do
     # If no arguments provided, launch the TUI
     if argv == [] do
-      CodeMySpecCli.Screens.Main.show()
+      Ratatouille.run(CodeMySpecCli.Screens.Main, interval: 100)
     else
       Optimus.new!(
         name: "codemyspec",
@@ -27,6 +27,6 @@ defmodule CodeMySpecCli.CLI do
 
   defp execute(_parsed) do
     # Placeholder - just launch TUI for now
-    CodeMySpecCli.Screens.Main.show()
+    Ratatouille.run(CodeMySpecCli.Screens.Main, interval: 100)
   end
 end

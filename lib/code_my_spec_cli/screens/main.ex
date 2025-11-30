@@ -1,92 +1,141 @@
 defmodule CodeMySpecCli.Screens.Main do
   @moduledoc """
-  Main REPL screen with splash and command prompt.
+  Main REPL screen with status and command prompt.
   """
+  @behaviour Ratatouille.App
 
-  alias CodeMySpecCli.Layouts.Root
+  import Ratatouille.View
+  import Ratatouille.Constants, only: [key: 1]
+
   alias CodeMySpecCli.Commands.Registry, as: CommandRegistry
   alias CodeMySpecCli.Auth.OAuthClient
+  alias CodeMySpec.Users.Scope
 
-  @logo """
-          TPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPW
-          Q                                                               Q
-          Q     ������W ������W ������W �������W���W   ���W��W   ��W      Q
-          Q    ��TPPPP]��TPPP��W��TPP��W��TPPPP]����W ����QZ��W ��T]      Q
-          Q    ��Q     ��Q   ��Q��Q  ��Q�����W  ��T����T��Q Z����T]       Q
-          Q    ��Q     ��Q   ��Q��Q  ��Q��TPP]  ��QZ��T]��Q  Z��T]        Q
-          Q    Z������WZ������T]������T]�������W��Q ZP] ��Q   ��Q         Q
-          Q     ZPPPPP] ZPPPPP] ZPPPPP] ZPPPPPP]ZP]     ZP]   ZP]         Q
-          Q                                                               Q
-          Q    ���W   ���W��W   ��W    �������W������W �������W ������W   Q
-          Q    ����W ����QZ��W ��T]    ��TPPPP]��TPP��W��TPPPP]��TPPPP]   Q
-          Q    ��T����T��Q Z����T]     �������W������T]�����W  ��Q        Q
-          Q    ��QZ��T]��Q  Z��T]      ZPPPP��Q��TPPP] ��TPP]  ��Q        Q
-          Q    ��Q ZP] ��Q   ��Q       �������Q��Q     �������WZ������W   Q
-          Q    ZP]     ZP]   ZP]       ZPPPPPP]ZP]     ZPPPPPP] ZPPPPP]   Q
-          Q                                                               Q
-          Q              Specification-Driven Development                 Q
-          Q                                                               Q
-          ZPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP]
-  """
+  defstruct [:input, :history, :output_lines, :authenticated, :project_name]
 
-  @doc """
-  Display the main screen with splash and start the REPL.
-  """
-  def show do
-    Root.clear_screen()
+  @impl true
+  def init(_context) do
+    # Get initial auth and project status
+    authenticated = OAuthClient.authenticated?()
+    scope = Scope.for_cli()
+    project_name = if scope && scope.active_project, do: scope.active_project.name, else: nil
 
-    # Display logo with color
-    logo_colored = Owl.Data.tag(@logo, [:red, :bright])
-    Owl.IO.puts(logo_colored)
-
-    Owl.IO.puts(["\n", Owl.Data.tag("Welcome to CodeMySpec!", [:cyan, :bright])])
-    Owl.IO.puts([Owl.Data.tag("Type /help to see available commands.\n", :faint)])
-
-    # Start the REPL
-    repl()
+    %__MODULE__{
+      input: "",
+      history: [],
+      output_lines: [],
+      authenticated: authenticated,
+      project_name: project_name
+    }
   end
 
-  @doc """
-  Main REPL loop - read, eval, print, loop.
-  """
-  def repl do
-    # Show authentication status in prompt
-    prompt = build_prompt()
+  @impl true
+  def update(model, msg) do
+    case msg do
+      {:event, %{ch: ch}} when ch > 0 ->
+        # Regular character input
+        %{model | input: model.input <> <<ch::utf8>>}
 
-    # Read input
-    input = Owl.IO.input(label: prompt) |> String.trim()
+      {:event, %{key: k}} ->
+        cond do
+          k == key(:backspace) or k == key(:backspace2) ->
+            # Backspace
+            %{model | input: String.slice(model.input, 0..-2//1)}
 
-    # Skip empty input
-    if input != "" do
-      # Execute command
-      case CommandRegistry.execute(input) do
-        :ok ->
-          # Command succeeded, continue
-          repl()
+          k == key(:enter) ->
+            # Process command
+            handle_command(model)
 
-        :exit ->
-          # Exit command was run
-          System.halt(0)
+          true ->
+            model
+        end
 
-        {:error, message} ->
-          # Command failed, show error and continue
-          Owl.IO.puts(["\n", Owl.Data.tag("Error: #{message}", [:red, :bright]), "\n"])
-          repl()
-      end
-    else
-      # Empty input, just show prompt again
-      repl()
+      _ ->
+        model
     end
   end
 
-  defp build_prompt do
-    auth_indicator =
-      if OAuthClient.authenticated?() do
-        Owl.Data.tag("●", :green)
-      else
-        Owl.Data.tag("○", :red)
-      end
+  @impl true
+  def render(model) do
+    view do
+      panel(title: "CodeMySpec", height: :fill) do
+        # Status bar
+        row do
+          column(size: 12) do
+            panel(title: "Status") do
+              label do
+                text(content: "Auth: ")
 
-    [auth_indicator, " ", Owl.Data.tag("codemyspec>", [:cyan, :bright])]
+                text(
+                  content: if(model.authenticated, do: "✓ Logged in", else: "✗ Not logged in"),
+                  color: if(model.authenticated, do: :green, else: :red)
+                )
+              end
+
+              label do
+                text(content: "Project: ")
+
+                if model.project_name do
+                  text(content: "✓ #{model.project_name}", color: :green)
+                else
+                  text(content: "✗ Not initialized", color: :red)
+                end
+              end
+            end
+          end
+        end
+
+        # Command history area
+        row do
+          column(size: 12) do
+            panel(title: "Output", height: :fill) do
+              viewport do
+                if Enum.empty?(model.output_lines) do
+                  label(content: "Type /help to see available commands.")
+                else
+                  for line <- Enum.take(model.output_lines, -20) do
+                    label(content: line)
+                  end
+                end
+              end
+            end
+          end
+        end
+
+        # Prompt
+        row do
+          column(size: 12) do
+            label do
+              text(content: "> ", color: :cyan, attributes: [:bold])
+              text(content: model.input)
+              text(content: "_")
+            end
+          end
+        end
+      end
+    end
+  end
+
+  defp handle_command(model) do
+    input = String.trim(model.input)
+
+    if input == "" do
+      %{model | input: ""}
+    else
+      case CommandRegistry.execute(input) do
+        :ok ->
+          output = ["> #{input}" | model.output_lines]
+          %{model | input: "", output_lines: output, history: [input | model.history]}
+
+        :exit ->
+          # Signal exit
+          System.halt(0)
+          model
+
+        {:error, message} ->
+          output = ["> #{input}", "Error: #{message}" | model.output_lines]
+          %{model | input: "", output_lines: output, history: [input | model.history]}
+      end
+    end
   end
 end
