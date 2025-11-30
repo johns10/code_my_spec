@@ -2,7 +2,7 @@ import Config
 
 config :code_my_spec, CodeMySpecWeb.Endpoint,
   server: false,
-  pubsub_server: CodeMySpecCli.PubSub
+  pubsub_server: CodeMySpec.PubSub
 
 config :code_my_spec, adapter: Ecto.Adapters.SQLite3
 
