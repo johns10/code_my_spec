@@ -6,6 +6,9 @@ defmodule CodeMySpecCli.Application do
     ensure_db_directory()
     Application.ensure_all_started(:telemetry)
 
+    # Add file logger backend at runtime
+    LoggerBackends.add({LoggerFileBackend, :file_log})
+
     children = [
       CodeMySpecCli.WebServer.Telemetry,
       CodeMySpec.Repo,
