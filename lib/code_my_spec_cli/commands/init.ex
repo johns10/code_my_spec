@@ -3,7 +3,10 @@ defmodule CodeMySpecCli.Commands.Init do
   /init command - initialize project in current directory
   """
 
-  @behaviour CodeMySpecCli.Commands.CommandBehaviour
+  use CodeMySpecCli.Commands.CommandBehaviour
+
+  # Init doesn't need scope (it creates the project config)
+  def resolve_scope(_args), do: {:ok, nil}
 
   alias CodeMySpec.Projects
   alias CodeMySpec.Projects.Project
@@ -24,7 +27,7 @@ defmodule CodeMySpecCli.Commands.Init do
     - Prompts for project details
     - Creates local project and saves to DB and config
   """
-  def execute(_args) do
+  def execute(_scope, _args) do
     if OAuthClient.authenticated?() do
       init_with_server()
     else

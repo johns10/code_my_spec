@@ -51,7 +51,7 @@ defmodule CodeMySpecCli.Commands.Registry do
   @doc """
   Execute a command string.
 
-  Parses the input, finds the command, checks authentication, and executes the handler.
+  Parses the input, finds the command, resolves scope, and executes the handler.
   """
   def execute(input) do
     input = String.trim(input)
@@ -63,7 +63,7 @@ defmodule CodeMySpecCli.Commands.Registry do
             {:error, "Unknown command: /#{command_name}. Type /help for available commands."}
 
           command_module ->
-            command_module.execute(args)
+            command_module.run(args)
         end
 
       {:error, reason} ->

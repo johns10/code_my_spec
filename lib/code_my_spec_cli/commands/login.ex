@@ -3,9 +3,12 @@ defmodule CodeMySpecCli.Commands.Login do
   /login command - authenticate with OAuth2
   """
 
-  @behaviour CodeMySpecCli.Commands.CommandBehaviour
+  use CodeMySpecCli.Commands.CommandBehaviour
 
   alias CodeMySpecCli.Auth.OAuthClient
+
+  # Login doesn't need scope (it creates scope)
+  def resolve_scope(_args), do: {:ok, nil}
 
   @doc """
   Login command - authenticate with OAuth2.
@@ -14,7 +17,7 @@ defmodule CodeMySpecCli.Commands.Login do
     /login                    # Use default server
     /login http://localhost:4000
   """
-  def execute(args) do
+  def execute(_scope, args) do
     server_url =
       case args do
         [url | _] -> url

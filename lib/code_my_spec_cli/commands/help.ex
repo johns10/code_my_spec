@@ -3,9 +3,12 @@ defmodule CodeMySpecCli.Commands.Help do
   Help command to display available commands and usage.
   """
 
-  @behaviour CodeMySpecCli.Commands.CommandBehaviour
+  use CodeMySpecCli.Commands.CommandBehaviour
 
   alias CodeMySpecCli.Commands.Registry, as: CommandRegistry
+
+  # Help doesn't need scope
+  def resolve_scope(_args), do: {:ok, nil}
 
   @doc """
   Show help for all commands or a specific command.
@@ -14,7 +17,7 @@ defmodule CodeMySpecCli.Commands.Help do
     /help          # Show all commands
     /help login    # Show help for /login
   """
-  def execute(args) do
+  def execute(_scope, args) do
     case args do
       [] ->
         show_all_commands()

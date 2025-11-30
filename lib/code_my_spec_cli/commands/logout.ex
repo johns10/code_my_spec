@@ -3,14 +3,17 @@ defmodule CodeMySpecCli.Commands.Logout do
   /logout command - clear stored credentials
   """
 
-  @behaviour CodeMySpecCli.Commands.CommandBehaviour
+  use CodeMySpecCli.Commands.CommandBehaviour
 
   alias CodeMySpecCli.Auth.OAuthClient
+
+  # Logout doesn't need scope
+  def resolve_scope(_args), do: {:ok, nil}
 
   @doc """
   Logout command - clear stored credentials.
   """
-  def execute(_args) do
+  def execute(_scope, _args) do
     OAuthClient.logout()
     :ok
   end

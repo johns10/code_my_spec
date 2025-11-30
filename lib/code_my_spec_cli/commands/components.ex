@@ -3,7 +3,7 @@ defmodule CodeMySpecCli.Commands.Components do
   Browse and search project components interactively.
   """
 
-  @behaviour CodeMySpecCli.Commands.CommandBehaviour
+  use CodeMySpecCli.Commands.CommandBehaviour
 
   alias CodeMySpecCli.Screens.Components, as: ComponentsScreen
 
@@ -17,7 +17,7 @@ defmodule CodeMySpecCli.Commands.Components do
   You can type to filter by module name, then select a component to view
   its details including paths, type, and relationships.
   """
-  def execute(_args) do
+  def execute(_scope, _args) do
     ComponentsScreen.show()
   end
 end
