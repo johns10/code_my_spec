@@ -55,7 +55,7 @@ defmodule CodeMySpec.ProjectSync.FileWatcherServer do
            watcher_pid: watcher_pid,
            debounce_timer: nil,
            pending_changes: MapSet.new(),
-           running: false
+           running: true
          }, {:continue, :initial_sync}}
 
       {:error, reason} ->
@@ -67,28 +67,16 @@ defmodule CodeMySpec.ProjectSync.FileWatcherServer do
   @impl true
   def handle_continue(:initial_sync, state) do
     Logger.info("FileWatcherServer performing initial sync_all")
-
-    # Get scope - if nil, project not initialized yet
-    case Scope.for_cli() do
-      nil ->
-        Logger.warning("No project initialized. Run /init to set up a project.")
-
-      scope ->
-        case Sync.sync_all(scope) do
-          {:ok, _result} ->
-            Logger.info("Initial sync completed for project #{scope.active_project_id}")
-
-          {:error, reason} ->
-            Logger.error(
-              "Initial sync failed for project #{scope.active_project_id}: #{inspect(reason)}"
-            )
-        end
-    end
-
-    # Broadcast running status change
     broadcast_status_change(true)
 
-    {:noreply, %{state | running: true}}
+    with %Scope{} = scope <- Scope.for_cli(),
+         {:ok, _result} <- Sync.sync_all(scope, persist: true) do
+      Logger.info("Initial sync completed for project #{scope.active_project_id}")
+    end
+
+    broadcast_status_change(false)
+
+    {:noreply, %{state | running: false}}
   end
 
   @impl true

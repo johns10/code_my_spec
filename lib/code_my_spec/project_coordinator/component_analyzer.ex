@@ -25,6 +25,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     scope = Keyword.get(opts, :scope, %Scope{})
 
     components
+    |> Enum.map(&Components.clear_requirements(scope, &1, opts))
     |> Enum.map(&analyze_local_component_status(&1, file_list, failures, scope, opts))
     |> Enum.map(&check_local_requirements(&1, scope, opts))
     |> DependencyTree.build()
@@ -62,8 +63,6 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   end
 
   defp check_local_requirements(component, scope, opts) do
-    Components.clear_requirements(scope, component, opts)
-
     requirements =
       Components.check_requirements(
         component,
@@ -80,6 +79,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
             Map.put(requirement, :component, %Ecto.Association.NotLoaded{})
 
           {:error, changeset} ->
+            IO.inspect(changeset)
+
             Logger.error("#{__MODULE__} failed check_local_requirements",
               changeset: changeset
             )
