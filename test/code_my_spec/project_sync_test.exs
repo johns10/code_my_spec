@@ -95,7 +95,10 @@ defmodule CodeMySpec.ProjectSyncTest do
       end)
     end
 
-    test "handles project with spec files and implementation files", %{scope: scope, tmp_dir: tmp_dir} do
+    test "handles project with spec files and implementation files", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       # Perform initial sync
       assert {:ok, result} = ProjectSync.sync_all(scope, base_dir: tmp_dir)
 
@@ -163,7 +166,10 @@ defmodule CodeMySpec.ProjectSyncTest do
       end)
     end
 
-    test "removes stale contexts that no longer exist in filesystem", %{scope: scope, tmp_dir: tmp_dir} do
+    test "removes stale contexts that no longer exist in filesystem", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       # First sync
       assert {:ok, _result} = ProjectSync.sync_all(scope, base_dir: tmp_dir, persist: true)
 
@@ -184,7 +190,10 @@ defmodule CodeMySpec.ProjectSyncTest do
       assert Components.get_component(scope, fake_context.id) == nil
     end
 
-    test "removes stale child components that no longer exist in filesystem", %{scope: scope, tmp_dir: tmp_dir} do
+    test "removes stale child components that no longer exist in filesystem", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       # First sync
       assert {:ok, _result} = ProjectSync.sync_all(scope, base_dir: tmp_dir, persist: true)
 

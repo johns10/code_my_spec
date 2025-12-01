@@ -80,15 +80,6 @@ defmodule CodeMySpec.Components.Sync do
   @spec sync_components(Scope.t(), parent_component :: Component.t(), keyword()) ::
           {:ok, [Component.t()]} | {:error, term()}
   def sync_components(%Scope{} = scope, %Component{} = parent_component, opts \\ []) do
-    # Validate parent is a context type
-    unless parent_component.type in [:context, :coordination_context] do
-      {:error, :parent_not_context}
-    else
-      do_sync_components(scope, parent_component, opts)
-    end
-  end
-
-  defp do_sync_components(%Scope{} = scope, %Component{} = parent_component, opts) do
     base_dir = Keyword.get(opts, :base_dir, ".")
 
     # Find component specs

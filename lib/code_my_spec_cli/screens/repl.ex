@@ -61,6 +61,7 @@ defmodule CodeMySpecCli.Screens.Repl do
           panel(title: "Status") do
             AuthStatus.render()
             ProjectStatus.render()
+            FileSyncStatus.render()
           end
         end
       end,
