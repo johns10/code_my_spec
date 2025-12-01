@@ -15,6 +15,39 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   @client_config_file ".codemyspec_client"
 
   @doc """
+  Authenticate with UI notifications.
+
+  Returns the auth URL that will be opened in the browser.
+  """
+  def authenticate_with_ui(opts \\ []) do
+    server_base_url = opts[:server_url] || get_server_url()
+    {:ok, client_id, _client_secret} = get_or_register_client(server_base_url)
+
+    # Generate PKCE for the auth URL
+    {_code_verifier, code_challenge} = generate_pkce_pair()
+    state = generate_state()
+
+    # Build auth URL
+    redirect_uri = "http://localhost:#{@callback_port}#{@callback_path}"
+
+    auth_url =
+      "#{server_base_url}/oauth/authorize?" <>
+        "client_id=#{client_id}" <>
+        "&code_challenge=#{code_challenge}" <>
+        "&code_challenge_method=S256" <>
+        "&redirect_uri=#{URI.encode_www_form(redirect_uri)}" <>
+        "&response_type=code" <>
+        "&scope=read+write" <>
+        "&state=#{state}"
+
+    # Continue with normal authentication (this will block)
+    result = authenticate(opts)
+
+    # Return both the URL and the result
+    {auth_url, result}
+  end
+
+  @doc """
   Authenticate the user via OAuth2 authorization code flow with PKCE.
 
   Opens the user's browser and waits for the callback from the local server.
@@ -51,22 +84,16 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
         state: state
       )
 
-    IO.puts("\n🔐 Opening browser for authentication...")
-    IO.puts("If the browser doesn't open, visit: #{auth_url}\n")
-
     # Register this process to receive the callback
     Registry.register(CodeMySpecCli.Registry, {:oauth_waiting, state}, nil)
 
-    # Open browser
+    # Open browser (silently - TUI will show the URL)
     open_browser(auth_url)
 
     # Wait for callback
     result =
       receive do
         {:oauth_callback, {:ok, code, ^state}} ->
-          IO.puts("✓ Authorization received")
-
-          # Exchange code for token
           params = [
             code: code,
             code_verifier: code_verifier,
@@ -90,7 +117,8 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
 
                   {:error, _} ->
                     # Already parsed correctly
-                    {token.access_token, token.refresh_token, token.expires_at, token.other_params["scope"]}
+                    {token.access_token, token.refresh_token, token.expires_at,
+                     token.other_params["scope"]}
                 end
 
               token_data = %{
@@ -102,13 +130,16 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
               }
 
               # Fetch and save user info (this also saves the token to DB)
-              with {:ok, %{id: user_id, email: email}} <- fetch_user_info(server_base_url, access_token),
+              with {:ok, %{id: user_id, email: email}} <-
+                     fetch_user_info(server_base_url, access_token),
                    {:ok, _client_user} <- save_client_user(user_id, email, token_data),
                    :ok <- CodeMySpecCli.Config.set_current_user_email(email) do
-                IO.puts("✓ Authentication successful! Logged in as #{email}\n")
+                # Broadcast auth status change (TUI will update automatically)
+                Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "cli:auth", {:auth_changed, true})
               else
-                {:error, reason} ->
-                  IO.puts("✓ Authentication successful! (Warning: #{inspect(reason)})\n")
+                {:error, _reason} ->
+                  # Still broadcast success even if there was a warning
+                  Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "cli:auth", {:auth_changed, true})
               end
 
               {:ok, token_data}
@@ -192,11 +223,13 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
         |> CodeMySpec.Repo.update()
 
         CodeMySpecCli.Config.clear_current_user_email()
-        IO.puts("✓ Logged out successfully")
+
+        # Broadcast auth status change (TUI will update automatically)
+        Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "cli:auth", {:auth_changed, false})
+
         :ok
 
       {:error, _} ->
-        IO.puts("✓ Not currently logged in")
         :ok
     end
   end
@@ -216,7 +249,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
     end
   end
 
-  defp get_or_register_client(server_base_url) do
+  def get_or_register_client(server_base_url) do
     config_path = Path.join(System.user_home!(), @client_config_file)
 
     case File.read(config_path) do
@@ -341,6 +374,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   end
 
   defp token_expired?(%CodeMySpec.ClientUsers.ClientUser{oauth_expires_at: nil}), do: true
+
   defp token_expired?(%CodeMySpec.ClientUsers.ClientUser{oauth_expires_at: expires_at}) do
     # Consider expired if less than 5 minutes remaining
     DateTime.compare(DateTime.utc_now(), DateTime.add(expires_at, -300, :second)) == :gt
@@ -368,7 +402,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
     end
   end
 
-  defp get_server_url do
+  def get_server_url do
     Application.get_env(:code_my_spec, :oauth_base_url, "http://localhost:4000")
   end
 
@@ -403,7 +437,9 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
 
     headers = [{"authorization", "Bearer #{access_token}"}]
 
-    Logger.debug("Fetching user info from #{url} with token: #{String.slice(access_token, 0..10)}...")
+    Logger.debug(
+      "Fetching user info from #{url} with token: #{String.slice(access_token, 0..10)}..."
+    )
 
     case Req.get(url, Keyword.merge([headers: headers], req_opts)) do
       {:ok, %{status: 200, body: %{"id" => id, "email" => email}}} ->

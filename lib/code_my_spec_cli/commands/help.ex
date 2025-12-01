@@ -30,14 +30,16 @@ defmodule CodeMySpecCli.Commands.Help do
   defp show_all_commands do
     commands = CommandRegistry.all_commands()
 
-    Owl.IO.puts(["\n", Owl.Data.tag("Available Commands:", [:cyan, :bright]), "\n"])
-
     # Group commands by category
     grouped =
       commands
       |> Enum.group_by(fn module ->
         cond do
-          module in [CodeMySpecCli.Commands.Login, CodeMySpecCli.Commands.Logout, CodeMySpecCli.Commands.Whoami] ->
+          module in [
+            CodeMySpecCli.Commands.Login,
+            CodeMySpecCli.Commands.Logout,
+            CodeMySpecCli.Commands.Whoami
+          ] ->
             "Authentication"
 
           module == CodeMySpecCli.Commands.Components ->
@@ -51,38 +53,31 @@ defmodule CodeMySpecCli.Commands.Help do
         end
       end)
 
-    # Display each group
-    Enum.each(grouped, fn {category, cmds} ->
-      Owl.IO.puts([Owl.Data.tag("\n#{category}:", [:yellow, :bright])])
+    # Build the output text
+    output =
+      [""]
+      |> then(fn acc ->
+        Enum.reduce(grouped, acc, fn {_category, cmds}, acc ->
+          commands_text =
+            Enum.map(cmds, fn module ->
+              # Extract moduledoc as description
+              {:docs_v1, _, _, _, module_doc, _, _} = Code.fetch_docs(module)
+              description = extract_description(module_doc)
 
-      Enum.each(cmds, fn module ->
-        # Extract moduledoc as description
-        {:docs_v1, _, _, _, module_doc, _, _} = Code.fetch_docs(module)
-        description = extract_description(module_doc)
+              # Get command name from module
+              command_name = CommandRegistry.module_name(module)
 
-        # Get command name from module
-        command_name = CommandRegistry.module_name(module)
+              # Format: /command - description
+              "  /#{command_name} - #{description}\n"
+            end)
 
-        # Format: /command - description
-        Owl.IO.puts([
-          "  ",
-          Owl.Data.tag("/#{command_name}", [:green]),
-          Owl.Data.tag(" - ", :faint),
-          description
-        ])
+          acc ++ [commands_text]
+        end)
       end)
-    end)
+      |> then(fn acc -> acc ++ ["\n\nTip: Type /help <command> for detailed usage.\n"] end)
+      |> Enum.join()
 
-    Owl.IO.puts([
-      "\n",
-      Owl.Data.tag("Tip:", [:magenta, :bright]),
-      " Type ",
-      Owl.Data.tag("/help <command>", [:green]),
-      " for detailed usage.",
-      "\n"
-    ])
-
-    :ok
+    {:ok, output}
   end
 
   defp show_command_help(command_name) do
@@ -94,15 +89,8 @@ defmodule CodeMySpecCli.Commands.Help do
         {:docs_v1, _, _, _, module_doc, _, _} = Code.fetch_docs(command_module)
         description = extract_description(module_doc)
 
-        Owl.IO.puts([
-          "\n",
-          Owl.Data.tag("/#{command_name}", [:cyan, :bright]),
-          "\n\n",
-          description,
-          "\n"
-        ])
-
-        :ok
+        output = "\n/#{command_name}\n\n#{description}\n"
+        {:ok, output}
     end
   end
 

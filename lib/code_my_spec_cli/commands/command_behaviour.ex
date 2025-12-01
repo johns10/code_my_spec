@@ -26,7 +26,7 @@ defmodule CodeMySpecCli.Commands.CommandBehaviour do
   alias CodeMySpec.Users.Scope
 
   @callback execute(scope :: Scope.t(), args :: [String.t()]) ::
-    :ok | :exit | {:error, String.t()}
+    :ok | :exit | {:ok, String.t()} | {:error, String.t()} | {:switch_screen, atom()}
 
   defmacro __using__(_opts) do
     quote do

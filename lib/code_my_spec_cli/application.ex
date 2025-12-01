@@ -17,11 +17,7 @@ defmodule CodeMySpecCli.Application do
       {Phoenix.PubSub, name: CodeMySpec.PubSub},
       # Registry for OAuth callback coordination
       {Registry, keys: :unique, name: CodeMySpecCli.Registry},
-      # File watcher for automatic project sync
-      # CodeMySpec.ProjectSync.FileWatcherServer,
-      # # Job status component for UI
-      # CodeMySpecCli.Components.JobStatus,
-      # Local HTTP server for OAuth callbacks and Anthropic proxying
+      CodeMySpec.ProjectSync.FileWatcherServer,
       {CodeMySpecCli.WebServer, port: 8314}
     ]
 

@@ -6,7 +6,7 @@ defmodule CodeMySpecCli.Commands.Registry do
   Each command can define its own handler, help text, and argument parsing.
   """
 
-  @type command_result :: :ok | {:error, String.t()} | :exit
+  @type command_result :: :ok | {:ok, String.t()} | {:error, String.t()} | :exit
 
   # All available command modules
   @command_modules [

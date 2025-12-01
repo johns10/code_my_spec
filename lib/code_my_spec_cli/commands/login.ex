@@ -26,19 +26,12 @@ defmodule CodeMySpecCli.Commands.Login do
 
     opts = if server_url, do: [server_url: server_url], else: []
 
-    # Run OAuth flow in a background task so it doesn't block the REPL
+    # Run OAuth flow in a background task so it doesn't block the TUI
     Task.start(fn ->
-      case OAuthClient.authenticate(opts) do
-        {:ok, _token_data} ->
-          # Success message is already printed by OAuthClient.authenticate
-          :ok
-
-        {:error, reason} ->
-          Owl.IO.puts(["\n", Owl.Data.tag("Login failed: #{inspect(reason)}", [:red, :bright]), "\n"])
-      end
+      OAuthClient.authenticate_with_ui(opts)
     end)
 
-    Owl.IO.puts(["\n", Owl.Data.tag("Login started in background...", :faint), "\n"])
+    # Return success message
     :ok
   end
 end

@@ -1,52 +1,103 @@
 defmodule CodeMySpecCli.Screens.Main do
   @moduledoc """
-  Main REPL screen with status and command prompt.
+  Main application screen router.
+
+  Routes between different screen modules:
+  - :repl - Command prompt interface (Repl)
+  - :init - Project initialization (Init)
   """
   @behaviour Ratatouille.App
 
   import Ratatouille.View
-  import Ratatouille.Constants, only: [key: 1]
 
-  alias CodeMySpecCli.Commands.Registry, as: CommandRegistry
-  alias CodeMySpecCli.Auth.OAuthClient
-  alias CodeMySpec.Users.Scope
+  alias CodeMySpecCli.Screens.Repl
+  alias CodeMySpecCli.Screens.Init
+  alias CodeMySpecCli.Screens.ComponentsBrowser
 
-  defstruct [:input, :history, :output_lines, :authenticated, :project_name]
+  defstruct [:screen, :repl_state, :init_state, :components_state]
 
   @impl true
   def init(_context) do
-    # Get initial auth and project status
-    authenticated = OAuthClient.authenticated?()
-    scope = Scope.for_cli()
-    project_name = if scope && scope.active_project, do: scope.active_project.name, else: nil
-
     %__MODULE__{
-      input: "",
-      history: [],
-      output_lines: [],
-      authenticated: authenticated,
-      project_name: project_name
+      screen: :repl,
+      repl_state: Repl.init(),
+      init_state: nil,
+      components_state: nil
     }
   end
 
   @impl true
+  def subscribe(_model) do
+    # Return an interval subscription that will trigger re-renders every 100ms
+    # This allows components to fetch fresh auth/project status
+    Ratatouille.Runtime.Subscription.interval(100, :tick)
+  end
+
+  @impl true
   def update(model, msg) do
-    case msg do
-      {:event, %{ch: ch}} when ch > 0 ->
-        # Regular character input
-        %{model | input: model.input <> <<ch::utf8>>}
+    case {model.screen, msg} do
+      # Tick from interval subscription - just re-render
+      {_, :tick} ->
+        model
 
-      {:event, %{key: k}} ->
-        cond do
-          k == key(:backspace) or k == key(:backspace2) ->
-            # Backspace
-            %{model | input: String.slice(model.input, 0..-2//1)}
+      # REPL screen
+      {:repl, msg} ->
+        case Repl.update(model.repl_state, msg) do
+          {:ok, new_repl_state} ->
+            %{model | repl_state: new_repl_state}
 
-          k == key(:enter) ->
-            # Process command
-            handle_command(model)
+          {:switch_screen, :init, new_repl_state} ->
+            # Init.init() returns {state, command} tuple
+            case Init.init() do
+              {init_state, nil} ->
+                %{model | screen: :init, repl_state: new_repl_state, init_state: init_state}
 
-          true ->
+              {init_state, command} ->
+                new_model = %{model | screen: :init, repl_state: new_repl_state, init_state: init_state}
+                {new_model, command}
+            end
+
+          {:switch_screen, :components, new_repl_state} ->
+            # ComponentsBrowser.init() returns {state, command} tuple
+            case ComponentsBrowser.init() do
+              {components_state, nil} ->
+                %{model | screen: :components, repl_state: new_repl_state, components_state: components_state}
+
+              {components_state, command} ->
+                new_model = %{model | screen: :components, repl_state: new_repl_state, components_state: components_state}
+                {new_model, command}
+            end
+
+          {:switch_screen, _other_screen, new_repl_state} ->
+            # Generic fallback for unknown screens
+            %{model | repl_state: new_repl_state}
+        end
+
+      # Init screen
+      {:init, msg} ->
+        case Init.update(model.init_state, msg) do
+          {:ok, new_init_state} ->
+            %{model | init_state: new_init_state}
+
+          {:switch_screen, :repl, _new_init_state} ->
+            %{model | screen: :repl}
+
+          {:switch_screen, _other_screen, _new_init_state} ->
+            # Generic fallback
+            model
+        end
+
+      # Components screen
+      {:components, msg} ->
+        case ComponentsBrowser.update(model.components_state, msg) do
+          {:ok, new_components_state} ->
+            %{model | components_state: new_components_state}
+
+          {:switch_screen, :repl, _new_components_state} ->
+            %{model | screen: :repl}
+
+          {:switch_screen, _other_screen, _new_components_state} ->
+            # Generic fallback
             model
         end
 
@@ -59,82 +110,11 @@ defmodule CodeMySpecCli.Screens.Main do
   def render(model) do
     view do
       panel(title: "CodeMySpec", height: :fill) do
-        # Status bar
-        row do
-          column(size: 12) do
-            panel(title: "Status") do
-              label do
-                text(content: "Auth: ")
-
-                text(
-                  content: if(model.authenticated, do: "✓ Logged in", else: "✗ Not logged in"),
-                  color: if(model.authenticated, do: :green, else: :red)
-                )
-              end
-
-              label do
-                text(content: "Project: ")
-
-                if model.project_name do
-                  text(content: "✓ #{model.project_name}", color: :green)
-                else
-                  text(content: "✗ Not initialized", color: :red)
-                end
-              end
-            end
-          end
+        case model.screen do
+          :repl -> Repl.render(model.repl_state)
+          :init -> Init.render(model.init_state)
+          :components -> ComponentsBrowser.render(model.components_state)
         end
-
-        # Command history area
-        row do
-          column(size: 12) do
-            panel(title: "Output", height: :fill) do
-              viewport do
-                if Enum.empty?(model.output_lines) do
-                  label(content: "Type /help to see available commands.")
-                else
-                  for line <- Enum.take(model.output_lines, -20) do
-                    label(content: line)
-                  end
-                end
-              end
-            end
-          end
-        end
-
-        # Prompt
-        row do
-          column(size: 12) do
-            label do
-              text(content: "> ", color: :cyan, attributes: [:bold])
-              text(content: model.input)
-              text(content: "_")
-            end
-          end
-        end
-      end
-    end
-  end
-
-  defp handle_command(model) do
-    input = String.trim(model.input)
-
-    if input == "" do
-      %{model | input: ""}
-    else
-      case CommandRegistry.execute(input) do
-        :ok ->
-          output = ["> #{input}" | model.output_lines]
-          %{model | input: "", output_lines: output, history: [input | model.history]}
-
-        :exit ->
-          # Signal exit
-          System.halt(0)
-          model
-
-        {:error, message} ->
-          output = ["> #{input}", "Error: #{message}" | model.output_lines]
-          %{model | input: "", output_lines: output, history: [input | model.history]}
       end
     end
   end

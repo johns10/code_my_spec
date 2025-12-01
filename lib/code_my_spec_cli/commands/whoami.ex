@@ -21,7 +21,9 @@ defmodule CodeMySpecCli.Commands.Whoami do
 
         expires_info =
           case user.oauth_expires_at do
-            nil -> "Unknown"
+            nil ->
+              "Unknown"
+
             expires_at ->
               case DateTime.compare(expires_at, DateTime.utc_now()) do
                 :gt -> "Valid until #{Calendar.strftime(expires_at, "%Y-%m-%d %H:%M:%S")} UTC"
@@ -29,31 +31,9 @@ defmodule CodeMySpecCli.Commands.Whoami do
               end
           end
 
-        Owl.IO.puts([
-          "\n",
-          Owl.Data.tag("✓ Authenticated", [:green, :bright]),
-          "\n",
-          Owl.Data.tag("Email: #{user.email}", :cyan),
-          "\n",
-          Owl.Data.tag("User ID: #{user.id}", :faint),
-          "\n",
-          Owl.Data.tag("Token: #{token_preview}", :faint),
-          "\n",
-          Owl.Data.tag("Expires: #{expires_info}", :faint),
-          "\n"
-        ])
-
-        :ok
+        {:ok, "#{user.email}\ntoken: #{token_preview}\n#{expires_info}"}
 
       _ ->
-        Owl.IO.puts([
-          "\n",
-          Owl.Data.tag("✗ Not authenticated", [:red, :bright]),
-          "\n",
-          Owl.Data.tag("Run /login to authenticate", :faint),
-          "\n"
-        ])
-
         :ok
     end
   end

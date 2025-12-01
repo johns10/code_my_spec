@@ -9,7 +9,6 @@ defmodule CodeMySpecCli.Commands.Exit do
   Exit the CLI.
   """
   def execute(_scope, _args) do
-    Owl.IO.puts(["\n", Owl.Data.tag("Goodbye! 👋", :green)])
     :exit
   end
 

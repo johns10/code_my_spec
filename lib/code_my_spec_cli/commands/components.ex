@@ -5,7 +5,8 @@ defmodule CodeMySpecCli.Commands.Components do
 
   use CodeMySpecCli.Commands.CommandBehaviour
 
-  alias CodeMySpecCli.Screens.Components, as: ComponentsScreen
+  # Components screen handles its own scope checking
+  def resolve_scope(_args), do: {:ok, nil}
 
   @doc """
   Opens an interactive component browser with typeahead search.
@@ -18,6 +19,7 @@ defmodule CodeMySpecCli.Commands.Components do
   its details including paths, type, and relationships.
   """
   def execute(_scope, _args) do
-    ComponentsScreen.show()
+    # Switch to the components browser screen
+    {:switch_screen, :components}
   end
 end
