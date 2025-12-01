@@ -19,6 +19,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
     :selected_index,
     :filter,
     :detail_component,
+    :selected_requirement_index,
     :error_message
   ]
 
@@ -37,6 +38,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
         selected_index: 0,
         filter: "",
         detail_component: nil,
+        selected_requirement_index: 0,
         error_message: "No active project found. Run /init to initialize a project."
       }
 
@@ -55,6 +57,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
         selected_index: 0,
         filter: "",
         detail_component: nil,
+        selected_requirement_index: 0,
         error_message: nil
       }
 
@@ -99,7 +102,9 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
 
           k == key(:enter) and length(filtered) > 0 and model.selected_index < length(filtered) ->
             selected_component = Enum.at(filtered, model.selected_index)
-            {:ok, %{model | state: :detail, detail_component: selected_component}}
+            # Load the component with requirements preloaded
+            component_with_requirements = Components.get_component!(model.scope, selected_component.id)
+            {:ok, %{model | state: :detail, detail_component: component_with_requirements, selected_requirement_index: 0}}
 
           k == key(:backspace) or k == key(:backspace2) ->
             new_filter = String.slice(model.filter, 0..-2//1)
@@ -112,12 +117,28 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
             {:ok, model}
         end
 
-      # Detail state - return to list on Esc or Enter
+      # Detail state - navigate requirements and create sessions
       {:detail, {:event, %{key: k}}} ->
-        if k == key(:esc) or k == key(:enter) do
-          {:ok, %{model | state: :list, detail_component: nil}}
-        else
-          {:ok, model}
+        requirements = model.detail_component.requirements || []
+
+        cond do
+          k == key(:esc) ->
+            {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
+
+          k == key(:arrow_up) and length(requirements) > 0 ->
+            new_index = max(0, model.selected_requirement_index - 1)
+            {:ok, %{model | selected_requirement_index: new_index}}
+
+          k == key(:arrow_down) and length(requirements) > 0 ->
+            new_index = min(length(requirements) - 1, model.selected_requirement_index + 1)
+            {:ok, %{model | selected_requirement_index: new_index}}
+
+          k == key(:enter) and length(requirements) > 0 and model.selected_requirement_index < length(requirements) ->
+            selected_requirement = Enum.at(requirements, model.selected_requirement_index)
+            create_session_for_requirement(model, selected_requirement)
+
+          true ->
+            {:ok, model}
         end
 
       # PubSub messages for component updates
@@ -139,6 +160,54 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
 
       _ ->
         {:ok, model}
+    end
+  end
+
+  # Helper function to create a session for a requirement
+  defp create_session_for_requirement(model, requirement) do
+    alias CodeMySpec.Sessions
+
+    # Determine session type from requirement's satisfied_by field
+    session_type = parse_session_type(requirement.satisfied_by)
+
+    session_attrs = %{
+      type: session_type,
+      agent: :claude_code,
+      environment: :local,
+      execution_mode: :manual,
+      component_id: model.detail_component.id,
+      state: %{}
+    }
+
+    case Sessions.create_session(model.scope, session_attrs) do
+      {:ok, session} ->
+            {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
+
+
+      {:error, _changeset} ->
+        # If session creation fails, just return to list
+        {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
+    end
+  end
+
+  # Parse the session type from the satisfied_by module name
+  defp parse_session_type(nil), do: CodeMySpec.ComponentCodingSessions
+  defp parse_session_type(""), do: CodeMySpec.ComponentCodingSessions
+
+  defp parse_session_type(satisfied_by) when is_binary(satisfied_by) do
+    # Extract session type from module name like "CodeMySpec.ComponentDesignSessions"
+    case satisfied_by do
+      "CodeMySpec.ContextDesignSessions" -> CodeMySpec.ContextDesignSessions
+      "CodeMySpec.ContextComponentsDesignSessions" -> CodeMySpec.ContextComponentsDesignSessions
+      "CodeMySpec.ContextDesignReviewSessions" -> CodeMySpec.ContextDesignReviewSessions
+      "CodeMySpec.ContextCodingSessions" -> CodeMySpec.ContextCodingSessions
+      "CodeMySpec.ContextTestingSessions" -> CodeMySpec.ContextTestingSessions
+      "CodeMySpec.ComponentDesignSessions" -> CodeMySpec.ComponentDesignSessions
+      "CodeMySpec.ComponentDesignReviewSessions" -> CodeMySpec.ComponentDesignReviewSessions
+      "CodeMySpec.ComponentTestSessions" -> CodeMySpec.ComponentTestSessions
+      "CodeMySpec.ComponentCodingSessions" -> CodeMySpec.ComponentCodingSessions
+      "CodeMySpec.IntegrationSessions" -> CodeMySpec.IntegrationSessions
+      _ -> CodeMySpec.ComponentCodingSessions
     end
   end
 
@@ -236,31 +305,73 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
 
   defp render_detail(model) do
     component = model.detail_component
+    requirements = component.requirements || []
 
-    row do
-      column(size: 12) do
-        panel(title: "Component Details") do
-          label do
-            text(content: "Module Name: ", color: :yellow)
-            text(content: component.module_name || "Unknown")
-          end
-
-          label do
-            text(content: "Type: ", color: :yellow)
-            text(content: format_type(component.type))
-          end
-
-          if component.description do
+    [
+      # Component details
+      row do
+        column(size: 12) do
+          panel(title: "Component Details") do
             label do
-              text(content: "Description: ", color: :yellow)
-              text(content: component.description)
+              text(content: "Module Name: ", color: :yellow)
+              text(content: component.module_name || "Unknown")
+            end
+
+            label do
+              text(content: "Type: ", color: :yellow)
+              text(content: format_type(component.type))
+            end
+
+            if component.description do
+              label do
+                text(content: "Description: ", color: :yellow)
+                text(content: component.description)
+              end
             end
           end
+        end
+      end,
 
-          label(content: "")
-          label(content: "Press Enter or Esc to return", color: :yellow)
+      # Requirements section
+      row do
+        column(size: 12) do
+          panel(title: "Requirements (#{length(requirements)})", height: :fill) do
+            if length(requirements) == 0 do
+              label(content: "No requirements defined", color: :yellow)
+            else
+              viewport do
+                for {requirement, index} <- Enum.with_index(requirements) do
+                  render_requirement_item(requirement, index == model.selected_requirement_index)
+                end
+              end
+            end
+          end
+        end
+      end,
+
+      # Footer
+      row do
+        column(size: 12) do
+          label(content: "Use ↑/↓ to navigate requirements, Enter to create session, Esc to return", color: :yellow)
         end
       end
+    ]
+  end
+
+  defp render_requirement_item(requirement, is_selected) do
+    status_icon = if requirement.satisfied, do: "✓", else: "✗"
+    status_color = if requirement.satisfied, do: :green, else: :red
+    prefix = if is_selected, do: "▶ ", else: "  "
+
+    label do
+      text(content: prefix, attributes: if(is_selected, do: [:bold], else: []))
+      text(content: "#{status_icon} ", color: status_color, attributes: [:bold])
+      text(
+        content: requirement.name || "Unknown",
+        attributes: if(is_selected, do: [:bold], else: []),
+        color: if(is_selected, do: :cyan, else: :white)
+      )
+      text(content: " - #{requirement.description || ""}")
     end
   end
 
