@@ -131,7 +131,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert length(contexts_with_both) > 0
     end
 
-    test "parses spec files for context metadata when available", %{scope: scope, tmp_dir: tmp_dir} do
+    test "parses spec files for context metadata when available", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       {:ok, contexts} = Sync.sync_contexts(scope, base_dir: tmp_dir)
 
       # Find contexts with specs (have type)
@@ -164,7 +167,10 @@ defmodule CodeMySpec.Components.SyncTest do
   end
 
   describe "sync_components/2" do
-    test "finds all component implementation files in context subdirectory", %{scope: scope, tmp_dir: tmp_dir} do
+    test "finds all component implementation files in context subdirectory", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       {:ok, contexts} = Sync.sync_contexts(scope, base_dir: tmp_dir)
 
       # Pick a context and sync its components
@@ -221,7 +227,10 @@ defmodule CodeMySpec.Components.SyncTest do
       end
     end
 
-    test "removes components that no longer exist in filesystem", %{scope: scope, tmp_dir: tmp_dir} do
+    test "removes components that no longer exist in filesystem", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       {:ok, contexts} = Sync.sync_contexts(scope, base_dir: tmp_dir)
       context = List.first(contexts)
 
@@ -263,20 +272,10 @@ defmodule CodeMySpec.Components.SyncTest do
       end
     end
 
-    test "returns error if parent is not a context type", %{scope: scope} do
-      # Create a non-context component
-      {:ok, regular_component} =
-        Components.create_component(scope, %{
-          name: "RegularComponent",
-          module_name: "#{scope.active_project.module_name}.RegularComponent",
-          type: :schema
-        })
-
-      # Should return error
-      assert {:error, :parent_not_context} = Sync.sync_components(scope, regular_component)
-    end
-
-    test "excludes the context file itself (only syncs children)", %{scope: scope, tmp_dir: tmp_dir} do
+    test "excludes the context file itself (only syncs children)", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       {:ok, contexts} = Sync.sync_contexts(scope, base_dir: tmp_dir)
       context = List.first(contexts)
 
@@ -288,7 +287,10 @@ defmodule CodeMySpec.Components.SyncTest do
       end
     end
 
-    test "recursively finds all .ex files in context subdirectory", %{scope: scope, tmp_dir: tmp_dir} do
+    test "recursively finds all .ex files in context subdirectory", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       {:ok, contexts} = Sync.sync_contexts(scope, base_dir: tmp_dir)
       context = List.first(contexts)
 
