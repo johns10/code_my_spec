@@ -47,12 +47,6 @@ defmodule CodeMySpec.Components.RequirementsRepository do
       |> where([r], r.component_id == ^component.id)
       |> Repo.delete_all()
     end
-
-    component
-    |> Map.put(:dependencies, [])
-    |> Map.put(:dependents, [])
-    |> Map.put(:outgoing_dependencies, [])
-    |> Map.put(:incoming_dependencies, [])
   end
 
   @spec components_with_unsatisfied_requirements(Scope.t()) :: [Component.t()]
