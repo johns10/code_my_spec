@@ -9,6 +9,11 @@ defmodule CodeMySpec.Environments.Cli do
   alias CodeMySpec.Environments.Cli.TmuxAdapter
   alias CodeMySpec.Environments.Environment
 
+  # Allow adapter injection for testing
+  defp adapter do
+    Application.get_env(:code_my_spec, :tmux_adapter, TmuxAdapter)
+  end
+
   @doc """
   Create a tmux window for command execution and return Environment struct.
 
@@ -24,13 +29,13 @@ defmodule CodeMySpec.Environments.Cli do
   """
   @spec create(opts :: keyword()) :: {:ok, Environment.t()} | {:error, term()}
   def create(opts \\ []) do
-    unless TmuxAdapter.inside_tmux?() do
+    unless adapter().inside_tmux?() do
       {:error, "Not running inside tmux"}
     else
       session_id = Keyword.get(opts, :session_id, :rand.uniform(10000))
       window_name = "claude-#{session_id}"
 
-      case TmuxAdapter.create_window(window_name) do
+      case adapter().create_window(window_name) do
         {:ok, window_ref} ->
           metadata = Keyword.get(opts, :metadata, %{})
 
@@ -54,7 +59,7 @@ defmodule CodeMySpec.Environments.Cli do
   """
   @spec destroy(env :: Environment.t()) :: :ok | {:error, term()}
   def destroy(%Environment{ref: window_ref}) do
-    case TmuxAdapter.kill_window(window_ref) do
+    case adapter().kill_window(window_ref) do
       :ok -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -78,7 +83,7 @@ defmodule CodeMySpec.Environments.Cli do
     env_vars = Keyword.get(opts, :env, %{})
     full_command = build_command_with_env(command, env_vars)
 
-    TmuxAdapter.send_keys(window_ref, full_command)
+    adapter().send_keys(window_ref, full_command)
   end
 
   @doc """
