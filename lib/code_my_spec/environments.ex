@@ -33,25 +33,8 @@ defmodule CodeMySpec.Environments do
   @spec create(type :: atom(), opts :: keyword()) ::
           {:ok, Environment.t()} | {:error, term()}
   def create(type, opts \\ []) do
-    case get_impl(type) do
-      {:ok, impl_module} ->
-        case impl_module.create(opts) do
-          {:ok, ref} ->
-            metadata = Keyword.get(opts, :metadata, %{})
-
-            {:ok,
-             %Environment{
-               type: type,
-               ref: ref,
-               metadata: metadata
-             }}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, impl_module} <- get_impl(type) do
+      impl_module.create(opts)
     end
   end
 
@@ -63,12 +46,8 @@ defmodule CodeMySpec.Environments do
   """
   @spec destroy(env :: Environment.t()) :: :ok | {:error, term()}
   def destroy(%Environment{type: type} = env) do
-    case get_impl(type) do
-      {:ok, impl_module} ->
-        impl_module.destroy(env)
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, impl_module} <- get_impl(type) do
+      impl_module.destroy(env)
     end
   end
 
@@ -89,12 +68,8 @@ defmodule CodeMySpec.Environments do
   @spec run_command(env :: Environment.t(), command :: String.t(), opts :: keyword()) ::
           :ok | {:ok, map()} | {:error, term()}
   def run_command(%Environment{type: type} = env, command, opts \\ []) do
-    case get_impl(type) do
-      {:ok, impl_module} ->
-        impl_module.run_command(env, command, opts)
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, impl_module} <- get_impl(type) do
+      impl_module.run_command(env, command, opts)
     end
   end
 
@@ -104,12 +79,8 @@ defmodule CodeMySpec.Environments do
   @spec read_file(env :: Environment.t(), path :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def read_file(%Environment{type: type} = env, path) do
-    case get_impl(type) do
-      {:ok, impl_module} ->
-        impl_module.read_file(env, path)
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, impl_module} <- get_impl(type) do
+      impl_module.read_file(env, path)
     end
   end
 
@@ -119,12 +90,8 @@ defmodule CodeMySpec.Environments do
   @spec list_directory(env :: Environment.t(), path :: String.t()) ::
           {:ok, [String.t()]} | {:error, term()}
   def list_directory(%Environment{type: type} = env, path) do
-    case get_impl(type) do
-      {:ok, impl_module} ->
-        impl_module.list_directory(env, path)
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, impl_module} <- get_impl(type) do
+      impl_module.list_directory(env, path)
     end
   end
 

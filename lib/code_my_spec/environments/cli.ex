@@ -10,18 +10,19 @@ defmodule CodeMySpec.Environments.Cli do
   alias CodeMySpec.Environments.Environment
 
   @doc """
-  Create a tmux window for command execution and return window reference.
+  Create a tmux window for command execution and return Environment struct.
 
   ## Options
 
   - `:session_id` - Used for window naming (e.g., "claude-123")
+  - `:metadata` - Optional metadata to include in Environment struct
 
   ## Returns
 
-  - `{:ok, window_ref}` - Window created successfully
+  - `{:ok, %Environment{}}` - Environment created successfully
   - `{:error, reason}` - Failed to create window (e.g., not inside tmux)
   """
-  @spec create(opts :: keyword()) :: {:ok, String.t()} | {:error, term()}
+  @spec create(opts :: keyword()) :: {:ok, Environment.t()} | {:error, term()}
   def create(opts \\ []) do
     unless TmuxAdapter.inside_tmux?() do
       {:error, "Not running inside tmux"}
@@ -31,7 +32,14 @@ defmodule CodeMySpec.Environments.Cli do
 
       case TmuxAdapter.create_window(window_name) do
         {:ok, window_ref} ->
-          {:ok, window_ref}
+          metadata = Keyword.get(opts, :metadata, %{})
+
+          {:ok,
+           %Environment{
+             type: :cli,
+             ref: window_ref,
+             metadata: metadata
+           }}
 
         {:error, reason} ->
           {:error, reason}
