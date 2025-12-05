@@ -68,8 +68,7 @@ defmodule CodeMySpec.Sessions do
     status_filter = Keyword.get(opts, :status, [:active])
 
     Session
-    |> where([s], s.account_id == ^scope.active_account.id)
-    |> where([s], s.project_id == ^scope.active_project.id)
+    |> where([s], s.project_id == ^scope.active_project_id)
     |> where([s], s.user_id == ^scope.user.id)
     |> where([s], s.status in ^status_filter)
     |> preload([:project, :component])

@@ -28,7 +28,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       [component: :parent_component],
       [child_sessions: [component: :project]]
     ])
-    |> Repo.get_by!(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
+    |> Repo.get_by!(id: id, account_id: scope.active_account_id, user_id: scope.user.id)
     |> populate_display_name()
   end
 
@@ -40,7 +40,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       [component: :parent_component],
       [child_sessions: [component: :project]]
     ])
-    |> Repo.get_by(id: id, account_id: scope.active_account.id, user_id: scope.user.id)
+    |> Repo.get_by(id: id, project_id: scope.active_project_id, user_id: scope.user.id)
     |> case do
       nil -> nil
       session -> populate_display_name(session)
@@ -63,7 +63,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
         interaction_id,
         result
       ) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
@@ -75,7 +75,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   end
 
   def add_interaction(%Scope{} = scope, %Session{} = session, interaction_attrs) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
@@ -89,7 +89,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   end
 
   def remove_interaction(%Scope{} = scope, %Session{} = session, interaction_id) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     updated_interactions =
@@ -109,7 +109,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   end
 
   def complete_session(%Scope{} = scope, %Session{} = session) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
