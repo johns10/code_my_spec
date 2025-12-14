@@ -68,4 +68,22 @@ defmodule CodeMySpec.Sessions.Command do
       timestamp: DateTime.utc_now()
     }
   end
+
+  @doc """
+  Check if a command requires terminal visualization.
+
+  Currently only "claude" commands run in the terminal. This can be extended
+  as new terminal-bound command types are added.
+
+  ## Examples
+
+      iex> Command.runs_in_terminal?(%Command{command: "claude"})
+      true
+
+      iex> Command.runs_in_terminal?(%Command{command: "spawn_sessions"})
+      false
+  """
+  @spec runs_in_terminal?(t()) :: boolean()
+  def runs_in_terminal?(%__MODULE__{command: "claude"}), do: true
+  def runs_in_terminal?(_), do: false
 end

@@ -8,7 +8,7 @@ defmodule CodeMySpec.Sessions do
   alias CodeMySpec.Sessions.SessionsRepository
   alias CodeMySpec.Repo
 
-  alias CodeMySpec.Sessions.{Session, ResultHandler, Orchestrator, SessionsBroadcaster}
+  alias CodeMySpec.Sessions.{Session, ResultHandler, Orchestrator, SessionsBroadcaster, Executor}
   alias CodeMySpec.Users.Scope
 
   @doc """
@@ -117,7 +117,7 @@ defmodule CodeMySpec.Sessions do
 
   """
   def update_session(%Scope{} = scope, %Session{} = session, attrs) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
@@ -136,7 +136,7 @@ defmodule CodeMySpec.Sessions do
         interaction_id,
         %Result{} = result
       ) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
@@ -166,7 +166,7 @@ defmodule CodeMySpec.Sessions do
 
   """
   def delete_session(%Scope{} = scope, %Session{} = session) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     with {:ok, session = %Session{}} <-
@@ -186,7 +186,7 @@ defmodule CodeMySpec.Sessions do
 
   """
   def change_session(%Scope{} = scope, %Session{} = session, attrs \\ %{}) do
-    true = session.account_id == scope.active_account.id
+    true = session.account_id == scope.active_account_id
     true = session.user_id == scope.user.id
 
     Session.changeset(session, attrs, scope)
@@ -203,6 +203,13 @@ defmodule CodeMySpec.Sessions do
   def next_command(%Scope{} = scope, session_id, opts \\ []) do
     with {:ok, %Session{} = session} <-
            Orchestrator.next_command(scope, session_id, opts) do
+      SessionsBroadcaster.broadcast_updated(scope, session)
+      {:ok, session}
+    end
+  end
+
+  def execute(%Scope{} = scope, session_id, opts \\ []) do
+    with {:ok, %Session{} = session} <- Executor.execute(scope, session_id, opts) do
       SessionsBroadcaster.broadcast_updated(scope, session)
       {:ok, session}
     end

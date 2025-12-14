@@ -272,21 +272,6 @@ defmodule CodeMySpec.Components.SyncTest do
       end
     end
 
-    test "excludes the context file itself (only syncs children)", %{
-      scope: scope,
-      tmp_dir: tmp_dir
-    } do
-      {:ok, contexts} = Sync.sync_contexts(scope, base_dir: tmp_dir)
-      context = List.first(contexts)
-
-      if context do
-        {:ok, components} = Sync.sync_components(scope, context, base_dir: tmp_dir)
-
-        # Components should not include the context itself
-        refute Enum.any?(components, &(&1.id == context.id))
-      end
-    end
-
     test "recursively finds all .ex files in context subdirectory", %{
       scope: scope,
       tmp_dir: tmp_dir

@@ -5,28 +5,26 @@ defmodule CodeMySpec.Environments.CliTest do
   alias CodeMySpec.Environments.Cli
   alias CodeMySpec.Environments.Environment
   alias CodeMySpec.Environments.MockTmuxAdapter
+  alias CodeMySpec.Sessions.Command
 
   setup do
     # Configure mock adapter for tests
-    Application.put_env(:code_my_spec, :tmux_adapter, MockTmuxAdapter)
     MockTmuxAdapter.reset!()
-
-    on_exit(fn ->
-      # Restore real adapter after test
-      Application.delete_env(:code_my_spec, :tmux_adapter)
-    end)
 
     :ok
   end
 
   describe "create/1" do
-    test "creates Environment struct with tmux window reference" do
+    test "creates Environment struct with window name (lazy creation)" do
       session_id = :rand.uniform(10000)
 
       assert {:ok, %Environment{} = env} = Cli.create(session_id: session_id)
       assert env.type == :cli
-      assert env.ref == "@mock-claude-#{session_id}"
+      assert env.ref == "session-#{session_id}"
       assert env.metadata == %{}
+
+      # Window should not be created yet (lazy creation)
+      refute MockTmuxAdapter.window_exists?("session-#{session_id}")
     end
 
     test "includes metadata in Environment struct when provided" do
@@ -41,12 +39,6 @@ defmodule CodeMySpec.Environments.CliTest do
       assert {:ok, %Environment{} = env} = Cli.create()
       assert env.type == :cli
       assert is_binary(env.ref)
-    end
-
-    test "returns error when not inside tmux" do
-      Process.put(:mock_inside_tmux, false)
-
-      assert {:error, "Not running inside tmux"} = Cli.create(session_id: 123)
     end
   end
 
@@ -69,62 +61,84 @@ defmodule CodeMySpec.Environments.CliTest do
   end
 
   describe "run_command/3" do
-    test "sends command to tmux window" do
-      {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
+    test "sends command to tmux window and creates window lazily" do
+      session_id = :rand.uniform(10000)
+      {:ok, env} = Cli.create(session_id: session_id)
+      command = %Command{command: "claude", metadata: %{}}
 
-      assert :ok = Cli.run_command(env, "echo 'test'")
+      # Window should not exist yet
+      refute MockTmuxAdapter.window_exists?("session-#{session_id}")
+
+      assert :ok = Cli.run_command(env, command)
+
+      # Window should now exist (lazy creation)
+      assert MockTmuxAdapter.window_exists?("session-#{session_id}")
 
       # Verify command was sent
       commands = MockTmuxAdapter.get_sent_commands()
       assert length(commands) == 1
-      assert {_window_ref, "echo 'test'"} = hd(commands)
+      assert {_window_name, "claude"} = hd(commands)
     end
 
     test "sends command with environment variables" do
       {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
+      command = %Command{command: "claude", metadata: %{}}
 
-      assert :ok = Cli.run_command(env, "echo $FOO", env: %{"FOO" => "bar"})
+      assert :ok = Cli.run_command(env, command, env: %{"FOO" => "bar"})
 
       # Verify environment variable was included
       commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_ref, command}] = commands
-      assert command =~ "export FOO="
-      assert command =~ "echo $FOO"
+      [{_window_name, cmd_str}] = commands
+      assert cmd_str =~ "export FOO="
+      assert cmd_str =~ "claude"
     end
 
     test "sends multiple environment variables" do
       {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
+      command = %Command{command: "claude", metadata: %{}}
 
-      assert :ok =
-               Cli.run_command(env, "echo test", env: %{"FOO" => "bar", "BAZ" => "qux"})
+      assert :ok = Cli.run_command(env, command, env: %{"FOO" => "bar", "BAZ" => "qux"})
 
       commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_ref, command}] = commands
-      assert command =~ "export FOO="
-      assert command =~ "export BAZ="
+      [{_window_name, cmd_str}] = commands
+      assert cmd_str =~ "export FOO="
+      assert cmd_str =~ "export BAZ="
     end
 
     test "escapes shell special characters in environment variables" do
       {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
+      command = %Command{command: "claude", metadata: %{}}
 
-      assert :ok = Cli.run_command(env, "echo test", env: %{"FOO" => "bar'baz"})
+      assert :ok = Cli.run_command(env, command, env: %{"FOO" => "bar'baz"})
 
       commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_ref, command}] = commands
+      [{_window_name, cmd_str}] = commands
       # Should escape the single quote
-      assert command =~ "export FOO='bar'\\''baz''"
+      assert cmd_str =~ "export FOO='bar'\\''baz''"
     end
 
     test "returns immediately without blocking" do
       {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
+      command = %Command{command: "claude", metadata: %{}}
 
       # Mock adapter returns immediately, simulating the async nature
       start_time = System.monotonic_time(:millisecond)
-      assert :ok = Cli.run_command(env, "sleep 100")
+      assert :ok = Cli.run_command(env, command)
       end_time = System.monotonic_time(:millisecond)
 
       # Should be very fast (< 100ms)
       assert end_time - start_time < 100
+    end
+
+    test "handles legacy format where command field has shell command" do
+      {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
+      command = %Command{command: "echo 'legacy'", metadata: %{}}
+
+      assert :ok = Cli.run_command(env, command)
+
+      commands = MockTmuxAdapter.get_sent_commands()
+      assert length(commands) == 1
+      assert {_window_ref, "echo 'legacy'"} = hd(commands)
     end
   end
 

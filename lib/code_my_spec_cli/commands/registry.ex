@@ -15,6 +15,8 @@ defmodule CodeMySpecCli.Commands.Registry do
     CodeMySpecCli.Commands.Logout,
     CodeMySpecCli.Commands.Whoami,
     CodeMySpecCli.Commands.Components,
+    CodeMySpecCli.Commands.Sessions,
+    CodeMySpecCli.Commands.SubmitResult,
     CodeMySpecCli.Commands.Help,
     CodeMySpecCli.Commands.Exit
   ]

@@ -8,6 +8,7 @@ defmodule CodeMySpec.Environments.Cli do
 
   alias CodeMySpec.Environments.Cli.TmuxAdapter
   alias CodeMySpec.Environments.Environment
+  require Logger
 
   # Allow adapter injection for testing
   defp adapter do
@@ -15,17 +16,20 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   @doc """
-  Create a tmux window for command execution and return Environment struct.
+  Create an environment for command execution (lazy window creation).
+
+  The tmux window is not created immediately. Instead, it's created on-demand
+  when the first command runs. This allows for more efficient resource usage.
 
   ## Options
 
-  - `:session_id` - Used for window naming (e.g., "claude-123")
+  - `:session_id` - Used for window naming (e.g., "session-123")
   - `:metadata` - Optional metadata to include in Environment struct
 
   ## Returns
 
   - `{:ok, %Environment{}}` - Environment created successfully
-  - `{:error, reason}` - Failed to create window (e.g., not inside tmux)
+  - `{:error, reason}` - Failed to validate environment (e.g., not inside tmux)
   """
   @spec create(opts :: keyword()) :: {:ok, Environment.t()} | {:error, term()}
   def create(opts \\ []) do
@@ -33,22 +37,15 @@ defmodule CodeMySpec.Environments.Cli do
       {:error, "Not running inside tmux"}
     else
       session_id = Keyword.get(opts, :session_id, :rand.uniform(10000))
-      window_name = "claude-#{session_id}"
+      window_name = "session-#{session_id}"
+      metadata = Keyword.get(opts, :metadata, %{})
 
-      case adapter().create_window(window_name) do
-        {:ok, window_ref} ->
-          metadata = Keyword.get(opts, :metadata, %{})
-
-          {:ok,
-           %Environment{
-             type: :cli,
-             ref: window_ref,
-             metadata: metadata
-           }}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+      {:ok,
+       %Environment{
+         type: :cli,
+         ref: window_name,
+         metadata: metadata
+       }}
     end
   end
 
@@ -56,10 +53,11 @@ defmodule CodeMySpec.Environments.Cli do
   Destroy a tmux window and clean up resources.
 
   This function is idempotent - returns `:ok` even if the window doesn't exist.
+  Since window creation is lazy, this might be called on a window that was never created.
   """
   @spec destroy(env :: Environment.t()) :: :ok | {:error, term()}
-  def destroy(%Environment{ref: window_ref}) do
-    case adapter().kill_window(window_ref) do
+  def destroy(%Environment{ref: window_name}) do
+    case adapter().kill_window(window_name) do
       :ok -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -68,23 +66,76 @@ defmodule CodeMySpec.Environments.Cli do
   @doc """
   Send a command to the tmux window for display. Does not capture output.
 
-  ## Options
-
-  - `:env` - Map of environment variables to set before running command
+  Pattern matches on command type and dispatches appropriately.
 
   ## Returns
 
   - `:ok` - Command sent successfully
   - `{:error, reason}` - Failed to send command
   """
-  @spec run_command(env :: Environment.t(), command :: String.t(), opts :: keyword()) ::
-          :ok | {:error, term()}
-  def run_command(%Environment{ref: window_ref}, command, opts \\ []) do
-    env_vars = Keyword.get(opts, :env, %{})
-    full_command = build_command_with_env(command, env_vars)
+  @spec run_command(
+          env :: Environment.t(),
+          command :: CodeMySpec.Sessions.Command.t(),
+          opts :: keyword()
+        ) ::
+          :ok | {:ok, map()} | {:error, term()}
+  def run_command(_env, _command, _opts \\ [])
 
-    adapter().send_keys(window_ref, full_command)
+  # Handle empty commands - auto-complete with success
+  def run_command(
+        %Environment{},
+        %CodeMySpec.Sessions.Command{command: cmd},
+        _opts
+      )
+      when cmd == "" or is_nil(cmd) do
+    {:ok, %{}}
   end
+
+  def run_command(
+        %Environment{} = env,
+        %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{path: path}},
+        _opts
+      ) do
+    read_file(env, path)
+  end
+
+  def run_command(
+        %Environment{} = env,
+        %CodeMySpec.Sessions.Command{command: "list_directory", metadata: %{path: path}},
+        _opts
+      ) do
+    list_directory(env, path)
+  end
+
+  def run_command(
+        %Environment{ref: window_name},
+        %CodeMySpec.Sessions.Command{command: "claude" = cmd},
+        opts
+      ) do
+    with :ok <- ensure_window_exists(window_name) do
+      env_vars = Keyword.get(opts, :env, %{})
+      full_command = build_command_with_env(cmd, env_vars)
+
+      adapter().send_keys(window_name, full_command)
+    end
+  end
+
+  # Fallback for legacy format where command field contains the actual shell command
+  def run_command(
+        %Environment{ref: window_name},
+        %CodeMySpec.Sessions.Command{command: cmd},
+        opts
+      )
+      when is_binary(cmd) do
+    with :ok <- ensure_window_exists(window_name) do
+      env_vars = Keyword.get(opts, :env, %{})
+      full_command = build_command_with_env(cmd, env_vars)
+
+      adapter().send_keys(window_name, full_command)
+    end
+  end
+
+  def environment_setup_command(_), do: ""
 
   @doc """
   Read a file from the server-side file system.
@@ -109,6 +160,23 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   # Private functions
+
+  @doc false
+  defp ensure_window_exists(window_name) do
+    unless adapter().window_exists?(window_name) do
+      case adapter().create_window(window_name) do
+        {:ok, _window_id} ->
+          Logger.debug("Created tmux window: #{window_name}")
+          :ok
+
+        {:error, reason} ->
+          Logger.error("Failed to create tmux window #{window_name}: #{inspect(reason)}")
+          {:error, reason}
+      end
+    else
+      :ok
+    end
+  end
 
   defp build_command_with_env(command, env_vars) when map_size(env_vars) == 0 do
     command

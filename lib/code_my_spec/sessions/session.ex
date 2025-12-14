@@ -23,7 +23,7 @@ defmodule CodeMySpec.Sessions.Session do
             | CodeMySpec.IntegrationSessions
             | nil,
           agent: :claude_code | nil,
-          environment: :local | :vscode | nil,
+          environment: :local | :vscode | :cli | nil,
           execution_mode: :manual | :auto | :agentic | nil,
           status: :active | :complete | :failed | :cancelled | nil,
           state: map() | nil,
@@ -49,7 +49,7 @@ defmodule CodeMySpec.Sessions.Session do
   schema "sessions" do
     field :type, CodeMySpec.Sessions.SessionType
     field :agent, Ecto.Enum, values: [:claude_code]
-    field :environment, Ecto.Enum, values: [:local, :vscode]
+    field :environment, Ecto.Enum, values: [:local, :vscode, :cli]
     field :execution_mode, Ecto.Enum, values: [:manual, :auto, :agentic], default: :manual
     field :status, Ecto.Enum, values: [:active, :complete, :failed, :cancelled], default: :active
     field :external_conversation_id, :string

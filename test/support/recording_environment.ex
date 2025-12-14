@@ -5,8 +5,78 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   """
 
   alias CodeMySpec.Support.CLIRecorder
+  alias CodeMySpec.Environments.Environment
 
   @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
+
+  @impl true
+  def create(opts \\ []) do
+    session_id = Keyword.get(opts, :session_id)
+
+    {:ok,
+     %Environment{
+       type: :local,
+       ref: nil,
+       metadata: %{session_id: session_id}
+     }}
+  end
+
+  @impl true
+  def destroy(_env), do: :ok
+
+  @impl true
+  def run_command(_env, _command, _opts \\ [])
+
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{path: path}}, _opts) do
+    case File.read(path) do
+      {:ok, content} -> {:ok, %{output: content, exit_code: 0}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "list_directory", metadata: %{path: path}}, _opts) do
+    case File.ls(path) do
+      {:ok, files} -> {:ok, %{output: Enum.join(files, "\n"), exit_code: 0}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "claude", metadata: %{cmd: cmd}}, _opts) do
+    case System.cmd("sh", ["-c", cmd], stderr_to_stdout: true) do
+      {output, 0} ->
+        {:ok, %{output: clean_terminal_output(output), exit_code: 0}}
+
+      {output, exit_code} ->
+        {:ok, %{output: clean_terminal_output(output), exit_code: exit_code}}
+    end
+  rescue
+    e ->
+      {:error, Exception.message(e)}
+  end
+
+  # Fallback for legacy format where command field contains the actual shell command
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: cmd}, _opts) when is_binary(cmd) do
+    case System.cmd("sh", ["-c", cmd], stderr_to_stdout: true) do
+      {output, 0} ->
+        {:ok, %{output: clean_terminal_output(output), exit_code: 0}}
+
+      {output, exit_code} ->
+        {:ok, %{output: clean_terminal_output(output), exit_code: exit_code}}
+    end
+  rescue
+    e ->
+      {:error, Exception.message(e)}
+  end
+
+  @impl true
+  def read_file(_env, path) do
+    File.read(path)
+  end
+
+  @impl true
+  def list_directory(_env, path) do
+    File.ls(path)
+  end
 
   @impl true
   def environment_setup_command(%{branch_name: branch_name, working_dir: working_dir}) do
@@ -56,7 +126,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
     """
   end
 
-  @impl true
+  # Legacy cmd/3 - kept for backward compatibility but not in behavior
   def cmd(command, args, opts) do
     full_command = [command | args]
 

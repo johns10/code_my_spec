@@ -7,10 +7,10 @@ defmodule CodeMySpec.Specs.SpecParserTest do
   describe "parse/1" do
     test "reads file and parses to Spec" do
       # Use an actual spec file from the project
-      file_path = "docs/spec/code_my_spec/contexts/dependency_tree.spec.md"
+      file_path = "docs/spec/code_my_spec/environments.spec.md"
 
       assert {:ok, %Spec{} = spec} = SpecParser.parse(file_path)
-      assert spec.module_name == "CodeMySpec.Contexts.DependencyTree"
+      assert spec.module_name == "CodeMySpec.Environments"
     end
 
     test "returns error for missing file" do

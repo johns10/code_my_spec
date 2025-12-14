@@ -13,8 +13,9 @@ defmodule CodeMySpecCli.Screens.Main do
   alias CodeMySpecCli.Screens.Repl
   alias CodeMySpecCli.Screens.Init
   alias CodeMySpecCli.Screens.ComponentsBrowser
+  alias CodeMySpecCli.Screens.Sessions
 
-  defstruct [:screen, :repl_state, :init_state, :components_state]
+  defstruct [:screen, :repl_state, :init_state, :components_state, :sessions_state]
 
   @impl true
   def init(_context) do
@@ -22,7 +23,8 @@ defmodule CodeMySpecCli.Screens.Main do
       screen: :repl,
       repl_state: Repl.init(),
       init_state: nil,
-      components_state: nil
+      components_state: nil,
+      sessions_state: nil
     }
   end
 
@@ -53,7 +55,13 @@ defmodule CodeMySpecCli.Screens.Main do
                 %{model | screen: :init, repl_state: new_repl_state, init_state: init_state}
 
               {init_state, command} ->
-                new_model = %{model | screen: :init, repl_state: new_repl_state, init_state: init_state}
+                new_model = %{
+                  model
+                  | screen: :init,
+                    repl_state: new_repl_state,
+                    init_state: init_state
+                }
+
                 {new_model, command}
             end
 
@@ -61,11 +69,24 @@ defmodule CodeMySpecCli.Screens.Main do
             # ComponentsBrowser.init() returns {state, command} tuple
             case ComponentsBrowser.init() do
               {components_state, nil} ->
-                %{model | screen: :components, repl_state: new_repl_state, components_state: components_state}
+                %{
+                  model
+                  | screen: :components,
+                    repl_state: new_repl_state,
+                    components_state: components_state
+                }
+            end
 
-              {components_state, command} ->
-                new_model = %{model | screen: :components, repl_state: new_repl_state, components_state: components_state}
-                {new_model, command}
+          {:switch_screen, :sessions, new_repl_state} ->
+            # Sessions.init() returns {state, command} tuple
+            case Sessions.init() do
+              {sessions_state, nil} ->
+                %{
+                  model
+                  | screen: :sessions,
+                    repl_state: new_repl_state,
+                    sessions_state: sessions_state
+                }
             end
 
           {:switch_screen, _other_screen, new_repl_state} ->
@@ -81,10 +102,6 @@ defmodule CodeMySpecCli.Screens.Main do
 
           {:switch_screen, :repl, _new_init_state} ->
             %{model | screen: :repl}
-
-          {:switch_screen, _other_screen, _new_init_state} ->
-            # Generic fallback
-            model
         end
 
       # Components screen
@@ -95,10 +112,16 @@ defmodule CodeMySpecCli.Screens.Main do
 
           {:switch_screen, :repl, _new_components_state} ->
             %{model | screen: :repl}
+        end
 
-          {:switch_screen, _other_screen, _new_components_state} ->
-            # Generic fallback
-            model
+      # Sessions screen
+      {:sessions, msg} ->
+        case Sessions.update(model.sessions_state, msg) do
+          {:ok, new_sessions_state} ->
+            %{model | sessions_state: new_sessions_state}
+
+          {:switch_screen, :repl, _new_sessions_state} ->
+            %{model | screen: :repl}
         end
 
       _ ->
@@ -114,6 +137,7 @@ defmodule CodeMySpecCli.Screens.Main do
           :repl -> Repl.render(model.repl_state)
           :init -> Init.render(model.init_state)
           :components -> ComponentsBrowser.render(model.components_state)
+          :sessions -> Sessions.render(model.sessions_state)
         end
       end
     end

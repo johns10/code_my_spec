@@ -103,8 +103,16 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
           k == key(:enter) and length(filtered) > 0 and model.selected_index < length(filtered) ->
             selected_component = Enum.at(filtered, model.selected_index)
             # Load the component with requirements preloaded
-            component_with_requirements = Components.get_component!(model.scope, selected_component.id)
-            {:ok, %{model | state: :detail, detail_component: component_with_requirements, selected_requirement_index: 0}}
+            component_with_requirements =
+              Components.get_component!(model.scope, selected_component.id)
+
+            {:ok,
+             %{
+               model
+               | state: :detail,
+                 detail_component: component_with_requirements,
+                 selected_requirement_index: 0
+             }}
 
           k == key(:backspace) or k == key(:backspace2) ->
             new_filter = String.slice(model.filter, 0..-2//1)
@@ -133,7 +141,8 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
             new_index = min(length(requirements) - 1, model.selected_requirement_index + 1)
             {:ok, %{model | selected_requirement_index: new_index}}
 
-          k == key(:enter) and length(requirements) > 0 and model.selected_requirement_index < length(requirements) ->
+          k == key(:enter) and length(requirements) > 0 and
+              model.selected_requirement_index < length(requirements) ->
             selected_requirement = Enum.at(requirements, model.selected_requirement_index)
             create_session_for_requirement(model, selected_requirement)
 
@@ -173,16 +182,15 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
     session_attrs = %{
       type: session_type,
       agent: :claude_code,
-      environment: :local,
+      environment: :cli,
       execution_mode: :manual,
       component_id: model.detail_component.id,
       state: %{}
     }
 
     case Sessions.create_session(model.scope, session_attrs) do
-      {:ok, session} ->
-            {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
-
+      {:ok, _session} ->
+        {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
 
       {:error, _changeset} ->
         # If session creation fails, just return to list
@@ -197,17 +205,16 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
   defp parse_session_type(satisfied_by) when is_binary(satisfied_by) do
     # Extract session type from module name like "CodeMySpec.ComponentDesignSessions"
     case satisfied_by do
-      "CodeMySpec.ContextDesignSessions" -> CodeMySpec.ContextDesignSessions
-      "CodeMySpec.ContextComponentsDesignSessions" -> CodeMySpec.ContextComponentsDesignSessions
-      "CodeMySpec.ContextDesignReviewSessions" -> CodeMySpec.ContextDesignReviewSessions
-      "CodeMySpec.ContextCodingSessions" -> CodeMySpec.ContextCodingSessions
-      "CodeMySpec.ContextTestingSessions" -> CodeMySpec.ContextTestingSessions
-      "CodeMySpec.ComponentDesignSessions" -> CodeMySpec.ComponentDesignSessions
-      "CodeMySpec.ComponentDesignReviewSessions" -> CodeMySpec.ComponentDesignReviewSessions
-      "CodeMySpec.ComponentTestSessions" -> CodeMySpec.ComponentTestSessions
-      "CodeMySpec.ComponentCodingSessions" -> CodeMySpec.ComponentCodingSessions
-      "CodeMySpec.IntegrationSessions" -> CodeMySpec.IntegrationSessions
-      _ -> CodeMySpec.ComponentCodingSessions
+      "ContextDesignSessions" -> CodeMySpec.ContextDesignSessions
+      "ContextComponentsDesignSessions" -> CodeMySpec.ContextComponentsDesignSessions
+      "ContextDesignReviewSessions" -> CodeMySpec.ContextDesignReviewSessions
+      "ContextCodingSessions" -> CodeMySpec.ContextCodingSessions
+      "ContextTestingSessions" -> CodeMySpec.ContextTestingSessions
+      "ComponentDesignSessions" -> CodeMySpec.ComponentDesignSessions
+      "ComponentDesignReviewSessions" -> CodeMySpec.ComponentDesignReviewSessions
+      "ComponentTestSessions" -> CodeMySpec.ComponentTestSessions
+      "ComponentCodingSessions" -> CodeMySpec.ComponentCodingSessions
+      "IntegrationSessions" -> CodeMySpec.IntegrationSessions
     end
   end
 
@@ -352,7 +359,10 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
       # Footer
       row do
         column(size: 12) do
-          label(content: "Use ↑/↓ to navigate requirements, Enter to create session, Esc to return", color: :yellow)
+          label(
+            content: "Use ↑/↓ to navigate requirements, Enter to create session, Esc to return",
+            color: :yellow
+          )
         end
       end
     ]
@@ -366,11 +376,13 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
     label do
       text(content: prefix, attributes: if(is_selected, do: [:bold], else: []))
       text(content: "#{status_icon} ", color: status_color, attributes: [:bold])
+
       text(
         content: requirement.name || "Unknown",
         attributes: if(is_selected, do: [:bold], else: []),
         color: if(is_selected, do: :cyan, else: :white)
       )
+
       text(content: " - #{requirement.description || ""}")
     end
   end

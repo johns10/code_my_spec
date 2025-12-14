@@ -15,6 +15,7 @@ defmodule CodeMySpec.Environments.MockTmuxAdapter do
   """
   def inside_tmux? do
     Process.get(:mock_inside_tmux, true)
+    true
   end
 
   @doc """
@@ -69,9 +70,12 @@ defmodule CodeMySpec.Environments.MockTmuxAdapter do
   Reset mock state - useful in test setup.
   """
   def reset! do
-    Process.delete(:mock_inside_tmux)
     Process.delete(:mock_windows)
     Process.delete(:mock_commands)
+    Process.delete(:mock_panes)
+    Process.delete(:mock_pane_titles)
+    Process.delete(:mock_joined_panes)
+    Process.delete(:mock_broken_windows)
   end
 
   @doc """
@@ -80,5 +84,126 @@ defmodule CodeMySpec.Environments.MockTmuxAdapter do
   def get_sent_commands do
     Process.get(:mock_commands, [])
     |> Enum.reverse()
+  end
+
+  @doc """
+  Mock split_pane - creates a mock pane and returns pane ID.
+  """
+  def split_pane(_target, _direction, _size) do
+    pane_id = "@mock-pane-#{:rand.uniform(1000)}"
+
+    # Store pane ID in process dictionary to track created panes
+    panes = Process.get(:mock_panes, MapSet.new())
+    Process.put(:mock_panes, MapSet.put(panes, pane_id))
+
+    {:ok, pane_id}
+  end
+
+  @doc """
+  Mock set_pane_title - stores the title for later retrieval.
+  """
+  def set_pane_title(pane_id, title) do
+    # Store pane titles in process dictionary
+    titles = Process.get(:mock_pane_titles, %{})
+    Process.put(:mock_pane_titles, Map.put(titles, pane_id, title))
+
+    :ok
+  end
+
+  @doc """
+  Mock enter_copy_mode - always succeeds.
+  """
+  def enter_copy_mode(_pane_id) do
+    :ok
+  end
+
+  @doc """
+  Mock kill_pane - removes pane from tracking (idempotent).
+  """
+  def kill_pane(pane_id) do
+    # Remove from tracked panes
+    panes = Process.get(:mock_panes, MapSet.new())
+    Process.put(:mock_panes, MapSet.delete(panes, pane_id))
+
+    # Remove title
+    titles = Process.get(:mock_pane_titles, %{})
+    Process.put(:mock_pane_titles, Map.delete(titles, pane_id))
+
+    :ok
+  end
+
+  @doc """
+  Mock list_panes - returns formatted output of tracked panes.
+  """
+  def list_panes(_target, _format) do
+    panes = Process.get(:mock_panes, MapSet.new())
+    titles = Process.get(:mock_pane_titles, %{})
+
+    output =
+      panes
+      |> Enum.map(fn pane_id ->
+        title = Map.get(titles, pane_id, "")
+        "#{pane_id}:#{title}"
+      end)
+      |> Enum.join("\n")
+
+    {:ok, output}
+  end
+
+  @doc """
+  Mock get_pane_property - returns property value for a pane.
+  """
+  def get_pane_property(pane_id, "\#{pane_title}") do
+    titles = Process.get(:mock_pane_titles, %{})
+
+    case Map.get(titles, pane_id) do
+      nil -> {:error, "pane not found"}
+      title -> {:ok, title}
+    end
+  end
+
+  def get_pane_property(_pane_id, _property) do
+    {:ok, "mock-value"}
+  end
+
+  @doc """
+  Mock join_pane - joins a pane from source window into current window.
+  """
+  def join_pane(source_window, _opts \\ []) do
+    # In mock, we simulate this by creating a new pane
+    # and tracking which window it came from
+    pane_id = "@mock-pane-#{:rand.uniform(1000)}"
+
+    panes = Process.get(:mock_panes, MapSet.new())
+    Process.put(:mock_panes, MapSet.put(panes, pane_id))
+
+    # Track source window for verification
+    joined_panes = Process.get(:mock_joined_panes, %{})
+    Process.put(:mock_joined_panes, Map.put(joined_panes, pane_id, source_window))
+
+    {:ok, pane_id}
+  end
+
+  @doc """
+  Mock break_pane - breaks a pane out into its own window.
+  """
+  def break_pane(pane_id, opts \\ []) do
+    window_name = Keyword.get(opts, :window_name)
+
+    # Remove from tracked panes
+    panes = Process.get(:mock_panes, MapSet.new())
+    Process.put(:mock_panes, MapSet.delete(panes, pane_id))
+
+    # Remove from joined panes tracking
+    joined_panes = Process.get(:mock_joined_panes, %{})
+    Process.put(:mock_joined_panes, Map.delete(joined_panes, pane_id))
+
+    # Track broken out windows if window_name provided
+    if window_name do
+      broken_windows = Process.get(:mock_broken_windows, MapSet.new())
+      Process.put(:mock_broken_windows, MapSet.put(broken_windows, window_name))
+    end
+
+    :ok
   end
 end

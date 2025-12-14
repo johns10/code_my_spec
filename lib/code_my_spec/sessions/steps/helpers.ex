@@ -88,7 +88,7 @@ defmodule CodeMySpec.Sessions.Steps.Helpers do
     end
   end
 
-  defp handle_opts(opts, session),
+  def handle_opts(opts, session),
     do:
       opts
       |> handle_resume_opts(session)

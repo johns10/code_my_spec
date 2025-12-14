@@ -8,6 +8,8 @@ defmodule CodeMySpec.Environments do
   """
 
   alias CodeMySpec.Environments.Environment
+  alias CodeMySpec.Sessions.Command
+  require Logger
 
   @doc """
   Create a new execution context and return an opaque Environment struct.
@@ -33,9 +35,7 @@ defmodule CodeMySpec.Environments do
   @spec create(type :: atom(), opts :: keyword()) ::
           {:ok, Environment.t()} | {:error, term()}
   def create(type, opts \\ []) do
-    with {:ok, impl_module} <- get_impl(type) do
-      impl_module.create(opts)
-    end
+    impl(type).create(opts)
   end
 
   @doc """
@@ -46,9 +46,7 @@ defmodule CodeMySpec.Environments do
   """
   @spec destroy(env :: Environment.t()) :: :ok | {:error, term()}
   def destroy(%Environment{type: type} = env) do
-    with {:ok, impl_module} <- get_impl(type) do
-      impl_module.destroy(env)
-    end
+    impl(type).destroy(env)
   end
 
   @doc """
@@ -65,12 +63,10 @@ defmodule CodeMySpec.Environments do
   - CLI: `:ok | {:error, term()}` (no output capture)
   - Server: `{:ok, result :: map()} | {:error, term()}` (with output)
   """
-  @spec run_command(env :: Environment.t(), command :: String.t(), opts :: keyword()) ::
+  @spec run_command(env :: Environment.t(), command :: Command.t(), opts :: keyword()) ::
           :ok | {:ok, map()} | {:error, term()}
   def run_command(%Environment{type: type} = env, command, opts \\ []) do
-    with {:ok, impl_module} <- get_impl(type) do
-      impl_module.run_command(env, command, opts)
-    end
+    impl(type).run_command(env, command, opts)
   end
 
   @doc """
@@ -79,9 +75,7 @@ defmodule CodeMySpec.Environments do
   @spec read_file(env :: Environment.t(), path :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def read_file(%Environment{type: type} = env, path) do
-    with {:ok, impl_module} <- get_impl(type) do
-      impl_module.read_file(env, path)
-    end
+    impl(type).read_file(env, path)
   end
 
   @doc """
@@ -90,53 +84,45 @@ defmodule CodeMySpec.Environments do
   @spec list_directory(env :: Environment.t(), path :: String.t()) ::
           {:ok, [String.t()]} | {:error, term()}
   def list_directory(%Environment{type: type} = env, path) do
-    with {:ok, impl_module} <- get_impl(type) do
-      impl_module.list_directory(env, path)
-    end
+    impl(type).list_directory(env, path)
   end
 
   # Private functions
 
-  defp get_impl(:cli) do
-    {:ok, CodeMySpec.Environments.Cli}
-  end
+  defp impl(:cli),
+    do: Application.get_env(:code_my_spec, :environment, CodeMySpec.Environments.Cli)
 
-  defp get_impl(:server) do
+  defp impl(:vscode),
+    do: Application.get_env(:code_my_spec, :environment, CodeMySpec.Environments.VSCode)
+
+  defp impl(:local),
+    do: Application.get_env(:code_my_spec, :environment, CodeMySpec.Environments.Local)
+
+  defp impl(:server) do
     # Server implementation not yet created
     {:error, "Server environment not implemented"}
   end
 
-  # defp get_impl(:vscode) do
-  #   # VSCode implementation not yet created
-  #   {:error, "VSCode environment not implemented"}
-  # end
-
-  defp get_impl(:vscode),
-    do: Application.get_env(:code_my_spec, :vscode_environment, CodeMySpec.Environments.VSCode)
-
-  defp get_impl(:local),
-    do: Application.get_env(:code_my_spec, :local_environment, CodeMySpec.Environments.Local)
-
-  defp get_impl(type) do
+  defp impl(type) do
     {:error, "Unknown environment type: #{inspect(type)}"}
   end
 
   def environment_setup_command(environment, attrs) do
-    get_impl(environment).environment_setup_command(attrs)
+    impl(environment).environment_setup_command(attrs)
   end
 
   def docs_environment_teardown_command(environment, attrs) do
-    get_impl(environment).docs_environment_teardown_command(attrs)
+    impl(environment).docs_environment_teardown_command(attrs)
   end
 
   def test_environment_teardown_command(environment, attrs) do
-    get_impl(environment).test_environment_teardown_command(attrs)
+    impl(environment).test_environment_teardown_command(attrs)
   end
 
   def code_environment_teardown_command(environment, attrs) do
-    get_impl(environment).code_environment_teardown_command(attrs)
+    impl(environment).code_environment_teardown_command(attrs)
   end
 
   def cmd(environment, command, args, opts \\ []),
-    do: get_impl(environment).cmd(command, args, opts)
+    do: impl(environment).cmd(command, args, opts)
 end
