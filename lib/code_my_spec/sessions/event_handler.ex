@@ -38,6 +38,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
       {:error, :session_not_found}
   """
   @spec handle_event(Scope.t(), integer(), map()) :: {:ok, Session.t()} | {:error, term()}
+
   def handle_event(%Scope{} = scope, session_id, event_attrs) do
     case SessionsRepository.get_session(scope, session_id) do
       nil ->
@@ -125,6 +126,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
            {:ok, session_updates} <- process_side_effects(session, event),
            {:ok, _inserted_event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
+        Logger.info(inspect(updated_session))
         SessionsBroadcaster.broadcast_activity(scope, session.id)
         updated_session
       else
@@ -244,7 +246,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
          %Session{external_conversation_id: nil} = _session,
          %SessionEvent{event_type: :session_start, data: data}
        ) do
-    case Map.get(data, "conversation_id", nil) do
+    case Map.get(data, "session_id", nil) do
       nil -> {:error, :session_id_not_found}
       conversation_id -> {:ok, %{external_conversation_id: conversation_id}}
     end

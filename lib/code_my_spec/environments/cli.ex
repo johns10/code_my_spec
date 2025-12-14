@@ -124,8 +124,8 @@ defmodule CodeMySpec.Environments.Cli do
 
       # Build environment variables for Claude CLI
       env_vars = %{
-        "CODE_MY_SPEC_API_URL" => Config.local_server_url(),
-        "CODE_MY_SPEC_SESSION_ID" => to_string(session_id)
+        "CODE_MY_SPEC_SESSION_ID" => to_string(session_id),
+        "CODE_MY_SPEC_HOOK_URL" => "#{Config.local_server_url()}/sessions/#{session_id}/hooks"
       }
 
       # Build final command with environment variables
