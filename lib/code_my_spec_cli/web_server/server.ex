@@ -7,11 +7,13 @@ defmodule CodeMySpecCli.WebServer do
   - Future: Anthropic API proxy for credential management
   """
 
+  alias CodeMySpecCli.WebServer.Config
+
   @doc """
   Child spec for supervision tree.
   """
   def child_spec(opts) do
-    port = Keyword.get(opts, :port, 8314)
+    port = Keyword.get(opts, :port, Config.local_server_port())
 
     %{
       id: __MODULE__,

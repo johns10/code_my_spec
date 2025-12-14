@@ -9,9 +9,8 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   require Logger
 
   alias CodeMySpecCli.Auth.Strategy
+  alias CodeMySpecCli.WebServer.Config
 
-  @callback_port 8314
-  @callback_path "/oauth/callback"
   @client_config_file ".codemyspec_client"
 
   @doc """
@@ -28,7 +27,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
     state = generate_state()
 
     # Build auth URL
-    redirect_uri = "http://localhost:#{@callback_port}#{@callback_path}"
+    redirect_uri = Config.oauth_callback_url()
 
     auth_url =
       "#{server_base_url}/oauth/authorize?" <>
@@ -71,7 +70,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
         site: server_base_url,
         authorize_url: "#{server_base_url}/oauth/authorize",
         token_url: "#{server_base_url}/oauth/token",
-        redirect_uri: "http://localhost:#{@callback_port}#{@callback_path}",
+        redirect_uri: Config.oauth_callback_url(),
         request_opts: build_hackney_opts(server_base_url)
       )
 
@@ -271,7 +270,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   defp register_new_client(config_path, server_base_url) do
     registration_params = %{
       client_name: "CodeMySpec CLI",
-      redirect_uris: ["http://localhost:#{@callback_port}#{@callback_path}"]
+      redirect_uris: [Config.oauth_callback_url()]
     }
 
     url = "#{server_base_url}/oauth/register"

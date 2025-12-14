@@ -8,6 +8,7 @@ defmodule CodeMySpec.Environments.Cli do
 
   alias CodeMySpec.Environments.Cli.TmuxAdapter
   alias CodeMySpec.Environments.Environment
+  alias CodeMySpecCli.WebServer.Config
   require Logger
 
   # Allow adapter injection for testing
@@ -109,14 +110,31 @@ defmodule CodeMySpec.Environments.Cli do
 
   def run_command(
         %Environment{ref: window_name},
-        %CodeMySpec.Sessions.Command{command: "claude" = cmd},
+        %CodeMySpec.Sessions.Command{command: "claude", metadata: metadata},
         opts
       ) do
-    with :ok <- ensure_window_exists(window_name) do
-      env_vars = Keyword.get(opts, :env, %{})
-      full_command = build_command_with_env(cmd, env_vars)
+    with {:ok, session_id} <- Keyword.fetch(opts, :session_id),
+         :ok <- ensure_window_exists(window_name),
+         {:ok, temp_path} <- Briefly.create(),
+         prompt <- Map.get(metadata, "prompt", ""),
+         args <- Map.get(metadata, "args", []),
+         :ok <- File.write(temp_path, prompt) do
+      # Build Claude command with piped prompt
+      claude_cmd = build_claude_command_with_pipe(temp_path, args)
+
+      # Build environment variables for Claude CLI
+      env_vars = %{
+        "CODE_MY_SPEC_API_URL" => Config.local_server_url(),
+        "CODE_MY_SPEC_SESSION_ID" => to_string(session_id)
+      }
+
+      # Build final command with environment variables
+      full_command = build_command_with_env(claude_cmd, env_vars)
 
       adapter().send_keys(window_name, full_command)
+    else
+      :error -> {:error, "session_id is required in opts for claude command"}
+      error -> error
     end
   end
 
@@ -178,6 +196,21 @@ defmodule CodeMySpec.Environments.Cli do
     end
   end
 
+  defp build_claude_command_with_pipe(temp_path, args) when is_list(args) do
+    # Build args string from list
+    args_string =
+      args
+      |> Enum.map(&shell_escape/1)
+      |> Enum.join(" ")
+
+    # Build piped command: cat "tempfile" | claude [args]
+    if args_string == "" do
+      "cat #{shell_escape(temp_path)} | claude"
+    else
+      "cat #{shell_escape(temp_path)} | claude #{args_string}"
+    end
+  end
+
   defp build_command_with_env(command, env_vars) when map_size(env_vars) == 0 do
     command
   end
@@ -193,6 +226,6 @@ defmodule CodeMySpec.Environments.Cli do
 
   defp shell_escape(value) do
     # Simple shell escaping - wrap in single quotes and escape any single quotes
-    "'#{String.replace(value, "'", "'\\''")}''"
+    "'#{String.replace(value, "'", "'\\''")}'"
   end
 end
