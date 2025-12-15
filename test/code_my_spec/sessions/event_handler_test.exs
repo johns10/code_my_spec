@@ -17,79 +17,83 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       scope = user_scope_fixture(user, account, project)
       session = session_fixture(scope)
+      interaction = interaction_fixture(session)
 
-      %{scope: scope, session: session}
+      %{scope: scope, session: session, interaction: interaction}
     end
 
     test "valid event with all required fields passes validation", %{
       scope: scope,
-      session: session
+      session: session,
+      interaction: interaction
     } do
-      event_attrs = valid_event_attrs(session.id)
+      event_attrs = valid_event_attrs()
 
-      assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
+
       assert updated_session.id == session.id
 
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == 1
 
       event = List.first(events)
-      assert event.session_id == session.id
+      assert event.interaction_id == interaction.id
       assert event.event_type == :proxy_response
       assert event.data["tool_name"] == "Read"
     end
 
-    test "missing required fields fails validation", %{scope: scope, session: session} do
+    test "missing required fields fails validation", %{scope: scope, interaction: interaction} do
       # Missing event_type
       event_attrs =
-        valid_event_attrs(session.id)
+        valid_event_attrs()
         |> Map.delete("event_type")
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
       assert %{event_type: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
+      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
 
       # Missing sent_at
       event_attrs =
-        valid_event_attrs(session.id)
+        valid_event_attrs()
         |> Map.delete("sent_at")
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
       assert %{sent_at: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
+      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
 
       # Missing data
       event_attrs =
-        valid_event_attrs(session.id)
+        valid_event_attrs()
         |> Map.delete("data")
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
       assert %{data: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
+      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
     end
 
-    test "invalid event_type fails validation", %{scope: scope, session: session} do
+    test "invalid event_type fails validation", %{scope: scope, interaction: interaction} do
       event_attrs =
-        valid_event_attrs(session.id)
+        valid_event_attrs()
         |> Map.put("event_type", :invalid_event_type)
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
       assert %{event_type: ["is invalid"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
+      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
     end
 
-    test "data field accepts any map structure", %{scope: scope, session: session} do
+    test "data field accepts any map structure", %{scope: scope, interaction: interaction} do
       # Simple map
       event_attrs =
-        valid_event_attrs(session.id, %{
+        valid_event_attrs(%{
           "data" => %{"simple" => "value"}
         })
 
-      assert {:ok, _} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, _} = EventHandler.handle_event(scope, interaction.id, event_attrs)
 
       # Nested map
       event_attrs =
-        valid_event_attrs(session.id, %{
+        valid_event_attrs(%{
           "data" => %{
             "nested" => %{
               "deeply" => %{
@@ -99,11 +103,11 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
           }
         })
 
-      assert {:ok, _} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, _} = EventHandler.handle_event(scope, interaction.id, event_attrs)
 
       # Mixed types
       event_attrs =
-        valid_event_attrs(session.id, %{
+        valid_event_attrs(%{
           "data" => %{
             "numbers" => 42,
             "booleans" => true,
@@ -113,17 +117,17 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
           }
         })
 
-      assert {:ok, _} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, _} = EventHandler.handle_event(scope, interaction.id, event_attrs)
 
       # Empty map
       event_attrs =
-        valid_event_attrs(session.id, %{
+        valid_event_attrs(%{
           "data" => %{}
         })
 
-      assert {:ok, _} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, _} = EventHandler.handle_event(scope, interaction.id, event_attrs)
 
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == 4
     end
   end
@@ -140,70 +144,85 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       scope = user_scope_fixture(user, account, project)
       session = session_fixture(scope)
+      interaction = interaction_fixture(session)
 
-      %{scope: scope, session: session}
+      %{scope: scope, session: session, interaction: interaction}
     end
 
     test "conversation_started sets external_conversation_id when nil", %{
       scope: scope,
-      session: session
+      session: session,
+      interaction: interaction
     } do
       conversation_id = "conv_abc123"
-      event_attrs = conversation_started_event_attrs(session.id, conversation_id)
+      event_attrs = conversation_started_event_attrs(conversation_id)
 
-      assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
+
       assert updated_session.external_conversation_id == conversation_id
 
       reloaded_session = CodeMySpec.Sessions.get_session!(scope, session.id)
       assert reloaded_session.external_conversation_id == conversation_id
 
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == 1
       assert List.first(events).event_type == :session_start
     end
 
     test "conversation_started no-ops when already set to same value", %{
       scope: scope,
-      session: session
+      session: session,
+      interaction: interaction
     } do
       conversation_id = "conv_abc123"
 
       # First event sets the conversation_id
-      event_attrs = conversation_started_event_attrs(session.id, conversation_id)
-      assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      event_attrs = conversation_started_event_attrs(conversation_id)
+
+      assert {:ok, updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
+
       assert updated_session.external_conversation_id == conversation_id
 
       # Second event with same conversation_id should not change anything
-      event_attrs2 = conversation_started_event_attrs(session.id, conversation_id)
-      assert {:ok, updated_session2} = EventHandler.handle_event(scope, session.id, event_attrs2)
+      event_attrs2 = conversation_started_event_attrs(conversation_id)
+
+      assert {:ok, updated_session2} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs2)
+
       assert updated_session2.external_conversation_id == conversation_id
 
       reloaded_session = CodeMySpec.Sessions.get_session!(scope, session.id)
       assert reloaded_session.external_conversation_id == conversation_id
 
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == 2
     end
 
     test "conversation_started logs warning when changing conversations", %{
       scope: scope,
-      session: session
+      session: session,
+      interaction: interaction
     } do
       first_conversation_id = "conv_abc123"
       second_conversation_id = "conv_xyz789"
 
       # First event sets the conversation_id
-      event_attrs = conversation_started_event_attrs(session.id, first_conversation_id)
-      assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      event_attrs = conversation_started_event_attrs(first_conversation_id)
+
+      assert {:ok, updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
+
       assert updated_session.external_conversation_id == first_conversation_id
 
       # Second event tries to change conversation_id
       # Should log warning but still process the event
-      event_attrs2 = conversation_started_event_attrs(session.id, second_conversation_id)
+      event_attrs2 = conversation_started_event_attrs(second_conversation_id)
 
       capture_log(fn ->
         assert {:ok, updated_session2} =
-                 EventHandler.handle_event(scope, session.id, event_attrs2)
+                 EventHandler.handle_event(scope, interaction.id, event_attrs2)
 
         # Session keeps original conversation_id (no change)
         assert updated_session2.external_conversation_id == first_conversation_id
@@ -213,13 +232,17 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       end)
 
       # Event is still persisted
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == 2
     end
 
-    test "session_status_changed updates session status", %{scope: scope, session: session} do
+    test "session_status_changed updates session status", %{
+      scope: scope,
+      session: session,
+      interaction: interaction
+    } do
       event_attrs =
-        valid_event_attrs(session.id, %{
+        valid_event_attrs(%{
           "event_type" => :proxy_request,
           "data" => %{
             "old_status" => "active",
@@ -227,7 +250,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
           }
         })
 
-      assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
 
       # Verify side effect applied
       assert updated_session.status == :complete
@@ -235,12 +259,16 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       reloaded_session = CodeMySpec.Sessions.get_session!(scope, session.id)
       assert reloaded_session.status == :complete
 
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == 1
       assert List.first(events).event_type == :proxy_request
     end
 
-    test "unknown event types have no side effects", %{scope: scope, session: session} do
+    test "unknown event types have no side effects", %{
+      scope: scope,
+      session: session,
+      interaction: interaction
+    } do
       # Test various event types that should have no side effects
       event_types = [:proxy_request, :proxy_response, :session_start]
 
@@ -250,12 +278,13 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       for event_type <- event_types do
         event_attrs =
-          valid_event_attrs(session.id, %{
+          valid_event_attrs(%{
             "event_type" => event_type,
             "data" => %{"test" => "data"}
           })
 
-        assert {:ok, updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+        assert {:ok, updated_session} =
+                 EventHandler.handle_event(scope, interaction.id, event_attrs)
 
         # No side effects - session unchanged
         assert updated_session.status == original_status
@@ -264,76 +293,8 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       end
 
       # All events persisted
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
+      events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
       assert length(events) == length(event_types)
-    end
-  end
-
-  describe "batch processing tests" do
-    setup do
-      user = user_fixture()
-      account = account_fixture()
-      member_fixture(user, account)
-
-      project =
-        user_scope_fixture(user, account)
-        |> project_fixture(%{account_id: account.id, module_name: "MyApp"})
-
-      scope = user_scope_fixture(user, account, project)
-      session = session_fixture(scope)
-
-      %{scope: scope, session: session}
-    end
-
-    test "multiple valid events insert successfully", %{scope: scope, session: session} do
-      events_attrs = [
-        conversation_started_event_attrs(session.id, "conversation-id"),
-        valid_event_attrs(session.id),
-        valid_event_attrs(session.id, %{
-          "event_type" => :proxy_request,
-          "data" => %{"command" => "mix test"}
-        })
-      ]
-
-      assert {:ok, updated_session} = EventHandler.handle_events(scope, session.id, events_attrs)
-      assert updated_session.id == session.id
-
-      events = Repo.all(CodeMySpec.Sessions.SessionEvent)
-      assert length(events) == 3
-
-      event_types = Enum.map(events, & &1.event_type)
-      assert :proxy_response in event_types
-      assert :proxy_request in event_types
-      assert :session_start in event_types
-    end
-
-    test "first invalid event fails entire batch", %{scope: scope, session: session} do
-      events_attrs = [
-        valid_event_attrs(session.id),
-        valid_event_attrs(session.id) |> Map.delete("sent_at"),
-        valid_event_attrs(session.id)
-      ]
-
-      assert {:error, changeset} = EventHandler.handle_events(scope, session.id, events_attrs)
-      assert %{sent_at: ["can't be blank"]} = errors_on(changeset)
-
-      # No events persisted due to transaction rollback
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
-    end
-
-    test "transaction rolls back on error", %{scope: scope, session: session} do
-      events_attrs = [
-        valid_event_attrs(session.id),
-        valid_event_attrs(session.id),
-        # Last event is invalid
-        valid_event_attrs(session.id) |> Map.put("event_type", :invalid_type)
-      ]
-
-      assert {:error, changeset} = EventHandler.handle_events(scope, session.id, events_attrs)
-      assert %{event_type: ["is invalid"]} = errors_on(changeset)
-
-      # No events persisted - entire batch rolled back
-      assert Repo.all(CodeMySpec.Sessions.SessionEvent) == []
     end
   end
 
@@ -349,6 +310,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       scope = user_scope_fixture(user, account, project)
       session = session_fixture(scope)
+      interaction = interaction_fixture(session)
 
       # Subscribe to all relevant channels
       account_topic = "account:#{account.id}:sessions"
@@ -363,6 +325,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       %{
         scope: scope,
         session: session,
+        interaction: interaction,
         account: account,
         user: user,
         account_topic: account_topic,
@@ -380,12 +343,14 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
     test "conversation_started broadcasts to account, user, and session channels", %{
       scope: scope,
-      session: session
+      session: session,
+      interaction: interaction
     } do
       conversation_id = "conv_test123"
-      event_attrs = conversation_started_event_attrs(session.id, conversation_id)
+      event_attrs = conversation_started_event_attrs(conversation_id)
 
-      assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, _updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
 
       # Should receive the message 3 times (once per channel)
       assert_receive(
@@ -407,10 +372,11 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
     test "session_status_changed broadcasts to account and user channels only", %{
       scope: scope,
-      session: session
+      session: session,
+      interaction: interaction
     } do
       event_attrs =
-        valid_event_attrs(session.id, %{
+        valid_event_attrs(%{
           "event_type" => :proxy_response,
           "data" => %{
             "old_status" => "active",
@@ -418,7 +384,9 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
           }
         })
 
-      assert {:ok, _updated_session} = EventHandler.handle_event(scope, session.id, event_attrs)
+      assert {:ok, _updated_session} =
+               EventHandler.handle_event(scope, interaction.id, event_attrs)
+
       assert_receive {:session_status_changed, %{session_id: session_id, status: :complete}}
       assert session_id == session.id
 

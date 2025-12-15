@@ -4,7 +4,6 @@ defmodule CodeMySpec.Sessions.Session do
   alias CodeMySpec.Accounts.Account
   alias CodeMySpec.Users.User
   alias CodeMySpec.Sessions.Interaction
-  alias CodeMySpec.Sessions.SessionEvent
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -41,7 +40,6 @@ defmodule CodeMySpec.Sessions.Session do
           child_sessions: [t()] | Ecto.Association.NotLoaded.t(),
           external_conversation_id: String.t() | nil,
           interactions: [Interaction.t()],
-          session_events: [SessionEvent.t()] | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -64,7 +62,6 @@ defmodule CodeMySpec.Sessions.Session do
     belongs_to :parent_session, __MODULE__, foreign_key: :session_id
 
     has_many :child_sessions, __MODULE__, foreign_key: :session_id
-    has_many :session_events, SessionEvent
     has_many :interactions, Interaction, preload_order: [desc: :inserted_at]
 
     timestamps(type: :utc_datetime)

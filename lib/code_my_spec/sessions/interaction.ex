@@ -7,7 +7,7 @@ defmodule CodeMySpec.Sessions.Interaction do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias CodeMySpec.Sessions.{Command, Result, Session}
+  alias CodeMySpec.Sessions.{Command, Result, Session, InteractionEvent}
 
   @derive Jason.Encoder
 
@@ -19,6 +19,7 @@ defmodule CodeMySpec.Sessions.Interaction do
           command: Command.t() | nil,
           result: Result.t() | nil,
           completed_at: DateTime.t() | nil,
+          interaction_events: [InteractionEvent.t()] | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -30,6 +31,7 @@ defmodule CodeMySpec.Sessions.Interaction do
     embeds_one :command, Command
     embeds_one :result, Result, on_replace: :update
     field :completed_at, :utc_datetime_usec
+    has_many :interaction_events, InteractionEvent
 
     timestamps(type: :utc_datetime_usec)
   end
