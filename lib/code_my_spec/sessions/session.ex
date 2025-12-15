@@ -65,8 +65,7 @@ defmodule CodeMySpec.Sessions.Session do
 
     has_many :child_sessions, __MODULE__, foreign_key: :session_id
     has_many :session_events, SessionEvent
-
-    embeds_many :interactions, Interaction, on_replace: :delete
+    has_many :interactions, Interaction, preload_order: [desc: :inserted_at]
 
     timestamps(type: :utc_datetime)
   end
@@ -86,38 +85,10 @@ defmodule CodeMySpec.Sessions.Session do
       :external_conversation_id
     ])
     |> validate_required([:type])
-    |> cast_embed(:interactions)
     |> put_change(:account_id, user_scope.active_account_id)
     |> put_change(:project_id, user_scope.active_project_id)
     |> put_change(:user_id, user_scope.user.id)
     |> put_display_name()
-  end
-
-  def complete_interaction_changeset(session, session_attrs, interaction_id, result) do
-    result_attrs = Map.from_struct(result)
-
-    interactions =
-      Enum.map(session.interactions, fn
-        %{id: ^interaction_id} = interaction ->
-          Interaction.changeset(interaction, %{result: result_attrs})
-
-        interaction ->
-          interaction
-      end)
-
-    session
-    |> cast(session_attrs, [
-      :type,
-      :agent,
-      :environment,
-      :execution_mode,
-      :status,
-      :state,
-      :component_id,
-      :session_id,
-      :external_conversation_id
-    ])
-    |> put_embed(:interactions, interactions)
   end
 
   def get_pending_interactions(session) do
@@ -126,11 +97,6 @@ defmodule CodeMySpec.Sessions.Session do
 
   def get_completed_interactions(session) do
     Enum.filter(session.interactions, &Interaction.completed?/1)
-  end
-
-  def add_interaction_changeset(session, %Interaction{} = interaction) do
-    change(session)
-    |> put_embed(:interactions, [interaction | session.interactions])
   end
 
   defp put_display_name(%{changes: %{type: type}} = changeset) when not is_nil(type) do

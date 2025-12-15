@@ -189,8 +189,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       [last_interaction | _] = session.interactions
       assert last_interaction.result.status == :ok
       assert session.status == :complete
-      assert session.state.pr_url == pr_url
-      assert session.state.finalized_at
+      assert session.state["pr_url"] == pr_url
+      assert session.state["finalized_at"]
 
       # Session should be complete
       assert {:error, :complete} = Sessions.next_command(scope, session.id)

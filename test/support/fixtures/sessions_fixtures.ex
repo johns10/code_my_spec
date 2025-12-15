@@ -15,13 +15,14 @@ defmodule CodeMySpec.SessionsFixtures do
         state: %{},
         status: :active,
         type: CodeMySpec.ContextDesignSessions,
-        display_name: "Context Design"
+        display_name: "Context Design",
+        interactions: []
       })
 
     {:ok, session} = CodeMySpec.Sessions.create_session(scope, attrs)
 
     # Reload with same preloads as list_sessions/1
-    CodeMySpec.Repo.preload(session, [:project, :component])
+    CodeMySpec.Repo.preload(session, [:project, :component, :interactions])
   end
 
   @doc """

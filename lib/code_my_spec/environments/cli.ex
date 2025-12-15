@@ -113,7 +113,8 @@ defmodule CodeMySpec.Environments.Cli do
         %CodeMySpec.Sessions.Command{command: "claude", metadata: metadata},
         opts
       ) do
-    with {:ok, session_id} <- Keyword.fetch(opts, :session_id),
+    with {:ok, session_id} <- get_session_id(opts),
+         {:ok, interaction_id} <- get_transaction_id(opts),
          :ok <- ensure_window_exists(window_name),
          {:ok, temp_path} <- Briefly.create(),
          prompt <- Map.get(metadata, "prompt", ""),
@@ -125,6 +126,7 @@ defmodule CodeMySpec.Environments.Cli do
       # Build environment variables for Claude CLI
       env_vars = %{
         "CODE_MY_SPEC_SESSION_ID" => to_string(session_id),
+        "CODE_MY_SPEC_INTERACTION_ID" => to_string(interaction_id),
         "CODE_MY_SPEC_HOOK_URL" => "#{Config.local_server_url()}/sessions/#{session_id}/hooks"
       }
 
@@ -132,9 +134,6 @@ defmodule CodeMySpec.Environments.Cli do
       full_command = build_command_with_env(claude_cmd, env_vars)
 
       adapter().send_keys(window_name, full_command)
-    else
-      :error -> {:error, "session_id is required in opts for claude command"}
-      error -> error
     end
   end
 
@@ -178,6 +177,20 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   # Private functions
+
+  defp get_session_id(opts) do
+    case Keyword.fetch(opts, :session_id) do
+      :error -> {:error, :missing_session_id}
+      ok -> ok
+    end
+  end
+
+  defp get_transaction_id(opts) do
+    case Keyword.fetch(opts, :transaction_id) do
+      :error -> {:error, :missing_transaction_id}
+      ok -> ok
+    end
+  end
 
   @doc false
   defp ensure_window_exists(window_name) do

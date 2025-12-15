@@ -1,6 +1,7 @@
 defmodule CodeMySpec.Sessions.ResultHandler do
+  alias CodeMySpec.Repo
   alias CodeMySpec.Sessions
-  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction}
+  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction, InteractionsRepository}
 
   def handle_result(scope, session_id, interaction_id, result_attrs, opts \\ []) do
     with {:ok, session} <- get_session(scope, session_id),
@@ -10,17 +11,18 @@ defmodule CodeMySpec.Sessions.ResultHandler do
            interaction.command.module.handle_result(scope, session, result, opts),
          enriched_attrs <-
            maybe_add_completion_status(session, interaction, session_attrs, final_result),
-         {:ok, final_session} <-
-           Sessions.complete_session_interaction(
-             scope,
-             session,
-             enriched_attrs,
-             interaction_id,
-             final_result
-           ) do
-      {:ok, final_session}
+         {:ok, _updated_interaction} <- InteractionsRepository.complete(interaction, final_result),
+         {:ok, _updated_session} <- maybe_update_session(scope, session, enriched_attrs),
+         refreshed_session <- SessionsRepository.get_session(scope, session_id) do
+      {:ok, refreshed_session}
     end
   end
+
+  defp maybe_update_session(scope, session, session_attrs) when map_size(session_attrs) > 0 do
+    Session.changeset(session, session_attrs, scope) |> Repo.update()
+  end
+
+  defp maybe_update_session(_scope, session, _session_attrs), do: {:ok, session}
 
   def get_session(scope, session_id) do
     case SessionsRepository.get_session(scope, session_id) do

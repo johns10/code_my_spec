@@ -272,7 +272,8 @@ defmodule CodeMySpecCli.Screens.Sessions do
               end,
               # Instructions
               label(
-                content: "↑/↓: navigate | Enter: details | n: next cmd | t: terminal | d: delete | q: exit",
+                content:
+                  "↑/↓: navigate | Enter: details | n: next cmd | t: terminal | d: delete | q: exit",
                 color: :cyan
               )
             ]

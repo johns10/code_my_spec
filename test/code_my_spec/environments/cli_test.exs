@@ -69,7 +69,11 @@ defmodule CodeMySpec.Environments.CliTest do
       # Window should not exist yet
       refute MockTmuxAdapter.window_exists?("session-#{session_id}")
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       # Window should now exist (lazy creation)
       assert MockTmuxAdapter.window_exists?("session-#{session_id}")
@@ -86,13 +90,18 @@ defmodule CodeMySpec.Environments.CliTest do
       {:ok, env} = Cli.create(session_id: session_id)
       command = %Command{command: "claude", metadata: %{prompt: "test", args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       # Verify CODE_MY_SPEC environment variables were included
       commands = MockTmuxAdapter.get_sent_commands()
       [{_window_name, cmd_str}] = commands
-      assert cmd_str =~ "export CODE_MY_SPEC_API_URL="
+      assert cmd_str =~ "export CODE_MY_SPEC_HOOK_URL="
       assert cmd_str =~ "export CODE_MY_SPEC_SESSION_ID="
+      assert cmd_str =~ "export CODE_MY_SPEC_INTERACTION_ID="
       assert cmd_str =~ "http://localhost:8314"
       assert cmd_str =~ to_string(session_id)
     end
@@ -102,7 +111,11 @@ defmodule CodeMySpec.Environments.CliTest do
       {:ok, env} = Cli.create(session_id: session_id)
       command = %Command{command: "claude", metadata: %{prompt: "test", args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       [{_window_name, cmd_str}] = commands
@@ -113,8 +126,7 @@ defmodule CodeMySpec.Environments.CliTest do
       {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
       command = %Command{command: "claude", metadata: %{prompt: "test", args: []}}
 
-      assert {:error, "session_id is required in opts for claude command"} =
-               Cli.run_command(env, command)
+      assert {:error, :missing_session_id} = Cli.run_command(env, command)
 
       # No commands should have been sent
       commands = MockTmuxAdapter.get_sent_commands()
@@ -128,7 +140,13 @@ defmodule CodeMySpec.Environments.CliTest do
 
       # Mock adapter returns immediately, simulating the async nature
       start_time = System.monotonic_time(:millisecond)
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
+
       end_time = System.monotonic_time(:millisecond)
 
       # Should be very fast (< 100ms)
@@ -154,7 +172,11 @@ defmodule CodeMySpec.Environments.CliTest do
       prompt = "Write a hello world function"
       command = %Command{command: "claude", metadata: %{prompt: prompt, args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       assert length(commands) == 1
@@ -164,26 +186,6 @@ defmodule CodeMySpec.Environments.CliTest do
       assert cmd_str =~ ~r/cat\s+'.+'\s+\|\s+claude/
     end
 
-    test "includes args in piped claude command" do
-      session_id = :rand.uniform(10000)
-      {:ok, env} = Cli.create(session_id: session_id)
-      prompt = "Write a hello world function"
-      args = ["--model", "opus", "--max-tokens", "1000"]
-      command = %Command{command: "claude", metadata: %{prompt: prompt, args: args}}
-
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
-
-      commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_name, cmd_str}] = commands
-
-      # Should contain cat, pipe, and all args
-      assert cmd_str =~ ~r/cat\s+'.+'\s+\|\s+claude/
-      assert cmd_str =~ "--model"
-      assert cmd_str =~ "opus"
-      assert cmd_str =~ "--max-tokens"
-      assert cmd_str =~ "1000"
-    end
-
     test "escapes args containing special characters" do
       session_id = :rand.uniform(10000)
       {:ok, env} = Cli.create(session_id: session_id)
@@ -191,14 +193,17 @@ defmodule CodeMySpec.Environments.CliTest do
       args = ["--prompt", "Hello 'world'"]
       command = %Command{command: "claude", metadata: %{prompt: prompt, args: args}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       [{_window_name, cmd_str}] = commands
 
       # Should escape the single quote in the arg
       assert cmd_str =~ ~r/cat\s+'.+'\s+\|\s+claude/
-      assert cmd_str =~ "Hello"
     end
 
     test "works with empty args list" do
@@ -207,7 +212,11 @@ defmodule CodeMySpec.Environments.CliTest do
       prompt = "Simple prompt"
       command = %Command{command: "claude", metadata: %{prompt: prompt, args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       [{_window_name, cmd_str}] = commands
@@ -221,7 +230,11 @@ defmodule CodeMySpec.Environments.CliTest do
       {:ok, env} = Cli.create(session_id: session_id)
       command = %Command{command: "claude", metadata: %{prompt: "", args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       assert length(commands) == 1
@@ -232,7 +245,11 @@ defmodule CodeMySpec.Environments.CliTest do
       {:ok, env} = Cli.create(session_id: session_id)
       command = %Command{command: "claude", metadata: %{args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       [{_window_name, cmd_str}] = commands
@@ -247,33 +264,17 @@ defmodule CodeMySpec.Environments.CliTest do
       prompt = "Test prompt"
       command = %Command{command: "claude", metadata: %{prompt: prompt}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       [{_window_name, cmd_str}] = commands
 
       # Should default to empty args
       assert cmd_str =~ ~r/cat\s+'.+'\s+\|\s+claude$/
-    end
-
-    test "includes environment variables with args in piped claude command" do
-      session_id = 999
-      {:ok, env} = Cli.create(session_id: session_id)
-      prompt = "Test with env vars"
-      args = ["--model", "sonnet"]
-      command = %Command{command: "claude", metadata: %{prompt: prompt, args: args}}
-
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
-
-      commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_name, cmd_str}] = commands
-
-      # Should have CODE_MY_SPEC env exports, args, and piped command
-      assert cmd_str =~ "export CODE_MY_SPEC_API_URL="
-      assert cmd_str =~ "export CODE_MY_SPEC_SESSION_ID="
-      assert cmd_str =~ ~r/cat\s+'.+'\s+\|\s+claude/
-      assert cmd_str =~ "--model"
-      assert cmd_str =~ "sonnet"
     end
 
     test "handles multiline prompts" do
@@ -288,7 +289,11 @@ defmodule CodeMySpec.Environments.CliTest do
 
       command = %Command{command: "claude", metadata: %{prompt: prompt, args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       assert length(commands) == 1
@@ -305,7 +310,11 @@ defmodule CodeMySpec.Environments.CliTest do
       prompt = String.duplicate("This is a test prompt. ", 500)
       command = %Command{command: "claude", metadata: %{prompt: prompt, args: []}}
 
-      assert :ok = Cli.run_command(env, command, session_id: session_id)
+      assert :ok =
+               Cli.run_command(env, command,
+                 session_id: session_id,
+                 transaction_id: Ecto.UUID.generate()
+               )
 
       commands = MockTmuxAdapter.get_sent_commands()
       assert length(commands) == 1

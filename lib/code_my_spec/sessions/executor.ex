@@ -27,8 +27,46 @@ defmodule CodeMySpec.Sessions.Executor do
     with {:ok, session} <- Orchestrator.next_command(scope, session_id, opts),
          {:ok, interaction} <- get_latest_interaction(session),
          {:ok, env} <- create_environment(session),
-         result <- Environments.run_command(env, interaction.command, session_id: session.id) do
-      handle_execution_result(scope, session_id, interaction.id, result)
+         result <-
+           Environments.run_command(env, interaction.command,
+             session_id: session.id,
+             interaction_id: interaction.id
+           ) do
+      case result do
+        :ok ->
+          # Async execution (CLI) - interaction is pending, waiting for user
+          Logger.info("Async step executing in background",
+            session_id: session_id,
+            interaction_id: interaction.id
+          )
+
+          Orchestrator.get_session(scope, session_id)
+
+        {:ok, output} when is_map(output) ->
+          # Sync execution - got result, handle immediately
+          Logger.info("Sync step completed, processing result",
+            session_id: session_id,
+            interaction_id: interaction.id
+          )
+
+          result_attrs = normalize_result(output)
+
+          CodeMySpec.Sessions.ResultHandler.handle_result(
+            scope,
+            session_id,
+            interaction.id,
+            result_attrs
+          )
+
+        {:error, reason} ->
+          Logger.error("Execution failed",
+            session_id: session_id,
+            interaction_id: interaction.id,
+            reason: reason
+          )
+
+          {:error, reason}
+      end
     end
   end
 
@@ -38,44 +76,6 @@ defmodule CodeMySpec.Sessions.Executor do
 
   defp create_environment(%Session{environment: type, id: session_id}) do
     Environments.create(type, session_id: session_id)
-  end
-
-  defp handle_execution_result(scope, session_id, interaction_id, result) do
-    case result do
-      :ok ->
-        # Async execution (CLI) - interaction is pending, waiting for user
-        Logger.info("Async step executing in background",
-          session_id: session_id,
-          interaction_id: interaction_id
-        )
-
-        Orchestrator.get_session(scope, session_id)
-
-      {:ok, output} when is_map(output) ->
-        # Sync execution - got result, handle immediately
-        Logger.info("Sync step completed, processing result",
-          session_id: session_id,
-          interaction_id: interaction_id
-        )
-
-        result_attrs = normalize_result(output)
-
-        CodeMySpec.Sessions.ResultHandler.handle_result(
-          scope,
-          session_id,
-          interaction_id,
-          result_attrs
-        )
-
-      {:error, reason} ->
-        Logger.error("Execution failed",
-          session_id: session_id,
-          interaction_id: interaction_id,
-          reason: reason
-        )
-
-        {:error, reason}
-    end
   end
 
   # Terminal execution result - has exit_code
