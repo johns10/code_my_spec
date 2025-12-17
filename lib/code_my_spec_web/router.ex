@@ -115,6 +115,16 @@ defmodule CodeMySpecWeb.Router do
          :sync_requirements
 
     get "/project-coordinator/next-actions", ProjectCoordinatorController, :next_actions
+
+    resources "/stories", StoriesController, except: [:new, :edit] do
+      post "/set-component", StoriesController, :set_component
+      post "/clear-component", StoriesController, :clear_component
+    end
+
+    get "/stories-list/project", StoriesController, :list_project_stories
+    get "/stories-list/by-component-priority", StoriesController, :list_project_stories_by_component_priority
+    get "/stories-list/unsatisfied", StoriesController, :list_unsatisfied_stories
+    get "/stories-list/component/:component_id", StoriesController, :list_component_stories
   end
 
   # Content sync endpoint (authenticated via deployment key, not OAuth)

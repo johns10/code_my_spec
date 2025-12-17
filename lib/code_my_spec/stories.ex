@@ -1,6 +1,12 @@
 defmodule CodeMySpec.Stories do
   @moduledoc """
   The Stories context.
+
+  This module delegates to either:
+  - StoriesRepository: For local/server environments (direct database access)
+  - RemoteClient: For CLI/VSCode environments (HTTP API calls)
+
+  The implementation is selected via the :stories_implementation config key.
   """
 
   alias CodeMySpec.Stories.Story
@@ -29,6 +35,11 @@ defmodule CodeMySpec.Stories do
     Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{key}:stories", message)
   end
 
+  # Private helper to get the implementation module
+  defp impl do
+    Application.get_env(:code_my_spec, :stories_implementation, StoriesRepository)
+  end
+
   @doc """
   Returns the list of stories.
 
@@ -38,11 +49,16 @@ defmodule CodeMySpec.Stories do
       [%Story{}, ...]
 
   """
-  defdelegate list_stories(scope), to: StoriesRepository
-  defdelegate list_project_stories(scope), to: StoriesRepository
-  defdelegate list_project_stories_by_component_priority(scope), to: StoriesRepository
-  defdelegate list_unsatisfied_stories(scope), to: StoriesRepository
-  defdelegate list_component_stories(scope, component_id), to: StoriesRepository
+  def list_stories(scope), do: impl().list_stories(scope)
+  def list_project_stories(scope), do: impl().list_project_stories(scope)
+
+  def list_project_stories_by_component_priority(scope),
+    do: impl().list_project_stories_by_component_priority(scope)
+
+  def list_unsatisfied_stories(scope), do: impl().list_unsatisfied_stories(scope)
+
+  def list_component_stories(scope, component_id),
+    do: impl().list_component_stories(scope, component_id)
 
   @doc """
   Gets a single story.
@@ -58,8 +74,8 @@ defmodule CodeMySpec.Stories do
       ** (Ecto.NoResultsError)
 
   """
-  defdelegate get_story!(scope, id), to: StoriesRepository
-  defdelegate get_story(scope, id), to: StoriesRepository
+  def get_story!(scope, id), do: impl().get_story!(scope, id)
+  def get_story(scope, id), do: impl().get_story(scope, id)
 
   @doc """
   Creates a story.
@@ -74,7 +90,7 @@ defmodule CodeMySpec.Stories do
 
   """
   def create_story(%Scope{} = scope, attrs) do
-    with {:ok, story = %Story{}} <- StoriesRepository.create_story(scope, attrs) do
+    with {:ok, story = %Story{}} <- impl().create_story(scope, attrs) do
       broadcast(scope, {:created, story})
       {:ok, story}
     end
@@ -95,7 +111,7 @@ defmodule CodeMySpec.Stories do
   def update_story(%Scope{} = scope, %Story{} = story, attrs) do
     true = story.account_id == scope.active_account.id
 
-    with {:ok, story = %Story{}} <- StoriesRepository.update_story(scope, story, attrs) do
+    with {:ok, story = %Story{}} <- impl().update_story(scope, story, attrs) do
       broadcast(scope, {:updated, story})
       {:ok, story}
     end
@@ -116,7 +132,7 @@ defmodule CodeMySpec.Stories do
   def delete_story(%Scope{} = scope, %Story{} = story) do
     true = story.account_id == scope.active_account.id
 
-    with {:ok, story = %Story{}} <- StoriesRepository.delete_story(scope, story) do
+    with {:ok, story = %Story{}} <- impl().delete_story(scope, story) do
       broadcast(scope, {:deleted, story})
       {:ok, story}
     end
@@ -153,7 +169,7 @@ defmodule CodeMySpec.Stories do
     true = story.account_id == scope.active_account.id
 
     with {:ok, story = %Story{}} <-
-           StoriesRepository.set_story_component(scope, story, component_id) do
+           impl().set_story_component(scope, story, component_id) do
       broadcast(scope, {:updated, story})
       {:ok, story}
     end
@@ -171,7 +187,7 @@ defmodule CodeMySpec.Stories do
   def clear_story_component(%Scope{} = scope, %Story{} = story) do
     true = story.account_id == scope.active_account.id
 
-    with {:ok, story = %Story{}} <- StoriesRepository.clear_story_component(scope, story) do
+    with {:ok, story = %Story{}} <- impl().clear_story_component(scope, story) do
       broadcast(scope, {:updated, story})
       {:ok, story}
     end
