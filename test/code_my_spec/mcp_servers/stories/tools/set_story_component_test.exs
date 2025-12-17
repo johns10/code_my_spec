@@ -19,7 +19,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponentTest do
 
       params = %{
         story_id: Integer.to_string(story.id),
-        component_id: Integer.to_string(component.id)
+        component_id: component.id
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}
@@ -35,7 +35,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponentTest do
 
       params = %{
         story_id: "999999",
-        component_id: Integer.to_string(component.id)
+        component_id: component.id
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}
@@ -51,7 +51,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponentTest do
 
       params = %{
         story_id: Integer.to_string(story.id),
-        component_id: "999999"
+        component_id: "00000000-0000-0000-0000-000000000000"
       }
 
       frame = %Frame{assigns: %{current_scope: scope}}

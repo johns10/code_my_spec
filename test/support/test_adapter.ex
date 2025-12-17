@@ -9,12 +9,12 @@ defmodule CodeMySpec.Support.TestAdapter do
 
   @behaviour CodeMySpec.Git.Behaviour
 
-  @code_repo_fixture_path "test_repos/test_phoenix_project"
-  @content_repo_fixture_path "test_repos/test_content_repo"
+  @code_repo_fixture_path "../code_my_spec_test_repos/test_phoenix_project"
+  @content_repo_fixture_path "../code_my_spec_test_repos/test_content_repo"
   @code_fixture_url "https://github.com/johns10/test_phoenix_project.git"
   @content_fixture_url "https://github.com/johns10/test_content_repo.git"
-  @test_results_cache "test_repos/test_results_cache.json"
-  @test_results_failing_cache "test_repos/test_results_failing_cache.json"
+  @test_results_cache "../code_my_spec_test_repos/test_results_cache.json"
+  @test_results_failing_cache "../code_my_spec_test_repos/test_results_failing_cache.json"
 
   @doc """
   Ensures the fixture repositories exist and are up to date.
@@ -52,14 +52,17 @@ defmodule CodeMySpec.Support.TestAdapter do
   def clone(_scope, repo_url, dest_path) do
     fixture_path = select_fixture(repo_url)
 
-    # Copy contents of fixture into dest_path (not the fixture directory itself)
-    # Using shell glob to copy all files including hidden ones
-    case System.cmd("sh", ["-c", "cp -R #{fixture_path}/. #{dest_path}/"]) do
+    # Create destination directory
+    File.mkdir_p!(dest_path)
+
+    # Copy contents of fixture into dest_path, excluding .git directory
+    # We don't need git history for tests, just the files
+    case System.cmd("sh", ["-c", "rsync -a --exclude='.git' #{fixture_path}/ #{dest_path}/"]) do
       {_, 0} ->
         {:ok, dest_path}
 
-      {output, _code} ->
-        {:error, "Failed to copy fixture: #{output}"}
+      {output, code} ->
+        {:error, "Failed to copy fixture: #{output}, #{code}"}
     end
   end
 
@@ -114,9 +117,27 @@ defmodule CodeMySpec.Support.TestAdapter do
   end
 
   defp pull_repo(fixture_path) do
-    case System.cmd("git", ["pull"], cd: fixture_path, stderr_to_stdout: true) do
+    case System.cmd("git", ["pull", "--recurse-submodules"],
+           cd: fixture_path,
+           stderr_to_stdout: true
+         ) do
       {_, 0} ->
-        :ok
+        # Also update submodules after pull
+        case System.cmd("git", ["submodule", "update", "--init", "--recursive"],
+               cd: fixture_path,
+               stderr_to_stdout: true
+             ) do
+          {_, 0} ->
+            :ok
+
+          {output, code} ->
+            raise """
+            Failed to update submodules.
+            Path: #{fixture_path}
+            Exit code: #{code}
+            Output: #{output}
+            """
+        end
 
       {output, code} ->
         raise """
@@ -161,7 +182,7 @@ defmodule CodeMySpec.Support.TestAdapter do
 
       # Now generate failing test cache
       IO.puts("[TestAdapter] Setting up failing test...")
-      failing_test_content = File.read!("test/fixtures/component_coding/blog_repository_test._ex")
+      failing_test_content = File.read!("test/fixtures/component_coding/post_repository_test._ex")
 
       test_path =
         Path.join([
@@ -169,7 +190,7 @@ defmodule CodeMySpec.Support.TestAdapter do
           "test",
           "test_phoenix_project",
           "blog",
-          "blog_repository_test.exs"
+          "post_repository_test.exs"
         ])
 
       File.mkdir_p!(Path.dirname(test_path))
@@ -194,9 +215,13 @@ defmodule CodeMySpec.Support.TestAdapter do
         @test_results_failing_cache
       )
 
-      # Remove the failing test file
-      IO.puts("[TestAdapter] Cleaning up failing test file...")
-      File.rm!(test_path)
+      # Restore the original test file from git
+      IO.puts("[TestAdapter] Restoring original test file from git...")
+
+      System.cmd("git", ["restore", "test/test_phoenix_project/blog/post_repository_test.exs"],
+        cd: @code_repo_fixture_path,
+        stderr_to_stdout: true
+      )
 
       # Remove failing test results file
       test_results_failing_path = Path.join(@code_repo_fixture_path, test_results_failing_file)

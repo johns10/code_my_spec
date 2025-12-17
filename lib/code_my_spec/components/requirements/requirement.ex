@@ -54,7 +54,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
     field :checked_at, :utc_datetime
     field :details, :map, default: %{}
 
-    belongs_to :component, CodeMySpec.Components.Component
+    belongs_to :component, CodeMySpec.Components.Component, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end
@@ -113,6 +113,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
       :details
     ])
     |> validate_required([:name, :type, :description, :checker_module, :satisfied])
+    |> unique_constraint([:component_id, :name], name: :requirements_component_id_name_index)
   end
 
   @doc """

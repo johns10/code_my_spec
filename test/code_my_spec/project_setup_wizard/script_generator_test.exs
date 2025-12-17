@@ -45,7 +45,6 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGeneratorTest do
 
       assert String.contains?(script, "#!/bin/bash")
       assert String.contains?(script, "git submodule add")
-      assert String.contains?(script, project.code_repo)
       assert String.contains?(script, project.docs_repo)
     end
 

@@ -1,4 +1,4 @@
-defmodule TestPhoenixProject.Blog.BlogRepository do
+defmodule TestPhoenixProject.Blog.PostRepository do
   @moduledoc """
   Repository for blog persistence.
   """

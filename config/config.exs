@@ -81,7 +81,9 @@ config :code_my_spec, ExOauth2Provider,
   application: CodeMySpec.Oauth.Application,
   access_grant: CodeMySpec.Oauth.AccessGrant,
   resource_owner: CodeMySpec.Users.User,
-  use_refresh_token: true
+  use_refresh_token: true,
+  # Disable global SSL enforcement - we validate localhost exceptions in Application changeset
+  force_ssl_in_redirect_uri: false
 
 config :mime, :types, %{
   "text/event-stream" => ["sse"]

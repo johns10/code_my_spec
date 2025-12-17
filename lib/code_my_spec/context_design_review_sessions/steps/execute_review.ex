@@ -73,7 +73,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview do
   end
 
   defp extract_context_component(%Session{component: nil, component_id: component_id})
-       when is_integer(component_id) do
+       when is_binary(component_id) do
     {:error, "Session component_id #{component_id} is invalid or component not preloaded"}
   end
 
@@ -86,7 +86,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview do
   end
 
   defp extract_project(%Session{project: nil, project_id: project_id})
-       when is_integer(project_id) do
+       when is_binary(project_id) do
     {:error, "Session project_id #{project_id} is invalid or project not preloaded"}
   end
 

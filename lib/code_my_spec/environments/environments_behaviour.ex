@@ -2,14 +2,54 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
   @moduledoc """
   Behaviour for environment implementations.
 
-  Environments handle both command generation (what to run) and command execution
-  (how to run it) for their specific context (VSCode, Local, etc.).
+  Environments define HOW commands execute (not WHAT commands to generate).
+  Each implementation handles execution in its specific context (CLI with tmux, Server, VSCode).
   """
+
+  alias CodeMySpec.Environments.Environment
+
+  @doc """
+  Create an execution environment.
+
+  Returns an Environment struct containing implementation-specific references.
+  """
+  @callback create(opts :: keyword()) :: {:ok, Environment.t()} | {:error, term()}
+
+  @doc """
+  Destroy an execution environment and clean up resources.
+
+  Should be idempotent - returns :ok even if environment doesn't exist.
+  """
+  @callback destroy(env :: Environment.t()) :: :ok | {:error, term()}
+
+  @doc """
+  Execute a command in the environment.
+
+  Returns :ok for async execution (CLI) or {:ok, output} for sync execution (Server).
+  """
+  @callback run_command(env :: Environment.t(), command :: String.t(), opts :: keyword()) ::
+              :ok | {:ok, map()} | {:error, term()}
+
+  @doc """
+  Read a file from the file system.
+
+  The environment reference may be used for remote file access in some implementations.
+  """
+  @callback read_file(env :: Environment.t(), path :: String.t()) ::
+              {:ok, String.t()} | {:error, term()}
+
+  @doc """
+  List contents of a directory.
+
+  The environment reference may be used for remote directory access in some implementations.
+  """
+  @callback list_directory(env :: Environment.t(), path :: String.t()) ::
+              {:ok, [String.t()]} | {:error, term()}
+
+  # Remove later, or reconsider:
 
   @callback environment_setup_command(attrs :: map()) :: String.t()
   @callback docs_environment_teardown_command(attrs :: map()) :: String.t()
   @callback test_environment_teardown_command(attrs :: map()) :: String.t()
   @callback code_environment_teardown_command(attrs :: map()) :: String.t()
-  @callback cmd(command :: String.t(), args :: [String.t()], opts :: Keyword.t()) ::
-              {String.t(), non_neg_integer()}
 end

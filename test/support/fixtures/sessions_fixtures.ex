@@ -4,6 +4,8 @@ defmodule CodeMySpec.SessionsFixtures do
   entities via the `CodeMySpec.Sessions` context.
   """
 
+  alias CodeMySpec.Sessions.{Command, Interaction, InteractionsRepository}
+
   @doc """
   Generate a session.
   """
@@ -15,21 +17,42 @@ defmodule CodeMySpec.SessionsFixtures do
         state: %{},
         status: :active,
         type: CodeMySpec.ContextDesignSessions,
-        display_name: "Context Design"
+        display_name: "Context Design",
+        interactions: []
       })
 
     {:ok, session} = CodeMySpec.Sessions.create_session(scope, attrs)
 
     # Reload with same preloads as list_sessions/1
-    CodeMySpec.Repo.preload(session, [:project, :component])
+    CodeMySpec.Repo.preload(session, [:project, :component, :interactions])
+  end
+
+  @doc """
+  Generate an interaction for a session.
+  """
+  def interaction_fixture(session, attrs \\ %{}) do
+    # Create a test command
+    command =
+      Command.new(
+        Map.get(attrs, :module, CodeMySpec.ContextDesignSessions),
+        Map.get(attrs, :command, "claude"),
+        metadata: Map.get(attrs, :metadata, %{prompt: "Test prompt"})
+      )
+
+    # Create interaction with command
+    interaction = Interaction.new_with_command(command)
+
+    # Insert into database
+    {:ok, created_interaction} = InteractionsRepository.create(session.id, interaction)
+
+    created_interaction
   end
 
   @doc """
   Generate valid event attributes for testing.
   """
-  def valid_event_attrs(session_id, attrs \\ %{}) do
+  def valid_event_attrs(attrs \\ %{}) do
     Enum.into(attrs, %{
-      "session_id" => session_id,
       "event_type" => :proxy_response,
       "sent_at" => DateTime.utc_now(),
       "data" => %{
@@ -42,13 +65,12 @@ defmodule CodeMySpec.SessionsFixtures do
   @doc """
   Generate a conversation_started event.
   """
-  def conversation_started_event_attrs(session_id, conversation_id, attrs \\ %{}) do
+  def conversation_started_event_attrs(conversation_id, attrs \\ %{}) do
     Enum.into(attrs, %{
-      "session_id" => session_id,
       "event_type" => :session_start,
       "sent_at" => DateTime.utc_now(),
       "data" => %{
-        "conversation_id" => conversation_id,
+        "session_id" => conversation_id,
         "agent" => "claude_code",
         "model" => "claude-sonnet-4"
       }

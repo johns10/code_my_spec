@@ -5,14 +5,15 @@ defmodule CodeMySpec.MixProject do
     [
       app: :code_my_spec,
       version: "0.1.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
-      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}, flags: [:incremental]]
+      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}, flags: [:incremental]],
+      releases: releases()
     ]
   end
 
@@ -21,7 +22,11 @@ defmodule CodeMySpec.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {CodeMySpec.Application, []},
+      mod:
+        case Mix.env() do
+          :cli -> {CodeMySpecCli.Application, []}
+          _ -> {CodeMySpec.Application, []}
+        end,
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -40,6 +45,7 @@ defmodule CodeMySpec.MixProject do
       {:phoenix, "~> 1.8.0-rc.4", override: true},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},
+      {:ecto_sqlite3, "~> 0.18"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -93,7 +99,16 @@ defmodule CodeMySpec.MixProject do
       {:google_api_analytics_admin, "~> 0.26.0"},
       {:recase, "~> 0.8"},
       {:oapi_github, "~> 0.3.3"},
-      {:httpoison, "~> 2.0"}
+      {:httpoison, "~> 2.0"},
+      {:uuid, "~> 1.1.8"},
+
+      # CLI deps,
+      {:burrito, "~> 1.5"},
+      {:optimus, "~> 0.5"},
+      {:ratatouille, "~> 0.5"},
+      {:oauth2, "~> 2.0"},
+      {:logger_backends, "~> 1.0"},
+      {:logger_file_backend, "~> 0.0.14"}
     ]
   end
 
@@ -115,6 +130,26 @@ defmodule CodeMySpec.MixProject do
         "tailwind code_my_spec --minify",
         "esbuild code_my_spec --minify",
         "phx.digest"
+      ],
+      cli: ["run --no-halt"]
+    ]
+  end
+
+  defp releases do
+    [
+      code_my_spec_cli: [
+        steps: [:assemble, &Burrito.wrap/1],
+        burrito: [
+          targets: [
+            # macos: [os: :darwin, cpu: :x86_64],
+            macos_m1: [os: :darwin, cpu: :aarch64]
+            # linux: [os: :linux, cpu: :x86_64],
+            # linux_aarch64: [os: :linux, cpu: :aarch64],
+            # windows: [os: :windows, cpu: :x86_64]
+          ],
+          debug: true,
+          no_clean: false
+        ]
       ]
     ]
   end

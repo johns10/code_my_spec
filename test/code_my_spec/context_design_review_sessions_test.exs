@@ -46,11 +46,11 @@ defmodule CodeMySpec.ContextDesignReviewSessionsTest do
           parent_component_id: context_component.id
         })
 
-      {:ok, _blog_repository} =
+      {:ok, _post_repository} =
         Components.create_component(scope, %{
-          name: "BlogRepository",
+          name: "PostRepository",
           type: :repository,
-          module_name: "TestPhoenixProject.Blog.BlogRepository",
+          module_name: "TestPhoenixProject.Blog.PostRepository",
           description: "Repository for blog persistence",
           parent_component_id: context_component.id
         })

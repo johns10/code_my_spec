@@ -56,7 +56,8 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
       scope: scope,
       post_cache: post_cache
     } do
-      project_dir = "test_repos/component_test_session_#{System.unique_integer([:positive])}"
+      project_dir =
+        "../code_my_spec_test_repos/component_test_session_#{System.unique_integer([:positive])}"
 
       # Setup test project using TestAdapter
       {:ok, ^project_dir} =

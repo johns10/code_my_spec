@@ -1,0 +1,324 @@
+defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
+  @moduledoc """
+  Adapter for tmux operations, enabling Cli environment to be tested without actual tmux dependency.
+
+  This module wraps tmux CLI commands and can be mocked in tests for testability.
+  """
+
+  @doc """
+  Check if currently running inside a tmux session.
+
+  Returns true if the TMUX environment variable is set and non-empty.
+  """
+  @spec inside_tmux?() :: boolean()
+  def inside_tmux? do
+    case System.get_env("TMUX") do
+      nil -> false
+      "" -> false
+      _value -> true
+    end
+  end
+
+  @doc """
+  Get the name of the current tmux session.
+
+  Returns {:ok, session_name} if inside tmux, {:error, reason} otherwise.
+  """
+  @spec get_current_session() :: {:ok, String.t()} | {:error, term()}
+  def get_current_session do
+    case System.cmd("tmux", ["display-message", "-p", "\#{session_name}"]) do
+      {session, 0} ->
+        {:ok, String.trim(session)}
+
+      {error, _code} ->
+        {:error, error}
+    end
+  rescue
+    error -> {:error, error}
+  end
+
+  @doc """
+  Create a new tmux window with specified name.
+
+  Returns {:ok, window_id} on success, {:error, reason} on failure.
+  """
+  @spec create_window(window_name :: String.t()) :: {:ok, String.t()} | {:error, term()}
+  def create_window(window_name) do
+    with {:ok, session} <- get_current_session() do
+      case System.cmd("tmux", [
+             "new-window",
+             "-t",
+             session,
+             "-n",
+             window_name,
+             "-d",
+             # Don't switch to it
+             "-P",
+             "-F",
+             "\#{window_id}"
+           ]) do
+        {window_id, 0} ->
+          {:ok, String.trim(window_id)}
+
+        {error, _code} ->
+          {:error, error}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Kill/close a tmux window by name.
+
+  Returns :ok on success, even if the window doesn't exist (idempotent).
+  Returns {:error, reason} only for actual tmux failures.
+  """
+  @spec kill_window(window_name :: String.t()) :: :ok | {:error, term()}
+  def kill_window(window_name) do
+    with {:ok, session} <- get_current_session() do
+      case System.cmd("tmux", ["kill-window", "-t", "#{session}:#{window_name}"]) do
+        {_output, 0} ->
+          :ok
+
+        # Window doesn't exist - that's fine (idempotent)
+        {error, _code} when is_binary(error) ->
+          if String.contains?(error, "can't find window") or
+               String.contains?(error, "no such window") do
+            :ok
+          else
+            {:error, error}
+          end
+
+        {error, _code} ->
+          {:error, error}
+      end
+    else
+      {:error, _reason} -> :ok
+    end
+  end
+
+  @doc """
+  Send a command string to a tmux window.
+
+  The command will be sent followed by Enter (C-m) to execute it.
+  Returns :ok on success, {:error, reason} on failure.
+  """
+  @spec send_keys(window_name :: String.t(), command :: String.t()) :: :ok | {:error, term()}
+  def send_keys(window_name, command) do
+    with {:ok, session} <- get_current_session() do
+      case System.cmd("tmux", [
+             "send-keys",
+             "-t",
+             "#{session}:#{window_name}",
+             command,
+             "C-m"
+           ]) do
+        {_output, 0} ->
+          :ok
+
+        {error, _code} ->
+          {:error, error}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Check if a tmux window exists by name.
+
+  Returns true if the window exists, false otherwise.
+  """
+  @spec window_exists?(window_name :: String.t()) :: boolean()
+  def window_exists?(window_name) do
+    with {:ok, session} <- get_current_session() do
+      case System.cmd("tmux", [
+             "list-windows",
+             "-t",
+             session,
+             "-F",
+             "\#{window_name}"
+           ]) do
+        {output, 0} ->
+          output
+          |> String.trim()
+          |> String.split("\n")
+          |> Enum.any?(&(&1 == window_name))
+
+        {_error, _code} ->
+          false
+      end
+    else
+      {:error, _} -> false
+    end
+  rescue
+    _error -> false
+  end
+
+  @doc """
+  Split a pane in a tmux window.
+
+  Returns {:ok, pane_id} on success, {:error, reason} on failure.
+  """
+  @spec split_pane(target :: String.t(), direction :: String.t(), size :: String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def split_pane(target, direction, size) do
+    case System.cmd("tmux", [
+           "split-window",
+           direction,
+           "-l",
+           size,
+           "-t",
+           target,
+           "-P",
+           "-F",
+           "\#{pane_id}",
+           "-d"
+         ]) do
+      {pane_id, 0} -> {:ok, String.trim(pane_id)}
+      {error, _code} -> {:error, error}
+    end
+  end
+
+  @doc """
+  Set the title of a tmux pane.
+
+  Returns :ok on success, {:error, reason} on failure.
+  """
+  @spec set_pane_title(pane_id :: String.t(), title :: String.t()) :: :ok | {:error, term()}
+  def set_pane_title(pane_id, title) do
+    case System.cmd("tmux", ["select-pane", "-t", pane_id, "-T", title]) do
+      {_output, 0} -> :ok
+      {error, _code} -> {:error, error}
+    end
+  end
+
+  @doc """
+  Enter copy mode in a tmux pane.
+
+  Returns :ok on success, {:error, reason} on failure.
+  """
+  @spec enter_copy_mode(pane_id :: String.t()) :: :ok | {:error, term()}
+  def enter_copy_mode(pane_id) do
+    case System.cmd("tmux", ["copy-mode", "-t", pane_id]) do
+      {_output, 0} -> :ok
+      {error, _code} -> {:error, error}
+    end
+  end
+
+  @doc """
+  Kill a tmux pane by ID.
+
+  Returns :ok on success, even if the pane doesn't exist (idempotent).
+  """
+  @spec kill_pane(pane_id :: String.t()) :: :ok | {:error, term()}
+  def kill_pane(pane_id) do
+    case System.cmd("tmux", ["kill-pane", "-t", pane_id]) do
+      {_output, 0} ->
+        :ok
+
+      {error, _code} when is_binary(error) ->
+        if String.contains?(error, "can't find pane") do
+          :ok
+        else
+          {:error, error}
+        end
+
+      {error, _code} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  List panes in a tmux window with a format string.
+
+  Returns {:ok, output} on success, {:error, reason} on failure.
+  """
+  @spec list_panes(target :: String.t(), format :: String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def list_panes(target, format) do
+    case System.cmd("tmux", ["list-panes", "-t", target, "-F", format]) do
+      {output, 0} -> {:ok, output}
+      {error, _code} -> {:error, error}
+    end
+  end
+
+  @doc """
+  Get a property from a tmux pane using display-message.
+
+  Returns {:ok, value} on success, {:error, reason} on failure.
+  """
+  @spec get_pane_property(pane_id :: String.t(), property :: String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def get_pane_property(pane_id, property) do
+    case System.cmd("tmux", ["display-message", "-t", pane_id, "-p", property]) do
+      {output, 0} -> {:ok, String.trim(output)}
+      {error, _code} -> {:error, error}
+    end
+  end
+
+  @doc """
+  Join a pane from a source window into the current window.
+
+  This moves the first pane from the source window to be displayed in the current window.
+  The original pane remains active so the TUI stays responsive.
+
+  Returns {:ok, pane_id} of the joined pane on success, {:error, reason} on failure.
+  """
+  @spec join_pane(source_window :: String.t(), opts :: keyword()) ::
+          {:ok, String.t()} | {:error, term()}
+  def join_pane(source_window, opts \\ []) do
+    direction = Keyword.get(opts, :direction, "-v")
+    size = Keyword.get(opts, :size, "50%")
+
+    with {:ok, session} <- get_current_session(),
+         {current_pane_id, 0} <- System.cmd("tmux", ["display-message", "-p", "\#{pane_id}"]),
+         {window_id, 0} <- System.cmd("tmux", ["display-message", "-p", "\#{window_id}"]),
+         {before_panes, 0} <- System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
+         before_set = before_panes |> String.trim() |> String.split("\n") |> MapSet.new(),
+         {_output, 0} <- System.cmd("tmux", [
+           "join-pane",
+           "-s",
+           "#{session}:#{source_window}.0",
+           "-t",
+           String.trim(current_pane_id),
+           direction,
+           "-l",
+           size
+         ]),
+         {after_panes, 0} <- System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
+         after_set = after_panes |> String.trim() |> String.split("\n") |> MapSet.new(),
+         [new_pane_id] <- MapSet.difference(after_set, before_set) |> MapSet.to_list(),
+         {_output, 0} <- System.cmd("tmux", ["select-pane", "-t", String.trim(current_pane_id)]),
+         {_output, 0} <- System.cmd("tmux", ["refresh-client"]) do
+      {:ok, new_pane_id}
+    else
+      [] -> {:error, "Could not identify newly joined pane"}
+      {error, _code} when is_binary(error) -> {:error, error}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Break a pane out into its own window.
+
+  Returns :ok on success, {:error, reason} on failure.
+  """
+  @spec break_pane(pane_id :: String.t(), opts :: keyword()) :: :ok | {:error, term()}
+  def break_pane(pane_id, opts \\ []) do
+    window_name = Keyword.get(opts, :window_name)
+
+    args =
+      if window_name do
+        ["break-pane", "-d", "-t", pane_id, "-n", window_name]
+      else
+        ["break-pane", "-d", "-t", pane_id]
+      end
+
+    case System.cmd("tmux", args) do
+      {_output, 0} -> :ok
+      {error, _code} -> {:error, error}
+    end
+  end
+end

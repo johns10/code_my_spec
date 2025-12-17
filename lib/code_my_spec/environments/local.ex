@@ -1,20 +1,8 @@
 defmodule CodeMySpec.Environments.Local do
   @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
 
-  def environment_setup_command(%{
-        repo_url: repo_url,
-        branch_name: branch_name,
-        working_dir: working_dir
-      }) do
-    project_name = extract_project_name(repo_url)
-
-    """
-    cd #{working_dir} && \
-    git clone #{repo_url} #{project_name} && \
-    cd #{project_name} && \
-    git switch -C #{branch_name} && \
-    mix deps.get
-    """
+  def environment_setup_command(%{}) do
+    ""
   end
 
   def docs_environment_teardown_command(%{
@@ -66,13 +54,6 @@ defmodule CodeMySpec.Environments.Local do
       {output, 0} -> {clean_terminal_output(output), 0}
       {output, exit_code} -> {clean_terminal_output(output), exit_code}
     end
-  end
-
-  defp extract_project_name(repo_url) do
-    repo_url
-    |> String.split("/")
-    |> List.last()
-    |> String.replace(".git", "")
   end
 
   defp clean_terminal_output(output) do

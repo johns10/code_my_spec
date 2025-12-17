@@ -150,7 +150,6 @@ defmodule CodeMySpec.ProjectSetupWizardTest do
 
       assert String.contains?(script, "#!/bin/bash")
       assert String.contains?(script, "git submodule add")
-      assert String.contains?(script, project.code_repo)
       assert String.contains?(script, project.docs_repo)
     end
 
@@ -209,29 +208,29 @@ defmodule CodeMySpec.ProjectSetupWizardTest do
   # ============================================================================
 
   describe "vscode_extension_connected?/1" do
-    test "returns true when extension present for project", %{project: project} do
+    test "returns true when extension present for project", %{scope: scope} do
       # We'll need to mock Phoenix.Presence.list/1
       # Since this is a stateless check, we can test the logic directly
       # In implementation, this will query Presence
 
       # For now, test that function exists and returns boolean
-      result = ProjectSetupWizard.vscode_extension_connected?(project)
+      result = ProjectSetupWizard.vscode_extension_connected?(scope)
       assert is_boolean(result)
     end
 
-    test "returns false when no extension connected", %{project: project} do
+    test "returns false when no extension connected", %{scope: scope} do
       # Mock Presence.list to return empty map
       # Phoenix.Presence.list should return %{}
 
-      result = ProjectSetupWizard.vscode_extension_connected?(project)
+      result = ProjectSetupWizard.vscode_extension_connected?(scope)
       assert is_boolean(result)
     end
 
-    test "queries Presence not database", %{project: project} do
+    test "queries Presence not database", %{scope: scope} do
       # This test verifies that we're using Presence API, not database queries
       # The function should call Phoenix.Presence.list, not Repo queries
 
-      result = ProjectSetupWizard.vscode_extension_connected?(project)
+      result = ProjectSetupWizard.vscode_extension_connected?(scope)
 
       # Should return immediately without database query
       assert is_boolean(result)

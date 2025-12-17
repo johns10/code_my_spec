@@ -17,4 +17,7 @@ CodeMySpec.Support.TestAdapter.ensure_fixture_fresh()
 Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter)
 
 # Use RecordingEnvironment as default for local environment in tests
-Application.put_env(:code_my_spec, :local_environment, CodeMySpec.Support.RecordingEnvironment)
+Application.put_env(:code_my_spec, :environment, CodeMySpec.Support.RecordingEnvironment)
+
+# Use MockTmuxAdapter as default for tmux operations in tests
+Application.put_env(:code_my_spec, :tmux_adapter, CodeMySpec.Environments.MockTmuxAdapter)

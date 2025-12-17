@@ -162,8 +162,8 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       # Include a non-existent component ID
       new_order = [
         to_string(high_priority.id),
-        # Non-existent ID
-        "99999"
+        # Non-existent UUID
+        "00000000-0000-0000-0000-000000000000"
       ]
 
       # Should not crash

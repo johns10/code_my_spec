@@ -49,8 +49,6 @@ defmodule CodeMySpec.Components.RequirementsRepository do
     end
 
     component
-    |> Map.put(:dependencies, [])
-    |> Map.put(:dependents, [])
     |> Map.put(:outgoing_dependencies, [])
     |> Map.put(:incoming_dependencies, [])
   end

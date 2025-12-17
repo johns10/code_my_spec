@@ -12,7 +12,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
           parse_status: :success | :error | nil,
           parse_errors: map() | nil,
           metadata: map() | nil,
-          project_id: integer() | nil,
+          project_id: Ecto.UUID.t() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
           account_id: integer() | nil,
           account: Account.t() | Ecto.Association.NotLoaded.t() | nil,
@@ -27,7 +27,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
     field :parse_errors, :map
     field :metadata, :map
 
-    belongs_to :project, Project
+    belongs_to :project, Project, type: :binary_id
     belongs_to :account, Account
 
     timestamps(type: :utc_datetime)

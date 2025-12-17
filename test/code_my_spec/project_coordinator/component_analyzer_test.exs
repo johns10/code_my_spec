@@ -12,17 +12,18 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
     test "returns component status for components with all files existing and tests passing" do
       scope = UsersFixtures.full_scope_fixture()
 
-      components = [
-        %Component{
-          id: 1,
+      # Create component using fixture which will generate deterministic UUID
+      created_component =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        }
-      ]
+          type: :context
+        })
+
+      # Fetch component with proper preloads
+      component = CodeMySpec.Components.get_component(scope, created_component.id)
+
+      components = [component]
 
       file_list = [
         "docs/design/my_app/users.md",
@@ -38,7 +39,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
           persist: false
         )
 
-      assert [%Component{id: 1, component_status: %ComponentStatus{} = status}] = result
+      assert [%Component{id: id, component_status: %ComponentStatus{} = status}] = result
+      assert id == component.id
       assert status.design_exists == true
       assert status.code_exists == true
       assert status.test_exists == true
@@ -48,17 +50,18 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
     test "returns component status for components with missing files" do
       scope = UsersFixtures.full_scope_fixture()
 
-      components = [
-        %Component{
-          id: 1,
+      # Create component using fixture
+      created_component =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        }
-      ]
+          type: :context
+        })
+
+      # Fetch component with proper preloads
+      component = CodeMySpec.Components.get_component(scope, created_component.id)
+
+      components = [component]
 
       file_list = [
         # Only code file exists
@@ -73,7 +76,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
           persist: false
         )
 
-      assert [%Component{id: 1, component_status: %ComponentStatus{} = status}] = result
+      assert [%Component{id: id, component_status: %ComponentStatus{} = status}] = result
+      assert id == component.id
       assert status.design_exists == false
       assert status.code_exists == true
       assert status.test_exists == false
@@ -83,17 +87,18 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
     test "returns component status for components with failing tests" do
       scope = UsersFixtures.full_scope_fixture()
 
-      components = [
-        %Component{
-          id: 1,
+      # Create component using fixture
+      created_component =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        }
-      ]
+          type: :context
+        })
+
+      # Fetch component with proper preloads
+      component = CodeMySpec.Components.get_component(scope, created_component.id)
+
+      components = [component]
 
       file_list = [
         "docs/design/my_app/users.md",
@@ -120,7 +125,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
           persist: false
         )
 
-      assert [%Component{id: 1, component_status: %ComponentStatus{} = status}] = result
+      assert [%Component{id: id, component_status: %ComponentStatus{} = status}] = result
+      assert id == component.id
       assert status.design_exists == true
       assert status.code_exists == true
       assert status.test_exists == true
@@ -130,26 +136,26 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
     test "handles multiple components" do
       scope = UsersFixtures.full_scope_fixture()
 
-      components = [
-        %Component{
-          id: 1,
+      # Create components using fixtures
+      created_users =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        },
-        %Component{
-          id: 2,
+          type: :context
+        })
+
+      created_posts =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "Posts",
           module_name: "Posts",
-          type: :context,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        }
-      ]
+          type: :context
+        })
+
+      # Fetch components with proper preloads
+      users = CodeMySpec.Components.get_component(scope, created_users.id)
+      posts = CodeMySpec.Components.get_component(scope, created_posts.id)
+
+      components = [users, posts]
 
       file_list = [
         "docs/design/my_app/users.md",
@@ -167,36 +173,41 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
           persist: false
         )
 
-      assert [
-               %Component{id: 1, component_status: %ComponentStatus{} = status1},
-               %Component{id: 2, component_status: %ComponentStatus{} = status2}
-             ] = result
+      assert length(result) == 2
 
-      assert status1.design_exists == true
-      assert status1.code_exists == true
-      assert status1.test_exists == true
-      assert status1.test_status == :passing
+      # Find components by ID (order-independent)
+      users_result = Enum.find(result, fn c -> c.id == users.id end)
+      posts_result = Enum.find(result, fn c -> c.id == posts.id end)
 
-      assert status2.design_exists == false
-      assert status2.code_exists == true
-      assert status2.test_exists == false
-      assert status2.test_status == :not_run
+      assert %Component{component_status: %ComponentStatus{} = users_status} = users_result
+      assert %Component{component_status: %ComponentStatus{} = posts_status} = posts_result
+
+      assert users_status.design_exists == true
+      assert users_status.code_exists == true
+      assert users_status.test_exists == true
+      assert users_status.test_status == :passing
+
+      assert posts_status.design_exists == false
+      assert posts_status.code_exists == true
+      assert posts_status.test_exists == false
+      assert posts_status.test_status == :not_run
     end
 
     test "ignores test results from other files" do
       scope = UsersFixtures.full_scope_fixture()
 
-      components = [
-        %Component{
-          id: 1,
+      # Create component using fixture
+      created_component =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        }
-      ]
+          type: :context
+        })
+
+      # Fetch component with proper preloads
+      component = CodeMySpec.Components.get_component(scope, created_component.id)
+
+      components = [component]
 
       file_list = [
         "lib/my_app/users.ex",
@@ -223,7 +234,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
           persist: false
         )
 
-      assert [%Component{id: 1, component_status: %ComponentStatus{} = status}] = result
+      assert [%Component{id: id, component_status: %ComponentStatus{} = status}] = result
+      assert id == component.id
       assert status.design_exists == false
       assert status.code_exists == true
       assert status.test_exists == true
@@ -234,17 +246,18 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
     test "handles nested module names correctly" do
       scope = UsersFixtures.full_scope_fixture()
 
-      components = [
-        %Component{
-          id: 1,
+      # Create component using fixture
+      created_component =
+        ComponentsFixtures.component_fixture(scope, %{
           name: "UserProfile",
           module_name: "Accounts.UserProfile",
-          type: :schema,
-          project_id: scope.active_project.id,
-          project: scope.active_project,
-          dependencies: []
-        }
-      ]
+          type: :schema
+        })
+
+      # Fetch component with proper preloads
+      component = CodeMySpec.Components.get_component(scope, created_component.id)
+
+      components = [component]
 
       file_list = [
         "docs/design/my_app/accounts/user_profile.md",
@@ -260,7 +273,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
           persist: false
         )
 
-      assert [%Component{id: 1, component_status: %ComponentStatus{} = status}] = result
+      assert [%Component{id: id, component_status: %ComponentStatus{} = status}] = result
+      assert id == component.id
       assert status.design_exists == true
       assert status.code_exists == true
       assert status.test_exists == true

@@ -203,7 +203,7 @@ defmodule CodeMySpecWeb.OAuthController do
           "client_id" => application.uid,
           "client_secret" => application.secret,
           "client_name" => application.name,
-          "redirect_uris" => String.split(application.redirect_uri || "", ",", trim: true),
+          "redirect_uris" => String.split(application.redirect_uri || "", " ", trim: true),
           "grant_types" => ["authorization_code"],
           "response_types" => ["code"],
           "scope" => application.scopes
@@ -222,7 +222,7 @@ defmodule CodeMySpecWeb.OAuthController do
   defp create_oauth_application(params) do
     attrs = %{
       name: params["client_name"] || "MCP Client",
-      redirect_uri: (params["redirect_uris"] || []) |> Enum.join(","),
+      redirect_uri: (params["redirect_uris"] || []) |> Enum.join(" "),
       scopes: "read write",
       uid: generate_client_id(),
       secret: generate_client_secret()

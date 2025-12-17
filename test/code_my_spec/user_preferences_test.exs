@@ -38,7 +38,8 @@ defmodule CodeMySpec.UserPreferencesTest do
     end
 
     test "create_user_preferences/2 with valid data creates a user_preference" do
-      valid_attrs = %{token: "some token", active_account_id: 42, active_project_id: 42}
+      project_id = Ecto.UUID.generate()
+      valid_attrs = %{token: "some token", active_account_id: 42, active_project_id: project_id}
       scope = user_scope_fixture()
 
       assert {:ok, %UserPreference{} = user_preference} =
@@ -46,7 +47,7 @@ defmodule CodeMySpec.UserPreferencesTest do
 
       assert user_preference.token == "some token"
       assert user_preference.active_account_id == 42
-      assert user_preference.active_project_id == 42
+      assert user_preference.active_project_id == project_id
       assert user_preference.user_id == scope.user.id
     end
 
@@ -65,14 +66,15 @@ defmodule CodeMySpec.UserPreferencesTest do
     test "update_user_preferences/2 with valid data updates the user_preference" do
       scope = user_scope_fixture()
       user_preference_fixture(scope)
-      update_attrs = %{token: "some updated token", active_account_id: 43, active_project_id: 43}
+      project_id = Ecto.UUID.generate()
+      update_attrs = %{token: "some updated token", active_account_id: 43, active_project_id: project_id}
 
       assert {:ok, %UserPreference{} = user_preference} =
                UserPreferences.update_user_preferences(scope, update_attrs)
 
       assert user_preference.token == "some updated token"
       assert user_preference.active_account_id == 43
-      assert user_preference.active_project_id == 43
+      assert user_preference.active_project_id == project_id
     end
 
     test "update_user_preferences/2 with invalid data succeeds with nil values" do
@@ -129,22 +131,24 @@ defmodule CodeMySpec.UserPreferencesTest do
 
     test "select_active_project/2 creates preference with project when none exists" do
       scope = user_scope_fixture()
+      project_id = Ecto.UUID.generate()
 
       assert {:ok, %UserPreference{} = user_preference} =
-               UserPreferences.select_active_project(scope, 789)
+               UserPreferences.select_active_project(scope, project_id)
 
-      assert user_preference.active_project_id == 789
+      assert user_preference.active_project_id == project_id
       assert user_preference.user_id == scope.user.id
     end
 
     test "select_active_project/2 updates existing preference" do
       scope = user_scope_fixture()
       user_preference_fixture(scope)
+      project_id = Ecto.UUID.generate()
 
       assert {:ok, %UserPreference{} = user_preference} =
-               UserPreferences.select_active_project(scope, 101)
+               UserPreferences.select_active_project(scope, project_id)
 
-      assert user_preference.active_project_id == 101
+      assert user_preference.active_project_id == project_id
       assert user_preference.user_id == scope.user.id
     end
 

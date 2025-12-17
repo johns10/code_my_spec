@@ -329,7 +329,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         type: CodeMySpec.ContextDesignReviewSessions,
         project: project,
         component: nil,
-        component_id: 999_999_999
+        component_id: Ecto.UUID.generate()
       }
 
       assert {:error, error_message} = ExecuteReview.get_command(scope, session, [])

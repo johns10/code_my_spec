@@ -4,14 +4,21 @@ defmodule CodeMySpec.UserPreferencesFixtures do
   entities via the `CodeMySpec.UserPreferences` context.
   """
 
+  import CodeMySpec.AccountsFixtures
+  import CodeMySpec.ProjectsFixtures
+
   @doc """
   Generate a user_preference.
   """
   def user_preference_fixture(scope, attrs \\ %{}) do
+    # Create actual account and project if not provided
+    account = account_fixture()
+    project = project_fixture(scope)
+
     attrs =
       Enum.into(attrs, %{
-        active_account_id: 42,
-        active_project_id: 42,
+        active_account_id: account.id,
+        active_project_id: project.id,
         token: "some token"
       })
 

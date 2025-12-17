@@ -537,7 +537,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
       {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, result)
 
       # Verify branch name is stored in session state (auto-generated from component name)
-      assert session.state.branch_name == "code-context-coding-session-for-accounts"
+      assert session.state["branch_name"] == "code-context-coding-session-for-accounts"
 
       # Cleanup
       File.rm_rf!("lib/my_app")

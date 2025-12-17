@@ -1,4 +1,4 @@
-defmodule TestPhoenixProject.Blog.BlogRepositoryTest do
+defmodule TestPhoenixProject.Blog.PostRepositoryTest do
   use ExUnit.Case, async: true
 
   test "repository implementation" do

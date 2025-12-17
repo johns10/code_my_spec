@@ -37,26 +37,27 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
           description: "Blog context for managing posts"
         })
 
-      # Create test component to implement (BlogRepository)
-      {:ok, blog_repository} =
+      # Create test component to implement (PostRepository)
+      {:ok, post_repository} =
         Components.create_component(scope, %{
-          name: "BlogRepository",
+          name: "PostRepository",
           type: :repository,
-          module_name: "TestPhoenixProject.Blog.BlogRepository",
+          module_name: "TestPhoenixProject.Blog.PostRepository",
           description: "Repository for blog persistence",
           parent_component_id: blog_context.id
         })
 
-      %{scope: scope, blog_context: blog_context, blog_repository: blog_repository}
+      %{scope: scope, blog_context: blog_context, post_repository: post_repository}
     end
 
     @tag timeout: 300_000
     # @tag :integration
     test "executes complete component coding workflow", %{
       scope: scope,
-      blog_repository: blog_repository
+      post_repository: post_repository
     } do
-      project_dir = "test_repos/component_coding_session_#{System.unique_integer([:positive])}"
+      project_dir =
+        "../code_my_spec_test_repos/component_coding_session_#{System.unique_integer([:positive])}"
 
       # Setup test project using TestAdapter
       {:ok, ^project_dir} =
@@ -72,7 +73,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
             type: ComponentCodingSessions,
             agent: :claude_code,
             environment: :local,
-            component_id: blog_repository.id
+            component_id: post_repository.id
           })
 
         # Step 1: Initialize
@@ -85,7 +86,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
             scope,
             session.id,
             GenerateImplementation,
-            mock_output: "Generated implementation for BlogRepository"
+            mock_output: "Generated implementation for PostRepository"
           )
 
         # Write the actual files that would have been generated
@@ -103,7 +104,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
         # Verify we got a failure
         assert result.status == :error
-        assert result.data.stats.failures == 1
+        assert result.data["stats"]["failures"] == 1
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -130,7 +131,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
         # Verify tests now pass
         assert result.status == :ok
-        assert result.data.stats.failures == 0
+        assert result.data["stats"]["failures"] == 0
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -185,19 +186,19 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
   # Write implementation and test files to the test project
   defp write_implementation_files(project_dir) do
     # Read fixtures
-    impl_content = File.read!("test/fixtures/component_coding/blog_repository._ex")
-    test_content = File.read!("test/fixtures/component_coding/blog_repository_test._ex")
+    impl_content = File.read!("test/fixtures/component_coding/post_repository._ex")
+    test_content = File.read!("test/fixtures/component_coding/post_repository_test._ex")
 
     # Write implementation file
     impl_path =
-      Path.join([project_dir, "lib", "test_phoenix_project", "blog", "blog_repository.ex"])
+      Path.join([project_dir, "lib", "test_phoenix_project", "blog", "post_repository.ex"])
 
     File.mkdir_p!(Path.dirname(impl_path))
     File.write!(impl_path, impl_content)
 
     # Write test file
     test_path =
-      Path.join([project_dir, "test", "test_phoenix_project", "blog", "blog_repository_test.exs"])
+      Path.join([project_dir, "test", "test_phoenix_project", "blog", "post_repository_test.exs"])
 
     File.mkdir_p!(Path.dirname(test_path))
     File.write!(test_path, test_content)
@@ -205,10 +206,10 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
   # Fix the test file by replacing with the passing version
   defp fix_test_file(project_dir) do
-    fixed_content = File.read!("test/fixtures/component_coding/blog_repository_test_fixed._ex")
+    fixed_content = File.read!("test/fixtures/component_coding/post_repository_test_fixed._ex")
 
     test_path =
-      Path.join([project_dir, "test", "test_phoenix_project", "blog", "blog_repository_test.exs"])
+      Path.join([project_dir, "test", "test_phoenix_project", "blog", "post_repository_test.exs"])
 
     File.write!(test_path, fixed_content)
   end

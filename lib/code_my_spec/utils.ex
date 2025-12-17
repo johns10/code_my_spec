@@ -1,14 +1,20 @@
 defmodule CodeMySpec.Utils do
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Projects.Project
+  alias CodeMySpec.Utils.Paths
 
+  # Delegate path-related functions to Paths module
+  defdelegate resolve_context_path(path), to: Paths
+  defdelegate module_to_path(module_name), to: Paths
+
+  # Legacy support for old Component schema
   def component_files(
         %Component{module_name: component_module_name, type: type},
         %Project{module_name: project_module_name}
       ) do
     component_module_name = String.replace(component_module_name, "#{project_module_name}.", "")
     full_module_name = "#{project_module_name}.#{component_module_name}"
-    module_path = module_to_path(full_module_name)
+    module_path = Paths.module_to_path(full_module_name)
 
     base_files = %{
       design_file: "docs/design/#{module_path}.md",
@@ -22,14 +28,6 @@ defmodule CodeMySpec.Utils do
     else
       base_files
     end
-  end
-
-  defp module_to_path(module_name) do
-    module_name
-    |> String.replace_prefix("", "")
-    |> Macro.underscore()
-    |> String.replace(".", "/")
-    |> String.downcase()
   end
 
   def changeset_error_to_string(%Ecto.Changeset{} = changeset) do

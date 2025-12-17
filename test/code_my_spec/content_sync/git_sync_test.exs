@@ -104,7 +104,7 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
       scope = %Scope{
         user: user_fixture(),
         active_account_id: account_fixture().id,
-        active_project_id: 999_999_999
+        active_project_id: Ecto.UUID.generate()
       }
 
       assert {:error, :not_found} = GitSync.clone_to_temp(scope)
@@ -245,7 +245,7 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
       assert {:ok, temp_path} = GitSync.clone_to_temp(scope)
       assert is_binary(temp_path)
       assert File.exists?(temp_path)
-      assert File.exists?(Path.join(temp_path, ".git"))
+      assert File.exists?(Path.join(temp_path, "mix.exs"))
 
       # Cleanup
       File.rm_rf!(temp_path)

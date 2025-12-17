@@ -1,5 +1,5 @@
 defmodule CodeMySpec.Sessions.Orchestrator do
-  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction}
+  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction, InteractionsRepository}
 
   def next_command(scope, session_id, opts \\ []) do
     with {:ok, %Session{type: session_module} = session} <- get_session(scope, session_id),
@@ -9,8 +9,9 @@ defmodule CodeMySpec.Sessions.Orchestrator do
          {:ok, command} <-
            next_interaction_module.get_command(scope, session, opts),
          interaction <- Interaction.new_with_command(command),
-         {:ok, updated_session} <- SessionsRepository.add_interaction(scope, session, interaction) do
-      {:ok, updated_session}
+         {:ok, _created_interaction} <- InteractionsRepository.create(session.id, interaction),
+         refreshed_session <- SessionsRepository.get_session(scope, session.id) do
+      {:ok, refreshed_session}
     else
       {%Interaction{} = _pending_interaction, session} ->
         {:ok, session}

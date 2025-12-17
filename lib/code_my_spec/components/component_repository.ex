@@ -24,6 +24,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def get_component!(%Scope{active_project_id: project_id}, id) do
     Component
     |> where([c], c.id == ^id and c.project_id == ^project_id)
+    |> preload([:project, :requirements])
     |> Repo.one!()
   end
 
@@ -31,6 +32,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def get_component(%Scope{active_project_id: project_id}, id) do
     Component
     |> where([c], c.id == ^id and c.project_id == ^project_id)
+    |> preload([:project, :requirements])
     |> Repo.one()
   end
 
@@ -144,6 +146,16 @@ defmodule CodeMySpec.Components.ComponentRepository do
     Component
     |> where([c], c.project_id == ^project_id)
     |> where([c], ilike(c.name, ^search_term))
+    |> Repo.all()
+  end
+
+  @spec search_components_by_module_name(Scope.t(), String.t()) :: [Component.t()]
+  def search_components_by_module_name(%Scope{active_project_id: project_id}, module_name_pattern) do
+    search_term = "%#{module_name_pattern}%"
+
+    Component
+    |> where([c], c.project_id == ^project_id)
+    |> where([c], ilike(c.module_name, ^search_term))
     |> Repo.all()
   end
 

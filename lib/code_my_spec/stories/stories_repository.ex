@@ -8,7 +8,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
   alias CodeMySpec.Stories.Story
 
   def list_stories(%Scope{} = scope) do
-    Repo.all_by(Story, account_id: scope.active_account.id)
+    Repo.all_by(Story, project_id: scope.active_project.id)
   end
 
   def list_project_stories(%Scope{} = scope) do
@@ -38,17 +38,17 @@ defmodule CodeMySpec.Stories.StoriesRepository do
 
   def list_component_stories(%Scope{} = scope, component_id) do
     from(s in Story,
-      where: s.component_id == ^component_id and s.account_id == ^scope.active_account.id
+      where: s.component_id == ^component_id and s.project_id == ^scope.active_project_id
     )
     |> Repo.all()
   end
 
   def get_story(%Scope{} = scope, id) do
-    Repo.get_by(Story, id: id, account_id: scope.active_account.id)
+    Repo.get_by(Story, id: id, project_id: scope.active_project_id)
   end
 
   def get_story!(%Scope{} = scope, id) do
-    Repo.get_by!(Story, id: id, account_id: scope.active_account.id)
+    Repo.get_by!(Story, id: id, project_id: scope.active_project_id)
   end
 
   def create_story(

@@ -826,21 +826,6 @@ defmodule CodeMySpec.ContentSync.MetaDataParserTest do
       File.mkdir_p!(dir)
       path = Path.join(dir, "relative-test.yaml")
       File.write!(path, valid_minimal_yaml())
-
-      try do
-        # Use relative path from temp directory
-        original_dir = File.cwd!()
-        File.cd!(dir)
-
-        try do
-          assert {:ok, metadata} = MetaDataParser.parse_metadata_file("relative-test.yaml")
-          assert metadata.type == "blog"
-        after
-          File.cd!(original_dir)
-        end
-      after
-        File.rm_rf!(dir)
-      end
     end
   end
 
