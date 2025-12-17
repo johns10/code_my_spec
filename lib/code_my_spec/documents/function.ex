@@ -1,6 +1,6 @@
-defmodule CodeMySpec.Specs.Function do
+defmodule CodeMySpec.Documents.Function do
   @moduledoc """
-  Embedded schema representing a function from a spec.
+  Embedded schema representing a function from a spec document.
   """
 
   use Ecto.Schema

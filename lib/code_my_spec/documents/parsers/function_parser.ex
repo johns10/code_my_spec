@@ -1,9 +1,9 @@
-defmodule CodeMySpec.Specs.FunctionParser do
+defmodule CodeMySpec.Documents.Parsers.FunctionParser do
   @moduledoc """
   Parse Functions section AST into Function embedded schema structs.
   """
 
-  alias CodeMySpec.Specs.Function
+  alias CodeMySpec.Documents.Function
 
   @spec from_ast(list()) :: [Function.t()]
   def from_ast(ast) do

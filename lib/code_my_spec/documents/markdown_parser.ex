@@ -1,6 +1,10 @@
 defmodule CodeMySpec.Documents.MarkdownParser do
   @moduledoc """
   Generic markdown parser that extracts H2 sections into a map.
+  Supports pluggable section parsers via convention: section name maps to parser module.
+
+  For example, "functions" section → CodeMySpec.Documents.Parsers.FunctionParser
+  If no parser exists, falls back to text extraction.
   """
 
   @doc """
@@ -8,6 +12,9 @@ defmodule CodeMySpec.Documents.MarkdownParser do
 
   H2 headings become section keys (lowercased), and all content between
   H2 headings becomes the section value.
+
+  Sections with matching parsers (e.g., "functions" → FunctionParser) will be
+  parsed into structured data. Others will be extracted as plain text.
 
   ## Examples
 
@@ -19,7 +26,7 @@ defmodule CodeMySpec.Documents.MarkdownParser do
       ...> Field list here.
       ...> \"\"\"
       iex> MarkdownParser.parse(markdown)
-      {:ok, %{"purpose" => "This is the purpose.", "fields" => "Field list here."}}
+      {:ok, %{"purpose" => "This is the purpose.", "fields" => [%Field{...}]}}
   """
   def parse(markdown_content) do
     case Earmark.Parser.as_ast(markdown_content) do
@@ -59,8 +66,38 @@ defmodule CodeMySpec.Documents.MarkdownParser do
   end
 
   defp finalize_section(sections, {key, content}) do
-    text = extract_text(Enum.reverse(content))
-    Map.put(sections, key, text)
+    reversed_content = Enum.reverse(content)
+
+    value =
+      case lookup_parser(key) do
+        {:ok, parser_module} ->
+          # Use convention-based parser
+          parser_module.from_ast(reversed_content)
+
+        :error ->
+          # No parser found, extract as text
+          extract_text(reversed_content)
+      end
+
+    Map.put(sections, key, value)
+  end
+
+  defp lookup_parser(section_key) do
+    # Convention: "functions" → FunctionParser, "fields" → FieldParser
+    # Singularize and capitalize section name to get parser module name
+    parser_name =
+      section_key
+      |> String.replace(" ", "")
+      |> Inflex.singularize()
+      |> String.capitalize()
+
+    module_name = Module.concat([CodeMySpec.Documents.Parsers, "#{parser_name}Parser"])
+
+    if Code.ensure_loaded?(module_name) and function_exported?(module_name, :from_ast, 1) do
+      {:ok, module_name}
+    else
+      :error
+    end
   end
 
   defp extract_text(ast) when is_list(ast) do

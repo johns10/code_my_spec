@@ -1,25 +1,23 @@
 defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Rules, Utils, Stories, Components}
-  alias CodeMySpec.Sessions.{Session, Steps.Helpers}
+  alias CodeMySpec.{Utils, Stories, Components, Agents}
+  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.Sessions.Steps.Helpers
   alias CodeMySpec.Documents.{DocumentSpecProjector}
+  require Logger
 
   def get_command(scope, %Session{project: project, component: component} = session, opts \\ []) do
+    opts = Helpers.handle_opts(opts, session)
+
     with {:ok, rules} <- get_design_rules(scope),
-         similar_components <- Components.list_similar_components(scope, component),
+         similar <- Components.list_similar_components(scope, component),
          stories <- Stories.list_component_stories(scope, component.id),
-         {:ok, prompt} <-
-           build_design_prompt(project, component, rules, stories, similar_components),
-         {:ok, command} <-
-           Helpers.build_agent_command(
-             __MODULE__,
-             session,
-             :context_designer,
-             "context-design-generator",
-             prompt,
-             opts
-           ) do
+         {:ok, prompt} <- build_design_prompt(project, component, rules, stories, similar),
+         {:ok, agent} <-
+           Agents.create_agent(:context_designer, "context-design-generator", :claude_code),
+         {:ok, command} <- Agents.build_command_struct(agent, prompt, opts) do
+      Logger.info(inspect(command))
       {:ok, command}
     end
   end
@@ -28,11 +26,12 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
     {:ok, %{}, result}
   end
 
-  defp get_design_rules(scope) do
-    case Rules.find_matching_rules(scope, "context", "design") do
-      rules when is_list(rules) -> {:ok, rules}
-      error -> error
-    end
+  defp get_design_rules(_scope) do
+    # case Rules.find_matching_rules(scope, "context", "design") do
+    #   rules when is_list(rules) -> {:ok, rules}
+    #   error -> error
+    # end
+    {:ok, [%{content: ""}]}
   end
 
   defp build_design_prompt(project, context, rules, stories, similar_components) do

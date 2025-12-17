@@ -10,6 +10,7 @@ defmodule CodeMySpec.Documents.Registry do
           overview: String.t(),
           required_sections: [String.t()],
           optional_sections: [String.t()],
+          allowed_additional_sections: [String.t()] | String.t(),
           section_descriptions: %{String.t() => String.t()}
         }
 
@@ -353,6 +354,85 @@ defmodule CodeMySpec.Documents.Registry do
       - test "raises when scope lacks permissions"
   """
 
+  @spec_delegates """
+  Format:
+  - Use H2 heading
+  - Simple bullet list of delegate function definitions
+
+  Content:
+  - Each item shows function/arity delegation in format: function_name/arity: Target.Module.function_name/arity
+  - Only include functions that are delegated to other modules
+
+  Examples:
+  - ## Delegates
+    - list_components/1: Components.ComponentRepository.list_components/1
+    - get_component/2: Components.ComponentRepository.get_component/2
+  """
+
+  @spec_functions """
+  Format:
+  - Use H2 heading
+  - Use H3 headers for each function in format: function_name/arity
+
+  Content:
+  - Document only PUBLIC functions (not private functions)
+  - Each function should include:
+    * Brief description of what the function does
+    * Elixir @spec in code block
+    * **Process**: Step-by-step description of the function's logic
+    * **Test Assertions**: List of test cases for this function
+
+  Examples:
+  - ## Functions
+    ### build/1
+    Apply dependency tree processing to all components.
+    ```elixir
+    @spec build([Component.t()]) :: [Component.t()]
+    ```
+    **Process**:
+    1. Topologically sort components to process dependencies first
+    2. Reduce over sorted components, building a map of processed components
+    **Test Assertions**:
+    - build/1 returns empty list for empty input
+    - build/1 processes components in dependency order
+  """
+
+  @spec_dependencies """
+  Format:
+  - Use H2 heading
+  - Simple bullet list of module names
+
+  Content:
+  - Each item must be a valid Elixir module name (PascalCase)
+  - No descriptions - just the module names
+  - Only include modules this module depends on
+
+  Examples:
+  - ## Dependencies
+    - CodeMySpec.Components
+    - CodeMySpec.Utils
+  """
+
+  @spec_fields """
+  Format:
+  - Use H2 heading
+  - Table format with columns: Field, Type, Required, Description, Constraints
+
+  Content:
+  - Only applicable for schemas and structs
+  - List all schema fields with their Ecto types
+  - Mark required fields clearly (Yes/No or Yes (auto) for auto-generated)
+  - Include constraints (length, format, references)
+
+  Examples:
+  - ## Fields
+    | Field       | Type         | Required   | Description           | Constraints         |
+    | ----------- | ------------ | ---------- | --------------------- | ------------------- |
+    | id          | integer      | Yes (auto) | Primary key           | Auto-generated      |
+    | name        | string       | Yes        | Name field            | Min: 1, Max: 255    |
+    | foreign_id  | integer      | Yes        | Foreign key           | References table.id |
+  """
+
   @default_component_definition %{
     overview: """
     Components are Elixir modules that encapsulate focused business logic within a Phoenix context.
@@ -361,6 +441,7 @@ defmodule CodeMySpec.Documents.Registry do
     """,
     required_sections: ["purpose", "public api", "execution flow", "test assertions"],
     optional_sections: [],
+    allowed_additional_sections: "*",
     section_descriptions: %{
       "purpose" => @component_purpose,
       "public api" => @public_api,
@@ -389,6 +470,7 @@ defmodule CodeMySpec.Documents.Registry do
         "test assertions"
       ],
       optional_sections: [],
+    allowed_additional_sections: "*",
       section_descriptions: %{
         "purpose" => @context_purpose,
         "entity ownership" => @entity_ownership,
@@ -417,6 +499,7 @@ defmodule CodeMySpec.Documents.Registry do
         "test assertions"
       ],
       optional_sections: ["entity ownership", "state management strategy"],
+    allowed_additional_sections: "*",
       section_descriptions: %{
         "purpose" => @context_purpose,
         "entity ownership" => @entity_ownership,
@@ -436,6 +519,7 @@ defmodule CodeMySpec.Documents.Registry do
       """,
       required_sections: ["purpose", "fields", "test assertions"],
       optional_sections: ["associations", "validation rules", "database constraints"],
+    allowed_additional_sections: "*",
       section_descriptions: %{
         "purpose" => @schema_purpose,
         "fields" => @schema_fields,
@@ -443,6 +527,30 @@ defmodule CodeMySpec.Documents.Registry do
         "validation rules" => @validation_rules,
         "database constraints" => @database_constraints,
         "test assertions" => @test_assertions
+      }
+    },
+    spec: %{
+      overview: """
+      Spec documents provide comprehensive documentation for Elixir modules following a
+      structured format. Each spec includes module metadata, public API documentation,
+      delegation information, dependencies, and detailed function specifications.
+
+      Specs are parsed using convention-based section parsers:
+      - "functions" section → Documents.Parsers.FunctionParser (returns structured Function schemas)
+      - "fields" section → Documents.Parsers.FieldParser (returns structured Field schemas)
+      - Other sections → Plain text extraction
+
+      Specs should focus on WHAT the module does, not HOW it does it. Keep them concise
+      and human-readable, as they're consumed by both humans and AI agents.
+      """,
+      required_sections: ["delegates", "functions", "dependencies"],
+      optional_sections: ["fields"],
+    allowed_additional_sections: [],
+      section_descriptions: %{
+        "delegates" => @spec_delegates,
+        "functions" => @spec_functions,
+        "dependencies" => @spec_dependencies,
+        "fields" => @spec_fields
       }
     }
   }

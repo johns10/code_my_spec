@@ -45,10 +45,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
   end
 
   defp create_document(component_design, component) do
-    doc_def = CodeMySpec.Documents.Registry.get_definition(component.type)
-    required_sections = doc_def.required_sections
-
-    Documents.create_dynamic_document(component_design, required_sections, type: component.type)
+    Documents.create_dynamic_document(component_design, component.type)
   end
 
   defp update_result_with_error(scope, result, error) do

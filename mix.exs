@@ -101,6 +101,7 @@ defmodule CodeMySpec.MixProject do
       {:oapi_github, "~> 0.3.3"},
       {:httpoison, "~> 2.0"},
       {:uuid, "~> 1.1.8"},
+      {:inflex, "~> 2.1.0"},
 
       # CLI deps,
       {:burrito, "~> 1.5"},

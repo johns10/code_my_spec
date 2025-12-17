@@ -1,8 +1,8 @@
-defmodule CodeMySpec.Specs.FunctionParserTest do
+defmodule CodeMySpec.Documents.Parsers.FunctionParserTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.Specs.FunctionParser
-  alias CodeMySpec.Specs.Function
+  alias CodeMySpec.Documents.Parsers.FunctionParser
+  alias CodeMySpec.Documents.Function
 
   describe "from_ast/1" do
     test "extracts function name from H3" do

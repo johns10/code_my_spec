@@ -29,28 +29,26 @@ defmodule CodeMySpec.Documents do
   end
 
   @doc """
-  Creates a document by validating sections against provided requirements.
+  Creates a document by validating sections against document type definition.
 
   ## Parameters
   - `markdown_content` - The markdown string to parse
-  - `required_sections` - List of required section names (e.g., ["purpose", "fields"])
-  - `opts` - Optional keyword list
-    - `:type` - Component type atom to include in result (default: nil)
+  - `document_type` - Document type atom (e.g., :context, :schema, :spec) to look up definition
 
-  Returns `{:ok, document}` with sections map or `{:error, reason}` on failure.
+  Returns `{:ok, document}` with sections map and type or `{:error, reason}` on failure.
   """
-  def create_dynamic_document(markdown_content, required_sections, opts \\ []) do
+  def create_dynamic_document(markdown_content, document_type) do
+    doc_def = CodeMySpec.Documents.Registry.get_definition(document_type)
+
     with {:ok, sections} <- MarkdownParser.parse(markdown_content),
-         :ok <- validate_required_sections(sections, required_sections) do
-      document = %{sections: sections}
-
-      document =
-        case Keyword.get(opts, :type) do
-          nil -> document
-          type -> Map.put(document, :type, type)
-        end
-
-      {:ok, document}
+         :ok <- validate_required_sections(sections, doc_def.required_sections),
+         :ok <- validate_additional_sections(
+           sections,
+           doc_def.required_sections,
+           doc_def.optional_sections,
+           doc_def.allowed_additional_sections
+         ) do
+      {:ok, %{sections: sections, type: document_type}}
     end
   end
 
@@ -63,6 +61,21 @@ defmodule CodeMySpec.Documents do
       :ok
     else
       {:error, "Missing required sections: #{Enum.join(missing, ", ")}"}
+    end
+  end
+
+  defp validate_additional_sections(_sections, _required, _optional, "*"), do: :ok
+
+  defp validate_additional_sections(sections, required_sections, optional_sections, allowed_additional) do
+    allowed_sections = MapSet.new(required_sections ++ optional_sections ++ allowed_additional)
+    actual_sections = MapSet.new(Map.keys(sections))
+    disallowed = MapSet.difference(actual_sections, allowed_sections)
+
+    if MapSet.size(disallowed) == 0 do
+      :ok
+    else
+      disallowed_list = MapSet.to_list(disallowed) |> Enum.sort()
+      {:error, "Disallowed sections found: #{Enum.join(disallowed_list, ", ")}"}
     end
   end
 

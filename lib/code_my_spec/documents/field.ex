@@ -1,4 +1,4 @@
-defmodule CodeMySpec.Specs.Field do
+defmodule CodeMySpec.Documents.Field do
   @moduledoc """
   Embedded schema representing a schema field.
   """

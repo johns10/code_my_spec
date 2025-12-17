@@ -1,9 +1,9 @@
-defmodule CodeMySpec.Specs.FieldParser do
+defmodule CodeMySpec.Documents.Parsers.FieldParser do
   @moduledoc """
   Parse Fields section table AST into Field embedded schema structs.
   """
 
-  alias CodeMySpec.Specs.Field
+  alias CodeMySpec.Documents.Field
 
   @spec from_ast(list()) :: [Field.t()]
   def from_ast(ast) do
