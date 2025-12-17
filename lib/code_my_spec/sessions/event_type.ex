@@ -13,7 +13,10 @@ defmodule CodeMySpec.Sessions.EventType do
     :proxy_response,
     :session_start,
     :notification_hook,
-    :session_stop_hook
+    :session_stop_hook,
+    :post_tool_use,
+    :user_prompt_submit,
+    :stop
   ]
 
   def type, do: :string

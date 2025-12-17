@@ -14,6 +14,11 @@ defmodule CodeMySpec.Sessions.InteractionEvent do
           :proxy_request
           | :proxy_response
           | :session_start
+          | :notification_hook
+          | :session_stop_hook
+          | :post_tool_use
+          | :user_prompt_submit
+          | :stop
 
   @type t :: %__MODULE__{
           id: integer() | nil,

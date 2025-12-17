@@ -403,4 +403,148 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       refute_receive _, 100
     end
   end
+
+  describe "interaction registry updates" do
+    setup do
+      user = user_fixture()
+      account = account_fixture()
+      member_fixture(user, account)
+
+      project =
+        user_scope_fixture(user, account)
+        |> project_fixture(%{account_id: account.id, module_name: "MyApp"})
+
+      scope = user_scope_fixture(user, account, project)
+      session = session_fixture(scope)
+      interaction = interaction_fixture(session)
+
+      # Clear registry before tests
+      CodeMySpec.Sessions.InteractionRegistry.clear_all()
+
+      %{scope: scope, session: session, interaction: interaction}
+    end
+
+    test "post_tool_use updates last_activity", %{
+      scope: scope,
+      interaction: interaction
+    } do
+      event_attrs =
+        valid_event_attrs(%{
+          "event_type" => :post_tool_use,
+          "data" => %{
+            "tool_name" => "Write",
+            "tool_use_id" => "toolu_abc123"
+          }
+        })
+
+      assert {:ok, _session} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+
+      assert {:ok, runtime} =
+               CodeMySpec.Sessions.InteractionRegistry.get_status(interaction.id)
+
+      assert runtime.agent_state == "running"
+      assert runtime.last_activity.event_type == :post_tool_use
+      assert runtime.last_activity.tool_name == "Write"
+      assert runtime.last_activity.tool_use_id == "toolu_abc123"
+    end
+
+    test "user_prompt_submit clears last_notification and last_stopped", %{
+      scope: scope,
+      interaction: interaction
+    } do
+      # First, set a notification and stopped state
+      notification_runtime =
+        CodeMySpec.Sessions.RuntimeInteraction.new(interaction.id, %{
+          agent_state: "notification",
+          last_notification: %{type: "idle_prompt"},
+          last_stopped: %{timestamp: DateTime.utc_now()}
+        })
+
+      CodeMySpec.Sessions.InteractionRegistry.register_status(notification_runtime)
+
+      # Now submit a user prompt
+      event_attrs =
+        valid_event_attrs(%{
+          "event_type" => :user_prompt_submit,
+          "data" => %{
+            "prompt" => "Please help me with this task"
+          }
+        })
+
+      assert {:ok, _session} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+
+      assert {:ok, runtime} =
+               CodeMySpec.Sessions.InteractionRegistry.get_status(interaction.id)
+
+      assert runtime.agent_state == "running"
+      assert runtime.last_notification == nil
+      assert runtime.last_stopped == nil
+      assert runtime.last_activity.event_type == :user_prompt_submit
+      assert runtime.last_activity.prompt_preview == "Please help me with this task"
+    end
+
+    test "stop event sets agent_state to idle and records last_stopped", %{
+      scope: scope,
+      interaction: interaction
+    } do
+      event_attrs =
+        valid_event_attrs(%{
+          "event_type" => :stop,
+          "data" => %{
+            "stop_hook_active" => true
+          }
+        })
+
+      assert {:ok, _session} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+
+      assert {:ok, runtime} =
+               CodeMySpec.Sessions.InteractionRegistry.get_status(interaction.id)
+
+      assert runtime.agent_state == "idle"
+      assert runtime.last_stopped.stop_hook_active == true
+      assert %DateTime{} = runtime.last_stopped.timestamp
+    end
+
+    test "registry merges updates preserving previous fields", %{
+      scope: scope,
+      interaction: interaction
+    } do
+      # First event: notification
+      notification_attrs =
+        valid_event_attrs(%{
+          "event_type" => :notification_hook,
+          "data" => %{
+            "notification_type" => "idle_prompt",
+            "message" => "Waiting for input"
+          }
+        })
+
+      assert {:ok, _session} =
+               EventHandler.handle_event(scope, interaction.id, notification_attrs)
+
+      assert {:ok, runtime1} =
+               CodeMySpec.Sessions.InteractionRegistry.get_status(interaction.id)
+
+      assert runtime1.agent_state == "notification"
+      assert runtime1.last_notification["notification_type"] == "idle_prompt"
+
+      # Second event: tool activity (should preserve notification)
+      tool_attrs =
+        valid_event_attrs(%{
+          "event_type" => :proxy_request,
+          "data" => %{
+            "tool_name" => "Read"
+          }
+        })
+
+      assert {:ok, _session} = EventHandler.handle_event(scope, interaction.id, tool_attrs)
+
+      assert {:ok, runtime2} =
+               CodeMySpec.Sessions.InteractionRegistry.get_status(interaction.id)
+
+      assert runtime2.agent_state == "running"
+      assert runtime2.last_notification["notification_type"] == "idle_prompt"
+      assert runtime2.last_activity.tool_name == "Read"
+    end
+  end
 end

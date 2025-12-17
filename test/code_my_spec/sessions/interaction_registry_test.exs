@@ -20,7 +20,7 @@ defmodule CodeMySpec.Sessions.InteractionRegistryTest do
       assert registered.agent_state == "running"
     end
 
-    test "overwrites existing status for interaction" do
+    test "updates agent_state for existing interaction" do
       interaction_id = "test-interaction-123"
       first_runtime = RuntimeInteraction.new(interaction_id, %{agent_state: "running"})
       second_runtime = RuntimeInteraction.new(interaction_id, %{agent_state: "complete"})
@@ -30,6 +30,51 @@ defmodule CodeMySpec.Sessions.InteractionRegistryTest do
 
       assert {:ok, registered} = InteractionRegistry.get_status(interaction_id)
       assert registered.agent_state == "complete"
+    end
+
+    test "merges status updates, preserving unmodified fields" do
+      interaction_id = "test-interaction-123"
+
+      # First update: set agent_state and last_notification
+      InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "notification",
+        last_notification: %{type: "idle_prompt"}
+      })
+
+      # Second update: only update agent_state and add last_activity
+      # last_notification should be preserved
+      InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "running",
+        last_activity: %{event_type: :proxy_request}
+      })
+
+      assert {:ok, registered} = InteractionRegistry.get_status(interaction_id)
+      assert registered.agent_state == "running"
+      assert registered.last_notification == %{type: "idle_prompt"}
+      assert registered.last_activity == %{event_type: :proxy_request}
+    end
+
+    test "explicitly clears fields with nil values" do
+      interaction_id = "test-interaction-123"
+
+      # First update: set fields
+      InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "notification",
+        last_notification: %{type: "idle_prompt"},
+        last_stopped: %{timestamp: DateTime.utc_now()}
+      })
+
+      # Second update: explicit nil values clear the fields
+      InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "running",
+        last_notification: nil,
+        last_stopped: nil
+      })
+
+      assert {:ok, registered} = InteractionRegistry.get_status(interaction_id)
+      assert registered.agent_state == "running"
+      assert registered.last_notification == nil
+      assert registered.last_stopped == nil
     end
 
     test "handles notification events" do

@@ -34,6 +34,26 @@ defmodule CodeMySpec.Sessions.InteractionRegistry do
   end
 
   @doc """
+  Update runtime status for an interaction with new attributes.
+  Fetches existing runtime, merges attrs, and registers the update.
+  Creates new runtime if none exists.
+
+  This is the preferred API for updating status - it handles merging automatically.
+
+  ## Examples
+
+      iex> update_status("interaction-123", %{agent_state: "running"})
+      :ok
+
+      iex> update_status("interaction-123", %{last_notification: nil})  # Explicit clear
+      :ok
+  """
+  @spec update_status(binary(), map()) :: :ok
+  def update_status(interaction_id, attrs) when is_binary(interaction_id) and is_map(attrs) do
+    GenServer.call(__MODULE__, {:update, interaction_id, attrs})
+  end
+
+  @doc """
   Retrieve current ephemeral status for an interaction.
 
   ## Examples
@@ -100,8 +120,36 @@ defmodule CodeMySpec.Sessions.InteractionRegistry do
 
   @impl true
   def handle_call({:register, %RuntimeInteraction{} = runtime}, _from, state) do
+    # Just store the runtime as-is - caller is responsible for merging
     updated_state = Map.put(state, runtime.interaction_id, runtime)
-    Logger.debug("Registered status for interaction #{runtime.interaction_id}: #{runtime.agent_state}")
+
+    Logger.debug(
+      "Registered status for interaction #{runtime.interaction_id}: #{runtime.agent_state}"
+    )
+
+    {:reply, :ok, updated_state}
+  end
+
+  @impl true
+  def handle_call({:update, interaction_id, attrs}, _from, state) do
+    # Fetch existing, merge with changeset, store result
+    updated_runtime =
+      case Map.get(state, interaction_id) do
+        nil ->
+          # No existing runtime, create new
+          RuntimeInteraction.new(interaction_id, attrs)
+
+        existing ->
+          # Update existing with new attrs - changeset handles partial updates
+          RuntimeInteraction.update(existing, attrs)
+      end
+
+    updated_state = Map.put(state, interaction_id, updated_runtime)
+
+    Logger.debug(
+      "Updated status for interaction #{interaction_id}: #{updated_runtime.agent_state}"
+    )
+
     {:reply, :ok, updated_state}
   end
 

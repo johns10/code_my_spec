@@ -21,8 +21,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
     InteractionsRepository,
     SessionsRepository,
     SessionsBroadcaster,
-    InteractionRegistry,
-    RuntimeInteraction
+    InteractionRegistry
   }
 
   @doc """
@@ -252,26 +251,20 @@ defmodule CodeMySpec.Sessions.EventHandler do
          event_type: :notification_hook,
          data: data
        }) do
-    runtime =
-      RuntimeInteraction.new(interaction_id, %{
-        agent_state: "notification",
-        last_notification: data
-      })
-
-    InteractionRegistry.register_status(runtime)
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "notification",
+      last_notification: data
+    })
   end
 
   defp update_interaction_registry(interaction_id, %InteractionEvent{
          event_type: :session_start,
          data: data
        }) do
-    runtime =
-      RuntimeInteraction.new(interaction_id, %{
-        agent_state: "started",
-        conversation_id: Map.get(data, "session_id")
-      })
-
-    InteractionRegistry.register_status(runtime)
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "started",
+      conversation_id: Map.get(data, "session_id")
+    })
   end
 
   defp update_interaction_registry(interaction_id, %InteractionEvent{
@@ -280,12 +273,9 @@ defmodule CodeMySpec.Sessions.EventHandler do
        })
        when is_map_key(data, "new_status") do
     # Status change event
-    runtime =
-      RuntimeInteraction.new(interaction_id, %{
-        agent_state: Map.get(data, "new_status")
-      })
-
-    InteractionRegistry.register_status(runtime)
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: Map.get(data, "new_status")
+    })
   end
 
   defp update_interaction_registry(interaction_id, %InteractionEvent{
@@ -294,17 +284,59 @@ defmodule CodeMySpec.Sessions.EventHandler do
        })
        when event_type in [:proxy_request, :proxy_response] do
     # Tool activity
-    runtime =
-      RuntimeInteraction.new(interaction_id, %{
-        agent_state: "running",
-        last_activity: %{
-          event_type: event_type,
-          tool_name: Map.get(data, "tool_name"),
-          timestamp: DateTime.utc_now()
-        }
-      })
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "running",
+      last_activity: %{
+        event_type: event_type,
+        tool_name: Map.get(data, "tool_name"),
+        timestamp: DateTime.utc_now()
+      }
+    })
+  end
 
-    InteractionRegistry.register_status(runtime)
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :post_tool_use,
+         data: data
+       }) do
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "running",
+      last_activity: %{
+        event_type: :post_tool_use,
+        tool_name: Map.get(data, "tool_name"),
+        tool_use_id: Map.get(data, "tool_use_id"),
+        timestamp: DateTime.utc_now()
+      }
+    })
+  end
+
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :user_prompt_submit,
+         data: data
+       }) do
+    # Explicit nil values clear the fields via changeset
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "running",
+      last_notification: nil,
+      last_stopped: nil,
+      last_activity: %{
+        event_type: :user_prompt_submit,
+        prompt_preview: String.slice(Map.get(data, "prompt", ""), 0, 100),
+        timestamp: DateTime.utc_now()
+      }
+    })
+  end
+
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :stop,
+         data: data
+       }) do
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "idle",
+      last_stopped: %{
+        timestamp: DateTime.utc_now(),
+        stop_hook_active: Map.get(data, "stop_hook_active", false)
+      }
+    })
   end
 
   # Default: don't update registry for other event types
