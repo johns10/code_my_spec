@@ -13,7 +13,17 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   alias CodeMySpec.Repo
   alias CodeMySpec.Users.Scope
-  alias CodeMySpec.Sessions.{Session, Interaction, InteractionEvent, InteractionsRepository, SessionsRepository, SessionsBroadcaster}
+
+  alias CodeMySpec.Sessions.{
+    Session,
+    Interaction,
+    InteractionEvent,
+    InteractionsRepository,
+    SessionsRepository,
+    SessionsBroadcaster,
+    InteractionRegistry,
+    RuntimeInteraction
+  }
 
   @doc """
   Processes a single event for an interaction.
@@ -49,7 +59,6 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
-
   # Private Functions
 
   defp process_single_event(scope, session, interaction, event_attrs) do
@@ -62,6 +71,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
            {:ok, _inserted_event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
         Logger.info(inspect(updated_session))
+
+        # Update interaction registry with runtime status
+        update_interaction_registry(interaction.id, event)
+
         SessionsBroadcaster.broadcast_activity(scope, session.id)
         updated_session
       else
@@ -233,4 +246,67 @@ defmodule CodeMySpec.Sessions.EventHandler do
       "user:#{user_id}:sessions"
     ]
   end
+
+  # Update interaction registry with runtime status based on event type
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :notification_hook,
+         data: data
+       }) do
+    runtime =
+      RuntimeInteraction.new(interaction_id, %{
+        agent_state: "notification",
+        last_notification: data
+      })
+
+    InteractionRegistry.register_status(runtime)
+  end
+
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :session_start,
+         data: data
+       }) do
+    runtime =
+      RuntimeInteraction.new(interaction_id, %{
+        agent_state: "started",
+        conversation_id: Map.get(data, "session_id")
+      })
+
+    InteractionRegistry.register_status(runtime)
+  end
+
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :proxy_request,
+         data: data
+       })
+       when is_map_key(data, "new_status") do
+    # Status change event
+    runtime =
+      RuntimeInteraction.new(interaction_id, %{
+        agent_state: Map.get(data, "new_status")
+      })
+
+    InteractionRegistry.register_status(runtime)
+  end
+
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: event_type,
+         data: data
+       })
+       when event_type in [:proxy_request, :proxy_response] do
+    # Tool activity
+    runtime =
+      RuntimeInteraction.new(interaction_id, %{
+        agent_state: "running",
+        last_activity: %{
+          event_type: event_type,
+          tool_name: Map.get(data, "tool_name"),
+          timestamp: DateTime.utc_now()
+        }
+      })
+
+    InteractionRegistry.register_status(runtime)
+  end
+
+  # Default: don't update registry for other event types
+  defp update_interaction_registry(_interaction_id, _event), do: :ok
 end
