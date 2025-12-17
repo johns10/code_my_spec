@@ -1,162 +1,93 @@
 defmodule CodeMySpec.Rules do
   @moduledoc """
-  The Rules context.
+  Simple local file-based rules system.
+  Reads rules from markdown files with YAML frontmatter in docs/rules/.
   """
 
-  alias CodeMySpec.Rules.Rule
-  alias CodeMySpec.Users.Scope
-  alias CodeMySpec.Rules.RulesRepository
-  alias CodeMySpec.Rules.RulesSeeder
+  defstruct [:name, :content, :component_type, :session_type]
 
-  @doc """
-  Subscribes to scoped notifications about any rule changes.
-
-  The broadcasted messages match the pattern:
-
-    * {:created, %Rule{}}
-    * {:updated, %Rule{}}
-    * {:deleted, %Rule{}}
-
-  """
-  def subscribe_rules(%Scope{} = scope) do
-    key = scope.active_account.id
-
-    Phoenix.PubSub.subscribe(CodeMySpec.PubSub, "user:#{key}:rules")
-  end
-
-  defp broadcast(%Scope{} = scope, message) do
-    key = scope.active_account.id
-
-    Phoenix.PubSub.broadcast(CodeMySpec.PubSub, "user:#{key}:rules", message)
-  end
-
-  @doc """
-  Returns the list of rules.
-
-  ## Examples
-
-      iex> list_rules(scope)
-      [%Rule{}, ...]
-
-  """
-  defdelegate list_rules(scope), to: RulesRepository
-
-  @doc """
-  Gets a single rule.
-
-  Raises `Ecto.NoResultsError` if the Rule does not exist.
-
-  ## Examples
-
-      iex> get_rule!(123)
-      %Rule{}
-
-      iex> get_rule!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  defdelegate get_rule!(scope, id), to: RulesRepository
-
-  @doc """
-  Creates a rule.
-
-  ## Examples
-
-      iex> create_rule(%{field: value})
-      {:ok, %Rule{}}
-
-      iex> create_rule(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_rule(%Scope{} = scope, attrs) do
-    with {:ok, rule = %Rule{}} <- RulesRepository.create_rule(scope, attrs) do
-      broadcast(scope, {:created, rule})
-      {:ok, rule}
-    end
-  end
-
-  @doc """
-  Updates a rule.
-
-  ## Examples
-
-      iex> update_rule(rule, %{field: new_value})
-      {:ok, %Rule{}}
-
-      iex> update_rule(rule, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_rule(%Scope{} = scope, %Rule{} = rule, attrs) do
-    with {:ok, rule = %Rule{}} <- RulesRepository.update_rule(scope, rule, attrs) do
-      broadcast(scope, {:updated, rule})
-      {:ok, rule}
-    end
-  end
-
-  @doc """
-  Deletes a rule.
-
-  ## Examples
-
-      iex> delete_rule(rule)
-      {:ok, %Rule{}}
-
-      iex> delete_rule(rule)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_rule(%Scope{} = scope, %Rule{} = rule) do
-    true = rule.account_id == scope.active_account.id
-
-    with {:ok, rule = %Rule{}} <- RulesRepository.delete_rule(scope, rule) do
-      broadcast(scope, {:deleted, rule})
-      {:ok, rule}
-    end
-  end
+  @rules_directory "docs/rules"
 
   @doc """
   Finds matching rules based on component type and session type.
+  Supports wildcard matching with "*".
 
   ## Examples
 
-      iex> find_matching_rules(scope, "context", "coding")
-      [%Rule{}, ...]
+      iex> find_matching_rules("context", "coding")
+      [%Rules{}, ...]
 
   """
-  defdelegate find_matching_rules(scope, component_type, session_type), to: RulesRepository
+  def find_matching_rules(component_type, session_type) do
+    load_all_rules()
+    |> filter_matching(component_type, session_type)
+  end
 
-  @doc """
-  Seeds base rules for an account from markdown files.
+  # Private functions
 
-  ## Examples
+  defp load_all_rules do
+    case File.exists?(@rules_directory) do
+      true ->
+        @rules_directory
+        |> File.ls!()
+        |> Enum.filter(&String.ends_with?(&1, ".md"))
+        |> Enum.map(&Path.join(@rules_directory, &1))
+        |> Enum.map(&parse_rule_file/1)
+        |> Enum.filter(&match?({:ok, _}, &1))
+        |> Enum.map(fn {:ok, rule} -> rule end)
 
-      iex> seed_account_rules(scope)
-      {:ok, [%Rule{}, ...]}
+      false ->
+        []
+    end
+  end
 
-  """
-  defdelegate seed_account_rules(scope), to: RulesSeeder
+  defp parse_rule_file(file_path) do
+    with {:ok, content} <- File.read(file_path),
+         {:ok, frontmatter, markdown} <- parse_frontmatter(content) do
+      rule_name = Path.basename(file_path, ".md")
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking rule changes.
+      rule = %__MODULE__{
+        name: rule_name,
+        content: String.trim(markdown),
+        component_type: Map.get(frontmatter, "component_type", "*"),
+        session_type: Map.get(frontmatter, "session_type", "*")
+      }
 
-  ## Examples
+      {:ok, rule}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-      iex> change_rule(rule)
-      %Ecto.Changeset{data: %Rule{}}
+  defp parse_frontmatter(content) do
+    case String.split(content, "---", parts: 3) do
+      ["", yaml_content, markdown_content] ->
+        case YamlElixir.read_from_string(yaml_content) do
+          {:ok, frontmatter} ->
+            {:ok, frontmatter, markdown_content}
 
-  """
-  defdelegate change_rule(scope, rule, attrs \\ %{}), to: RulesRepository
+          {:error, _} ->
+            {:ok, %{}, content}
+        end
 
-  @doc """
-  Deletes all rules for an account.
+      [markdown_content] ->
+        {:ok, %{}, markdown_content}
 
-  ## Examples
+      _ ->
+        {:ok, %{}, content}
+    end
+  end
 
-      iex> delete_all_rules(scope)
-      {5, nil}
+  defp filter_matching(rules, component_type, session_type) do
+    Enum.filter(rules, fn rule ->
+      component_matches?(rule.component_type, component_type) &&
+        session_matches?(rule.session_type, session_type)
+    end)
+  end
 
-  """
-  defdelegate delete_all_rules(scope), to: RulesRepository
+  defp component_matches?("*", _), do: true
+  defp component_matches?(rule_type, component_type), do: rule_type == component_type
+
+  defp session_matches?("*", _), do: true
+  defp session_matches?(rule_type, session_type), do: rule_type == session_type
 end

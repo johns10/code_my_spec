@@ -29,11 +29,10 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
     {:ok, %{}, result}
   end
 
-  defp get_design_rules(scope, component) do
+  defp get_design_rules(_scope, component) do
     component_type = component.type
 
-    scope
-    |> Rules.find_matching_rules(Atom.to_string(component_type), "design")
+    Rules.find_matching_rules(Atom.to_string(component_type), "design")
     |> case do
       rules when is_list(rules) -> {:ok, rules}
       error -> error

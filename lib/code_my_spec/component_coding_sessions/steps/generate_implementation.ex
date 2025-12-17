@@ -30,11 +30,10 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
     {:ok, %{}, result}
   end
 
-  defp get_implementation_rules(scope, component) do
+  defp get_implementation_rules(_scope, component) do
     component_type = component.type
 
-    scope
-    |> Rules.find_matching_rules(Atom.to_string(component_type), "code")
+    Rules.find_matching_rules(Atom.to_string(component_type), "code")
     |> case do
       rules when is_list(rules) -> {:ok, rules}
       error -> error
