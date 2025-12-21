@@ -274,13 +274,8 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   defp ensure_parent_directory(path) do
-    r =
-      path
-      |> Path.dirname()
-      |> File.mkdir_p()
-
-    Logger.info(Path.dirname(path))
-    Logger.info(r)
-    r
+    path
+    |> Path.dirname()
+    |> File.mkdir_p()
   end
 end

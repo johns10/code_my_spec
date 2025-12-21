@@ -84,6 +84,13 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
+  def write_file(_env, path, content) do
+    with :ok <- ensure_parent_directory(path) do
+      File.write(path, content)
+    end
+  end
+
+  @impl true
   def environment_setup_command(%{branch_name: branch_name, working_dir: working_dir}) do
     "git -C #{working_dir} switch -C #{branch_name}"
   end
@@ -202,5 +209,11 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
           _ -> ""
         end
     end
+  end
+
+  defp ensure_parent_directory(path) do
+    path
+    |> Path.dirname()
+    |> File.mkdir_p()
   end
 end

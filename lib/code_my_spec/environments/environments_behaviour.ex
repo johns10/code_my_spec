@@ -46,6 +46,15 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
   @callback list_directory(env :: Environment.t(), path :: String.t()) ::
               {:ok, [String.t()]} | {:error, term()}
 
+  @doc """
+  Write content to a file in the file system.
+
+  Creates parent directories if they don't exist.
+  The environment reference may be used for remote file access in some implementations.
+  """
+  @callback write_file(env :: Environment.t(), path :: String.t(), content :: String.t()) ::
+              :ok | {:error, term()}
+
   # Remove later, or reconsider:
 
   @callback environment_setup_command(attrs :: map()) :: String.t()
