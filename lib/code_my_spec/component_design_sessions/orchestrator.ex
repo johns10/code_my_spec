@@ -11,7 +11,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
 
   @step_modules [
     Steps.Initialize,
-    Steps.GenerateComponentDesign,
+    Steps.GenerateComponentSpec,
     Steps.ValidateSpec,
     Steps.ReviseSpec,
     Steps.Finalize
@@ -43,11 +43,11 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
 
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
-  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateComponentDesign}
+  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateComponentSpec}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  defp get_next_step(:ok, Steps.GenerateComponentDesign), do: {:ok, Steps.ValidateSpec}
-  defp get_next_step(_, Steps.GenerateComponentDesign), do: {:ok, Steps.GenerateComponentDesign}
+  defp get_next_step(:ok, Steps.GenerateComponentSpec), do: {:ok, Steps.ValidateSpec}
+  defp get_next_step(_, Steps.GenerateComponentSpec), do: {:ok, Steps.GenerateComponentSpec}
 
   defp get_next_step(:ok, Steps.ValidateSpec), do: {:ok, Steps.Finalize}
   defp get_next_step(:error, Steps.ValidateSpec), do: {:ok, Steps.ReviseSpec}

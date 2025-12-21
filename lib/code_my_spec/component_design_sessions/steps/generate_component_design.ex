@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
+defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.{Rules, Utils}
@@ -11,7 +11,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
         opts \\ []
       ) do
     with {:ok, rules} <- get_design_rules(scope, component),
-         {:ok, prompt} <- build_design_prompt(project, component, rules, state),
+         {:ok, prompt} <- build_spec_prompt(project, component, rules, state),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -38,17 +38,17 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
     end
   end
 
-  defp build_design_prompt(project, component, rules, _state) do
+  defp build_spec_prompt(project, component, rules, _state) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
     document_spec = DocumentSpecProjector.project_spec(component.type)
-    %{design_file: design_file_path} = Utils.component_files(component, project)
+    %{spec_file: spec_file_path} = Utils.component_files(component, project)
 
     parent_component = component.parent_component
-    %{design_file: parent_design_file_path} = Utils.component_files(parent_component, project)
+    %{spec_file: parent_spec_file_path} = Utils.component_files(parent_component, project)
 
     prompt =
       """
-      Generate a Phoenix component design for the following.
+      Generate a Phoenix component spec for the following.
 
       Project: #{project.name}
       Project Description: #{project.description}
@@ -56,7 +56,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
       Component Description: #{component.description || "No description provided"}
       Type: #{component.type}
 
-      Parent Context Design File: #{parent_design_file_path}
+      Parent Context Design File: #{parent_spec_file_path}
 
       Design Rules:
       #{rules_text}
@@ -64,7 +64,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
       Document Specifications:
       #{document_spec}
 
-      Write the document to #{design_file_path}.
+      Write the document to #{spec_file_path}.
       """
 
     {:ok, prompt}

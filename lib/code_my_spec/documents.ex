@@ -3,7 +3,7 @@ defmodule CodeMySpec.Documents do
   Context for managing document creation from markdown content.
   """
 
-  alias CodeMySpec.Documents.{ContextDesign, ContextDesignParser, MarkdownParser}
+  alias CodeMySpec.Documents.MarkdownParser
 
   @doc """
   Creates a document by validating sections against document type definition.
@@ -33,7 +33,19 @@ defmodule CodeMySpec.Documents do
   defp validate_required_sections(sections, required_sections) do
     missing =
       required_sections
-      |> Enum.reject(fn section -> Map.has_key?(sections, section) end)
+      |> Enum.reject(fn
+        # String: must be present
+        section when is_binary(section) ->
+          Map.has_key?(sections, section)
+
+        # List: at least one must be present (OR logic)
+        alternatives when is_list(alternatives) ->
+          Enum.any?(alternatives, fn alt -> Map.has_key?(sections, alt) end)
+      end)
+      |> Enum.map(fn
+        section when is_binary(section) -> section
+        alternatives when is_list(alternatives) -> Enum.join(alternatives, " OR ")
+      end)
 
     if Enum.empty?(missing) do
       :ok
@@ -50,7 +62,17 @@ defmodule CodeMySpec.Documents do
          optional_sections,
          allowed_additional
        ) do
-    allowed_sections = MapSet.new(required_sections ++ optional_sections ++ allowed_additional)
+    # Flatten OR alternatives in required_sections
+    flattened_required =
+      required_sections
+      |> Enum.flat_map(fn
+        section when is_binary(section) -> [section]
+        alternatives when is_list(alternatives) -> alternatives
+      end)
+
+    allowed_sections =
+      MapSet.new(flattened_required ++ optional_sections ++ allowed_additional)
+
     actual_sections = MapSet.new(Map.keys(sections))
     disallowed = MapSet.difference(actual_sections, allowed_sections)
 
@@ -60,22 +82,5 @@ defmodule CodeMySpec.Documents do
       disallowed_list = MapSet.to_list(disallowed) |> Enum.sort()
       {:error, "Disallowed sections found: #{Enum.join(disallowed_list, ", ")}"}
     end
-  end
-
-  defp apply_changeset(%Ecto.Changeset{valid?: true} = changeset) do
-    data = Ecto.Changeset.apply_changes(changeset)
-    {:ok, data}
-  end
-
-  defp apply_changeset(%Ecto.Changeset{valid?: false} = changeset) do
-    {:error, changeset}
-  end
-
-  defp create_error_changeset(message) do
-    %Ecto.Changeset{
-      data: %{},
-      errors: [document: {message, []}],
-      valid?: false
-    }
   end
 end

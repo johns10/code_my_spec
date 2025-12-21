@@ -194,5 +194,84 @@ defmodule CodeMySpec.DocumentsTest do
       assert document.type == :spec
       assert is_list(document.sections["fields"])
     end
+
+    test "validates OR logic - succeeds when first alternative is present" do
+      # Create a test document type with OR logic
+      markdown = """
+      # Test
+
+      ## Delegates
+      - func/1: Other.func/1
+
+      ## Dependencies
+      - Other.Module
+
+      ## Components
+      Component list.
+      """
+
+      # Temporarily test with context_spec which has [["delegates", "functions"], "dependencies", "components"]
+      {:ok, document} = Documents.create_dynamic_document(markdown, :context_spec)
+
+      assert document.type == :context_spec
+    end
+
+    test "validates OR logic - succeeds when second alternative is present" do
+      markdown = """
+      # Test
+
+      ## Functions
+
+      ### my_func/1
+      Does something.
+
+      ## Dependencies
+      - Other.Module
+
+      ## Components
+      Component list.
+      """
+
+      {:ok, document} = Documents.create_dynamic_document(markdown, :context_spec)
+
+      assert document.type == :context_spec
+    end
+
+    test "validates OR logic - fails when none of the alternatives are present" do
+      markdown = """
+      # Test
+
+      ## Dependencies
+      - Other.Module
+
+      ## Components
+      Component list.
+      """
+
+      {:error, error} = Documents.create_dynamic_document(markdown, :context_spec)
+
+      assert error =~ "Missing required sections"
+      assert error =~ "delegates OR functions"
+    end
+
+    test "validates mixed OR and regular required sections" do
+      markdown = """
+      # Test
+
+      ## Functions
+
+      ### my_func/1
+      Does something.
+
+      ## Components
+      Component list.
+      """
+
+      {:error, error} = Documents.create_dynamic_document(markdown, :context_spec)
+
+      assert error =~ "Missing required sections"
+      assert error =~ "dependencies"
+      refute error =~ "delegates OR functions"
+    end
   end
 end

@@ -8,7 +8,7 @@ defmodule CodeMySpec.Documents.Registry do
 
   @type document_definition :: %{
           overview: String.t(),
-          required_sections: [String.t()],
+          required_sections: [String.t() | [String.t()]],
           optional_sections: [String.t()],
           allowed_additional_sections: [String.t()] | String.t(),
           section_descriptions: %{String.t() => String.t()}
@@ -561,8 +561,8 @@ defmodule CodeMySpec.Documents.Registry do
       Specs should focus on WHAT the module does, not HOW it does it. Keep them concise
       and human-readable, as they're consumed by both humans and AI agents.
       """,
-      required_sections: ["dependencies", "components"],
-      optional_sections: ["delegates", "functions", "fields"],
+      required_sections: [["delegates", "functions"], "dependencies", "components"],
+      optional_sections: ["fields"],
       allowed_additional_sections: [],
       section_descriptions: %{
         "delegates" => @spec_delegates,
@@ -586,7 +586,7 @@ defmodule CodeMySpec.Documents.Registry do
       Specs should focus on WHAT the module does, not HOW it does it. Keep them concise
       and human-readable, as they're consumed by both humans and AI agents.
       """,
-      required_sections: ["delegates", "functions", "dependencies"],
+      required_sections: [["delegates", "functions"], "dependencies"],
       optional_sections: ["fields"],
       allowed_additional_sections: [],
       section_descriptions: %{

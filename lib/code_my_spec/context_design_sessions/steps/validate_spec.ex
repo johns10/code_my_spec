@@ -70,13 +70,6 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
     {:error, "components section missing or invalid"}
   end
 
-  defp extract_component_name(module_name) do
-    module_name
-    |> String.split(".")
-    |> List.last()
-    |> Macro.underscore()
-  end
-
   defp build_spec_content(module_name, description) do
     """
     # #{module_name}

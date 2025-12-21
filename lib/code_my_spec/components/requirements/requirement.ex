@@ -15,6 +15,7 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
           | :dependencies_satisfied
           | :hierarchy
           | :context_review
+          | :document_validity
 
   @type requirement_spec :: %{
           name: atom(),
@@ -44,7 +45,8 @@ defmodule CodeMySpec.Components.Requirements.Requirement do
         :manual_review,
         :dependencies_satisfied,
         :hierarchy,
-        :context_review
+        :context_review,
+        :document_validity
       ]
 
     field :description, :string

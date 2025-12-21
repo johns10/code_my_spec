@@ -8,7 +8,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
   alias CodeMySpec.ComponentDesignSessions.Steps.{
     Finalize,
-    GenerateComponentDesign,
+    GenerateComponentSpec,
     Initialize,
     ReviseSpec,
     ValidateSpec
@@ -83,7 +83,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
           execute_step(
             scope,
             session.id,
-            GenerateComponentDesign,
+            GenerateComponentSpec,
             mock_output: "Generated component design for PostRepository"
           )
 

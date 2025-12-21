@@ -40,10 +40,31 @@ defmodule CodeMySpec.Components.Registry do
     satisfied_by: "ContextSpecSessions"
   }
 
+  @context_spec_validity %{
+    name: :spec_valid,
+    checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
+    satisfied_by: "ContextSpecSessions",
+    document_type: :context_spec
+  }
+
   @design_file %{
-    name: :design_file,
+    name: :spec_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
     satisfied_by: "ComponentDesignSessions"
+  }
+
+  @component_spec_validity %{
+    name: :spec_valid,
+    checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
+    satisfied_by: "ComponentDesignSessions",
+    document_type: :spec
+  }
+
+  @schema_spec_validity %{
+    name: :spec_valid,
+    checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
+    satisfied_by: "ComponentDesignSessions",
+    document_type: :schema
   }
 
   @implementation_file %{
@@ -72,6 +93,7 @@ defmodule CodeMySpec.Components.Registry do
 
   @default_requirements [
     @design_file,
+    @component_spec_validity,
     @test_file,
     @implementation_file,
     @tests_passing
@@ -88,6 +110,7 @@ defmodule CodeMySpec.Components.Registry do
     context: %{
       requirements: [
         @context_design_file,
+        @context_spec_validity,
         @child_designs,
         @review_file,
         @child_implementations,
@@ -104,6 +127,7 @@ defmodule CodeMySpec.Components.Registry do
     coordination_context: %{
       requirements: [
         @context_design_file,
+        @context_spec_validity,
         @child_designs,
         @review_file,
         @child_implementations,
@@ -120,6 +144,7 @@ defmodule CodeMySpec.Components.Registry do
     schema: %{
       requirements: [
         @design_file,
+        @schema_spec_validity,
         @implementation_file
       ],
       display_name: "Schema",
@@ -151,6 +176,7 @@ defmodule CodeMySpec.Components.Registry do
     behaviour: %{
       requirements: [
         @design_file,
+        @component_spec_validity,
         @implementation_file
       ],
       display_name: "Behaviour",

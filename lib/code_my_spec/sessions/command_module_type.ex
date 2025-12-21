@@ -21,7 +21,7 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
     CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview,
     CodeMySpec.ContextDesignReviewSessions.Steps.Finalize,
     CodeMySpec.ComponentDesignSessions.Steps.Initialize,
-    CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentSpec,
     CodeMySpec.ComponentDesignSessions.Steps.ValidateSpec,
     CodeMySpec.ComponentDesignSessions.Steps.ReviseSpec,
     CodeMySpec.ComponentDesignSessions.Steps.Finalize,
