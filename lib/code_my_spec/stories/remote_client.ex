@@ -55,6 +55,9 @@ defmodule CodeMySpec.Stories.RemoteClient do
       {:ok, %{status: 200, body: %{"data" => stories}}} ->
         Enum.map(stories, &deserialize_story/1)
 
+      {:ok, %{status: 401}} ->
+        {:error, :token_expired}
+
       {:error, reason} ->
         raise "Failed to list component stories: #{inspect(reason)}"
     end

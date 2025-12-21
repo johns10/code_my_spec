@@ -35,7 +35,7 @@ defmodule CodeMySpec.Components.Registry do
   }
 
   @context_design_file %{
-    name: :design_file,
+    name: :spec_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
     satisfied_by: "ContextDesignSessions"
   }

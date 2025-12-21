@@ -11,6 +11,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
           design_exists: boolean(),
           code_exists: boolean(),
           test_exists: boolean(),
+          spec_exists: boolean(),
           review_exists: boolean(),
           test_status: :passing | :failing | :not_run,
           expected_files: %{atom() => String.t()},
@@ -24,6 +25,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
     field :design_exists, :boolean, default: false
     field :code_exists, :boolean, default: false
     field :test_exists, :boolean, default: false
+    field :spec_exists, :boolean, default: false
     field :review_exists, :boolean, default: false
     field :test_status, Ecto.Enum, values: [:passing, :failing, :not_run], default: :not_run
     field :expected_files, :map, default: %{}
@@ -38,6 +40,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
       :design_exists,
       :code_exists,
       :test_exists,
+      :spec_exists,
       :review_exists,
       :test_status,
       :expected_files,
@@ -49,6 +52,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
       :design_exists,
       :code_exists,
       :test_exists,
+      :spec_exists,
       :review_exists,
       :test_status
     ])
@@ -66,6 +70,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
       design_exists: expected_files.design_file in actual_files,
       code_exists: expected_files.code_file in actual_files,
       test_exists: expected_files.test_file in actual_files,
+      spec_exists: expected_files.spec_file in actual_files,
       review_exists: review_exists,
       test_status: determine_test_status(failing_tests, actual_files, expected_files.test_file),
       expected_files: expected_files,
@@ -96,6 +101,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
     status.design_exists and
       status.code_exists and
       status.test_exists and
+      status.spec_exists and
       status.test_status == :passing
   end
 
@@ -106,6 +112,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
     cond do
       # Ready for design
       not status.design_exists -> true
+      not status.spec_exists -> true
       # Ready for coding if design exists
       not status.code_exists -> status.design_exists
       # Ready for testing if code exists
@@ -123,6 +130,7 @@ defmodule CodeMySpec.Components.ComponentStatus do
   def next_action(%__MODULE__{} = status) do
     cond do
       not status.design_exists -> :create_design
+      not status.spec_exists -> :create_spec
       not status.code_exists -> :implement_code
       not status.test_exists -> :write_tests
       status.test_status == :failing -> :fix_tests

@@ -183,6 +183,23 @@ defmodule CodeMySpec.Environments.Cli do
     File.ls(path)
   end
 
+  @doc """
+  Write content to a file on the server-side file system.
+
+  Creates parent directories if they don't exist.
+  The environment reference is not used since file operations are server-side.
+  """
+  @spec write_file(env :: Environment.t(), path :: String.t(), content :: String.t()) ::
+          :ok | {:error, term()}
+  def write_file(_env, path, content) do
+    Logger.info("write file called")
+
+    with :ok <- ensure_parent_directory(path) do
+      Logger.info("parent directory ensured")
+      File.write(path, content)
+    end
+  end
+
   def docs_environment_teardown_command(_) do
     "pass"
   end
@@ -254,5 +271,16 @@ defmodule CodeMySpec.Environments.Cli do
   defp shell_escape(value) do
     # Simple shell escaping - wrap in single quotes and escape any single quotes
     "'#{String.replace(value, "'", "'\\''")}'"
+  end
+
+  defp ensure_parent_directory(path) do
+    r =
+      path
+      |> Path.dirname()
+      |> File.mkdir_p()
+
+    Logger.info(Path.dirname(path))
+    Logger.info(r)
+    r
   end
 end

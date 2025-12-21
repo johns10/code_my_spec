@@ -79,8 +79,6 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
             Map.put(requirement, :component, %Ecto.Association.NotLoaded{})
 
           {:error, changeset} ->
-            IO.inspect(changeset)
-
             Logger.error("#{__MODULE__} failed check_local_requirements",
               changeset: changeset
             )

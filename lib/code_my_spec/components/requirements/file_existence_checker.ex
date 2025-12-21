@@ -5,6 +5,12 @@ defmodule CodeMySpec.Components.Requirements.FileExistenceChecker do
   def check(%{name: name} = requirement_spec, %Component{component_status: component_status}) do
     {satisfied, details} =
       case {name, component_status} do
+        {:spec_file, %{spec_exists: true}} ->
+          {true, %{status: "Design file exists"}}
+
+        {:spec_file, %{spec_exists: false}} ->
+          {false, %{reason: "Design file missing"}}
+
         {:design_file, %{design_exists: true}} ->
           {true, %{status: "Design file exists"}}
 

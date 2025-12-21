@@ -31,6 +31,17 @@ defmodule CodeMySpec.Utils do
     end
   end
 
+  def component_files(module_name) do
+    module_path = Paths.module_to_path(module_name)
+
+    %{
+      design_file: "docs/design/#{module_path}.md",
+      code_file: "lib/#{module_path}.ex",
+      test_file: "test/#{module_path}_test.exs",
+      spec_file: "docs/spec/#{module_path}.spec.md"
+    }
+  end
+
   def changeset_error_to_string(%Ecto.Changeset{} = changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Enum.reduce(opts, msg, fn {key, value}, acc ->

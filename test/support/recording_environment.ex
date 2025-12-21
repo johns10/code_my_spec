@@ -37,7 +37,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
     resolved_path = resolve_path(path, env.metadata[:working_dir])
 
     case File.read(resolved_path) do
-      {:ok, content} -> {:ok, %{data: %{content: content}}}
+      {:ok, content} -> {:ok, %{content: content}}
       {:error, reason} -> {:error, reason}
     end
   end

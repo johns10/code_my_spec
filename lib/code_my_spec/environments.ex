@@ -87,6 +87,16 @@ defmodule CodeMySpec.Environments do
     impl(type).list_directory(env, path)
   end
 
+  @doc """
+  Write content to a file in the execution environment's file system.
+  """
+  @spec write_file(env :: Environment.t(), path :: String.t(), content :: String.t()) ::
+          :ok | {:error, term()}
+  def write_file(%Environment{type: type} = env, path, content) do
+    Logger.info("environments write file called")
+    impl(type).write_file(env, path, content)
+  end
+
   # Private functions
 
   defp impl(:cli),

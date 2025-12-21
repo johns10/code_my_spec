@@ -36,6 +36,7 @@ defmodule CodeMySpecWeb.ProjectCoordinatorJSON do
       design_exists: status.design_exists,
       code_exists: status.code_exists,
       test_exists: status.test_exists,
+      spec_exists: status.spec_exists,
       test_status: status.test_status,
       expected_files: status.expected_files,
       actual_files: status.actual_files,

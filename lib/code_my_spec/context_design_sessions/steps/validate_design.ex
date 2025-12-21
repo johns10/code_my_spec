@@ -3,6 +3,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
   require Logger
 
   alias CodeMySpec.Documents
+  alias CodeMySpec.Environments
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Sessions
   alias CodeMySpec.Utils
@@ -16,7 +17,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
     with {:ok, component_design} <- get_component_design(result),
          {:ok, document} <-
            Documents.create_dynamic_document(component_design, :context_spec),
-         {:ok, _created} <- create_components(scope, session, document.sections) do
+         {:ok, _created} <- create_spec_files(scope, session, document.sections) do
       {:ok, %{}, result}
     else
       {:error, error} ->
@@ -37,46 +38,51 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.ValidateDesign do
     {:error, "component_design not found in result"}
   end
 
-  defp create_components(scope, session, %{
-         "components" => components,
-         "dependencies" => dependencies
-       })
-       when is_list(components) and is_list(dependencies) do
-    project_module_name = scope.active_project.module_name
-    filtered_deps = filter_project_dependencies(dependencies, project_module_name)
+  defp create_spec_files(_scope, session, %{"components" => components})
+       when is_list(components) do
+    {:ok, environment} = Environments.create(session.environment)
 
-    component_attrs_list =
+    # Create spec files for each component
+    results =
       Enum.map(components, fn %{module_name: module_name, description: description} ->
-        %{
-          name: extract_component_name(module_name),
-          module_name: module_name,
-          description: description,
-          parent_component_id: session.component.id,
-          type: :other
-        }
+        %{spec_file: file_path} = Utils.component_files(module_name)
+        content = build_spec_content(module_name, description)
+
+        case Environments.write_file(environment, file_path, content) do
+          :ok ->
+            Logger.info("Created spec file: #{file_path}")
+            {:ok, file_path}
+
+          {:error, reason} ->
+            Logger.error("Failed to create spec file #{file_path}: #{inspect(reason)}")
+            {:error, reason}
+        end
       end)
 
-    CodeMySpec.Components.create_components_with_dependencies(
-      scope,
-      component_attrs_list,
-      filtered_deps
-    )
+    # Check if all files were created successfully
+    case Enum.find(results, fn result -> match?({:error, _}, result) end) do
+      nil -> {:ok, Enum.map(results, fn {:ok, path} -> path end)}
+      {:error, reason} -> {:error, "Failed to create one or more spec files: #{inspect(reason)}"}
+    end
   end
 
-  defp create_components(_scope, _session, _sections) do
-    {:error, "components or dependencies section missing or invalid"}
+  defp create_spec_files(_scope, _session, _sections) do
+    {:error, "components section missing or invalid"}
   end
 
   defp extract_component_name(module_name) do
     module_name
     |> String.split(".")
     |> List.last()
+    |> Macro.underscore()
   end
 
-  defp filter_project_dependencies(dependencies, project_module_name) do
-    Enum.filter(dependencies, fn dep ->
-      String.starts_with?(dep, project_module_name)
-    end)
+  defp build_spec_content(module_name, description) do
+    """
+    # #{module_name}
+
+    #{description}
+    """
   end
 
   defp update_result_with_error(scope, result, error) do

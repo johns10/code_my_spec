@@ -142,15 +142,6 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
     test "includes implementation-specific coding rules" do
       scope = full_scope_fixture()
 
-      # Seed coding rules
-      {:ok, _rule} =
-        CodeMySpec.Rules.create_rule(scope, %{
-          name: "code rule",
-          content: "Write pure functions",
-          component_type: "*",
-          session_type: "code"
-        })
-
       project = project_fixture(scope, %{module_name: "MyApp"})
 
       component =
@@ -171,7 +162,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       session = %{session | component: component, project: project}
 
       assert {:ok, %Command{} = command} = GenerateImplementation.get_command(scope, session)
-      assert command.metadata.prompt =~ "Write pure functions"
+      assert command.metadata.prompt =~ "Generate the implementation for a Phoenix component."
       assert command.metadata.prompt =~ "Coding Rules:"
     end
 
