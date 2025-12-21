@@ -35,7 +35,6 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign do
     Rules.find_matching_rules(Atom.to_string(component_type), "design")
     |> case do
       rules when is_list(rules) -> {:ok, rules}
-      error -> error
     end
   end
 

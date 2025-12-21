@@ -35,7 +35,6 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     Rules.find_matching_rules(Atom.to_string(component_type), "test")
     |> case do
       rules when is_list(rules) -> {:ok, rules}
-      error -> error
     end
   end
 
