@@ -49,12 +49,20 @@ defmodule CodeMySpec.Sessions.EventHandler do
   @spec handle_event(Scope.t(), binary(), map()) :: {:ok, Session.t()} | {:error, term()}
 
   def handle_event(%Scope{} = scope, interaction_id, event_attrs) do
+    event_type = Map.get(event_attrs, "event_type") || Map.get(event_attrs, :event_type)
+    Logger.debug("Handling event #{event_type} for interaction #{interaction_id}")
+
     with %Interaction{} = interaction <- InteractionsRepository.get(interaction_id),
          %Session{} = session <- SessionsRepository.get_session(scope, interaction.session_id) do
       process_single_event(scope, session, interaction, event_attrs)
     else
-      nil -> {:error, :interaction_not_found}
-      error -> error
+      nil ->
+        Logger.warning("Event rejected: interaction #{interaction_id} not found")
+        {:error, :interaction_not_found}
+
+      error ->
+        Logger.error("Event handling failed for interaction #{interaction_id}: #{inspect(error)}")
+        error
     end
   end
 
@@ -66,10 +74,11 @@ defmodule CodeMySpec.Sessions.EventHandler do
       event_attrs_with_interaction = Map.put(event_attrs, "interaction_id", interaction.id)
 
       with {:ok, event} <- build_and_validate_event(event_attrs_with_interaction),
-           {:ok, session_updates} <- process_side_effects(session, event),
+           {:ok, session_updates} <- process_side_effects(scope, session, event),
            {:ok, _inserted_event} <- insert_event(event),
            {:ok, updated_session} <- apply_session_updates(scope, session, session_updates) do
-        Logger.info(inspect(updated_session))
+        # Log event processing completion
+        log_event_processed(session.id, event, session_updates)
 
         # Update interaction registry with runtime status
         update_interaction_registry(interaction.id, event)
@@ -77,7 +86,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
         SessionsBroadcaster.broadcast_activity(scope, session.id)
         updated_session
       else
-        {:error, reason} -> Repo.rollback(reason)
+        {:error, reason} ->
+          Logger.error("Event processing failed for session #{session.id}: #{inspect(reason)}")
+
+          Repo.rollback(reason)
       end
     end)
   end
@@ -88,6 +100,10 @@ defmodule CodeMySpec.Sessions.EventHandler do
     if changeset.valid? do
       {:ok, Ecto.Changeset.apply_changes(changeset)}
     else
+      event_type = Map.get(event_attrs, "event_type") || Map.get(event_attrs, :event_type)
+
+      Logger.warning("Event validation failed for #{event_type}: #{inspect(changeset.errors)}")
+
       {:error, changeset}
     end
   end
@@ -98,14 +114,21 @@ defmodule CodeMySpec.Sessions.EventHandler do
     |> Repo.insert()
   end
 
-  defp process_side_effects(session, event) do
-    case apply_side_effect(session, event) do
+  defp process_side_effects(scope, session, event) do
+    case apply_side_effect(scope, session, event) do
+      {:ok, updates} when map_size(updates) > 0 ->
+        Logger.debug(
+          "Side effects applied for event #{event.event_type} on session #{session.id}: #{inspect(Map.keys(updates))}"
+        )
+
+        {:ok, updates}
+
       {:ok, updates} ->
         {:ok, updates}
 
       {:error, reason} ->
         Logger.warning(
-          "Side effect processing failed for event #{event.event_type}: #{inspect(reason)}"
+          "Side effect processing failed for event #{event.event_type} on session #{session.id}: #{inspect(reason)}"
         )
 
         {:ok, %{}}
@@ -113,7 +136,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
   end
 
   # Check for status change first (based on data content, not event type)
-  defp apply_side_effect(%Session{} = _session, %InteractionEvent{data: data})
+  defp apply_side_effect(_scope, %Session{} = _session, %InteractionEvent{data: data})
        when is_map_key(data, "new_status") do
     new_status = Map.get(data, "new_status")
 
@@ -125,16 +148,23 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   # Check for conversation_id (session_start event)
   defp apply_side_effect(
-         %Session{external_conversation_id: nil} = _session,
+         _scope,
+         %Session{external_conversation_id: nil} = session,
          %InteractionEvent{event_type: :session_start, data: data}
        ) do
     case Map.get(data, "session_id", nil) do
-      nil -> {:error, :session_id_not_found}
-      conversation_id -> {:ok, %{external_conversation_id: conversation_id}}
+      nil ->
+        Logger.warning("session_start event missing session_id for session #{session.id}")
+        {:error, :session_id_not_found}
+
+      conversation_id ->
+        Logger.info("Setting conversation_id #{conversation_id} for session #{session.id}")
+        {:ok, %{external_conversation_id: conversation_id}}
     end
   end
 
   defp apply_side_effect(
+         _scope,
          %Session{external_conversation_id: existing_id} = session,
          %InteractionEvent{event_type: :session_start, data: data}
        ) do
@@ -152,13 +182,17 @@ defmodule CodeMySpec.Sessions.EventHandler do
   end
 
   # Handle notification_hook - broadcast to clients
-  defp apply_side_effect(%Session{} = session, %InteractionEvent{
+  defp apply_side_effect(_scope, %Session{} = session, %InteractionEvent{
          event_type: :notification_hook,
          data: data
        }) do
+    notification_type = Map.get(data, "notification_type")
+
+    Logger.info("Broadcasting notification_hook (#{notification_type}) for session #{session.id}")
+
     payload = %{
       session_id: session.id,
-      notification_type: Map.get(data, "notification_type"),
+      notification_type: notification_type,
       data: data
     }
 
@@ -177,8 +211,51 @@ defmodule CodeMySpec.Sessions.EventHandler do
     {:ok, %{}}
   end
 
+  # Handle session_end - finalize session and broadcast
+  defp apply_side_effect(
+         %Scope{} = scope,
+         %Session{} = session,
+         %InteractionEvent{event_type: :session_end, interaction_id: interaction_id, data: data}
+       ) do
+    Logger.info("Processing session_end for session #{session.id}")
+
+    # Extract result from event data, defaulting to empty map
+    result =
+      Map.get(data, "result", %{})
+      |> Map.put("status", :ok)
+
+    # Call Sessions.handle_result to process the result and update session
+    case CodeMySpec.Sessions.handle_result(scope, session.id, interaction_id, result) do
+      {:ok, _updated_session} ->
+        Logger.info("Session #{session.id} ended successfully, broadcasting to clients")
+
+        # Broadcast session_ended message to clients
+        Phoenix.PubSub.broadcast(
+          CodeMySpec.PubSub,
+          "account:#{session.account_id}:sessions",
+          {:session_ended, session.id}
+        )
+
+        Phoenix.PubSub.broadcast(
+          CodeMySpec.PubSub,
+          "user:#{session.user_id}:sessions",
+          {:session_ended, session.id}
+        )
+
+        {:ok, %{}}
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to handle result for session_end event on session #{session.id}: #{inspect(reason)}"
+        )
+
+        # Return success to allow event to be recorded even if result handling fails
+        {:ok, %{}}
+    end
+  end
+
   # Default: no side effects
-  defp apply_side_effect(%Session{} = _session, %InteractionEvent{} = _event) do
+  defp apply_side_effect(_scope, %Session{} = _session, %InteractionEvent{} = _event) do
     {:ok, %{}}
   end
 
@@ -246,6 +323,18 @@ defmodule CodeMySpec.Sessions.EventHandler do
     ]
   end
 
+  # Log event processing completion
+  defp log_event_processed(session_id, event, session_updates)
+       when map_size(session_updates) > 0 do
+    Logger.info(
+      "Event #{event.event_type} processed for session #{session_id}, updates: #{inspect(Map.keys(session_updates))}"
+    )
+  end
+
+  defp log_event_processed(session_id, event, _session_updates) do
+    Logger.debug("Event #{event.event_type} processed for session #{session_id}")
+  end
+
   # Update interaction registry with runtime status based on event type
   defp update_interaction_registry(interaction_id, %InteractionEvent{
          event_type: :notification_hook,
@@ -253,7 +342,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
        }) do
     InteractionRegistry.update_status(interaction_id, %{
       agent_state: "notification",
-      last_notification: data
+      last_notification: Map.put(data, "timestamp", DateTime.utc_now())
     })
   end
 
@@ -263,7 +352,12 @@ defmodule CodeMySpec.Sessions.EventHandler do
        }) do
     InteractionRegistry.update_status(interaction_id, %{
       agent_state: "started",
-      conversation_id: Map.get(data, "session_id")
+      conversation_id: Map.get(data, "session_id"),
+      last_activity: %{
+        event_type: :session_start,
+        session_id: Map.get(data, "session_id"),
+        timestamp: DateTime.utc_now()
+      }
     })
   end
 
@@ -335,6 +429,20 @@ defmodule CodeMySpec.Sessions.EventHandler do
       last_stopped: %{
         timestamp: DateTime.utc_now(),
         stop_hook_active: Map.get(data, "stop_hook_active", false)
+      }
+    })
+  end
+
+  defp update_interaction_registry(interaction_id, %InteractionEvent{
+         event_type: :session_end,
+         data: data
+       }) do
+    InteractionRegistry.update_status(interaction_id, %{
+      agent_state: "ended",
+      last_activity: %{
+        event_type: :session_end,
+        reason: Map.get(data, "reason"),
+        timestamp: DateTime.utc_now()
       }
     })
   end

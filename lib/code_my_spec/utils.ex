@@ -19,7 +19,8 @@ defmodule CodeMySpec.Utils do
     base_files = %{
       design_file: "docs/design/#{module_path}.md",
       code_file: "lib/#{module_path}.ex",
-      test_file: "test/#{module_path}_test.exs"
+      test_file: "test/#{module_path}_test.exs",
+      spec_file: "docs/spec/#{module_path}.spec.md"
     }
 
     # Add review_file for context components (both :context and :coordination_context)

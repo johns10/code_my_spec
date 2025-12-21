@@ -228,10 +228,10 @@ defmodule CodeMySpec.Stories.RemoteClient do
   end
 
   defp get_oauth_token(%Scope{} = _scope) do
-    # TODO: Implement OAuth token retrieval from scope or token storage
-    # For now, read from application config
-    Application.get_env(:code_my_spec, :oauth_token) ||
-      raise "OAuth token not configured. Please set :oauth_token in config."
+    case CodeMySpecCli.Auth.OAuthClient.get_token() do
+      {:ok, token} -> token
+      {:error, _} -> raise "Not authenticated. Please run `code login` first."
+    end
   end
 
   defp deserialize_story(data) do

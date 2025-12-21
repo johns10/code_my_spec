@@ -28,7 +28,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       [component: :parent_component],
       [child_sessions: [component: :project]]
     ])
-    |> Repo.get_by!(id: id, account_id: scope.active_account_id, user_id: scope.user.id)
+    |> Repo.get_by!(id: id, user_id: scope.user.id)
     |> populate_display_name()
   end
 

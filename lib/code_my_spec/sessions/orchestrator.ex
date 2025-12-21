@@ -4,7 +4,7 @@ defmodule CodeMySpec.Sessions.Orchestrator do
   def next_command(scope, session_id, opts \\ []) do
     with {:ok, %Session{type: session_module} = session} <- get_session(scope, session_id),
          :ok <- validate_session_status(session),
-         {nil, session} <- get_pending_interaction(session),
+         :ok <- clear_pending_interaction(session),
          {:ok, next_interaction_module} <- session_module.get_next_interaction(session),
          {:ok, command} <-
            next_interaction_module.get_command(scope, session, opts),
@@ -32,17 +32,18 @@ defmodule CodeMySpec.Sessions.Orchestrator do
   defp validate_session_status(%Session{status: :failed}), do: {:error, :failed}
   defp validate_session_status(%Session{}), do: :ok
 
-  defp get_pending_interaction(%Session{interactions: []} = session) do
-    {nil, session}
+  defp clear_pending_interaction(%Session{interactions: []}) do
+    :ok
   end
 
-  defp get_pending_interaction(%Session{interactions: [latest | _]} = session) do
+  defp clear_pending_interaction(%Session{interactions: [latest | _]}) do
     case latest do
       %Interaction{result: nil} = pending_interaction ->
-        {pending_interaction, session}
+        InteractionsRepository.delete(pending_interaction)
+        :ok
 
       _ ->
-        {nil, session}
+        :ok
     end
   end
 end

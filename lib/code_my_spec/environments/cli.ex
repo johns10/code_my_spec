@@ -94,15 +94,18 @@ defmodule CodeMySpec.Environments.Cli do
 
   def run_command(
         %Environment{} = env,
-        %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{path: path}},
+        %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{"path" => path}},
         _opts
       ) do
-    read_file(env, path)
+    case read_file(env, path) do
+      {:ok, content} -> {:ok, %{content: content}}
+      error -> error
+    end
   end
 
   def run_command(
         %Environment{} = env,
-        %CodeMySpec.Sessions.Command{command: "list_directory", metadata: %{path: path}},
+        %CodeMySpec.Sessions.Command{command: "list_directory", metadata: %{"path" => path}},
         _opts
       ) do
     list_directory(env, path)
@@ -114,7 +117,7 @@ defmodule CodeMySpec.Environments.Cli do
         opts
       ) do
     with {:ok, session_id} <- get_session_id(opts),
-         {:ok, interaction_id} <- get_transaction_id(opts),
+         {:ok, interaction_id} <- get_interaction_id(opts),
          :ok <- ensure_window_exists(window_name),
          {:ok, temp_path} <- Briefly.create(),
          prompt <- Map.get(metadata, "prompt", ""),
@@ -135,6 +138,10 @@ defmodule CodeMySpec.Environments.Cli do
 
       adapter().send_keys(window_name, full_command)
     end
+  end
+
+  def run_command(%Environment{}, %CodeMySpec.Sessions.Command{command: "pass"}, _opts) do
+    {:ok, %{}}
   end
 
   # Fallback for legacy format where command field contains the actual shell command
@@ -176,6 +183,10 @@ defmodule CodeMySpec.Environments.Cli do
     File.ls(path)
   end
 
+  def docs_environment_teardown_command(_) do
+    "pass"
+  end
+
   # Private functions
 
   defp get_session_id(opts) do
@@ -185,9 +196,12 @@ defmodule CodeMySpec.Environments.Cli do
     end
   end
 
-  defp get_transaction_id(opts) do
-    case Keyword.fetch(opts, :transaction_id) do
-      :error -> {:error, :missing_transaction_id}
+  defp get_interaction_id(opts) do
+    Logger.info(inspect(opts))
+    Logger.info(inspect(Keyword.fetch(opts, :interaction_id)))
+
+    case Keyword.fetch(opts, :interaction_id) do
+      :error -> {:error, :missing_interaction_id}
       ok -> ok
     end
   end

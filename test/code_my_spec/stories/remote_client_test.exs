@@ -60,16 +60,27 @@ defmodule CodeMySpec.Stories.RemoteClientTest do
   """
 
   use CodeMySpec.DataCase
-  use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+  use ExVCR.Mock, adapter: ExVCR.Adapter.Finch
 
-  import CodeMySpec.{UsersFixtures}
+  import CodeMySpec.{UsersFixtures, ClientUsersFixtures}
 
   alias CodeMySpec.Stories.RemoteClient
   alias CodeMySpec.Stories.Story
 
   setup do
     ExVCR.Config.cassette_library_dir("test/fixtures/vcr_cassettes/stories")
+
+    # Filter out authorization header to avoid storing sensitive tokens in cassettes
+    ExVCR.Config.filter_request_headers("authorization")
+
     Application.put_env(:code_my_spec, :api_base_url, "http://localhost:4000")
+
+    # Set up authenticated client user so OAuth token retrieval works
+    client_user = authenticated_client_user_fixture()
+
+    # Clean up on test exit
+    on_exit(fn -> cleanup_authenticated_client_user(client_user) end)
+
     scope = full_scope_fixture()
 
     {:ok, scope: scope}
@@ -140,7 +151,7 @@ defmodule CodeMySpec.Stories.RemoteClientTest do
   describe "create_story/2" do
     test "creates story with valid params", %{scope: scope} do
       use_cassette "remote_client_create_story_success" do
-        title = Ecto.UUID.generate()
+        title = "d78622c7-7c68-466a-adaf-6ca8c4c105d1"
 
         attrs = %{
           title: title,

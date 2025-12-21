@@ -14,8 +14,16 @@ defmodule CodeMySpecCli.Screens.Main do
   alias CodeMySpecCli.Screens.Init
   alias CodeMySpecCli.Screens.ComponentsBrowser
   alias CodeMySpecCli.Screens.Sessions
+  alias CodeMySpecCli.Screens.SessionDetail
 
-  defstruct [:screen, :repl_state, :init_state, :components_state, :sessions_state]
+  defstruct [
+    :screen,
+    :repl_state,
+    :init_state,
+    :components_state,
+    :sessions_state,
+    :session_detail_state
+  ]
 
   @impl true
   def init(_context) do
@@ -24,7 +32,8 @@ defmodule CodeMySpecCli.Screens.Main do
       repl_state: Repl.init(),
       init_state: nil,
       components_state: nil,
-      sessions_state: nil
+      sessions_state: nil,
+      session_detail_state: nil
     }
   end
 
@@ -120,8 +129,34 @@ defmodule CodeMySpecCli.Screens.Main do
           {:ok, new_sessions_state} ->
             %{model | sessions_state: new_sessions_state}
 
+          {:switch_screen, :session_detail, new_sessions_state} ->
+            # Get selected session from sessions_state
+            session = Enum.at(new_sessions_state.sessions, new_sessions_state.selected_session_index)
+
+            # Initialize detail screen with session
+            case SessionDetail.init_with_session(session) do
+              {detail_state, nil} ->
+                %{
+                  model
+                  | screen: :session_detail,
+                    sessions_state: new_sessions_state,
+                    session_detail_state: detail_state
+                }
+            end
+
           {:switch_screen, :repl, _new_sessions_state} ->
             %{model | screen: :repl}
+        end
+
+      # Session detail screen
+      {:session_detail, msg} ->
+        case SessionDetail.update(model.session_detail_state, msg) do
+          {:ok, new_detail_state} ->
+            %{model | session_detail_state: new_detail_state}
+
+          {:switch_screen, :sessions, _new_detail_state} ->
+            # Return to sessions list
+            %{model | screen: :sessions}
         end
 
       _ ->
@@ -138,6 +173,7 @@ defmodule CodeMySpecCli.Screens.Main do
           :init -> Init.render(model.init_state)
           :components -> ComponentsBrowser.render(model.components_state)
           :sessions -> Sessions.render(model.sessions_state)
+          :session_detail -> SessionDetail.render(model.session_detail_state)
         end
       end
     end

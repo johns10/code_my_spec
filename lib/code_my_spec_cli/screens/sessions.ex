@@ -8,9 +8,10 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
   import Ratatouille.View
   import Ratatouille.Constants, only: [key: 1]
+  require Logger
 
   alias CodeMySpec.Sessions
-  alias CodeMySpec.Sessions.{Command, Interaction}
+  alias CodeMySpec.Sessions.{Command, Interaction, InteractionRegistry}
   alias CodeMySpec.Users.Scope
   alias CodeMySpecCli.TerminalPanes
 
@@ -121,7 +122,16 @@ defmodule CodeMySpecCli.Screens.Sessions do
           |> Enum.map(fn s -> if s.id == session.id, do: session, else: s end)
           |> sort_sessions()
 
-        {:ok, %{model | sessions: new_sessions}}
+        # Check if the updated session's interaction has ended
+        updated_model =
+          if session_ended?(session) && model.terminal_session_id == session.id do
+            close_terminal_for_session(session.id)
+            %{model | terminal_session_id: nil}
+          else
+            model
+          end
+
+        {:ok, %{updated_model | sessions: new_sessions}}
 
       {:deleted, session} ->
         new_sessions = Enum.reject(model.sessions, &(&1.id == session.id))
@@ -305,7 +315,47 @@ defmodule CodeMySpecCli.Screens.Sessions do
   # Render a session list item
   defp render_session_item(session, is_selected) do
     prefix = if is_selected, do: "▶ ", else: "  "
-    display_name = session.display_name || "Session ##{session.id}"
+
+    session_type_name =
+      session.type
+      |> Atom.to_string()
+      |> String.split(".")
+      |> List.last()
+      |> Inflex.singularize()
+      |> Recase.to_sentence()
+      |> String.replace("session", "")
+      |> String.trim()
+
+    interaction_command_name =
+      session
+      |> Map.get(:interactions)
+      |> List.first()
+      |> case do
+        nil ->
+          ""
+
+        interaction = %{} ->
+          interaction
+          |> Map.get(:command)
+          |> Map.get(:module)
+          |> Atom.to_string()
+          |> String.split(".")
+          |> List.last()
+          |> Inflex.singularize()
+          |> Recase.to_sentence()
+      end
+
+    component_name =
+      with {:ok, %{} = component} <- Map.fetch(session, :component),
+           {:ok, name} <- Map.fetch(component, :name) do
+        name
+      else
+        _ -> "component no longer exists"
+      end
+
+    display_name =
+      "#{session_type_name} for #{component_name} (#{interaction_command_name})"
+
     status_color = status_color(session.status)
 
     # Get current step name from pending interaction
@@ -321,8 +371,23 @@ defmodule CodeMySpecCli.Screens.Sessions do
         ""
       end
 
+    # Get runtime status indicator
+    {indicator, indicator_color} = get_runtime_status_indicator(session)
+
+    # Build prefix with indicator
+    prefix_with_indicator =
+      if indicator do
+        "#{prefix}#{indicator} "
+      else
+        prefix
+      end
+
     label do
-      text(content: prefix, attributes: if(is_selected, do: [:bold], else: []))
+      text(
+        content: prefix_with_indicator,
+        attributes: if(is_selected, do: [:bold], else: []),
+        color: indicator_color || :white
+      )
 
       text(
         content: display_name,
@@ -340,6 +405,49 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
   # Helper functions
 
+  # Check if a session has ended by looking at its RuntimeInteraction state
+  defp session_ended?(session) do
+    pending_interaction =
+      Enum.find(session.interactions, fn interaction ->
+        Interaction.pending?(interaction)
+      end)
+
+    case pending_interaction do
+      nil ->
+        false
+
+      interaction ->
+        case InteractionRegistry.get_status(interaction.id) do
+          {:ok, runtime} ->
+            runtime.agent_state == "ended"
+
+          {:error, :not_found} ->
+            false
+        end
+    end
+  end
+
+  # Close the terminal window for a session
+  defp close_terminal_for_session(session_id) do
+    # Construct Environment struct for CLI with the session's window name
+    env = %CodeMySpec.Environments.Environment{
+      type: :cli,
+      ref: "session-#{session_id}",
+      metadata: %{}
+    }
+
+    # Destroy the terminal window
+    case CodeMySpec.Environments.destroy(env) do
+      :ok ->
+        Logger.info("Closed terminal window for ended session #{session_id}")
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to close terminal for session #{session_id}: #{inspect(reason)}"
+        )
+    end
+  end
+
   defp status_color(:active), do: :green
   defp status_color(:complete), do: :blue
   defp status_color(:failed), do: :red
@@ -348,5 +456,93 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
   defp sort_sessions(sessions) do
     Enum.sort_by(sessions, & &1.inserted_at, {:desc, DateTime})
+  end
+
+  # Get runtime status indicator for a session's pending interaction.
+  # Returns a tuple of {indicator, color} based on RuntimeInteraction data.
+  defp get_runtime_status_indicator(session) do
+    # Find pending interaction
+    pending_interaction =
+      Enum.find(session.interactions, fn interaction ->
+        Interaction.pending?(interaction)
+      end)
+
+    case pending_interaction do
+      nil ->
+        {nil, nil}
+
+      interaction ->
+        case InteractionRegistry.get_status(interaction.id) do
+          {:ok, runtime} ->
+            compute_status_indicator(runtime)
+
+          {:error, :not_found} ->
+            # No runtime data yet - show default indicator for active sessions
+            if session.status == :active do
+              {"○", :white}
+            else
+              {nil, nil}
+            end
+        end
+    end
+  end
+
+  defp compute_status_indicator(runtime) do
+    now = DateTime.utc_now()
+
+    # Check for notification (highest priority)
+    notification_timestamp = get_timestamp(runtime.last_notification)
+
+    if notification_timestamp &&
+         is_most_recent?(notification_timestamp, [
+           get_timestamp(runtime.last_activity),
+           get_timestamp(runtime.last_stopped)
+         ]) do
+      {"🔔", :yellow}
+    else
+      # Check for stopped/idle state
+      stopped_timestamp = get_timestamp(runtime.last_stopped)
+
+      if stopped_timestamp &&
+           is_most_recent?(stopped_timestamp, [
+             get_timestamp(runtime.last_activity)
+           ]) do
+        {"⏸", :cyan}
+      else
+        # Check activity recency
+        activity_timestamp = get_timestamp(runtime.last_activity)
+
+        if activity_timestamp do
+          seconds_since_activity = DateTime.diff(now, activity_timestamp, :second)
+
+          if seconds_since_activity <= 5 do
+            {"●", :green}
+          else
+            {"○", :white}
+          end
+        else
+          {nil, nil}
+        end
+      end
+    end
+  end
+
+  defp get_timestamp(nil), do: nil
+
+  defp get_timestamp(%{"timestamp" => timestamp}) when is_binary(timestamp) do
+    case DateTime.from_iso8601(timestamp) do
+      {:ok, dt, _} -> dt
+      _ -> nil
+    end
+  end
+
+  defp get_timestamp(%{timestamp: %DateTime{} = dt}), do: dt
+  defp get_timestamp(%{"timestamp" => %DateTime{} = dt}), do: dt
+  defp get_timestamp(_), do: nil
+
+  defp is_most_recent?(timestamp, other_timestamps) do
+    other_timestamps
+    |> Enum.reject(&is_nil/1)
+    |> Enum.all?(fn other -> DateTime.compare(timestamp, other) in [:gt, :eq] end)
   end
 end

@@ -1,0 +1,12 @@
+{
+  "sh -c git -C docs switch -C docs-context-design-session-for-blog": {
+    "command": [
+      "sh",
+      "-c",
+      "git -C docs switch -C docs-context-design-session-for-blog"
+    ],
+    "output": "Reset branch 'docs-context-design-session-for-blog'\n",
+    "exit_code": 0,
+    "recorded_at": "2025-12-17T23:20:34.046158Z"
+  }
+}

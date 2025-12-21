@@ -12,12 +12,13 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   @impl true
   def create(opts \\ []) do
     session_id = Keyword.get(opts, :session_id)
+    working_dir = Keyword.get(opts, :working_dir)
 
     {:ok,
      %Environment{
        type: :local,
        ref: nil,
-       metadata: %{session_id: session_id}
+       metadata: %{session_id: session_id, working_dir: working_dir}
      }}
   end
 
@@ -25,33 +26,37 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   def destroy(_env), do: :ok
 
   @impl true
-  def run_command(_env, _command, _opts \\ [])
+  def run_command(_env, command, opts \\ [])
 
-  def run_command(_env, %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{path: path}}, _opts) do
-    case File.read(path) do
-      {:ok, content} -> {:ok, %{output: content, exit_code: 0}}
+  def run_command(
+        env,
+        %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{"path" => path}},
+        _opts
+      ) do
+    # Resolve path relative to working_dir if it's a relative path
+    resolved_path = resolve_path(path, env.metadata[:working_dir])
+
+    case File.read(resolved_path) do
+      {:ok, content} -> {:ok, %{data: %{content: content}}}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  def run_command(_env, %CodeMySpec.Sessions.Command{command: "list_directory", metadata: %{path: path}}, _opts) do
+  def run_command(
+        _env,
+        %CodeMySpec.Sessions.Command{command: "list_directory", metadata: %{path: path}},
+        _opts
+      ) do
     case File.ls(path) do
       {:ok, files} -> {:ok, %{output: Enum.join(files, "\n"), exit_code: 0}}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  def run_command(_env, %CodeMySpec.Sessions.Command{command: "claude", metadata: %{cmd: cmd}}, _opts) do
-    case System.cmd("sh", ["-c", cmd], stderr_to_stdout: true) do
-      {output, 0} ->
-        {:ok, %{output: clean_terminal_output(output), exit_code: 0}}
-
-      {output, exit_code} ->
-        {:ok, %{output: clean_terminal_output(output), exit_code: exit_code}}
-    end
-  rescue
-    e ->
-      {:error, Exception.message(e)}
+  # Handle Claude commands - return :ok for async (CLI) execution
+  # Tests will manually create any files that would have been generated
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "claude"}, _opts) do
+    :ok
   end
 
   # Fallback for legacy format where command field contains the actual shell command
@@ -136,6 +141,17 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
 
       {:error, :process_failed, {exit_code, output}} ->
         {clean_terminal_output(output), exit_code}
+    end
+  end
+
+  # Resolve path relative to working_dir if it's a relative path
+  defp resolve_path(path, nil), do: path
+
+  defp resolve_path(path, working_dir) do
+    if Path.type(path) == :relative do
+      Path.join(working_dir, path)
+    else
+      path
     end
   end
 

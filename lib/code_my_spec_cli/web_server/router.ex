@@ -78,7 +78,8 @@ defmodule CodeMySpecCli.WebServer.Router do
   end
 
   defp process_hook(conn, scope, _session_id) do
-    with %{"hook_name" => hook_name, "hook_data" => hook_data, "interaction_id" => interaction_id} <- conn.body_params,
+    with %{"hook_name" => hook_name, "hook_data" => hook_data, "interaction_id" => interaction_id} <-
+           conn.body_params,
          {:ok, _session} <- add_hook_event(scope, interaction_id, hook_name, hook_data) do
       Logger.debug("Successfully processed hook #{hook_name} for interaction #{interaction_id}")
 
@@ -112,9 +113,9 @@ defmodule CodeMySpecCli.WebServer.Router do
   defp add_hook_event(scope, interaction_id, hook_name, hook_data) do
     # Build event attributes in the format expected by EventHandler
     event_attrs = %{
-      event_type: hook_name,
-      sent_at: hook_data["timestamp"] || DateTime.utc_now(),
-      data: hook_data
+      "event_type" => hook_name,
+      "sent_at" => hook_data["timestamp"] || DateTime.utc_now(),
+      "data" => hook_data
     }
 
     CodeMySpec.Sessions.EventHandler.handle_event(scope, interaction_id, event_attrs)

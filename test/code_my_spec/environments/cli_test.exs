@@ -72,7 +72,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       # Window should now exist (lazy creation)
@@ -93,7 +93,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       # Verify CODE_MY_SPEC environment variables were included
@@ -114,7 +114,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -144,7 +144,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       end_time = System.monotonic_time(:millisecond)
@@ -175,7 +175,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -196,7 +196,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -215,7 +215,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -233,7 +233,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -248,7 +248,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -267,7 +267,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -292,7 +292,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()
@@ -313,7 +313,7 @@ defmodule CodeMySpec.Environments.CliTest do
       assert :ok =
                Cli.run_command(env, command,
                  session_id: session_id,
-                 transaction_id: Ecto.UUID.generate()
+                 interaction_id: Ecto.UUID.generate()
                )
 
       commands = MockTmuxAdapter.get_sent_commands()

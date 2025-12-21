@@ -46,14 +46,14 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
       First paragraph.
       Second paragraph.
 
-      ## Dependencies
-      Dependency content.
+      ## Notes
+      Some notes content.
       """
 
       assert {:ok, sections} = MarkdownParser.parse(markdown)
       assert sections["purpose"] =~ "First paragraph"
       assert sections["purpose"] =~ "Second paragraph"
-      assert sections["dependencies"] =~ "Dependency content"
+      assert sections["notes"] =~ "Some notes content"
     end
 
     test "skips H1 heading" do
@@ -79,13 +79,13 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
 
       ## Purpose
 
-      ## Dependencies
+      ## Notes
       Some content.
       """
 
       assert {:ok, sections} = MarkdownParser.parse(markdown)
       assert sections["purpose"] == ""
-      assert sections["dependencies"] =~ "Some content"
+      assert sections["notes"] =~ "Some content"
     end
 
     test "returns error for invalid markdown" do
@@ -175,16 +175,15 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
       ## Purpose
       This is plain text content.
 
-      ## Dependencies
-      - CodeMySpec.Components
-      - CodeMySpec.Utils
+      ## Notes
+      Some additional notes.
       """
 
       assert {:ok, sections} = MarkdownParser.parse(markdown)
       assert is_binary(sections["purpose"])
       assert sections["purpose"] =~ "This is plain text content"
-      assert is_binary(sections["dependencies"])
-      assert sections["dependencies"] =~ "CodeMySpec.Components"
+      assert is_binary(sections["notes"])
+      assert sections["notes"] =~ "Some additional notes"
     end
 
     test "handles mixed sections with and without parsers" do
@@ -206,7 +205,8 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
       assert {:ok, sections} = MarkdownParser.parse(markdown)
       assert is_binary(sections["purpose"])
       assert [%Function{}] = sections["functions"]
-      assert is_binary(sections["dependencies"])
+      assert is_list(sections["dependencies"])
+      assert sections["dependencies"] == ["SomeModule"]
     end
   end
 
@@ -227,7 +227,7 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
       assert sections["execution flow"] =~ "3. Third step"
     end
 
-    test "extracts unordered lists as formatted text" do
+    test "parses dependencies from unordered lists" do
       markdown = """
       # Title
 
@@ -238,28 +238,34 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
       """
 
       assert {:ok, sections} = MarkdownParser.parse(markdown)
-      assert sections["dependencies"] =~ "- First item"
-      assert sections["dependencies"] =~ "- Second item"
-      assert sections["dependencies"] =~ "- Third item"
+      assert is_list(sections["dependencies"])
+      assert sections["dependencies"] == ["First item", "Second item", "Third item"]
     end
 
-    test "extracts tables as formatted text" do
+    test "parses components into SpecComponent structs" do
       markdown = """
       # Title
 
       ## Components
 
-      | Name | Type |
-      |------|------|
-      | Foo  | logic |
-      | Bar  | schema |
+      ### MyApp.Foo
+
+      Handles business logic for foo operations.
+
+      ### MyApp.Bar
+
+      Manages schema for bar entities.
       """
 
+      alias CodeMySpec.Documents.SpecComponent
+
       assert {:ok, sections} = MarkdownParser.parse(markdown)
-      assert sections["components"] =~ "Name"
-      assert sections["components"] =~ "Type"
-      assert sections["components"] =~ "Foo"
-      assert sections["components"] =~ "logic"
+      assert [%SpecComponent{}, %SpecComponent{}] = sections["components"]
+      assert Enum.any?(sections["components"], &(&1.module_name == "MyApp.Foo"))
+      assert Enum.any?(sections["components"], &(&1.module_name == "MyApp.Bar"))
+
+      foo = Enum.find(sections["components"], &(&1.module_name == "MyApp.Foo"))
+      assert foo.description == "Handles business logic for foo operations."
     end
 
     test "handles code blocks within sections" do
@@ -382,9 +388,10 @@ defmodule CodeMySpec.Documents.MarkdownParserTest do
       assert func.name == "create_component/2"
       assert func.spec =~ "@spec create_component"
 
-      # Dependencies should be plain text
-      assert is_binary(sections["dependencies"])
-      assert sections["dependencies"] =~ "CodeMySpec.Repo"
+      # Dependencies should be parsed as list
+      assert is_list(sections["dependencies"])
+      assert "CodeMySpec.Repo" in sections["dependencies"]
+      assert "CodeMySpec.Utils" in sections["dependencies"]
     end
 
     test "parses schema spec with fields" do

@@ -6,29 +6,6 @@ defmodule CodeMySpec.Documents do
   alias CodeMySpec.Documents.{ContextDesign, ContextDesignParser, MarkdownParser}
 
   @doc """
-  Creates a context design document with full Ecto validation.
-
-  ## Parameters
-  - `markdown_content` - The markdown string to parse
-  - `scope` - Scope for validating component references
-
-  Returns `{:ok, %ContextDesign{}}` on success or `{:error, changeset}` on failure.
-  """
-  def create_context_document(markdown_content) do
-    with {:ok, attrs} <- ContextDesignParser.from_markdown(markdown_content),
-         changeset <- ContextDesign.changeset(%ContextDesign{}, attrs),
-         {:ok, document} <- apply_changeset(changeset) do
-      {:ok, document}
-    else
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, reason, _warnings} ->
-        {:error, create_error_changeset(reason)}
-    end
-  end
-
-  @doc """
   Creates a document by validating sections against document type definition.
 
   ## Parameters
@@ -42,12 +19,13 @@ defmodule CodeMySpec.Documents do
 
     with {:ok, sections} <- MarkdownParser.parse(markdown_content),
          :ok <- validate_required_sections(sections, doc_def.required_sections),
-         :ok <- validate_additional_sections(
-           sections,
-           doc_def.required_sections,
-           doc_def.optional_sections,
-           doc_def.allowed_additional_sections
-         ) do
+         :ok <-
+           validate_additional_sections(
+             sections,
+             doc_def.required_sections,
+             doc_def.optional_sections,
+             doc_def.allowed_additional_sections
+           ) do
       {:ok, %{sections: sections, type: document_type}}
     end
   end
@@ -66,7 +44,12 @@ defmodule CodeMySpec.Documents do
 
   defp validate_additional_sections(_sections, _required, _optional, "*"), do: :ok
 
-  defp validate_additional_sections(sections, required_sections, optional_sections, allowed_additional) do
+  defp validate_additional_sections(
+         sections,
+         required_sections,
+         optional_sections,
+         allowed_additional
+       ) do
     allowed_sections = MapSet.new(required_sections ++ optional_sections ++ allowed_additional)
     actual_sections = MapSet.new(Map.keys(sections))
     disallowed = MapSet.difference(actual_sections, allowed_sections)

@@ -1,23 +1,25 @@
 defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Utils, Stories, Components, Agents}
+  alias CodeMySpec.{Utils, Stories, Components, Rules}
   alias CodeMySpec.Sessions.Session
   alias CodeMySpec.Sessions.Steps.Helpers
   alias CodeMySpec.Documents.{DocumentSpecProjector}
-  require Logger
 
   def get_command(scope, %Session{project: project, component: component} = session, opts \\ []) do
-    opts = Helpers.handle_opts(opts, session)
-
     with {:ok, rules} <- get_design_rules(scope),
          similar <- Components.list_similar_components(scope, component),
          stories <- Stories.list_component_stories(scope, component.id),
          {:ok, prompt} <- build_design_prompt(project, component, rules, stories, similar),
-         {:ok, agent} <-
-           Agents.create_agent(:context_designer, "context-design-generator", :claude_code),
-         {:ok, command} <- Agents.build_command_struct(agent, prompt, opts) do
-      Logger.info(inspect(command))
+         {:ok, command} <-
+           Helpers.build_agent_command(
+             __MODULE__,
+             session,
+             :context_designer,
+             "context-design-generator",
+             prompt,
+             opts
+           ) do
       {:ok, command}
     end
   end
@@ -27,22 +29,19 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
   end
 
   defp get_design_rules(_scope) do
-    # case Rules.find_matching_rules(scope, "context", "design") do
-    #   rules when is_list(rules) -> {:ok, rules}
-    #   error -> error
-    # end
-    {:ok, [%{content: ""}]}
+    rules = Rules.find_matching_rules("context", "design")
+    {:ok, rules}
   end
 
   defp build_design_prompt(project, context, rules, stories, similar_components) do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
     stories_text = format_stories(stories)
     similar_text = format_similar_components(project, similar_components)
-    document_spec = DocumentSpecProjector.project_spec(:context)
-    %{design_file: design_file_path} = Utils.component_files(context, project)
+    document_spec = DocumentSpecProjector.project_spec(:context_spec)
+    %{spec_file: spec_file_path} = Utils.component_files(context, project)
 
     prompt = """
-    Your task is to generate a Phoenix bounded context design.
+    Your task is to generate a specification for a Phoenix bounded context.
 
     # Project
 
@@ -58,7 +57,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
     # User Stories this context satisfies
     #{stories_text}
 
-    # Similar Components (for design inspiration)
+    # Similar Components
     #{similar_text}
 
     # How to write the document
@@ -67,10 +66,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign do
     # Design Rules
     #{rules_text}
 
-    Please write the design documentation to: #{design_file_path}
-
-    Your design should be as concise as possible, while accurately describing the module.
-    Try to make it dense, without including any unnecessary information.
+    Please write the specification to: #{spec_file_path}
     """
 
     {:ok, prompt}

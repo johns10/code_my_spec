@@ -35,27 +35,25 @@ defmodule CodeMySpec.Sessions.Executor do
       case result do
         :ok ->
           # Async execution (CLI) - interaction is pending, waiting for user
-          Logger.info("Async step executing in background",
+          Logger.info("Async step #{interaction.command.module} executing in background",
             session_id: session_id,
             interaction_id: interaction.id
           )
 
           Orchestrator.get_session(scope, session_id)
 
-        {:ok, output} when is_map(output) ->
+        {:ok, output} ->
           # Sync execution - got result, handle immediately
           Logger.info("Sync step completed, processing result",
             session_id: session_id,
             interaction_id: interaction.id
           )
 
-          result_attrs = normalize_result(output)
-
           CodeMySpec.Sessions.ResultHandler.handle_result(
             scope,
             session_id,
             interaction.id,
-            result_attrs
+            %{status: :ok, data: output}
           )
 
         {:error, reason} ->
@@ -74,25 +72,14 @@ defmodule CodeMySpec.Sessions.Executor do
 
   defp get_latest_interaction(%Session{interactions: [latest | _]}), do: {:ok, latest}
 
-  defp create_environment(%Session{environment: type, id: session_id}) do
-    Environments.create(type, session_id: session_id)
-  end
+  defp create_environment(%Session{environment: type, id: session_id, state: state}) do
+    opts = [session_id: session_id]
 
-  # Terminal execution result - has exit_code
-  defp normalize_result(%{exit_code: exit_code} = output) do
-    %{
-      status: if(exit_code == 0, do: :ok, else: :error),
-      stdout: Map.get(output, :stdout),
-      stderr: Map.get(output, :stderr),
-      code: exit_code
-    }
-  end
+    opts =
+      if state && Map.has_key?(state, "working_dir"),
+        do: Keyword.put(opts, :working_dir, state["working_dir"]),
+        else: opts
 
-  # Data result (e.g., from read_file, list_directory, or empty commands)
-  defp normalize_result(output) when is_map(output) do
-    %{
-      status: :ok,
-      data: output
-    }
+    Environments.create(type, opts)
   end
 end

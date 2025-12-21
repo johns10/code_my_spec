@@ -47,6 +47,28 @@ defmodule CodeMySpec.Documents.Registry do
   [Single sentence describing the bounded context]
   """
 
+  @spec_components """
+  Format:
+  - Use H2 heading
+  - Use H3 headers for each component module
+  - Include description text
+
+  Content:
+  - Module names must be valid Elixir modules (PascalCase)
+  - Include brief description
+  - Focus on architectural relationships, not implementation details
+  - Show clear separation of concerns
+  - Indicate behavior contracts where applicable
+  - Use consistent naming conventions
+  - Valid component types: #{ComponentType.to_string()}
+
+  Examples:
+  - ## Components
+    ### ModuleName
+
+    Brief description of the component's responsibility.
+  """
+
   @components """
   Format:
   - Use H2 heading
@@ -470,7 +492,7 @@ defmodule CodeMySpec.Documents.Registry do
         "test assertions"
       ],
       optional_sections: [],
-    allowed_additional_sections: "*",
+      allowed_additional_sections: "*",
       section_descriptions: %{
         "purpose" => @context_purpose,
         "entity ownership" => @entity_ownership,
@@ -499,7 +521,7 @@ defmodule CodeMySpec.Documents.Registry do
         "test assertions"
       ],
       optional_sections: ["entity ownership", "state management strategy"],
-    allowed_additional_sections: "*",
+      allowed_additional_sections: "*",
       section_descriptions: %{
         "purpose" => @context_purpose,
         "entity ownership" => @entity_ownership,
@@ -519,7 +541,7 @@ defmodule CodeMySpec.Documents.Registry do
       """,
       required_sections: ["purpose", "fields", "test assertions"],
       optional_sections: ["associations", "validation rules", "database constraints"],
-    allowed_additional_sections: "*",
+      allowed_additional_sections: "*",
       section_descriptions: %{
         "purpose" => @schema_purpose,
         "fields" => @schema_fields,
@@ -527,6 +549,27 @@ defmodule CodeMySpec.Documents.Registry do
         "validation rules" => @validation_rules,
         "database constraints" => @database_constraints,
         "test assertions" => @test_assertions
+      }
+    },
+    context_spec: %{
+      overview: """
+      Spec documents provide comprehensive documentation for Elixir modules following a
+      structured format. Each spec includes module metadata, public API documentation,
+      delegation information, dependencies, detailed function specifications, and
+      titles and brief descriptions of components contained by the context.
+
+      Specs should focus on WHAT the module does, not HOW it does it. Keep them concise
+      and human-readable, as they're consumed by both humans and AI agents.
+      """,
+      required_sections: ["dependencies", "components"],
+      optional_sections: ["delegates", "functions", "fields"],
+      allowed_additional_sections: [],
+      section_descriptions: %{
+        "delegates" => @spec_delegates,
+        "functions" => @spec_functions,
+        "dependencies" => @spec_dependencies,
+        "fields" => @spec_fields,
+        "components" => @spec_components
       }
     },
     spec: %{
@@ -545,7 +588,7 @@ defmodule CodeMySpec.Documents.Registry do
       """,
       required_sections: ["delegates", "functions", "dependencies"],
       optional_sections: ["fields"],
-    allowed_additional_sections: [],
+      allowed_additional_sections: [],
       section_descriptions: %{
         "delegates" => @spec_delegates,
         "functions" => @spec_functions,

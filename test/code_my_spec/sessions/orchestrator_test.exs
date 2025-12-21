@@ -57,19 +57,12 @@ defmodule CodeMySpec.Sessions.OrchestratorTest do
       session_after_first = Sessions.get_session(scope, session.id)
       assert length(session_after_first.interactions) == 1
 
-      # Second call should return same interaction, not create new one
+      # Second call should return different interaction
       assert {:ok, session2} = Sessions.next_command(scope, session.id)
       [interaction2 | _] = session2.interactions
-      assert interaction2.id == interaction1.id
+      assert interaction2.id != interaction1.id
       session_after_second = Sessions.get_session(scope, session.id)
       assert length(session_after_second.interactions) == 1
-
-      # Third call should still return same interaction
-      assert {:ok, session3} = Sessions.next_command(scope, session.id)
-      [interaction3 | _] = session3.interactions
-      assert interaction3.id == interaction1.id
-      session_after_third = Sessions.get_session(scope, session.id)
-      assert length(session_after_third.interactions) == 1
     end
 
     test "creates new interaction after completing previous one", %{
