@@ -10,8 +10,8 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
     Finalize,
     GenerateComponentDesign,
     Initialize,
-    ReviseDesign,
-    ValidateDesign
+    ReviseSpec,
+    ValidateSpec
   }
 
   @test_repo_url "https://github.com/johns10/test_phoenix_project.git"
@@ -106,7 +106,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         # Step 4: Validate Design
         {_, _, session} =
-          execute_step(scope, session.id, ValidateDesign,
+          execute_step(scope, session.id, ValidateSpec,
             mock_output: invalid_post_repository_content()
           )
 
@@ -117,7 +117,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         # Step 5: Revise Design
         {_, _, session} =
-          execute_step(scope, session.id, ReviseDesign,
+          execute_step(scope, session.id, ReviseSpec,
             mock_output: "Revised component design for PostRepository"
           )
 
@@ -126,7 +126,7 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         # Step 6: Revalidate Design
         {_, _, session} =
-          execute_step(scope, session.id, ValidateDesign, mock_output: post_repository_content())
+          execute_step(scope, session.id, ValidateSpec, mock_output: post_repository_content())
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{

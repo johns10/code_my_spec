@@ -4,9 +4,9 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
 
   @valid_modules [
     CodeMySpec.ContextSpecSessions.Steps.Initialize,
-    CodeMySpec.ContextSpecSessions.Steps.GenerateContextDesign,
-    CodeMySpec.ContextSpecSessions.Steps.ValidateDesign,
-    CodeMySpec.ContextSpecSessions.Steps.ReviseDesign,
+    CodeMySpec.ContextSpecSessions.Steps.GenerateContextSpec,
+    CodeMySpec.ContextSpecSessions.Steps.ValidateSpec,
+    CodeMySpec.ContextSpecSessions.Steps.ReviseSpec,
     CodeMySpec.ContextSpecSessions.Steps.Finalize,
     CodeMySpec.ContextComponentsDesignSessions.Steps.Initialize,
     CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignSessions,
@@ -22,8 +22,8 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
     CodeMySpec.ContextDesignReviewSessions.Steps.Finalize,
     CodeMySpec.ComponentDesignSessions.Steps.Initialize,
     CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentDesign,
-    CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign,
-    CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign,
+    CodeMySpec.ComponentDesignSessions.Steps.ValidateSpec,
+    CodeMySpec.ComponentDesignSessions.Steps.ReviseSpec,
     CodeMySpec.ComponentDesignSessions.Steps.Finalize,
     CodeMySpec.ComponentCodingSessions.Steps.Initialize,
     CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation,

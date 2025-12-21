@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateDesign do
+defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.{Documents, Sessions}

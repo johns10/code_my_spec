@@ -12,8 +12,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
   @step_modules [
     Steps.Initialize,
     Steps.GenerateComponentDesign,
-    Steps.ValidateDesign,
-    Steps.ReviseDesign,
+    Steps.ValidateSpec,
+    Steps.ReviseSpec,
     Steps.Finalize
   ]
 
@@ -46,15 +46,15 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
   defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateComponentDesign}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  defp get_next_step(:ok, Steps.GenerateComponentDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(:ok, Steps.GenerateComponentDesign), do: {:ok, Steps.ValidateSpec}
   defp get_next_step(_, Steps.GenerateComponentDesign), do: {:ok, Steps.GenerateComponentDesign}
 
-  defp get_next_step(:ok, Steps.ValidateDesign), do: {:ok, Steps.Finalize}
-  defp get_next_step(:error, Steps.ValidateDesign), do: {:ok, Steps.ReviseDesign}
-  defp get_next_step(_, Steps.ValidateDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(:ok, Steps.ValidateSpec), do: {:ok, Steps.Finalize}
+  defp get_next_step(:error, Steps.ValidateSpec), do: {:ok, Steps.ReviseSpec}
+  defp get_next_step(_, Steps.ValidateSpec), do: {:ok, Steps.ValidateSpec}
 
-  defp get_next_step(:ok, Steps.ReviseDesign), do: {:ok, Steps.ValidateDesign}
-  defp get_next_step(_, Steps.ReviseDesign), do: {:ok, Steps.ReviseDesign}
+  defp get_next_step(:ok, Steps.ReviseSpec), do: {:ok, Steps.ValidateSpec}
+  defp get_next_step(_, Steps.ReviseSpec), do: {:ok, Steps.ReviseSpec}
 
   defp get_next_step(:ok, Steps.Finalize), do: {:error, :session_complete}
 

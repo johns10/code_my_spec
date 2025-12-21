@@ -11,9 +11,9 @@ defmodule CodeMySpec.ContextSpecSessions.Orchestrator do
 
   @step_modules [
     Steps.Initialize,
-    Steps.GenerateContextDesign,
-    Steps.ValidateDesign,
-    Steps.ReviseDesign,
+    Steps.GenerateContextSpec,
+    Steps.ValidateSpec,
+    Steps.ReviseSpec,
     Steps.Finalize
   ]
 
@@ -43,18 +43,18 @@ defmodule CodeMySpec.ContextSpecSessions.Orchestrator do
 
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
-  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateContextDesign}
+  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.GenerateContextSpec}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  defp get_next_step(:ok, Steps.GenerateContextDesign), do: {:ok, Steps.ValidateDesign}
-  defp get_next_step(_, Steps.GenerateContextDesign), do: {:ok, Steps.GenerateContextDesign}
+  defp get_next_step(:ok, Steps.GenerateContextSpec), do: {:ok, Steps.ValidateSpec}
+  defp get_next_step(_, Steps.GenerateContextSpec), do: {:ok, Steps.GenerateContextSpec}
 
-  defp get_next_step(:ok, Steps.ValidateDesign), do: {:ok, Steps.Finalize}
-  defp get_next_step(:error, Steps.ValidateDesign), do: {:ok, Steps.ReviseDesign}
-  defp get_next_step(_, Steps.ValidateDesign), do: {:ok, Steps.ValidateDesign}
+  defp get_next_step(:ok, Steps.ValidateSpec), do: {:ok, Steps.Finalize}
+  defp get_next_step(:error, Steps.ValidateSpec), do: {:ok, Steps.ReviseSpec}
+  defp get_next_step(_, Steps.ValidateSpec), do: {:ok, Steps.ValidateSpec}
 
-  defp get_next_step(:ok, Steps.ReviseDesign), do: {:ok, Steps.ValidateDesign}
-  defp get_next_step(_, Steps.ReviseDesign), do: {:ok, Steps.ReviseDesign}
+  defp get_next_step(:ok, Steps.ReviseSpec), do: {:ok, Steps.ValidateSpec}
+  defp get_next_step(_, Steps.ReviseSpec), do: {:ok, Steps.ReviseSpec}
 
   defp get_next_step(:ok, Steps.Finalize), do: {:error, :session_complete}
 

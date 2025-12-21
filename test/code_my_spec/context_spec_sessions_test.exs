@@ -8,10 +8,10 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
 
   alias CodeMySpec.ContextSpecSessions.Steps.{
     Finalize,
-    GenerateContextDesign,
+    GenerateContextSpec,
     Initialize,
-    ReviseDesign,
-    ValidateDesign
+    ReviseSpec,
+    ValidateSpec
   }
 
   @test_repo_url "https://github.com/johns10/test_phoenix_project.git"
@@ -94,10 +94,10 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
         {_, _, session} = execute_step(scope, session.id, Initialize)
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
 
-        # Step 2: GenerateContextDesign
+        # Step 2: GenerateContextSpec
         {:ok, session} = Sessions.execute(scope, session.id)
         [interaction | _] = session.interactions
-        assert interaction.command.module == GenerateContextDesign
+        assert interaction.command.module == GenerateContextSpec
 
         # Create the design file that would have been created by Claude
         design_file =
@@ -119,7 +119,7 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
                          %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
 
         # Step 3: Validate Design
-        {_, _, session} = execute_step(scope, session.id, ValidateDesign)
+        {_, _, session} = execute_step(scope, session.id, ValidateSpec)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -175,10 +175,10 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
         {_, _, session} = execute_step(scope, session.id, Initialize)
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
 
-        # Step 2: GenerateContextDesign
+        # Step 2: GenerateContextSpec
         {:ok, session} = Sessions.execute(scope, session.id)
         [interaction | _] = session.interactions
-        assert interaction.command.module == GenerateContextDesign
+        assert interaction.command.module == GenerateContextSpec
 
         # Create an invalid design file (missing required sections)
         design_file =
@@ -200,17 +200,17 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
                          %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
 
         # Step 3: Validate Design (should fail)
-        {_, _, session} = execute_step(scope, session.id, ValidateDesign)
+        {_, _, session} = execute_step(scope, session.id, ValidateSpec)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
                            interactions: [%Interaction{result: %{status: :error}}, _, _]
                          }}
 
-        # Step 4: ReviseDesign (after validation failure)
+        # Step 4: ReviseSpec (after validation failure)
         {:ok, session} = Sessions.execute(scope, session.id)
         [interaction | _] = session.interactions
-        assert interaction.command.module == ReviseDesign
+        assert interaction.command.module == ReviseSpec
 
         # Update the design file with valid content
         File.write!(design_file, valid_blog_context_content())
@@ -222,7 +222,7 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
                          %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _, _, _]}}
 
         # Step 5: Revalidate Design (should pass)
-        {_, _, session} = execute_step(scope, session.id, ValidateDesign)
+        {_, _, session} = execute_step(scope, session.id, ValidateSpec)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{

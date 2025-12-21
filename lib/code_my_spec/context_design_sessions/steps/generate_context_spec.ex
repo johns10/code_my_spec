@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ContextSpecSessions.Steps.GenerateContextDesign do
+defmodule CodeMySpec.ContextSpecSessions.Steps.GenerateContextSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.{Utils, Stories, Components, Rules}

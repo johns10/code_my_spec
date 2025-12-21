@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseDesign do
+defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Steps.Helpers

@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateDesign do
+defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
   require Logger
 

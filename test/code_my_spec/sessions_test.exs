@@ -174,7 +174,7 @@ defmodule CodeMySpec.SessionsTest do
           code: 0
         })
 
-      # Now get the GenerateContextDesign command
+      # Now get the GenerateContextSpec command
       {:ok, session_with_command} = Sessions.next_command(scope, session_init_complete.id)
       [pending_interaction, _init] = session_with_command.interactions
 
