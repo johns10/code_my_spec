@@ -3,11 +3,11 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
   require Logger
 
   @valid_modules [
-    CodeMySpec.ContextDesignSessions.Steps.Initialize,
-    CodeMySpec.ContextDesignSessions.Steps.GenerateContextDesign,
-    CodeMySpec.ContextDesignSessions.Steps.ValidateDesign,
-    CodeMySpec.ContextDesignSessions.Steps.ReviseDesign,
-    CodeMySpec.ContextDesignSessions.Steps.Finalize,
+    CodeMySpec.ContextSpecSessions.Steps.Initialize,
+    CodeMySpec.ContextSpecSessions.Steps.GenerateContextDesign,
+    CodeMySpec.ContextSpecSessions.Steps.ValidateDesign,
+    CodeMySpec.ContextSpecSessions.Steps.ReviseDesign,
+    CodeMySpec.ContextSpecSessions.Steps.Finalize,
     CodeMySpec.ContextComponentsDesignSessions.Steps.Initialize,
     CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignSessions,
     CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSession,

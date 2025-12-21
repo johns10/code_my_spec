@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ContextDesignSessions.Orchestrator do
+defmodule CodeMySpec.ContextSpecSessions.Orchestrator do
   @moduledoc """
   Stateless orchestrator for context design session workflows.
   All state lives in the Session record and its embedded Interactions.
@@ -7,7 +7,7 @@ defmodule CodeMySpec.ContextDesignSessions.Orchestrator do
   @behaviour CodeMySpec.Sessions.OrchestratorBehaviour
 
   alias CodeMySpec.Sessions.{Interaction, Result, Utils, Session}
-  alias CodeMySpec.ContextDesignSessions.Steps
+  alias CodeMySpec.ContextSpecSessions.Steps
 
   @step_modules [
     Steps.Initialize,

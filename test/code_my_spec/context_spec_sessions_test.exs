@@ -1,12 +1,12 @@
-defmodule CodeMySpec.ContextDesignSessionsTest do
+defmodule CodeMySpec.ContextSpecSessionsTest do
   alias CodeMySpec.Sessions.Interaction
   use CodeMySpec.DataCase
   import CodeMySpec.Support.CLIRecorder
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
   alias CodeMySpec.{Sessions, Components, Stories}
-  alias CodeMySpec.ContextDesignSessions
+  alias CodeMySpec.ContextSpecSessions
 
-  alias CodeMySpec.ContextDesignSessions.Steps.{
+  alias CodeMySpec.ContextSpecSessions.Steps.{
     Finalize,
     GenerateContextDesign,
     Initialize,
@@ -70,7 +70,7 @@ defmodule CodeMySpec.ContextDesignSessionsTest do
       blog_context: blog_context
     } do
       project_dir =
-        "../code_my_spec_test_repos/context_design_session_#{System.unique_integer([:positive])}"
+        "../code_my_spec_test_repos/context_spec_session_#{System.unique_integer([:positive])}"
 
       # Setup test project using TestAdapter
       {:ok, ^project_dir} =
@@ -83,7 +83,7 @@ defmodule CodeMySpec.ContextDesignSessionsTest do
         # Create context design session
         {:ok, session} =
           Sessions.create_session(scope, %{
-            type: ContextDesignSessions,
+            type: ContextSpecSessions,
             agent: :claude_code,
             environment: :local,
             component_id: blog_context.id,
@@ -151,7 +151,7 @@ defmodule CodeMySpec.ContextDesignSessionsTest do
       blog_context: blog_context
     } do
       project_dir =
-        "../code_my_spec_test_repos/context_design_session_retry_#{System.unique_integer([:positive])}"
+        "../code_my_spec_test_repos/context_spec_session_retry_#{System.unique_integer([:positive])}"
 
       # Setup test project using TestAdapter
       {:ok, ^project_dir} =
@@ -164,7 +164,7 @@ defmodule CodeMySpec.ContextDesignSessionsTest do
         # Create context design session
         {:ok, session} =
           Sessions.create_session(scope, %{
-            type: ContextDesignSessions,
+            type: ContextSpecSessions,
             agent: :claude_code,
             environment: :local,
             component_id: blog_context.id,

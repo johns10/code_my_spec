@@ -1,9 +1,9 @@
-defmodule CodeMySpec.ContextDesignSessions.Steps.Initialize do
+defmodule CodeMySpec.ContextSpecSessions.Steps.Initialize do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Environments
-  alias CodeMySpec.ContextDesignSessions.Utils
+  alias CodeMySpec.ContextSpecSessions.Utils
 
   def get_command(_scope, %{environment: environment, project: project} = session, _opts \\ []) do
     attrs = %{

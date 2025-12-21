@@ -1,5 +1,5 @@
 defmodule CodeMySpec.SessionsTest do
-  alias CodeMySpec.ContextDesignSessions
+  alias CodeMySpec.ContextSpecSessions
   use CodeMySpec.DataCase
 
   alias CodeMySpec.Sessions
@@ -36,7 +36,7 @@ defmodule CodeMySpec.SessionsTest do
     test "create_session/2 with valid data creates a session" do
       valid_attrs = %{
         status: :active,
-        type: ContextDesignSessions,
+        type: ContextSpecSessions,
         state: %{},
         agent: :claude_code,
         environment: :local
@@ -46,7 +46,7 @@ defmodule CodeMySpec.SessionsTest do
 
       assert {:ok, %Session{} = session} = Sessions.create_session(scope, valid_attrs)
       assert session.status == :active
-      assert session.type == ContextDesignSessions
+      assert session.type == ContextSpecSessions
       assert session.state == %{}
       assert session.agent == :claude_code
       assert session.environment == :local
@@ -64,7 +64,7 @@ defmodule CodeMySpec.SessionsTest do
 
       update_attrs = %{
         status: :complete,
-        type: ContextDesignSessions,
+        type: ContextSpecSessions,
         state: %{},
         agent: :claude_code,
         environment: :vscode
@@ -72,7 +72,7 @@ defmodule CodeMySpec.SessionsTest do
 
       assert {:ok, %Session{} = session} = Sessions.update_session(scope, session, update_attrs)
       assert session.status == :complete
-      assert session.type == ContextDesignSessions
+      assert session.type == ContextSpecSessions
       assert session.state == %{}
       assert session.agent == :claude_code
       assert session.environment == :vscode
@@ -147,7 +147,7 @@ defmodule CodeMySpec.SessionsTest do
     test "update_execution_mode/3 regenerates pending command with new mode" do
       scope = full_scope_fixture()
 
-      # Create a component for ContextDesignSessions
+      # Create a component for ContextSpecSessions
       {:ok, component} =
         CodeMySpec.Components.create_component(scope, %{
           name: "TestContext",
@@ -159,7 +159,7 @@ defmodule CodeMySpec.SessionsTest do
       # Create session
       session =
         session_fixture(scope, %{
-          type: ContextDesignSessions,
+          type: ContextSpecSessions,
           execution_mode: :manual,
           component_id: component.id
         })

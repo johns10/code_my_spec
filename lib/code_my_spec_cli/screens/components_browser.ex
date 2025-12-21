@@ -205,7 +205,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
   defp parse_session_type(satisfied_by) when is_binary(satisfied_by) do
     # Extract session type from module name like "CodeMySpec.ComponentDesignSessions"
     case satisfied_by do
-      "ContextDesignSessions" -> CodeMySpec.ContextDesignSessions
+      "ContextSpecSessions" -> CodeMySpec.ContextSpecSessions
       "ContextComponentsDesignSessions" -> CodeMySpec.ContextComponentsDesignSessions
       "ContextDesignReviewSessions" -> CodeMySpec.ContextDesignReviewSessions
       "ContextCodingSessions" -> CodeMySpec.ContextCodingSessions

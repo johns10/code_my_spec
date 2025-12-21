@@ -1,9 +1,9 @@
-defmodule CodeMySpec.ContextDesignSessions.Utils do
+defmodule CodeMySpec.ContextSpecSessions.Utils do
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Sessions.Session
 
   def branch_name(%Session{
-        type: CodeMySpec.ContextDesignSessions,
+        type: CodeMySpec.ContextSpecSessions,
         component: %Component{name: name}
       }) do
     sanitized_name =

@@ -16,7 +16,7 @@ defmodule CodeMySpec.SessionsFixtures do
         environment: :local,
         state: %{},
         status: :active,
-        type: CodeMySpec.ContextDesignSessions,
+        type: CodeMySpec.ContextSpecSessions,
         display_name: "Context Design",
         interactions: []
       })
@@ -34,7 +34,7 @@ defmodule CodeMySpec.SessionsFixtures do
     # Create a test command
     command =
       Command.new(
-        Map.get(attrs, :module, CodeMySpec.ContextDesignSessions),
+        Map.get(attrs, :module, CodeMySpec.ContextSpecSessions),
         Map.get(attrs, :command, "claude"),
         metadata: Map.get(attrs, :metadata, %{prompt: "Test prompt"})
       )

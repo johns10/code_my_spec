@@ -72,7 +72,7 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
 
       response_data = json_response(conn, 200)["data"]
       assert response_data["id"] == session.id
-      assert response_data["type"] == "ContextDesignSessions"
+      assert response_data["type"] == "ContextSpecSessions"
       assert response_data["status"] == "active"
     end
 
@@ -89,7 +89,7 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
       session_params = %{
         agent: "claude_code",
         environment: "local",
-        type: "ContextDesignSessions",
+        type: "ContextSpecSessions",
         component_id: component.id
       }
 
@@ -98,7 +98,7 @@ defmodule CodeMySpecWeb.SessionsControllerTest do
       assert %{"data" => session_data} = json_response(conn, 201)
       assert session_data["agent"] == "claude_code"
       assert session_data["environment"] == "local"
-      assert session_data["type"] == "ContextDesignSessions"
+      assert session_data["type"] == "ContextSpecSessions"
       assert session_data["status"] == "active"
     end
 

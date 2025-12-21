@@ -38,7 +38,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       )
 
     # Add interactions with commands to both sessions so render works
-    command = %Command{module: CodeMySpec.ContextDesignSessions.Steps.Initialize, command: "test", metadata: %{}}
+    command = %Command{
+      module: CodeMySpec.ContextSpecSessions.Steps.Initialize,
+      command: "test",
+      metadata: %{}
+    }
 
     interaction = %Interaction{
       step_name: "test_step",
@@ -217,7 +221,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
 
     test "opens terminal for sessions with terminal commands", %{scope: scope, session1: session1} do
       # Add interaction with terminal-bound command
-      command = %Command{module: CodeMySpec.ContextDesignSessions.Steps.Initialize, command: "claude", metadata: %{}}
+      command = %Command{
+        module: CodeMySpec.ContextSpecSessions.Steps.Initialize,
+        command: "claude",
+        metadata: %{}
+      }
 
       interaction = %Interaction{
         step_name: "test_step",
@@ -262,7 +270,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       session1: session1
     } do
       # Add interaction with terminal-bound command
-      command = %Command{module: CodeMySpec.ContextDesignSessions.Steps.Initialize, command: "claude", metadata: %{}}
+      command = %Command{
+        module: CodeMySpec.ContextSpecSessions.Steps.Initialize,
+        command: "claude",
+        metadata: %{}
+      }
 
       interaction = %Interaction{
         step_name: "test_step",
@@ -319,7 +331,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
 
     test "breaks terminal pane back to window on exit", %{scope: scope, session1: session1} do
       # Add interaction with terminal-bound command
-      command = %Command{module: CodeMySpec.ContextDesignSessions.Steps.Initialize, command: "claude", metadata: %{}}
+      command = %Command{
+        module: CodeMySpec.ContextSpecSessions.Steps.Initialize,
+        command: "claude",
+        metadata: %{}
+      }
 
       interaction = %Interaction{
         step_name: "test_step",
@@ -556,7 +572,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
 
     test "shows pending step name", %{scope: scope, session1: session1} do
       # Add pending interaction
-      command = %Command{module: CodeMySpec.ContextDesignSessions.Steps.Initialize, command: "test", metadata: %{}}
+      command = %Command{
+        module: CodeMySpec.ContextSpecSessions.Steps.Initialize,
+        command: "test",
+        metadata: %{}
+      }
 
       interaction = %Interaction{
         id: Ecto.UUID.generate(),

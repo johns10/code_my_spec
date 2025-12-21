@@ -1,9 +1,9 @@
-defmodule CodeMySpec.ContextDesignSessions.Steps.Finalize do
+defmodule CodeMySpec.ContextSpecSessions.Steps.Finalize do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Environments
-  alias CodeMySpec.ContextDesignSessions
+  alias CodeMySpec.ContextSpecSessions
 
   def get_command(
         _scope,
@@ -19,7 +19,7 @@ defmodule CodeMySpec.ContextDesignSessions.Steps.Finalize do
       |> Enum.join("/")
 
     attrs = %{
-      branch_name: ContextDesignSessions.Utils.branch_name(session),
+      branch_name: ContextSpecSessions.Utils.branch_name(session),
       design_file_name: design_file_name,
       working_dir: "docs",
       context_name: component.name,

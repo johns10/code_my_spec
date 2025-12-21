@@ -2,7 +2,7 @@ defmodule CodeMySpec.Sessions.SessionType do
   use Ecto.Type
 
   @type t ::
-          CodeMySpec.ContextDesignSessions
+          CodeMySpec.ContextSpecSessions
           | CodeMySpec.ContextComponentsDesignSessions
           | CodeMySpec.ContextDesignReviewSessions
           | CodeMySpec.ContextCodingSessions
@@ -14,7 +14,7 @@ defmodule CodeMySpec.Sessions.SessionType do
           | CodeMySpec.IntegrationSessions
 
   @valid_types [
-    CodeMySpec.ContextDesignSessions,
+    CodeMySpec.ContextSpecSessions,
     CodeMySpec.ContextComponentsDesignSessions,
     CodeMySpec.ContextDesignReviewSessions,
     CodeMySpec.ContextCodingSessions,

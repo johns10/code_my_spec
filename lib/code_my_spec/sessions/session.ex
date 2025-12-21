@@ -10,7 +10,7 @@ defmodule CodeMySpec.Sessions.Session do
   @type t :: %__MODULE__{
           id: integer() | nil,
           type:
-            CodeMySpec.ContextDesignSessions
+            CodeMySpec.ContextSpecSessions
             | CodeMySpec.ContextComponentsDesignSessions
             | CodeMySpec.ContextDesignReviewSessions
             | CodeMySpec.ContextCodingSessions
