@@ -1,4 +1,6 @@
 defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
+  require Logger
+
   @moduledoc """
   Adapter for tmux operations, enabling Cli environment to be tested without actual tmux dependency.
 
@@ -76,15 +78,24 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
   """
   @spec kill_window(window_name :: String.t()) :: :ok | {:error, term()}
   def kill_window(window_name) do
+    Logger.info("Attempting to kill window: #{window_name}")
+
     with {:ok, session} <- get_current_session() do
-      case System.cmd("tmux", ["kill-window", "-t", "#{session}:#{window_name}"]) do
+      target = "#{session}:#{window_name}"
+      Logger.info("Kill window target: #{target}")
+
+      case System.cmd("tmux", ["kill-window", "-t", target]) do
         {_output, 0} ->
+          Logger.info("Successfully killed window #{window_name}")
           :ok
 
         # Window doesn't exist - that's fine (idempotent)
-        {error, _code} when is_binary(error) ->
+        {error, code} when is_binary(error) ->
+          Logger.warning("kill_window failed: #{inspect(error)} (exit code: #{code})")
+
           if String.contains?(error, "can't find window") or
                String.contains?(error, "no such window") do
+            Logger.info("Window #{window_name} doesn't exist, treating as success")
             :ok
           else
             {:error, error}
@@ -94,7 +105,9 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
           {:error, error}
       end
     else
-      {:error, _reason} -> :ok
+      {:error, reason} ->
+        Logger.warning("Could not get current session: #{inspect(reason)}")
+        :ok
     end
   end
 
@@ -275,19 +288,22 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
     with {:ok, session} <- get_current_session(),
          {current_pane_id, 0} <- System.cmd("tmux", ["display-message", "-p", "\#{pane_id}"]),
          {window_id, 0} <- System.cmd("tmux", ["display-message", "-p", "\#{window_id}"]),
-         {before_panes, 0} <- System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
+         {before_panes, 0} <-
+           System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
          before_set = before_panes |> String.trim() |> String.split("\n") |> MapSet.new(),
-         {_output, 0} <- System.cmd("tmux", [
-           "join-pane",
-           "-s",
-           "#{session}:#{source_window}.0",
-           "-t",
-           String.trim(current_pane_id),
-           direction,
-           "-l",
-           size
-         ]),
-         {after_panes, 0} <- System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
+         {_output, 0} <-
+           System.cmd("tmux", [
+             "join-pane",
+             "-s",
+             "#{session}:#{source_window}.0",
+             "-t",
+             String.trim(current_pane_id),
+             direction,
+             "-l",
+             size
+           ]),
+         {after_panes, 0} <-
+           System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
          after_set = after_panes |> String.trim() |> String.split("\n") |> MapSet.new(),
          [new_pane_id] <- MapSet.difference(after_set, before_set) |> MapSet.to_list(),
          {_output, 0} <- System.cmd("tmux", ["select-pane", "-t", String.trim(current_pane_id)]),
@@ -303,22 +319,38 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
   @doc """
   Break a pane out into its own window.
 
+  If window_name is provided, the new window will be renamed to that name.
+
   Returns :ok on success, {:error, reason} on failure.
   """
   @spec break_pane(pane_id :: String.t(), opts :: keyword()) :: :ok | {:error, term()}
   def break_pane(pane_id, opts \\ []) do
     window_name = Keyword.get(opts, :window_name)
 
-    args =
-      if window_name do
-        ["break-pane", "-d", "-t", pane_id, "-n", window_name]
-      else
-        ["break-pane", "-d", "-t", pane_id]
-      end
+    # Break pane to its own window (let tmux create a new window)
+    # -s specifies source pane, -t specifies destination window
+    case System.cmd("tmux", ["break-pane", "-d", "-P", "-F", "\#{window_id}", "-s", pane_id]) do
+      {window_id, 0} when is_binary(window_id) ->
+        window_id = String.trim(window_id)
 
-    case System.cmd("tmux", args) do
-      {_output, 0} -> :ok
-      {error, _code} -> {:error, error}
+        # If window_name specified, rename the new window
+        if window_name do
+          case System.cmd("tmux", ["rename-window", "-t", window_id, window_name]) do
+            {_output, 0} ->
+              Logger.info("Broke pane to window #{window_id} and renamed to #{window_name}")
+              :ok
+
+            {error, code} ->
+              Logger.warning("rename-window failed: #{inspect(error)} (exit code: #{code})")
+              {:error, error}
+          end
+        else
+          :ok
+        end
+
+      {error, code} ->
+        Logger.warning("break_pane failed: #{inspect(error)} (exit code: #{code})")
+        {:error, error}
     end
   end
 end

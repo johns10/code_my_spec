@@ -54,26 +54,32 @@ defmodule CodeMySpecCli.TerminalPanes do
   def hide_terminal do
     case find_terminal_pane() do
       {:ok, pane_id} ->
+        Logger.info("Found terminal pane: #{pane_id}")
+
         # Get the session_id from the pane title to restore window name
         case current_session() do
           {:ok, session_id} ->
             window_name = "session-#{session_id}"
+            Logger.info("Attempting to break pane back to window: #{window_name}")
 
+            # Break pane to new window with the session name
             case adapter().break_pane(pane_id, window_name: window_name) do
               :ok ->
                 Logger.info("Broke terminal pane back to window #{window_name}")
                 :ok
 
-              error ->
-                error
+              {:error, reason} ->
+                Logger.error("Failed to hide terminal: #{inspect(reason)}")
+                {:error, reason}
             end
 
-          {:error, _} ->
-            # If we can't get session_id, just break without window name
-            adapter().break_pane(pane_id)
+          {:error, reason} ->
+            Logger.warning("Could not get current session: #{inspect(reason)}")
+            {:error, reason}
         end
 
       {:error, :not_found} ->
+        Logger.info("No terminal pane found to hide")
         :ok
     end
   end
@@ -179,6 +185,8 @@ defmodule CodeMySpecCli.TerminalPanes do
     else
       with {:ok, session} <- adapter().get_current_session(),
            {:ok, output} <- adapter().list_panes("#{session}:0", "\#{pane_id}:\#{pane_title}") do
+        Logger.info(inspect(output))
+
         panes =
           output
           |> String.trim()

@@ -3,7 +3,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
   Sessions screen for Ratatouille.
 
   Displays a list of active sessions with navigation and actions.
-  Allows viewing session details, opening terminal, and deleting sessions.
+  Allows viewing session details, opening terminal, closing terminal pane, destroying terminal windows, and deleting sessions.
   """
 
   import Ratatouille.View
@@ -100,9 +100,17 @@ defmodule CodeMySpecCli.Screens.Sessions do
       {:event, %{ch: ?t}} ->
         handle_open_terminal(model)
 
+      # 'c' key - close terminal pane
+      {:event, %{ch: ?c}} ->
+        handle_close_terminal_pane(model)
+
       # 'd' key - delete session
       {:event, %{ch: ?d}} ->
         handle_delete_session(model)
+
+      # 'k' key - kill/destroy terminal window
+      {:event, %{ch: ?k}} ->
+        handle_destroy_terminal(model)
 
       # 'q' or Esc key - exit
       {:event, %{ch: ?q}} ->
@@ -227,6 +235,20 @@ defmodule CodeMySpecCli.Screens.Sessions do
     end
   end
 
+  defp handle_close_terminal_pane(model) do
+    if model.terminal_session_id do
+      case TerminalPanes.hide_terminal() do
+        :ok ->
+          {:ok, %{model | terminal_session_id: nil, error_message: nil}}
+
+        {:error, reason} ->
+          {:ok, %{model | error_message: "Failed to close terminal pane: #{inspect(reason)}"}}
+      end
+    else
+      {:ok, %{model | error_message: "No terminal pane is currently open"}}
+    end
+  end
+
   defp handle_delete_session(model) do
     if length(model.sessions) > 0 and model.selected_session_index < length(model.sessions) do
       session = Enum.at(model.sessions, model.selected_session_index)
@@ -248,6 +270,38 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
         {:error, reason} ->
           {:ok, %{model | error_message: "Failed to delete session: #{inspect(reason)}"}}
+      end
+    else
+      {:ok, model}
+    end
+  end
+
+  defp handle_destroy_terminal(model) do
+    if length(model.sessions) > 0 and model.selected_session_index < length(model.sessions) do
+      session = Enum.at(model.sessions, model.selected_session_index)
+
+      # Construct Environment struct for CLI with the session's window name
+      env = %CodeMySpec.Environments.Environment{
+        type: :cli,
+        ref: "session-#{session.id}",
+        metadata: %{}
+      }
+
+      # Destroy the terminal window
+      case CodeMySpec.Environments.destroy(env) do
+        :ok ->
+          # Also clear terminal_session_id if this was the open terminal
+          updated_model =
+            if model.terminal_session_id == session.id do
+              %{model | terminal_session_id: nil}
+            else
+              model
+            end
+
+          {:ok, %{updated_model | error_message: nil}}
+
+        {:error, reason} ->
+          {:ok, %{model | error_message: "Failed to destroy terminal: #{inspect(reason)}"}}
       end
     else
       {:ok, model}
@@ -283,7 +337,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
               # Instructions
               label(
                 content:
-                  "↑/↓: navigate | Enter: details | n: next cmd | t: terminal | d: delete | q: exit",
+                  "↑/↓: navigate | Enter: details | n: next cmd | t: terminal | c: close pane | d: delete | k: kill | q: exit",
                 color: :cyan
               )
             ]
