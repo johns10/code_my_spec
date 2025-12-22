@@ -91,31 +91,6 @@ defmodule CodeMySpecCli.Screens.SessionDetail do
       {:event, %{key: @esc}} ->
         handle_exit(model)
 
-      # PubSub messages for session updates
-      {:updated, session} ->
-        # Check if this is our session
-        if session.id == model.session.id do
-          # Adjust selection index if needed
-          new_index =
-            if model.selected_interaction_index >= length(session.interactions) do
-              max(0, length(session.interactions) - 1)
-            else
-              model.selected_interaction_index
-            end
-
-          {:ok, %{model | session: session, selected_interaction_index: new_index}}
-        else
-          {:ok, model}
-        end
-
-      {:deleted, session} ->
-        # If our session was deleted, return to sessions list
-        if session.id == model.session.id do
-          {:switch_screen, :sessions, model}
-        else
-          {:ok, model}
-        end
-
       _ ->
         {:ok, model}
     end

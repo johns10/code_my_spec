@@ -55,9 +55,6 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
       {state, nil}
     else
-      # Subscribe to session changes
-      Sessions.subscribe_user_sessions(scope)
-
       # Load active sessions
       sessions =
         Sessions.list_sessions(scope, status: [:active])
@@ -496,9 +493,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
         Logger.info("Closed terminal window for ended session #{session_id}")
 
       {:error, reason} ->
-        Logger.warning(
-          "Failed to close terminal for session #{session_id}: #{inspect(reason)}"
-        )
+        Logger.warning("Failed to close terminal for session #{session_id}: #{inspect(reason)}")
     end
   end
 
