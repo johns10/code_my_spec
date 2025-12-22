@@ -47,7 +47,20 @@ defmodule CodeMySpecCli.Screens.Main do
   @impl true
   def update(model, msg) do
     case {model.screen, msg} do
-      # Tick from interval subscription - just re-render
+      # Tick - forward to sessions screen for polling
+      {:sessions, :tick} ->
+        case Sessions.update(model.sessions_state, :tick) do
+          {:ok, new_sessions_state} ->
+            %{model | sessions_state: new_sessions_state}
+
+          other ->
+            # Unexpected return, log and continue
+            require Logger
+            Logger.warning("Unexpected return from Sessions.update(:tick): #{inspect(other)}")
+            model
+        end
+
+      # Tick from interval subscription for other screens - just re-render
       {_, :tick} ->
         model
 

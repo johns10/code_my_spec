@@ -26,7 +26,8 @@ defmodule CodeMySpecCli.Screens.Sessions do
     :sessions,
     :selected_session_index,
     :error_message,
-    :terminal_session_id
+    :terminal_session_id,
+    :tick_count
   ]
 
   @type t :: %__MODULE__{
@@ -34,7 +35,8 @@ defmodule CodeMySpecCli.Screens.Sessions do
           sessions: [Sessions.Session.t()],
           selected_session_index: integer(),
           error_message: String.t() | nil,
-          terminal_session_id: integer() | nil
+          terminal_session_id: integer() | nil,
+          tick_count: integer()
         }
 
   @doc """
@@ -50,7 +52,8 @@ defmodule CodeMySpecCli.Screens.Sessions do
         sessions: [],
         selected_session_index: 0,
         error_message: "No active project found. Run /init to initialize a project.",
-        terminal_session_id: nil
+        terminal_session_id: nil,
+        tick_count: 0
       }
 
       {state, nil}
@@ -65,7 +68,8 @@ defmodule CodeMySpecCli.Screens.Sessions do
         sessions: sessions,
         selected_session_index: 0,
         error_message: nil,
-        terminal_session_id: nil
+        terminal_session_id: nil,
+        tick_count: 0
       }
 
       {state, nil}
@@ -78,6 +82,36 @@ defmodule CodeMySpecCli.Screens.Sessions do
   @spec update(t(), term()) :: {:ok, t()} | {:switch_screen, atom(), t()}
   def update(model, msg) do
     case msg do
+      # Tick - poll for session updates every 10 ticks (1 second)
+      :tick ->
+        model = check_and_cleanup_terminal(model)
+        new_tick_count = model.tick_count + 1
+
+        if rem(new_tick_count, 5) == 0 && model.scope do
+          # Refetch sessions
+          sessions =
+            Sessions.list_sessions(model.scope, status: [:active])
+            |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+
+          # Preserve selected_session_index, but ensure it's still valid
+          new_index =
+            if model.selected_session_index >= length(sessions) do
+              max(0, length(sessions) - 1)
+            else
+              model.selected_session_index
+            end
+
+          {:ok,
+           %{
+             model
+             | sessions: sessions,
+               selected_session_index: new_index,
+               tick_count: new_tick_count
+           }}
+        else
+          {:ok, %{model | tick_count: new_tick_count}}
+        end
+
       # Arrow key navigation
       {:event, %{key: @arrow_up}} ->
         handle_arrow_up(model)
@@ -115,41 +149,6 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
       {:event, %{key: @esc}} ->
         handle_exit(model)
-
-      # PubSub messages for session updates
-      {:created, session} ->
-        new_sessions = [session | model.sessions] |> sort_sessions()
-        {:ok, %{model | sessions: new_sessions}}
-
-      {:updated, session} ->
-        new_sessions =
-          model.sessions
-          |> Enum.map(fn s -> if s.id == session.id, do: session, else: s end)
-          |> sort_sessions()
-
-        # Check if the updated session's interaction has ended
-        updated_model =
-          if session_ended?(session) && model.terminal_session_id == session.id do
-            close_terminal_for_session(session.id)
-            %{model | terminal_session_id: nil}
-          else
-            model
-          end
-
-        {:ok, %{updated_model | sessions: new_sessions}}
-
-      {:deleted, session} ->
-        new_sessions = Enum.reject(model.sessions, &(&1.id == session.id))
-
-        # Adjust selection if needed
-        new_index =
-          if model.selected_session_index >= length(new_sessions) do
-            max(0, length(new_sessions) - 1)
-          else
-            model.selected_session_index
-          end
-
-        {:ok, %{model | sessions: new_sessions, selected_session_index: new_index}}
 
       _ ->
         {:ok, model}
@@ -319,6 +318,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
   """
   @spec render(t()) :: term()
   def render(model) do
+    # Check and cleanup terminal if session ended
     session_count = length(model.sessions)
 
     [
@@ -456,25 +456,44 @@ defmodule CodeMySpecCli.Screens.Sessions do
 
   # Helper functions
 
+  # Check if terminal session has ended and cleanup if needed
+  defp check_and_cleanup_terminal(model) do
+    if model.terminal_session_id && model.scope do
+      terminal_session = Sessions.get_session(model.scope, model.terminal_session_id)
+
+      case {terminal_session, terminal_session && session_ended?(terminal_session)} do
+        # Session not found - close pane and clear ID
+        {nil, _} ->
+          Logger.info("Terminal session #{model.terminal_session_id} not found, closing pane")
+          TerminalPanes.hide_terminal()
+          %{model | terminal_session_id: nil}
+
+        # Session ended - close pane, destroy window, clear ID
+        {_session, true} ->
+          Logger.info("Session #{model.terminal_session_id} ended, closing terminal pane")
+          TerminalPanes.hide_terminal()
+          %{model | terminal_session_id: nil}
+
+        # Session still active - no changes
+        {_session, false} ->
+          model
+      end
+    else
+      # No terminal session open or no scope - no changes
+      model
+    end
+  end
+
   # Check if a session has ended by looking at its RuntimeInteraction state
-  defp session_ended?(session) do
-    pending_interaction =
-      Enum.find(session.interactions, fn interaction ->
-        Interaction.pending?(interaction)
-      end)
+  defp session_ended?(%{interactions: []}), do: :ok
 
-    case pending_interaction do
-      nil ->
+  defp session_ended?(%{interactions: [latest_interaction | _]}) do
+    case InteractionRegistry.get_status(latest_interaction.id) do
+      {:ok, runtime} ->
+        runtime.agent_state == "ended"
+
+      {:error, :not_found} ->
         false
-
-      interaction ->
-        case InteractionRegistry.get_status(interaction.id) do
-          {:ok, runtime} ->
-            runtime.agent_state == "ended"
-
-          {:error, :not_found} ->
-            false
-        end
     end
   end
 

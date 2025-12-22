@@ -146,17 +146,32 @@ defmodule CodeMySpecCli.TerminalPanes do
   end
 
   defp ensure_window_exists(window_name) do
-    unless adapter().window_exists?(window_name) do
+    exists = adapter().window_exists?(window_name)
+    Logger.info("Window #{window_name} exists? #{exists}")
+
+    unless exists do
       case adapter().create_window(window_name) do
-        {:ok, _} ->
-          Logger.debug("Created window #{window_name} for terminal display")
+        {:ok, window_id} ->
+          Logger.info("Created window #{window_name} with ID #{window_id} for terminal display")
           :ok
 
         {:error, reason} ->
+          Logger.error("Failed to create window #{window_name}: #{inspect(reason)}")
           {:error, reason}
       end
     else
-      :ok
+      # Window exists - let's verify it has panes
+      with {:ok, session} <- adapter().get_current_session(),
+           target = "#{session}:#{window_name}",
+           {:ok, panes_output} <- adapter().list_panes(target, "\#{pane_id}") do
+        panes = panes_output |> String.trim() |> String.split("\n")
+        Logger.info("Window #{window_name} has #{length(panes)} pane(s): #{inspect(panes)}")
+        :ok
+      else
+        {:error, reason} ->
+          Logger.warning("Could not list panes for window #{window_name}: #{inspect(reason)}")
+          :ok
+      end
     end
   end
 
