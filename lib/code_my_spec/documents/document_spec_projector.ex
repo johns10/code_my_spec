@@ -38,6 +38,7 @@ defmodule CodeMySpec.Documents.DocumentSpecProjector do
 
   defp format_sections(sections, descriptions) do
     sections
+    |> List.flatten()
     |> Enum.map(fn section ->
       description = Map.get(descriptions, section, "No description available")
       "### #{format_section_name(section)}\n\n#{description}"
