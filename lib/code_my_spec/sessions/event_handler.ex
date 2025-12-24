@@ -181,14 +181,14 @@ defmodule CodeMySpec.Sessions.EventHandler do
     end
   end
 
-  # Handle notification_hook - broadcast to clients
+  # Handle notification - broadcast to clients
   defp apply_side_effect(_scope, %Session{} = session, %InteractionEvent{
-         event_type: :notification_hook,
+         event_type: :notification,
          data: data
        }) do
     notification_type = Map.get(data, "notification_type")
 
-    Logger.info("Broadcasting notification_hook (#{notification_type}) for session #{session.id}")
+    Logger.info("Broadcasting notification (#{notification_type}) for session #{session.id}")
 
     payload = %{
       session_id: session.id,
@@ -199,13 +199,13 @@ defmodule CodeMySpec.Sessions.EventHandler do
     Phoenix.PubSub.broadcast(
       CodeMySpec.PubSub,
       "account:#{session.account_id}:sessions",
-      {:notification_hook, payload}
+      {:notification, payload}
     )
 
     Phoenix.PubSub.broadcast(
       CodeMySpec.PubSub,
       "user:#{session.user_id}:sessions",
-      {:notification_hook, payload}
+      {:notification, payload}
     )
 
     {:ok, %{}}
@@ -337,7 +337,7 @@ defmodule CodeMySpec.Sessions.EventHandler do
 
   # Update interaction registry with runtime status based on event type
   defp update_interaction_registry(interaction_id, %InteractionEvent{
-         event_type: :notification_hook,
+         event_type: :notification,
          data: data
        }) do
     InteractionRegistry.update_status(interaction_id, %{
