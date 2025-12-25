@@ -34,9 +34,16 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
 
   def get_command(_scope, %{component: component, project: project}, opts) do
     %{test_file: test_file_path} = Utils.component_files(component, project)
-    seed = if Keyword.get(opts, :seed, false), do: " --seed #{opts[:seed]}", else: ""
-    command = "mix test #{test_file_path} --formatter ExUnitJsonFormatter" <> seed
-    {:ok, Command.new(__MODULE__, command)}
+
+    base_args = ["test", test_file_path, "--formatter", "ExUnitJsonFormatter"]
+
+    args =
+      case Keyword.get(opts, :seed) do
+        nil -> base_args
+        seed -> base_args ++ ["--seed", to_string(seed)]
+      end
+
+    {:ok, Command.new(__MODULE__, "mix_test", metadata: %{args: args})}
   end
 
   def handle_result(scope, _session, result, _opts \\ []) do
@@ -70,45 +77,19 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
     end
   end
 
+  defp get_test_run_data(%{data: %{test_results: test_results}}) when is_binary(test_results) do
+    case Jason.decode(test_results) do
+      {:ok, data} ->
+        {:ok, data}
+
+      {:error, _error} ->
+        {:error, "invalid JSON in stdout"}
+    end
+  end
+
   defp get_test_run_data(%{data: data}) when is_map(data) and map_size(data) > 0, do: {:ok, data}
 
-  defp get_test_run_data(%{stdout: stdout}) when is_binary(stdout) do
-    json_string = extract_json_from_stdout(stdout)
-
-    case Jason.decode(json_string) do
-      {:ok, data} -> {:ok, data}
-      {:error, _} -> {:error, "invalid JSON in stdout"}
-    end
-  end
-
   defp get_test_run_data(_result), do: {:error, "test run data not found in result"}
-
-  defp extract_json_from_stdout(stdout) do
-    # Extract JSON part from stdout (filter out compilation messages)
-    # Search for {" to find start of JSON object (not Elixir tuples like {:ok, ...})
-    json_start = :binary.match(stdout, "{\"")
-    json_end_match = :binary.matches(stdout, "}")
-
-    case {json_start, json_end_match} do
-      {:nomatch, _} ->
-        ""
-
-      {_, []} ->
-        ""
-
-      {{start_pos, _}, matches} ->
-        # Get the last "}" position
-        {end_pos, _} = List.last(matches)
-        json_end = end_pos + 1
-
-        if start_pos >= json_end do
-          ""
-        else
-          # Use binary_part since we're working with byte positions
-          :binary.part(stdout, start_pos, json_end - start_pos)
-        end
-    end
-  end
 
   defp validate_test_run(test_run_data) do
     case TestRun.changeset(%TestRun{}, test_run_data) do

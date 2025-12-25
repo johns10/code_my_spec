@@ -42,14 +42,14 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     test_rules_text = Enum.map_join(test_rules, "\n\n", & &1.content)
     similar_text = format_similar_components(project, similar_components)
 
-    %{design_file: design_file_path, test_file: test_file_path} =
+    %{spec_file: spec_file_path, test_file: test_file_path} =
       Utils.component_files(component, project)
 
-    parent_design_file_path =
+    parent_spec_file_path =
       if component.parent_component do
         parent_component = component.parent_component
-        %{design_file: parent_design_file_path} = Utils.component_files(parent_component, project)
-        parent_design_file_path
+        %{spec_file: parent_spec_file_path} = Utils.component_files(parent_component, project)
+        parent_spec_file_path
       else
         "no parent design"
       end
@@ -67,8 +67,8 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       Component Name: #{component.name}
       Component Type: #{component.type}
 
-      Parent Context Design File: #{parent_design_file_path}
-      Component Design File: #{design_file_path}
+      Parent Context Design File: #{parent_spec_file_path}
+      Component Design File: #{spec_file_path}
 
       Similar Components (for test pattern inspiration):
       #{similar_text}
@@ -102,7 +102,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       """
       #{index}. #{component.name} (#{component.type})
          Description: #{component.description || "No description"}
-         Design: #{files.design_file}
+         Design: #{files.spec_file}
          Implementation: #{files.code_file}
          Test: #{files.test_file}
       """

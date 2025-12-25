@@ -137,11 +137,90 @@ defmodule CodeMySpec.Environments.Cli do
       full_command = build_command_with_env(claude_cmd, env_vars)
 
       adapter().send_keys(window_name, full_command)
+      :ok
     end
   end
 
   def run_command(%Environment{}, %CodeMySpec.Sessions.Command{command: "pass"}, _opts) do
     {:ok, %{}}
+  end
+
+  def run_command(
+        %Environment{},
+        %CodeMySpec.Sessions.Command{command: "mix_test", metadata: %{"args" => args}},
+        opts
+      )
+      when is_list(args) do
+    interaction_id = Keyword.fetch!(opts, :interaction_id)
+    session_id = Keyword.fetch!(opts, :session_id)
+
+    Task.start(fn ->
+      # Set initial state
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "running_tests"
+      })
+
+      # Create temp file for clean JSON test results
+      temp_file = Path.join(System.tmp_dir!(), "test-results-#{interaction_id}.json")
+
+      # Open port with EXUNIT_JSON_OUTPUT_FILE to separate test JSON from other output
+      port =
+        Port.open({:spawn_executable, System.find_executable("mix")}, [
+          :binary,
+          :exit_status,
+          :stderr_to_stdout,
+          :use_stdio,
+          {:line, 2048},
+          {:args, args},
+          {:env,
+           [
+             {~c"MIX_ENV", ~c"test"},
+             {~c"EXUNIT_JSON_OUTPUT_FILE", String.to_charlist(temp_file)},
+             {~c"EXUNIT_JSON_STREAMING", ~c"true"}
+           ]}
+        ])
+
+      # Stream stdout (compiler warnings, progress, etc.)
+      _stdout = stream_test_output(port, interaction_id, [])
+
+      # Read clean JSON from file
+      test_results =
+        case File.read(temp_file) do
+          {:ok, json_content} ->
+            File.rm(temp_file)
+            json_content
+
+          {:error, reason} ->
+            Logger.warning("Failed to read test results file: #{inspect(reason)}")
+            # Fall back to empty results
+            "{}"
+        end
+
+      # Mark as complete
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "tests_complete"
+      })
+
+      # Get scope and call handle_result
+      scope = CodeMySpec.Users.Scope.for_cli()
+
+      result = %{
+        status: :ok,
+        data: %{test_results: test_results}
+      }
+
+      case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, result) do
+        {:ok, _updated_session} ->
+          Logger.info("Test execution completed for session #{session_id}")
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to handle test result for session #{session_id}: #{inspect(reason)}"
+          )
+      end
+    end)
+
+    :ok
   end
 
   # Fallback for legacy format where command field contains the actual shell command
@@ -201,6 +280,10 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   def docs_environment_teardown_command(_) do
+    "pass"
+  end
+
+  def test_environment_teardown_command(_) do
     "pass"
   end
 
@@ -277,5 +360,40 @@ defmodule CodeMySpec.Environments.Cli do
     path
     |> Path.dirname()
     |> File.mkdir_p()
+  end
+
+  # Stream output from port, updating RuntimeInteraction in real-time
+  defp stream_test_output(port, interaction_id, acc) do
+    receive do
+      {^port, {:data, {:eol, line}}} ->
+        # Try to parse line as JSON and update RuntimeInteraction
+        case Jason.decode(line) do
+          {:ok, json_message} ->
+            CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+              last_activity:
+                Map.merge(json_message, %{
+                  event_type: :test_event,
+                  timestamp: DateTime.utc_now()
+                })
+            })
+
+          {:error, _} ->
+            # Not JSON, skip
+            :ok
+        end
+
+        # Accumulate line and continue streaming
+        stream_test_output(port, interaction_id, [line | acc])
+
+      {^port, {:data, {:noeol, partial}}} ->
+        # Partial line without newline, accumulate and continue
+        stream_test_output(port, interaction_id, [partial | acc])
+
+      {^port, {:exit_status, _status}} ->
+        # Port exited, return accumulated output
+        acc
+        |> Enum.reverse()
+        |> Enum.join("\n")
+    end
   end
 end

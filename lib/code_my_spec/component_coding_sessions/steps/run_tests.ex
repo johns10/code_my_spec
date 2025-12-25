@@ -8,9 +8,15 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTests do
 
   def get_command(_scope, %{component: component, project: project}, opts) do
     %{test_file: test_file_path} = Utils.component_files(component, project)
-    seed = if Keyword.get(opts, :seed, false), do: " --seed #{opts[:seed]}", else: ""
-    command = "mix test #{test_file_path} --formatter ExUnitJsonFormatter" <> seed
-    {:ok, Command.new(__MODULE__, command)}
+
+    base_args = ["test", test_file_path, "--formatter", "ExUnitJsonFormatter"]
+
+    args = case Keyword.get(opts, :seed) do
+      nil -> base_args
+      seed -> base_args ++ ["--seed", to_string(seed)]
+    end
+
+    {:ok, Command.new(__MODULE__, "mix_test", metadata: %{args: args})}
   end
 
   def handle_result(scope, _session, result, _opts \\ []) do
