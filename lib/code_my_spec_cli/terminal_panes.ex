@@ -176,20 +176,16 @@ defmodule CodeMySpecCli.TerminalPanes do
   end
 
   defp update_terminal_session(session_id) do
-    case find_terminal_pane() do
-      {:ok, pane_id} ->
-        title = pane_title(session_id)
+    Logger.debug("Switching terminal from current session to session #{session_id}")
 
-        case adapter().set_pane_title(pane_id, title) do
-          :ok ->
-            Logger.info("Updated terminal to show session #{session_id}")
-            :ok
-
-          error ->
-            error
-        end
-
-      error ->
+    # Break current pane back to its window, then create new pane from new session
+    with :ok <- hide_terminal(),
+         :ok <- create_terminal_pane(session_id) do
+      Logger.info("Switched terminal to show session #{session_id}")
+      :ok
+    else
+      {:error, reason} = error ->
+        Logger.error("Failed to switch terminal to session #{session_id}: #{inspect(reason)}")
         error
     end
   end
@@ -199,7 +195,8 @@ defmodule CodeMySpecCli.TerminalPanes do
       {:error, :not_found}
     else
       with {:ok, session} <- adapter().get_current_session(),
-           {:ok, output} <- adapter().list_panes("#{session}:0", "\#{pane_id}:\#{pane_title}") do
+           # Search across all windows by using just the session name (no window specifier)
+           {:ok, output} <- adapter().list_panes(session, "\#{pane_id}:\#{pane_title}") do
         Logger.info(inspect(output))
 
         panes =

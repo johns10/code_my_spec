@@ -93,7 +93,8 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
         {error, code} when is_binary(error) ->
           Logger.warning("kill_window failed: #{inspect(error)} (exit code: #{code})")
 
-          if String.contains?(error, "can't find window") or
+          # Empty error or "can't find window" means window doesn't exist
+          if error == "" or String.contains?(error, "can't find window") or
                String.contains?(error, "no such window") do
             Logger.info("Window #{window_name} doesn't exist, treating as success")
             :ok
@@ -132,6 +133,23 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
 
         {error, _code} ->
           {:error, error}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  List all windows in the current session with a format string.
+
+  Returns {:ok, output} on success, {:error, reason} on failure.
+  """
+  @spec list_windows(format :: String.t()) :: {:ok, String.t()} | {:error, term()}
+  def list_windows(format \\ "\#{window_name}") do
+    with {:ok, session} <- get_current_session() do
+      case System.cmd("tmux", ["list-windows", "-t", session, "-F", format]) do
+        {output, 0} -> {:ok, output}
+        {error, _code} -> {:error, error}
       end
     else
       {:error, reason} -> {:error, reason}
@@ -277,6 +295,9 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
   This moves the first pane from the source window to be displayed in the current window.
   The original pane remains active so the TUI stays responsive.
 
+  IMPORTANT: If the source window has only one pane, this will close that window.
+  Ensure source window has at least 2 panes to keep it alive.
+
   Returns {:ok, pane_id} of the joined pane on success, {:error, reason} on failure.
   """
   @spec join_pane(source_window :: String.t(), opts :: keyword()) ::
@@ -287,30 +308,37 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
 
     with {:ok, session} <- get_current_session(),
          {current_pane_id, 0} <- System.cmd("tmux", ["display-message", "-p", "\#{pane_id}"]),
+         current_pane_id = String.trim(current_pane_id),
          {window_id, 0} <- System.cmd("tmux", ["display-message", "-p", "\#{window_id}"]),
-         {before_panes, 0} <-
-           System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
+         window_id = String.trim(window_id),
+         # Get panes before join
+         {:ok, before_panes} <- list_panes(window_id, "\#{pane_id}"),
          before_set = before_panes |> String.trim() |> String.split("\n") |> MapSet.new(),
+         # Perform the join
          {_output, 0} <-
            System.cmd("tmux", [
              "join-pane",
              "-s",
              "#{session}:#{source_window}.0",
              "-t",
-             String.trim(current_pane_id),
+             current_pane_id,
              direction,
              "-l",
              size
            ]),
-         {after_panes, 0} <-
-           System.cmd("tmux", ["list-panes", "-t", String.trim(window_id), "-F", "\#{pane_id}"]),
+         # Get panes after join
+         {:ok, after_panes} <- list_panes(window_id, "\#{pane_id}"),
          after_set = after_panes |> String.trim() |> String.split("\n") |> MapSet.new(),
-         [new_pane_id] <- MapSet.difference(after_set, before_set) |> MapSet.to_list(),
-         {_output, 0} <- System.cmd("tmux", ["select-pane", "-t", String.trim(current_pane_id)]),
-         {_output, 0} <- System.cmd("tmux", ["refresh-client"]) do
-      {:ok, new_pane_id}
+         # Find the new pane by diffing
+         new_panes = MapSet.difference(after_set, before_set) |> MapSet.to_list(),
+         [joined_pane_id] <- new_panes,
+         # Keep focus on original pane so TUI stays responsive
+         {_output, 0} <- System.cmd("tmux", ["select-pane", "-t", current_pane_id]) do
+      Logger.info("Joined pane #{joined_pane_id} from window #{source_window}")
+      {:ok, joined_pane_id}
     else
-      [] -> {:error, "Could not identify newly joined pane"}
+      [] -> {:error, "Could not identify joined pane"}
+      [_ | _] = multiple -> {:error, "Multiple new panes detected: #{inspect(multiple)}"}
       {error, _code} when is_binary(error) -> {:error, error}
       {:error, reason} -> {:error, reason}
     end
