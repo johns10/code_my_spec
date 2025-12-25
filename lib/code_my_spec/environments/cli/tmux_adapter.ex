@@ -239,6 +239,20 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
   end
 
   @doc """
+  Enable mouse mode globally for tmux.
+
+  This allows scrolling with the mouse wheel and clicking to select panes.
+  Returns :ok on success, {:error, reason} on failure.
+  """
+  @spec enable_mouse_mode() :: :ok | {:error, term()}
+  def enable_mouse_mode do
+    case System.cmd("tmux", ["set", "-g", "mouse", "on"]) do
+      {_output, 0} -> :ok
+      {error, _code} -> {:error, error}
+    end
+  end
+
+  @doc """
   Kill a tmux pane by ID.
 
   Returns :ok on success, even if the pane doesn't exist (idempotent).

@@ -133,7 +133,10 @@ defmodule CodeMySpecCli.TerminalPanes do
       # Set pane title to track which session this is
       adapter().set_pane_title(pane_id, title)
 
-      Logger.info("Joined terminal pane from window #{window_name}")
+      # Enable mouse mode for scrolling
+      adapter().enable_mouse_mode()
+
+      Logger.info("Joined terminal pane from window #{window_name} (mouse mode enabled)")
       :ok
     else
       {:error, reason} ->
