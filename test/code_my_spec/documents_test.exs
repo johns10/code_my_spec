@@ -3,14 +3,11 @@ defmodule CodeMySpec.DocumentsTest do
   doctest CodeMySpec.Documents
 
   alias CodeMySpec.Documents
-  alias CodeMySpec.Documents.ContextDesign
 
   describe "create_dynamic_document/2" do
     test "creates a valid schema document from markdown" do
       markdown = """
       # User Schema
-
-      ## Purpose
       Represents user account entities with authentication credentials.
 
       ## Fields
@@ -19,16 +16,13 @@ defmodule CodeMySpec.DocumentsTest do
       | email | string | Yes | User email address | Unique |
       | name | string | Yes | User full name | Min: 1, Max: 255 |
 
-      ## Test Assertions
-      - validates email format
-      - validates name presence
+      ## Dependencies
+      - CodeMySpec.MyModule
       """
 
       {:ok, document} = Documents.create_dynamic_document(markdown, :schema)
 
       assert document.type == :schema
-      assert document.sections["purpose"] =~ "Represents user account entities"
-      # Fields section is parsed by FieldParser into list of Field structs
       assert is_list(document.sections["fields"])
     end
 
@@ -46,36 +40,9 @@ defmodule CodeMySpec.DocumentsTest do
       assert error =~ "fields"
     end
 
-    test "allows optional sections" do
-      markdown = """
-      # User Schema
-
-      ## Purpose
-      Test schema.
-
-      ## Fields
-      | Field | Type | Required |
-      |-------|------|----------|
-      | name | string | Yes |
-
-      ## Test Assertions
-      - test something
-
-      ## Associations
-      Has many things.
-      """
-
-      {:ok, document} = Documents.create_dynamic_document(markdown, :schema)
-
-      assert document.sections["purpose"] == "Test schema."
-      assert document.sections["associations"] == "Has many things."
-    end
-
     test "allows additional sections when allowed_additional_sections is '*'" do
       markdown = """
       # Context
-
-      ## Purpose
       Does context things.
 
       ## Entity Ownership
@@ -107,9 +74,12 @@ defmodule CodeMySpec.DocumentsTest do
 
       ## Custom Section
       Extra content allowed for contexts.
+
+      ## Delegates
+      - func/1: Other.func/1
       """
 
-      {:ok, document} = Documents.create_dynamic_document(markdown, :context)
+      {:ok, document} = Documents.create_dynamic_document(markdown, :dynamic_document)
 
       assert document.sections["custom section"] == "Extra content allowed for contexts."
     end
