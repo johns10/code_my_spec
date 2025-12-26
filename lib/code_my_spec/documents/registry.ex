@@ -75,8 +75,8 @@ defmodule CodeMySpec.Documents.Registry do
     1. Topologically sort components to process dependencies first
     2. Reduce over sorted components, building a map of processed components
     **Test Assertions**:
-    - build/1 returns empty list for empty input
-    - build/1 processes components in dependency order
+    - returns empty list for empty input
+    - processes components in dependency order
   """
 
   @spec_dependencies """

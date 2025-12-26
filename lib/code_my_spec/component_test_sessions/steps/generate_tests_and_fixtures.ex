@@ -59,8 +59,17 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       Generate tests and fixtures for the following Phoenix component.
       The component doesn't exist yet.
       You are to write the tests before we implement the module, TDD style.
-      Only write the tests defined in the Test Assertions section of the design
+      Only write the tests defined in the Test Assertions section of the design.
       If you want to write more cases, you must modify the design first.
+
+      Tests should be grouped by describe blocks that match the function signature EXACTLY.
+      Any blocks that don't match the test assertions in the spec will be rejected and you'll have to redo them.
+
+      describe "get_test_assertions/1" do
+        test "extracts test names from test blocks", %{tmp_dir: tmp_dir} do
+          ...test code
+        end
+      end
 
       Project: #{project.name}
       Project Description: #{project.description}

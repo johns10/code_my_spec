@@ -259,10 +259,10 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       pane_id = MapSet.to_list(panes) |> List.first()
       assert Map.get(joined_panes, pane_id) == "session-#{session1.id}"
 
-      # The pane should have a title set to "terminal-session-{id}"
+      # The pane should have a title set to "session-{id}"
       titles = Process.get(:mock_pane_titles, %{})
       assert map_size(titles) == 1
-      assert Map.get(titles, pane_id) == "terminal-session-#{session1.id}"
+      assert Map.get(titles, pane_id) == "session-#{session1.id}"
     end
 
     test "is idempotent when terminal already open for same session", %{

@@ -11,7 +11,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
   require Logger
 
   alias CodeMySpec.Sessions
-  alias CodeMySpec.Sessions.{Command, Interaction, InteractionRegistry}
+  alias CodeMySpec.Sessions.{Interaction, InteractionRegistry}
   alias CodeMySpec.Users.Scope
   alias CodeMySpecCli.TerminalPanes
 
