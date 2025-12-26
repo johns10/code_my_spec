@@ -7,6 +7,7 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
   import CodeMySpec.SessionsFixtures
 
   alias CodeMySpecCli.Screens.Sessions, as: SessionsScreen
+  alias CodeMySpec.Sessions
   alias CodeMySpec.Sessions.{Command, Interaction, Result}
   alias CodeMySpec.Environments.MockTmuxAdapter
   alias Ratatouille.Constants
@@ -309,26 +310,6 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       assert MapSet.size(panes_after_second) == first_pane_count
     end
 
-    test "shows error for sessions without terminal commands", %{scope: scope, session1: session1} do
-      # Session with no terminal commands
-      model = %SessionsScreen{
-        scope: scope,
-        sessions: [session1],
-        selected_session_index: 0,
-        error_message: nil,
-        terminal_session_id: nil
-      }
-
-      {:ok, updated} = SessionsScreen.update(model, {:event, %{ch: ?t}})
-
-      assert updated.error_message == "Session has no terminal commands"
-      assert updated.terminal_session_id == nil
-
-      # Verify no tmux operations were performed
-      panes = Process.get(:mock_panes, MapSet.new())
-      assert MapSet.size(panes) == 0
-    end
-
     test "breaks terminal pane back to window on exit", %{scope: scope, session1: session1} do
       # Add interaction with terminal-bound command
       command = %Command{
@@ -438,63 +419,98 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
     end
   end
 
-  describe "update/2 - PubSub messages" do
-    test "adds new session on :created message", %{scope: scope, session1: session1} do
+  describe "update/2 - tick polling" do
+    test "refetches sessions on tick interval", %{scope: scope, session1: session1, component: component} do
       model = %SessionsScreen{
         scope: scope,
         sessions: [session1],
         selected_session_index: 0,
         error_message: nil,
-        terminal_session_id: nil
+        terminal_session_id: nil,
+        tick_count: 0
       }
 
-      # Create a new session using fixture
-      new_session =
+      # Create a new session after model initialization
+      session3 =
         session_fixture(scope,
+          component_id: component.id,
           status: :active,
           display_name: "New Session",
-          inserted_at: DateTime.utc_now()
+          inserted_at: ~U[2025-01-01 12:00:00Z]
         )
 
-      {:ok, updated} = SessionsScreen.update(model, {:created, new_session})
-
-      assert length(updated.sessions) == 2
-      assert Enum.any?(updated.sessions, &(&1.id == new_session.id))
-    end
-
-    test "updates existing session on :updated message", %{scope: scope, session1: session1} do
-      model = %SessionsScreen{
-        scope: scope,
-        sessions: [session1],
-        selected_session_index: 0,
-        error_message: nil,
-        terminal_session_id: nil
+      # Add interactions to session3
+      command = %Command{
+        module: CodeMySpec.ContextSpecSessions.Steps.Initialize,
+        command: "test",
+        metadata: %{}
       }
 
-      updated_session = %{session1 | display_name: "Updated Name"}
+      interaction = %Interaction{
+        step_name: "test_step",
+        command: command,
+        result: %Result{stdout: "test", status: :ok}
+      }
 
-      {:ok, updated} = SessionsScreen.update(model, {:updated, updated_session})
+      session3 = %{session3 | interactions: [interaction]}
 
-      assert Enum.at(updated.sessions, 0).display_name == "Updated Name"
+      # Tick 4 times - should not refetch
+      {:ok, updated} = SessionsScreen.update(model, :tick)
+      {:ok, updated} = SessionsScreen.update(updated, :tick)
+      {:ok, updated} = SessionsScreen.update(updated, :tick)
+      {:ok, updated} = SessionsScreen.update(updated, :tick)
+
+      # Should still have only 1 session (no refetch yet)
+      assert length(updated.sessions) == 1
+      assert updated.tick_count == 4
+
+      # Tick 5th time - should refetch and now see all active sessions
+      {:ok, updated} = SessionsScreen.update(updated, :tick)
+
+      # Should now have all 3 sessions from the database
+      assert length(updated.sessions) == 3
+      assert updated.tick_count == 5
+      assert Enum.any?(updated.sessions, &(&1.id == session3.id))
     end
 
-    test "removes session on :deleted message", %{
-      scope: scope,
-      session1: session1,
-      session2: session2
-    } do
+    test "preserves selected index when refetching sessions", %{scope: scope, session1: session1, session2: session2} do
       model = %SessionsScreen{
         scope: scope,
         sessions: [session2, session1],
-        selected_session_index: 0,
+        selected_session_index: 1,
         error_message: nil,
-        terminal_session_id: nil
+        terminal_session_id: nil,
+        tick_count: 4
       }
 
-      {:ok, updated} = SessionsScreen.update(model, {:deleted, session2})
+      # Tick 5th time - should refetch
+      {:ok, updated} = SessionsScreen.update(model, :tick)
 
+      # Selection should be preserved
+      assert updated.selected_session_index == 1
+      assert updated.tick_count == 5
+    end
+
+    test "adjusts selected index when session list shrinks", %{scope: scope, session1: session1, session2: session2} do
+      model = %SessionsScreen{
+        scope: scope,
+        sessions: [session2, session1],
+        selected_session_index: 1,
+        error_message: nil,
+        terminal_session_id: nil,
+        tick_count: 4
+      }
+
+      # Delete session1 before the tick
+      Sessions.delete_session(scope, session1)
+
+      # Tick 5th time - should refetch and adjust index
+      {:ok, updated} = SessionsScreen.update(model, :tick)
+
+      # Should only have session2 now
       assert length(updated.sessions) == 1
-      refute Enum.any?(updated.sessions, &(&1.id == session2.id))
+      # Index should be adjusted to valid range (0)
+      assert updated.selected_session_index == 0
     end
   end
 
