@@ -8,7 +8,7 @@ defmodule CodeMySpecCli.TerminalPanes do
   alias CodeMySpec.Environments.Cli.TmuxAdapter
   require Logger
 
-  @pane_title_prefix "terminal-session-"
+  @pane_title_prefix "session-"
 
   # Allow adapter injection for testing
   defp adapter do

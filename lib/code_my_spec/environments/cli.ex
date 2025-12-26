@@ -118,7 +118,7 @@ defmodule CodeMySpec.Environments.Cli do
       ) do
     with {:ok, session_id} <- get_session_id(opts),
          {:ok, interaction_id} <- get_interaction_id(opts),
-         :ok <- ensure_window_exists(window_name),
+         :ok <- ensure_window_or_pane_exists(window_name),
          {:ok, temp_path} <- Briefly.create(),
          prompt <- Map.get(metadata, "prompt", ""),
          args <- Map.get(metadata, "args", []),
@@ -136,7 +136,7 @@ defmodule CodeMySpec.Environments.Cli do
       # Build final command with environment variables
       full_command = build_command_with_env(claude_cmd, env_vars)
 
-      adapter().send_keys(window_name, full_command)
+      send_keys(window_name, full_command)
       :ok
     end
   end
@@ -230,11 +230,11 @@ defmodule CodeMySpec.Environments.Cli do
         opts
       )
       when is_binary(cmd) do
-    with :ok <- ensure_window_exists(window_name) do
+    with :ok <- ensure_window_or_pane_exists(window_name) do
       env_vars = Keyword.get(opts, :env, %{})
       full_command = build_command_with_env(cmd, env_vars)
 
-      adapter().send_keys(window_name, full_command)
+      send_keys(window_name, full_command)
     end
   end
 
@@ -307,8 +307,9 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   @doc false
-  defp ensure_window_exists(window_name) do
-    unless adapter().window_exists?(window_name) do
+  defp ensure_window_or_pane_exists(window_name) do
+    # Check if pane with this title exists OR window exists
+    unless adapter().pane_exists?(window_name) or adapter().window_exists?(window_name) do
       case adapter().create_window(window_name) do
         {:ok, _window_id} ->
           Logger.debug("Created tmux window: #{window_name}")
@@ -394,6 +395,18 @@ defmodule CodeMySpec.Environments.Cli do
         acc
         |> Enum.reverse()
         |> Enum.join("\n")
+    end
+  end
+
+  defp send_keys(window_name, full_command) do
+    case adapter().find_pane_by_title(window_name) do
+      {:ok, pane_id} ->
+        Logger.info("Found pane #{pane_id} with title #{window_name}, sending keys to pane")
+        adapter().send_keys_to_pane(pane_id, full_command)
+
+      {:error, :not_found} ->
+        Logger.info("No pane with title #{window_name}, sending keys to window")
+        adapter().send_keys(window_name, full_command)
     end
   end
 end

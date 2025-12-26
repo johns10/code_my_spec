@@ -116,6 +116,7 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
   Send a command string to a tmux window.
 
   The command will be sent followed by Enter (C-m) to execute it.
+  Uses -l flag to send as literal UTF-8 characters.
   Returns :ok on success, {:error, reason} on failure.
   """
   @spec send_keys(window_name :: String.t(), command :: String.t()) :: :ok | {:error, term()}
@@ -123,19 +124,45 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
     with {:ok, session} <- get_current_session() do
       case System.cmd("tmux", [
              "send-keys",
+             "-l",
              "-t",
              "#{session}:#{window_name}",
-             command,
-             "C-m"
+             command
            ]) do
         {_output, 0} ->
-          :ok
+          # Send Enter separately since -l makes C-m literal
+          case System.cmd("tmux", ["send-keys", "-t", "#{session}:#{window_name}", "C-m"]) do
+            {_output, 0} -> :ok
+            {error, _code} -> {:error, error}
+          end
 
         {error, _code} ->
           {:error, error}
       end
     else
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Send a command string directly to a tmux pane by ID.
+
+  The command will be sent followed by Enter (C-m) to execute it.
+  Uses -l flag to send as literal UTF-8 characters.
+  Returns :ok on success, {:error, reason} on failure.
+  """
+  @spec send_keys_to_pane(pane_id :: String.t(), command :: String.t()) :: :ok | {:error, term()}
+  def send_keys_to_pane(pane_id, command) do
+    case System.cmd("tmux", ["send-keys", "-l", "-t", pane_id, command]) do
+      {_output, 0} ->
+        # Send Enter separately since -l makes C-m literal
+        case System.cmd("tmux", ["send-keys", "-t", pane_id, "C-m"]) do
+          {_output, 0} -> :ok
+          {error, _code} -> {:error, error}
+        end
+
+      {error, _code} ->
+        {:error, error}
     end
   end
 
@@ -185,6 +212,49 @@ defmodule CodeMySpec.Environments.Cli.TmuxAdapter do
     end
   rescue
     _error -> false
+  end
+
+  @doc """
+  Check if a pane with the specified title exists.
+
+  Returns true if a pane with the title exists, false otherwise.
+  """
+  @spec pane_exists?(title :: String.t()) :: boolean()
+  def pane_exists?(title) do
+    case find_pane_by_title(title) do
+      {:ok, _pane_id} -> true
+      {:error, :not_found} -> false
+    end
+  end
+
+  @doc """
+  Find a pane by its title.
+
+  Returns {:ok, pane_id} if found, {:error, :not_found} otherwise.
+  """
+  @spec find_pane_by_title(title :: String.t()) :: {:ok, String.t()} | {:error, :not_found}
+  def find_pane_by_title(title) do
+    with {:ok, session} <- get_current_session(),
+         {:ok, output} <- list_panes(session, "\#{pane_id}:\#{pane_title}") do
+      panes =
+        output
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(fn line ->
+          case String.split(line, ":", parts: 2) do
+            [pane_id, pane_title] -> {pane_id, pane_title}
+            _ -> nil
+          end
+        end)
+        |> Enum.reject(&is_nil/1)
+
+      case Enum.find(panes, fn {_id, pane_title} -> pane_title == title end) do
+        {pane_id, _title} -> {:ok, String.trim(pane_id)}
+        nil -> {:error, :not_found}
+      end
+    else
+      {:error, _} -> {:error, :not_found}
+    end
   end
 
   @doc """

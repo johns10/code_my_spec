@@ -208,23 +208,12 @@ defmodule CodeMySpecCli.Screens.Sessions do
     if length(model.sessions) > 0 and model.selected_session_index < length(model.sessions) do
       session = Enum.at(model.sessions, model.selected_session_index)
 
-      # Check if session has any interactions with terminal-bound commands
-      has_terminal_commands? =
-        session.interactions
-        |> Enum.any?(fn interaction ->
-          interaction.command && Command.runs_in_terminal?(interaction.command)
-        end)
+      case TerminalPanes.show_terminal(session.id) do
+        :ok ->
+          {:ok, %{model | terminal_session_id: session.id, error_message: nil}}
 
-      if has_terminal_commands? do
-        case TerminalPanes.show_terminal(session.id) do
-          :ok ->
-            {:ok, %{model | terminal_session_id: session.id, error_message: nil}}
-
-          {:error, reason} ->
-            {:ok, %{model | error_message: "Failed to open terminal: #{inspect(reason)}"}}
-        end
-      else
-        {:ok, %{model | error_message: "Session has no terminal commands"}}
+        {:error, reason} ->
+          {:ok, %{model | error_message: "Failed to open terminal: #{inspect(reason)}"}}
       end
     else
       {:ok, model}
