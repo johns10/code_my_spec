@@ -10,7 +10,7 @@ defmodule CodeMySpec.Components.Requirements.ContextReviewFileChecker do
   @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
   alias CodeMySpec.Components.Component
 
-  def check(%{name: name} = requirement_spec, %Component{component_status: component_status}) do
+  def check(%{name: name} = requirement_spec, %Component{component_status: component_status}, _opts \\ []) do
     {satisfied, details} =
       case {name, component_status} do
         {:review_file, %{review_exists: true}} ->

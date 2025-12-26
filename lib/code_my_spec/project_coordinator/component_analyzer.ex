@@ -66,7 +66,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     requirements =
       Components.check_requirements(
         component,
-        exclude: @hierarchy_checks ++ @dependency_checks
+        Keyword.put(opts, :exclude, @hierarchy_checks ++ @dependency_checks)
       )
       |> Enum.map(fn requirement_attrs ->
         case Components.create_requirement(
@@ -95,7 +95,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     dependency_requirements =
       Components.check_requirements(
         component,
-        include: @dependency_checks ++ @hierarchy_checks
+        Keyword.put(opts, :include, @dependency_checks ++ @hierarchy_checks)
       )
       |> Enum.map(fn requirement_attrs ->
         case Components.create_requirement(

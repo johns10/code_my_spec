@@ -96,7 +96,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       test_results = parse_test_results(test_output)
 
       # Sync project requirements
-      result = ProjectCoordinator.sync_project_requirements(scope, file_list, test_results)
+      result = ProjectCoordinator.sync_project_requirements(scope, file_list, test_results, cwd: project_dir)
 
       post_cache = Enum.find(result, &(&1.name == "PostCache"))
       assert post_cache.requirements |> Enum.any?(&(&1.satisfied == false))

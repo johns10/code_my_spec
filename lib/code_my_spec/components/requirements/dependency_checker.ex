@@ -2,7 +2,7 @@ defmodule CodeMySpec.Components.Requirements.DependencyChecker do
   @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
   alias CodeMySpec.Components.Component
 
-  def check(%{name: name} = requirement_spec, %Component{dependencies: dependencies}) do
+  def check(%{name: name} = requirement_spec, %Component{dependencies: dependencies}, _opts \\ []) do
     {satisfied, details} =
       case {name, dependencies} do
         {:dependencies_satisfied, []} ->

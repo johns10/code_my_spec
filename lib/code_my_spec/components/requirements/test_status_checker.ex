@@ -4,7 +4,8 @@ defmodule CodeMySpec.Components.Requirements.TestStatusChecker do
 
   def check(
         %{name: name} = requirement_spec,
-        %Component{component_status: component_status}
+        %Component{component_status: component_status},
+        _opts \\ []
       ) do
     {satisfied, details} =
       case {name, component_status} do

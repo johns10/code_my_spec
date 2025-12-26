@@ -13,5 +13,5 @@ defmodule CodeMySpec.Components.Requirements.CheckerBehaviour do
           details: map()
         }
 
-  @callback check(Requirement.requirement_spec(), Component.t()) :: requirement_attrs()
+  @callback check(Requirement.requirement_spec(), Component.t(), keyword()) :: requirement_attrs()
 end

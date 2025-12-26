@@ -3,7 +3,7 @@ defmodule CodeMySpec.Components.Requirements.HierarchicalChecker do
   require Logger
   alias CodeMySpec.Components.Component
 
-  def check(%{name: name} = requirement_spec, %Component{} = component) do
+  def check(%{name: name} = requirement_spec, %Component{} = component, _opts \\ []) do
     {satisfied, details} =
       case name do
         :children_designs ->

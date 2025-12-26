@@ -147,7 +147,7 @@ defmodule CodeMySpec.Components do
     end)
     |> Enum.map(fn requirement_spec ->
       checker = requirement_spec.checker
-      checker.check(requirement_spec, component)
+      checker.check(requirement_spec, component, opts)
     end)
   end
 
