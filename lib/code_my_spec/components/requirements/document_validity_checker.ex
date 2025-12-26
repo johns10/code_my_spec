@@ -24,8 +24,14 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityChecker do
         document_type: :context_spec
       }
   """
-  def check(%{name: name, document_type: document_type} = requirement_spec, %Component{} = component) do
-    {satisfied, details} = validate_document(component, document_type)
+  def check(requirement_spec, component, opts \\ [])
+
+  def check(
+        %{name: name, document_type: document_type} = requirement_spec,
+        %Component{} = component,
+        opts
+      ) do
+    {satisfied, details} = validate_document(component, document_type, opts)
 
     %{
       name: Atom.to_string(name),
@@ -40,7 +46,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityChecker do
   end
 
   # Handle case where document_type is not specified in requirement_spec
-  def check(%{name: name} = requirement_spec, %Component{}) do
+  def check(%{name: name} = requirement_spec, %Component{}, _opts) do
     %{
       name: Atom.to_string(name),
       type: :document_validity,
@@ -53,22 +59,30 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityChecker do
     }
   end
 
-  defp validate_document(%Component{module_name: module_name} = _component, document_type) do
+  defp validate_document(%Component{module_name: module_name} = _component, document_type, opts) do
     files = Utils.component_files(module_name)
     spec_path = Map.get(files, :spec_file)
 
-    case File.read(spec_path) do
+    # If cwd is provided, prepend it to the spec_path
+    full_spec_path =
+      case Keyword.get(opts, :cwd) do
+        nil -> spec_path
+        cwd -> Path.join(cwd, spec_path)
+      end
+
+    case File.read(full_spec_path) do
       {:ok, content} ->
         case Documents.create_dynamic_document(content, document_type) do
           {:ok, _document} ->
             {true, %{status: "Document is valid", document_type: document_type}}
 
           {:error, error_message} ->
-            {false, %{
-              reason: "Document validation failed",
-              error: error_message,
-              document_type: document_type
-            }}
+            {false,
+             %{
+               reason: "Document validation failed",
+               error: error_message,
+               document_type: document_type
+             }}
         end
 
       {:error, reason} ->

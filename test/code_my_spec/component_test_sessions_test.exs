@@ -73,73 +73,97 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
             type: ComponentTestSessions,
             agent: :claude_code,
             environment: :local,
-            component_id: post_cache.id
+            component_id: post_cache.id,
+            state: %{working_dir: project_dir}
           })
 
         # Step 1: Initialize
         {_, _, session} = execute_step(scope, session.id, Initialize)
         assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
 
-        # Step 2: Generate Tests and Fixtures
-        {_, _, session_before_run_tests} =
-          execute_step(
-            scope,
-            session.id,
-            GenerateTestsAndFixtures,
-            mock_output: "Generated tests and fixtures for PostCache"
-          )
+        # Step 2: GenerateTestsAndFixtures (async)
+        {:ok, session} = Sessions.execute(scope, session.id)
+        [interaction | _] = session.interactions
+        assert interaction.command.module == GenerateTestsAndFixtures
+
+        # Write the test files that would have been generated
+        write_test_files_with_undefined_module(project_dir)
+
+        # Complete the async interaction
+        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
 
         assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [_, %Interaction{}]}}
+                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
 
-        {_, result, session} =
-          execute_step(scope, session_before_run_tests.id, RunTests,
-            seed: 1,
-            mock_output: "Compilation Error"
-          )
+        # Step 3: RunTests (async - should fail with undefined module error)
+        {:ok, session} = Sessions.execute(scope, session.id)
+        [interaction | _] = session.interactions
+        assert interaction.command.module == RunTests
 
-        # Verify we got a test failure (undefined module causes runtime error)
-        assert result.status == :error
+        # Mock test failure result (undefined module error)
+        test_failure_result = %{
+          status: :error,
+          output:
+            "** (UndefinedFunctionError) function TestPhoenixProject.Blog.PostCache.start_link/1 is undefined",
+          exit_code: 1
+        }
+
+        # Complete the async interaction with error result
+        {:ok, session} =
+          Sessions.handle_result(scope, session.id, interaction.id, test_failure_result)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
                            interactions: [%Interaction{result: %{status: :error}}, _, _]
                          }}
 
-        # Write the test files with undefined module error
-        write_test_files_with_undefined_module(project_dir)
-
-        # Step 4: Fix Compilation Errors (which fixes the undefined module)
-        {_, _, session} =
-          execute_step(scope, session.id, FixCompilationErrors,
-            mock_output: "Fixed undefined module error"
-          )
+        # Step 4: FixCompilationErrors (async)
+        {:ok, session} = Sessions.execute(scope, session.id)
+        [interaction | _] = session.interactions
+        assert interaction.command.module == FixCompilationErrors
 
         # Actually fix the undefined module error
         write_failing_test_module(project_dir)
+
+        # Complete the async interaction
+        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
                            interactions: [%Interaction{}, _, _, _]
                          }}
 
-        # Step 5: Run Tests Again (passing) - use cached test results
+        # Step 5: RunTests Again (async - should pass now)
+        {:ok, session} = Sessions.execute(scope, session.id)
+        [interaction | _] = session.interactions
+        assert interaction.command.module == RunTests
+
         failing_test_output =
           File.read!(CodeMySpec.Support.TestAdapter.test_results_failing_cache_path())
 
-        {_, result, session} =
-          execute_step(scope, session.id, RunTests, seed: 2, mock_output: failing_test_output)
+        # Mock successful test result
+        test_success_result = %{
+          status: :ok,
+          data: %{test_results: failing_test_output},
+          exit_code: 0
+        }
 
-        assert result.status == :ok
+        # Complete the async interaction with success result
+        {:ok, session} =
+          Sessions.handle_result(scope, session.id, interaction.id, test_success_result)
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
                            interactions: [%Interaction{result: %{status: :ok}}, _, _, _, _]
                          }}
 
-        # Step 6: Finalize
-        {_finalize_interaction, _finalize_result, session} =
-          execute_step(scope, session.id, Finalize)
+        # Step 6: Finalize (async)
+        {:ok, session} = Sessions.execute(scope, session.id)
+        [interaction | _] = session.interactions
+        assert interaction.command.module == Finalize
+
+        # Complete the async interaction
+        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
@@ -147,37 +171,20 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
                          }}
 
         # Session should be complete
-        assert {:error, :complete} = Sessions.next_command(scope, session.id)
+        assert {:error, :complete} = Sessions.execute(scope, session.id)
       end
     end
   end
 
   # Helper function to execute a session step with common pattern
   defp execute_step(scope, session_id, expected_module, opts \\ []) do
-    cd_opts = Keyword.get(opts, :cd_opts, [])
-    mock_output = Keyword.get(opts, :mock_output)
-
-    {:ok, session} = Sessions.next_command(scope, session_id, opts)
+    {:ok, session} = Sessions.execute(scope, session_id, opts)
     [interaction | _] = session.interactions
     assert interaction.command.module == expected_module
 
-    result =
-      if mock_output do
-        %{status: :ok, stdout: mock_output, stderr: "", exit_code: 0}
-      else
-        {output, code} =
-          CodeMySpec.Environments.cmd(:local, "sh", ["-c", interaction.command.command], cd_opts)
+    final_result = Map.get(interaction, :result)
 
-        %{status: :ok, stdout: output, stderr: "", exit_code: code}
-      end
-
-    {:ok, updated_session} =
-      Sessions.handle_result(scope, session_id, interaction.id, result)
-
-    [final_interaction | _] = updated_session.interactions
-    final_result = Map.get(final_interaction, :result)
-
-    {final_interaction, final_result, updated_session}
+    {interaction, final_result, session}
   end
 
   # Write test files with undefined module error to the test project

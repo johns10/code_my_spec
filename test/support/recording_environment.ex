@@ -59,6 +59,10 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
     :ok
   end
 
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "mix_test"}, _opts) do
+    :ok
+  end
+
   # Fallback for legacy format where command field contains the actual shell command
   def run_command(_env, %CodeMySpec.Sessions.Command{command: cmd}, _opts) when is_binary(cmd) do
     case System.cmd("sh", ["-c", cmd], stderr_to_stdout: true) do
