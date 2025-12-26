@@ -20,8 +20,14 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTestsTest do
 
       assert {:ok, %Command{} = command} = RunTests.get_command(scope, session, [])
       assert command.module == RunTests
-      assert command.command =~ "mix test test/my_app/my_component_test.exs"
-      assert command.command =~ "--formatter ExUnitJsonFormatter"
+      assert command.command =~ "mix_test"
+
+      assert command.metadata.args == [
+               "test",
+               "test/my_app/my_component_test.exs",
+               "--formatter",
+               "ExUnitJsonFormatter"
+             ]
     end
   end
 
