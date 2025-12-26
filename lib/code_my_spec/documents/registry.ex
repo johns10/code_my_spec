@@ -147,8 +147,8 @@ defmodule CodeMySpec.Documents.Registry do
       relationships, and validation rules for persistence in the database. Each schema
       documents its fields, associations, validations, and database constraints.
       """,
-      required_sections: ["fields", "dependencies"],
-      optional_sections: ["functions"],
+      required_sections: ["fields"],
+      optional_sections: ["functions", "dependencies"],
       allowed_additional_sections: [],
       section_descriptions: %{
         "functions" => @spec_functions,
@@ -176,6 +176,12 @@ defmodule CodeMySpec.Documents.Registry do
         "fields" => @spec_fields,
         "components" => @spec_components
       }
+    },
+    dynamic_document: %{
+      overview: "A fully dynamic document",
+      required_sections: [],
+      optional_sections: [],
+      allowed_additional_sections: "*"
     }
   }
 

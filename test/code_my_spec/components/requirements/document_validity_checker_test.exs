@@ -31,17 +31,12 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
 
   @valid_schema_content """
   # User Schema
-
-  ## Purpose
   Represents user entities.
 
   ## Fields
   | Field | Type | Required | Description | Constraints |
   |-------|------|----------|-------------|-------------|
   | email | string | Yes | User email | Unique |
-
-  ## Test Assertions
-  - validates email format
   """
 
   @invalid_spec_content """
@@ -111,7 +106,6 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
-
       assert result.satisfied == true
       assert result.details.document_type == :schema
 
