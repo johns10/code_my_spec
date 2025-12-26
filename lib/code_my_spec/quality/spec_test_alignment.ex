@@ -1,5 +1,6 @@
 defmodule CodeMySpec.Quality.SpecTestAlignment do
   alias CodeMySpec.Code.ElixirAst
+  alias CodeMySpec.Quality.Result
   alias CodeMySpec.Utils
 
   @doc """
@@ -10,11 +11,20 @@ defmodule CodeMySpec.Quality.SpecTestAlignment do
   - Tests are organized in describe blocks matching function signatures
   - No extra tests exist that aren't in the spec
 
-  Returns `:ok` if aligned, or `{:error, message}` with details of misalignment.
+  Returns a `%Quality.Result{}` with a score of 1.0 if aligned, or 0.0 with error details if misaligned.
+
+  ## Options
+
+  - `:cwd` - Base directory path to prepend to file paths (default: current directory)
   """
-  def spec_test_alignment(component, project) do
+  def spec_test_alignment(component, project, opts \\ []) do
+    cwd = Keyword.get(opts, :cwd, ".")
+
     %{test_file: test_file_path, spec_file: spec_file_path} =
       Utils.component_files(component, project)
+
+    test_file_path = Path.join(cwd, test_file_path)
+    spec_file_path = Path.join(cwd, spec_file_path)
 
     with {:ok, spec_content} <- File.read(spec_file_path),
          {:ok, expected_by_function} <- parse_spec_test_assertions(spec_content),
@@ -24,10 +34,25 @@ defmodule CodeMySpec.Quality.SpecTestAlignment do
       compare_assertions(expected_by_function, actual_by_function)
     else
       {:error, :enoent} ->
-        {:error, "Spec or test file not found"}
+        Result.error(["Spec or test file not found"])
 
       {:error, reason} ->
-        {:error, "Failed to parse files: #{inspect(reason)}"}
+        Result.error([
+          """
+          The tests are not aligned with the spec.
+          Make sure you ONLY write the tests defined in the specification.
+          Name the describe blocks according to the function, and the tests according to the spec, for example:
+
+          describe "get_test_assertions/1" do
+            test "extracts test names from test blocks", %{tmp_dir: tmp_dir} do
+              ...test code
+            end
+          end
+
+          Misalignment details:
+          #{inspect(reason)}
+          """
+        ])
     end
   end
 
@@ -113,103 +138,65 @@ defmodule CodeMySpec.Quality.SpecTestAlignment do
         MapSet.new(Map.keys(actual_by_function))
       )
 
-    errors =
+    {error_strings, matching_count, missing_count, extra_count} =
       all_functions
-      |> Enum.flat_map(fn function ->
+      |> Enum.reduce({[], 0, 0, 0}, fn function, {errors, matching, missing_total, extra_total} ->
         expected = Map.get(expected_by_function, function, []) |> MapSet.new()
         actual = Map.get(actual_by_function, function, []) |> MapSet.new()
 
-        missing = MapSet.difference(expected, actual) |> MapSet.to_list() |> Enum.sort()
-        extra = MapSet.difference(actual, expected) |> MapSet.to_list() |> Enum.sort()
+        matching_tests = MapSet.intersection(expected, actual)
+        missing_tests = MapSet.difference(expected, actual) |> MapSet.to_list() |> Enum.sort()
+        extra_tests = MapSet.difference(actual, expected) |> MapSet.to_list() |> Enum.sort()
 
-        build_function_errors(function, missing, extra)
+        function_errors = build_function_error_strings(function, missing_tests, extra_tests)
+
+        {
+          errors ++ function_errors,
+          matching + MapSet.size(matching_tests),
+          missing_total + length(missing_tests),
+          extra_total + length(extra_tests)
+        }
       end)
 
-    if Enum.empty?(errors) do
-      :ok
+    total_tests = matching_count + missing_count + extra_count
+
+    quality =
+      if total_tests == 0 do
+        1.0
+      else
+        matching_count / total_tests
+      end
+
+    if Enum.empty?(error_strings) do
+      Result.ok()
     else
-      error_message = format_error_message(errors)
-      {:error, error_message}
+      Result.partial(quality, error_strings)
     end
   end
 
-  defp build_function_errors(function, missing, extra) do
-    errors = []
+  defp build_function_error_strings(function, missing, extra) do
+    error_strings = []
 
-    errors =
+    error_strings =
       if Enum.any?(missing) do
-        [
-          %{
-            function: function,
-            type: :missing,
-            assertions: missing
-          }
-          | errors
-        ]
+        missing_msg =
+          "Function `#{function}`: Missing test assertions (defined in spec but not implemented): #{Enum.join(missing, ", ")}"
+
+        [missing_msg | error_strings]
       else
-        errors
+        error_strings
       end
 
-    errors =
+    error_strings =
       if Enum.any?(extra) do
-        [
-          %{
-            function: function,
-            type: :extra,
-            assertions: extra
-          }
-          | errors
-        ]
+        extra_msg =
+          "Function `#{function}`: Extra tests found (not defined in spec): #{Enum.join(extra, ", ")}"
+
+        [extra_msg | error_strings]
       else
-        errors
+        error_strings
       end
 
-    errors
-  end
-
-  defp format_error_message(errors) do
-    grouped = Enum.group_by(errors, & &1.type)
-
-    lines = []
-
-    lines =
-      if missing_errors = grouped[:missing] do
-        missing_section =
-          missing_errors
-          |> Enum.map(fn %{function: func, assertions: assertions} ->
-            assertion_lines = Enum.map(assertions, fn a -> "  - #{a}" end)
-            ["Function `#{func}`:" | assertion_lines]
-          end)
-          |> List.flatten()
-
-        lines ++
-          ["Missing test assertions (defined in spec but not implemented):"] ++ missing_section
-      else
-        lines
-      end
-
-    lines =
-      if lines != [] do
-        lines ++ [""]
-      else
-        lines
-      end
-
-    lines =
-      if extra_errors = grouped[:extra] do
-        extra_section =
-          extra_errors
-          |> Enum.map(fn %{function: func, assertions: assertions} ->
-            assertion_lines = Enum.map(assertions, fn a -> "  - #{a}" end)
-            ["Function `#{func}`:" | assertion_lines]
-          end)
-          |> List.flatten()
-
-        lines ++ ["Extra tests found (not defined in spec):"] ++ extra_section
-      else
-        lines
-      end
-
-    Enum.join(lines, "\n")
+    error_strings
   end
 end

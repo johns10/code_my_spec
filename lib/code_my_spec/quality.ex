@@ -3,5 +3,6 @@ defmodule CodeMySpec.Quality do
   Quality checks for validating implementation against design specifications.
   """
 
-  defdelegate spec_test_alignment(component, project), to: CodeMySpec.Quality.SpecTestAlignment
+  defdelegate spec_test_alignment(component, project, opts \\ []),
+    to: CodeMySpec.Quality.SpecTestAlignment
 end

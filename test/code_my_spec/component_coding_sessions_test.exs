@@ -104,7 +104,7 @@ defmodule CodeMySpec.ComponentCodingSessionsTest do
 
         # Verify we got a failure
         assert result.status == :error
-        assert result.data["stats"]["failures"] == 1
+        assert result.data["stats"]["failures"] == 2
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
