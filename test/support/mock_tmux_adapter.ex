@@ -59,6 +59,26 @@ defmodule CodeMySpec.Environments.MockTmuxAdapter do
   end
 
   @doc """
+  Mock send_keys_to_pane - records the command and returns success.
+  """
+  def send_keys_to_pane(pane_id, command) do
+    # Store sent commands for verification if needed
+    commands = Process.get(:mock_pane_commands, [])
+    Process.put(:mock_pane_commands, [{pane_id, command} | commands])
+
+    :ok
+  end
+
+  @doc """
+  Mock list_windows - returns formatted output of tracked windows.
+  """
+  def list_windows(_format \\ nil) do
+    windows = Process.get(:mock_windows, MapSet.new())
+    output = windows |> Enum.join("\n")
+    {:ok, output}
+  end
+
+  @doc """
   Mock window_exists? - checks if window was created.
   """
   def window_exists?(window_name) do
@@ -67,11 +87,41 @@ defmodule CodeMySpec.Environments.MockTmuxAdapter do
   end
 
   @doc """
+  Mock pane_exists? - checks if pane with the title exists.
+  """
+  def pane_exists?(title) do
+    case find_pane_by_title(title) do
+      {:ok, _pane_id} -> true
+      {:error, :not_found} -> false
+    end
+  end
+
+  @doc """
+  Mock find_pane_by_title - finds a pane by its title.
+  """
+  def find_pane_by_title(title) do
+    titles = Process.get(:mock_pane_titles, %{})
+
+    case Enum.find(titles, fn {_pane_id, pane_title} -> pane_title == title end) do
+      {pane_id, _title} -> {:ok, pane_id}
+      nil -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Mock enable_mouse_mode - always succeeds.
+  """
+  def enable_mouse_mode do
+    :ok
+  end
+
+  @doc """
   Reset mock state - useful in test setup.
   """
   def reset! do
     Process.delete(:mock_windows)
     Process.delete(:mock_commands)
+    Process.delete(:mock_pane_commands)
     Process.delete(:mock_panes)
     Process.delete(:mock_pane_titles)
     Process.delete(:mock_joined_panes)
