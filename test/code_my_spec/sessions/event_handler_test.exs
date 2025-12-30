@@ -512,7 +512,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       # First event: notification
       notification_attrs =
         valid_event_attrs(%{
-          "event_type" => :notification_hook,
+          "event_type" => :notification,
           "data" => %{
             "notification_type" => "idle_prompt",
             "message" => "Waiting for input"

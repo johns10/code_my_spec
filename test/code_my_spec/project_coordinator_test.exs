@@ -96,7 +96,10 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       test_results = parse_test_results(test_output)
 
       # Sync project requirements
-      result = ProjectCoordinator.sync_project_requirements(scope, file_list, test_results, cwd: project_dir)
+      result =
+        ProjectCoordinator.sync_project_requirements(scope, file_list, test_results,
+          cwd: project_dir
+        )
 
       post_cache = Enum.find(result, &(&1.name == "PostCache"))
       assert post_cache.requirements |> Enum.any?(&(&1.satisfied == false))
@@ -121,11 +124,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
   end
 
   defp parse_test_results(output) do
-    json_regex = ~r/\{.*\}/s
-    [json_part] = Regex.run(json_regex, output)
-    {:ok, data} = Jason.decode(json_part)
-
-    # Use the TestRun changeset to parse the JSON
+    {:ok, data} = Jason.decode(output)
     changeset = CodeMySpec.Tests.TestRun.changeset(data)
 
     Ecto.Changeset.apply_changes(changeset)

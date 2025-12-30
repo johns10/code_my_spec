@@ -72,7 +72,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
           Sessions.create_session(scope, %{
             type: ComponentTestSessions,
             agent: :claude_code,
-            environment: :local,
+            environment: :cli,
             component_id: post_cache.id,
             state: %{working_dir: project_dir}
           })
@@ -100,12 +100,15 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         [interaction | _] = session.interactions
         assert interaction.command.module == RunTests
 
-        # Mock test failure result (undefined module error)
+        # Mock test failure result with clean compilation and failing tests
+        compiler_errors = File.read!(CodeMySpec.Support.TestAdapter.compiler_errors_cache_path())
+
         test_failure_result = %{
           status: :error,
-          output:
-            "** (UndefinedFunctionError) function TestPhoenixProject.Blog.PostCache.start_link/1 is undefined",
-          exit_code: 1
+          data: %{
+            compiler_results: compiler_errors,
+            test_results: %{}
+          }
         }
 
         # Complete the async interaction with error result
@@ -138,19 +141,37 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         [interaction | _] = session.interactions
         assert interaction.command.module == RunTests
 
-        failing_test_output =
-          File.read!(CodeMySpec.Support.TestAdapter.test_results_failing_cache_path())
+        compiler_ok = File.read!(CodeMySpec.Support.TestAdapter.compiler_ok_cache_path())
 
-        # Mock successful test result
+        post_cache_test_output =
+          File.read!(CodeMySpec.Support.TestAdapter.test_results_post_cache_failing_cache_path())
+
+        # Mock successful test result with clean compilation and failing tests
         test_success_result = %{
           status: :ok,
-          data: %{test_results: failing_test_output},
+          data: %{
+            compiler_results: compiler_ok,
+            test_results: post_cache_test_output
+          },
           exit_code: 0
         }
 
+        test_path =
+          Path.join([
+            project_dir,
+            "test",
+            "test_phoenix_project",
+            "blog",
+            "post_cache_test.exs"
+          ])
+
+        File.cp("test/fixtures/component_coding/post_cache_test._ex", test_path)
+
         # Complete the async interaction with success result
         {:ok, session} =
-          Sessions.handle_result(scope, session.id, interaction.id, test_success_result)
+          Sessions.handle_result(scope, session.id, interaction.id, test_success_result,
+            cwd: project_dir
+          )
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{

@@ -486,25 +486,6 @@ defmodule CodeMySpecCli.Screens.Sessions do
     end
   end
 
-  # Close the terminal window for a session
-  defp close_terminal_for_session(session_id) do
-    # Construct Environment struct for CLI with the session's window name
-    env = %CodeMySpec.Environments.Environment{
-      type: :cli,
-      ref: "session-#{session_id}",
-      metadata: %{}
-    }
-
-    # Destroy the terminal window
-    case CodeMySpec.Environments.destroy(env) do
-      :ok ->
-        Logger.info("Closed terminal window for ended session #{session_id}")
-
-      {:error, reason} ->
-        Logger.warning("Failed to close terminal for session #{session_id}: #{inspect(reason)}")
-    end
-  end
-
   defp status_color(:active), do: :green
   defp status_color(:complete), do: :blue
   defp status_color(:failed), do: :red

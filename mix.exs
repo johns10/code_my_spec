@@ -74,7 +74,7 @@ defmodule CodeMySpec.MixProject do
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
       {:exunit_json_formatter,
        git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
-      # {:exunit_formatter_json, "~> 0.1.0"},
+      {:mix_machine, git: "https://github.com/johns10/mix_machine", branch: "master"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7.13"},
 

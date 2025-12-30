@@ -51,7 +51,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegrationTest do
   - First run without cassettes will make real API calls and record them
   - Subsequent runs will replay from cassettes (no real API calls)
   - To re-record, delete the cassette file and run again
-  
+
   ## Note on auth token
   - If any of these tests have to be rerun, you must get a token with delete_repo in the claims
   - Right now, when we get the token, we don't put this in the claims, which is right, good and safe
@@ -199,7 +199,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegrationTest do
 
         assert is_binary(updated_project.code_repo)
         assert String.contains?(updated_project.code_repo, "github.com")
-        assert String.contains?(updated_project.code_repo, "-code")
+        assert String.contains?(updated_project.code_repo, "test-project")
 
         # Clean up the repository after test completes
         cleanup_github_repo(scope, updated_project.code_repo)

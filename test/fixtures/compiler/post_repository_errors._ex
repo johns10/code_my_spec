@@ -1,0 +1,17 @@
+defmodule Errors do
+  @moduledoc """
+  Temporary module to generate compilation errors.
+  """
+
+  def test_function do
+    # This will cause a compilation error - undefined function
+    UndefinedModule.undefined_function()
+  end
+  end
+
+  def another_test do
+    # This will cause another compilation error
+    NonExistent.Module.call()
+  end
+  end
+end

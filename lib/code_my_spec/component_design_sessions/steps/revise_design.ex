@@ -5,10 +5,9 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseSpec do
 
   @impl true
   def get_command(scope, session, opts \\ []) do
-    with {:ok, component_design} <- get_component_design_from_state(session.state),
-         {:ok, validation_errors} <-
+    with {:ok, validation_errors} <-
            get_validation_errors_from_previous_interaction(scope, session),
-         prompt <- build_revision_prompt(component_design, validation_errors),
+         prompt <- build_revision_prompt(validation_errors),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -31,19 +30,6 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseSpec do
     {:ok, %{state: updated_state}, result}
   end
 
-  defp get_component_design_from_state(%{"component_design" => component_design})
-       when is_binary(component_design) do
-    if String.trim(component_design) == "" do
-      {:error, "component design is empty"}
-    else
-      {:ok, component_design}
-    end
-  end
-
-  defp get_component_design_from_state(_state) do
-    {:error, "component_design not found in session state"}
-  end
-
   defp get_validation_errors_from_previous_interaction(_scope, session) do
     # Get the most recent interaction that has an error result
     case Enum.find(session.interactions, fn
@@ -61,7 +47,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ReviseSpec do
     end
   end
 
-  defp build_revision_prompt(_component_design, validation_errors) do
+  defp build_revision_prompt(validation_errors) do
     """
     The component design failed validation:
 

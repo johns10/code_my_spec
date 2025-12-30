@@ -57,8 +57,11 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
 
   # Remove later, or reconsider:
 
-  @callback environment_setup_command(attrs :: map()) :: String.t()
-  @callback docs_environment_teardown_command(attrs :: map()) :: String.t()
-  @callback test_environment_teardown_command(attrs :: map()) :: String.t()
-  @callback code_environment_teardown_command(attrs :: map()) :: String.t()
+  @callback environment_setup_command(env :: Environment.t(), attrs :: map()) :: String.t()
+  @callback docs_environment_teardown_command(env :: Environment.t(), attrs :: map()) ::
+              String.t()
+  @callback test_environment_teardown_command(env :: Environment.t(), attrs :: map()) ::
+              String.t()
+  @callback code_environment_teardown_command(env :: Environment.t(), attrs :: map()) ::
+              String.t()
 end

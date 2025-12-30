@@ -1,0 +1,123 @@
+defmodule TestPhoenixProject.Blog.PostCacheTest do
+  use ExUnit.Case, async: true
+
+  alias TestPhoenixProject.Blog.PostCache
+  alias TestPhoenixProject.Blog.Post
+
+  setup do
+    # Start a fresh cache for each test
+    {:ok, pid} = PostCache.start_link([])
+    on_exit(fn -> if Process.alive?(pid), do: GenServer.stop(pid) end)
+    :ok
+  end
+
+  describe "start_link/1" do
+    test "starts the cache process" do
+      {:ok, pid} = PostCache.start_link([])
+      assert Process.alive?(pid)
+      GenServer.stop(pid)
+    end
+
+    test "registers process with module name" do
+      {:ok, _pid} = PostCache.start_link(name: PostCache)
+      assert Process.whereis(PostCache) != nil
+      GenServer.stop(PostCache)
+    end
+  end
+
+  describe "store/2" do
+    test "caches a post by ID" do
+      post = %Post{
+        id: 1,
+        title: "Test Post",
+        content: "Test content",
+        published: true,
+        user_id: 1
+      }
+
+      assert :ok = PostCache.store(1, post)
+      assert {:ok, ^post} = PostCache.get(1)
+    end
+
+    test "overwrites existing cached post with same ID" do
+      post1 = %Post{
+        id: 1,
+        title: "First Post",
+        content: "First content",
+        published: true,
+        user_id: 1
+      }
+
+      post2 = %Post{
+        id: 1,
+        title: "Updated Post",
+        content: "Updated content",
+        published: false,
+        user_id: 1
+      }
+
+      assert :ok = PostCache.store(1, post1)
+      assert :ok = PostCache.store(1, post2)
+      assert {:ok, ^post2} = PostCache.get(1)
+    end
+  end
+
+  describe "get/1" do
+    test "returns cached post when it exists" do
+      post = %Post{
+        id: 42,
+        title: "Cached Post",
+        content: "Cached content",
+        published: true,
+        user_id: 1
+      }
+
+      PostCache.store(42, post)
+      assert {:ok, ^post} = PostCache.get(42)
+    end
+
+    test "returns error tuple when post not cached" do
+      assert {:error, :not_found} = PostCache.get(999)
+    end
+  end
+
+  describe "delete/1" do
+    test "removes cached post" do
+      post = %Post{
+        id: 10,
+        title: "To Delete",
+        content: "Delete me",
+        published: true,
+        user_id: 1
+      }
+
+      PostCache.store(10, post)
+      assert {:ok, ^post} = PostCache.get(10)
+
+      assert :ok = PostCache.delete(10)
+      assert {:error, :not_found} = PostCache.get(10)
+    end
+
+    test "returns :ok when post not found" do
+      assert :ok = PostCache.delete(999)
+    end
+  end
+
+  describe "clear/0" do
+    test "removes all cached posts" do
+      post1 = %Post{id: 1, title: "Post 1", content: "Content 1", published: true, user_id: 1}
+      post2 = %Post{id: 2, title: "Post 2", content: "Content 2", published: true, user_id: 1}
+      post3 = %Post{id: 3, title: "Post 3", content: "Content 3", published: true, user_id: 1}
+
+      PostCache.store(1, post1)
+      PostCache.store(2, post2)
+      PostCache.store(3, post3)
+
+      assert :ok = PostCache.clear()
+
+      assert {:error, :not_found} = PostCache.get(1)
+      assert {:error, :not_found} = PostCache.get(2)
+      assert {:error, :not_found} = PostCache.get(3)
+    end
+  end
+end

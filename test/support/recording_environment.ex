@@ -16,7 +16,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
 
     {:ok,
      %Environment{
-       type: :local,
+       type: :cli,
        ref: nil,
        metadata: %{session_id: session_id, working_dir: working_dir}
      }}
@@ -55,13 +55,9 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
 
   # Handle Claude commands - return :ok for async (CLI) execution
   # Tests will manually create any files that would have been generated
-  def run_command(_env, %CodeMySpec.Sessions.Command{command: "claude"}, _opts) do
-    :ok
-  end
-
-  def run_command(_env, %CodeMySpec.Sessions.Command{command: "mix_test"}, _opts) do
-    :ok
-  end
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "claude"}, _opts), do: :ok
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "mix_test"}, _opts), do: :ok
+  def run_command(_env, %CodeMySpec.Sessions.Command{command: "run_checks"}, _opts), do: :ok
 
   # Fallback for legacy format where command field contains the actual shell command
   def run_command(_env, %CodeMySpec.Sessions.Command{command: cmd}, _opts) when is_binary(cmd) do
@@ -95,12 +91,12 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
-  def environment_setup_command(%{branch_name: branch_name, working_dir: working_dir}) do
+  def environment_setup_command(_env, %{branch_name: branch_name, working_dir: working_dir}) do
     "git -C #{working_dir} switch -C #{branch_name}"
   end
 
   @impl true
-  def docs_environment_teardown_command(%{
+  def docs_environment_teardown_command(_env, %{
         context_name: context_name,
         working_dir: working_dir,
         design_file_name: design_file_name,
@@ -115,7 +111,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
-  def test_environment_teardown_command(%{
+  def test_environment_teardown_command(_env, %{
         context_name: context_name,
         working_dir: working_dir,
         test_file_name: test_file_name,
@@ -130,7 +126,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
-  def code_environment_teardown_command(%{
+  def code_environment_teardown_command(_env, %{
         context_name: context_name,
         working_dir: working_dir,
         code_file_name: code_file_name,
@@ -153,6 +149,10 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
       {:error, :process_failed, {exit_code, output}} ->
         {clean_terminal_output(output), exit_code}
     end
+  end
+
+  def file_exists?(_env, path) do
+    File.exists?(path)
   end
 
   # Resolve path relative to working_dir if it's a relative path

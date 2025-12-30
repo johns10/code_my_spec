@@ -130,8 +130,10 @@ defmodule CodeMySpec.ComponentDesignSessionsTest do
 
         assert_received {:updated,
                          %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{result: %{status: :ok}}, _, _, _, _]
+                           interactions: [interaction, _, _, _, _]
                          }}
+
+        assert %Interaction{result: %{status: :ok}} = interaction
 
         # Step 6: Finalize (assuming validation passes)
         {_finalize_interaction, _finalize_result, session} =

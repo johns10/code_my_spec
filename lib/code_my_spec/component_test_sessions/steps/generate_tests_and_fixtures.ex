@@ -6,12 +6,12 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
 
   def get_command(
         scope,
-        %Session{project: project, component: component} = session,
+        %Session{component: component} = session,
         opts \\ []
       ) do
     with {:ok, test_rules} <- get_test_rules(scope, component),
          similar_components <- Components.list_similar_components(scope, component),
-         {:ok, prompt} <- build_prompt(project, component, test_rules, similar_components),
+         {:ok, prompt} <- build_prompt(session, test_rules, similar_components),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -38,12 +38,34 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     end
   end
 
-  defp build_prompt(project, component, test_rules, similar_components) do
+  defp build_prompt(
+         %{project: project, component: component} = session,
+         test_rules,
+         similar_components
+       ) do
     test_rules_text = Enum.map_join(test_rules, "\n\n", & &1.content)
     similar_text = format_similar_components(project, similar_components)
 
-    %{spec_file: spec_file_path, test_file: test_file_path} =
+    %{spec_file: spec_file_path, test_file: test_file_path, code_file: code_file_path} =
       Utils.component_files(component, project)
+
+    # Check if implementation exists
+    implementation_exists = check_implementation_exists(session, code_file_path)
+
+    tdd_section =
+      if implementation_exists do
+        """
+        The component implementation already exists.
+        Write tests that validate the existing implementation against the design specification.
+        """
+      else
+        """
+        The component doesn't exist yet.
+        You are to write the tests before we implement the module, TDD style.
+        Only write the tests defined in the Test Assertions section of the design.
+        If you want to write more cases, you must modify the design first.
+        """
+      end
 
     parent_spec_file_path =
       if component.parent_component do
@@ -57,10 +79,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
     prompt =
       """
       Generate tests and fixtures for the following Phoenix component.
-      The component doesn't exist yet.
-      You are to write the tests before we implement the module, TDD style.
-      Only write the tests defined in the Test Assertions section of the design.
-      If you want to write more cases, you must modify the design first.
+      #{tdd_section}
 
       Tests should be grouped by describe blocks that match the function signature EXACTLY.
       Any blocks that don't match the test assertions in the spec will be rejected and you'll have to redo them.
@@ -117,5 +136,10 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
       """
       |> String.trim()
     end)
+  end
+
+  defp check_implementation_exists(session, code_file_path) do
+    # Create environment to check file existence
+    CodeMySpec.Environments.file_exists?(session.environment, code_file_path)
   end
 end

@@ -53,7 +53,8 @@ defmodule CodeMySpec.Sessions.Executor do
             scope,
             session_id,
             interaction.id,
-            %{status: :ok, data: output}
+            %{status: :ok, data: output},
+            opts
           )
 
         {:error, reason} ->

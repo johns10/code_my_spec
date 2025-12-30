@@ -12,9 +12,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateSpec do
 
   def handle_result(scope, session, result, _opts \\ []) do
     with {:ok, component_design} <- get_component_design(result),
-         updated_state = Map.put(session.state || %{}, "component_design", component_design),
          {:ok, _document} <- create_document(component_design, session.component) do
-      {:ok, %{state: updated_state}, result}
+      {:ok, %{}, Map.put(result, :status, :ok)}
     else
       {:error, error} ->
         updated_result = update_result_with_error(scope, result, error)

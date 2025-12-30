@@ -6,6 +6,7 @@ defmodule CodeMySpec.Environments.Cli do
   Delegates to TmuxAdapter for testability.
   """
 
+  @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
   alias CodeMySpec.Environments.Cli.TmuxAdapter
   alias CodeMySpec.Environments.Environment
   alias CodeMySpecCli.WebServer.Config
@@ -155,59 +156,8 @@ defmodule CodeMySpec.Environments.Cli do
     session_id = Keyword.fetch!(opts, :session_id)
 
     Task.start(fn ->
-      # Set initial state
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "running_tests"
-      })
-
-      # Create temp file for clean JSON test results
-      temp_file = Path.join(System.tmp_dir!(), "test-results-#{interaction_id}.json")
-
-      # Open port with EXUNIT_JSON_OUTPUT_FILE to separate test JSON from other output
-      port =
-        Port.open({:spawn_executable, System.find_executable("mix")}, [
-          :binary,
-          :exit_status,
-          :stderr_to_stdout,
-          :use_stdio,
-          {:line, 2048},
-          {:args, args},
-          {:env,
-           [
-             {~c"MIX_ENV", ~c"test"},
-             {~c"EXUNIT_JSON_OUTPUT_FILE", String.to_charlist(temp_file)},
-             {~c"EXUNIT_JSON_STREAMING", ~c"true"}
-           ]}
-        ])
-
-      # Stream stdout (compiler warnings, progress, etc.)
-      _stdout = stream_test_output(port, interaction_id, [])
-
-      # Read clean JSON from file
-      test_results =
-        case File.read(temp_file) do
-          {:ok, json_content} ->
-            File.rm(temp_file)
-            json_content
-
-          {:error, reason} ->
-            Logger.warning("Failed to read test results file: #{inspect(reason)}")
-            # Fall back to empty results
-            "{}"
-        end
-
-      # Mark as complete
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "tests_complete"
-      })
-
-      # Get scope and call handle_result
+      result = CodeMySpec.Tests.execute(args, interaction_id)
       scope = CodeMySpec.Users.Scope.for_cli()
-
-      result = %{
-        status: :ok,
-        data: %{test_results: test_results}
-      }
 
       case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, result) do
         {:ok, _updated_session} ->
@@ -221,6 +171,81 @@ defmodule CodeMySpec.Environments.Cli do
     end)
 
     :ok
+  end
+
+  def run_command(
+        %Environment{},
+        %CodeMySpec.Sessions.Command{command: "run_checks", metadata: %{"checks" => checks}},
+        opts
+      )
+      when is_map(checks) do
+    with {:ok, interaction_id} <- Keyword.fetch(opts, :interaction_id),
+         {:ok, session_id} <- Keyword.fetch(opts, :session_id),
+         {compile_args, test_args} <- extract_check_args(checks) do
+      # Run checks in a Task, calling synchronous versions
+      Task.start(fn ->
+        # Set initial state
+        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+          agent_state: "running_compiler"
+        })
+
+        # Run compilation synchronously
+        compile_result = CodeMySpec.Compile.execute(compile_args)
+
+        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+          agent_state: "compiler_finished"
+        })
+
+        # Check if compilation has errors
+        results = %{compile: compile_result}
+
+        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+          agent_state: "running_tests"
+        })
+
+        Logger.info(inspect(test_args))
+
+        final_results =
+          case check_compilation_errors(results) do
+            {:ok, _} ->
+              # No compilation errors, run tests
+              test_result = CodeMySpec.Tests.execute(test_args, interaction_id)
+              %{compile: compile_result, test: test_result}
+
+            {:error, _} ->
+              # Compilation errors, skip tests
+              %{compile: compile_result}
+          end
+
+        # Mark as complete
+        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+          agent_state: "tests_complete"
+        })
+
+        # Mark as complete
+        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+          agent_state: "checks_complete"
+        })
+
+        # Merge and handle results
+        merged_result = merge_check_results(final_results)
+        scope = CodeMySpec.Users.Scope.for_cli()
+
+        case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, merged_result) do
+          {:ok, _updated_session} ->
+            Logger.info("Checks execution completed for session #{session_id}")
+
+          {:error, reason} ->
+            Logger.error(
+              "Failed to handle checks result for session #{session_id}: #{inspect(reason)}"
+            )
+        end
+      end)
+
+      :ok
+    else
+      :error -> {:error, :missing_required_option}
+    end
   end
 
   # Fallback for legacy format where command field contains the actual shell command
@@ -279,11 +304,29 @@ defmodule CodeMySpec.Environments.Cli do
     end
   end
 
-  def docs_environment_teardown_command(_) do
+  @doc """
+  Check if a file exists on the server-side file system.
+
+  The environment reference is not used since file operations are server-side.
+  """
+  @spec file_exists?(env :: Environment.t(), path :: String.t()) :: boolean()
+  def file_exists?(_env, path) do
+    File.exists?(path)
+  end
+
+  def environment_setup_command(_, _) do
     "pass"
   end
 
-  def test_environment_teardown_command(_) do
+  def docs_environment_teardown_command(_, _) do
+    "pass"
+  end
+
+  def test_environment_teardown_command(_, _) do
+    "pass"
+  end
+
+  def code_environment_teardown_command(_, _) do
     "pass"
   end
 
@@ -363,41 +406,6 @@ defmodule CodeMySpec.Environments.Cli do
     |> File.mkdir_p()
   end
 
-  # Stream output from port, updating RuntimeInteraction in real-time
-  defp stream_test_output(port, interaction_id, acc) do
-    receive do
-      {^port, {:data, {:eol, line}}} ->
-        # Try to parse line as JSON and update RuntimeInteraction
-        case Jason.decode(line) do
-          {:ok, json_message} ->
-            CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-              last_activity:
-                Map.merge(json_message, %{
-                  event_type: :test_event,
-                  timestamp: DateTime.utc_now()
-                })
-            })
-
-          {:error, _} ->
-            # Not JSON, skip
-            :ok
-        end
-
-        # Accumulate line and continue streaming
-        stream_test_output(port, interaction_id, [line | acc])
-
-      {^port, {:data, {:noeol, partial}}} ->
-        # Partial line without newline, accumulate and continue
-        stream_test_output(port, interaction_id, [partial | acc])
-
-      {^port, {:exit_status, _status}} ->
-        # Port exited, return accumulated output
-        acc
-        |> Enum.reverse()
-        |> Enum.join("\n")
-    end
-  end
-
   defp send_keys(window_name, full_command) do
     case adapter().find_pane_by_title(window_name) do
       {:ok, pane_id} ->
@@ -408,5 +416,75 @@ defmodule CodeMySpec.Environments.Cli do
         Logger.info("No pane with title #{window_name}, sending keys to window")
         adapter().send_keys(window_name, full_command)
     end
+  end
+
+  # Extract compile and test args from checks map
+  # Expects format: %{compile: %{args: [...]}, test: %{args: [...]}}
+  # Or JSON format: %{"compile" => %{"args" => [...]}, "test" => %{"args" => [...]}}
+  defp extract_check_args(checks) when is_map(checks) do
+    compile_args =
+      case Map.get(checks, :compile) || Map.get(checks, "compile") do
+        %{args: args} -> args
+        %{"args" => args} -> args
+        _ -> []
+      end
+
+    test_args =
+      case Map.get(checks, :test) || Map.get(checks, "test") do
+        %{args: args} -> args
+        %{"args" => args} -> args
+        _ -> []
+      end
+
+    {compile_args, test_args}
+  end
+
+  # Check if compilation has errors using Diagnostic schema
+  defp check_compilation_errors(%{compile: compile_result} = results) do
+    alias CodeMySpec.Compile.Diagnostic
+
+    case compile_result do
+      %{data: %{compiler_results: compiler_json}} when is_binary(compiler_json) ->
+        case Diagnostic.parse_json(compiler_json) do
+          {:ok, diagnostics} ->
+            has_errors = Enum.any?(diagnostics, &Diagnostic.error?/1)
+
+            if has_errors do
+              {:error, results}
+            else
+              {:ok, results}
+            end
+
+          {:error, _} ->
+            # Failed to parse, assume no errors
+            {:ok, results}
+        end
+
+      _ ->
+        # No compiler data or unexpected format, assume no errors
+        {:ok, results}
+    end
+  end
+
+  # Merge compile and test results into final result structure
+  defp merge_check_results(%{compile: compile_result, test: test_result}) do
+    # Both compile and test ran
+    compiler_data = get_in(compile_result, [:data, :compiler_results]) || "[]"
+    test_data = get_in(test_result, [:data, :test_results]) || %{}
+
+    %{
+      status: Map.get(test_result, :status, :ok),
+      data: %{
+        compiler_results: compiler_data,
+        test_results: test_data
+      },
+      exit_code: Map.get(test_result, :exit_code, 0),
+      output: Map.get(test_result, :output, "")
+    }
+  end
+
+  defp merge_check_results(%{compile: compile_result}) do
+    # Only compile ran (compilation failed)
+    compile_result
   end
 end

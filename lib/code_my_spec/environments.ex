@@ -118,19 +118,23 @@ defmodule CodeMySpec.Environments do
   end
 
   def environment_setup_command(environment, attrs) do
-    impl(environment).environment_setup_command(attrs)
+    impl(environment).environment_setup_command(environment, attrs)
   end
 
   def docs_environment_teardown_command(environment, attrs) do
-    impl(environment).docs_environment_teardown_command(attrs)
+    impl(environment).docs_environment_teardown_command(environment, attrs)
   end
 
   def test_environment_teardown_command(environment, attrs) do
-    impl(environment).test_environment_teardown_command(attrs)
+    impl(environment).test_environment_teardown_command(environment, attrs)
   end
 
   def code_environment_teardown_command(environment, attrs) do
-    impl(environment).code_environment_teardown_command(attrs)
+    impl(environment).code_environment_teardown_command(environment, attrs)
+  end
+
+  def file_exists?(environment, attrs) do
+    impl(environment).file_exists?(environment, attrs)
   end
 
   def cmd(environment, command, args, opts \\ []),

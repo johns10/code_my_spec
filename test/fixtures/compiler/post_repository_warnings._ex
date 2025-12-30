@@ -1,0 +1,11 @@
+defmodule Warnings do
+  @moduledoc """
+  Temporary module to generate compilation warnings.
+  """
+
+  def test_function do
+    unused_var = "this will trigger a warning"
+    another_unused = 42
+    :ok
+  end
+end
