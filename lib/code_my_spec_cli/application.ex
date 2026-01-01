@@ -1,6 +1,7 @@
 defmodule CodeMySpecCli.Application do
   @impl true
   use Application
+  import Ratatouille.Constants, only: [key: 1]
 
   def start(_type, _args) do
     ensure_db_directory()
@@ -27,7 +28,11 @@ defmodule CodeMySpecCli.Application do
 
     # Start the TUI after all services are running
     # This blocks until the user quits
-    Ratatouille.run(CodeMySpecCli.Screens.Main, interval: 100)
+    # Override quit_events to only use Ctrl+C, not 'q'
+    Ratatouille.run(CodeMySpecCli.Screens.Main,
+      interval: 100,
+      quit_events: [{:key, key(:ctrl_c)}]
+    )
 
     {:ok, supervisor}
   end

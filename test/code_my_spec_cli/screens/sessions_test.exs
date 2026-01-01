@@ -343,7 +343,7 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       assert MapSet.size(panes_before_exit) == 1
 
       # Exit (which should break terminal back to its window)
-      {:switch_screen, :repl, _model} = SessionsScreen.update(updated, {:event, %{ch: ?q}})
+      {:switch_screen, :repl, _model} = SessionsScreen.update(updated, {:event, %{key: Constants.key(:esc)}})
 
       # Verify pane was broken (removed from TUI)
       panes_after_exit = Process.get(:mock_panes, MapSet.new())
