@@ -104,7 +104,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
 
           case OAuth2.Client.get_token(client, params) do
             {:ok, %OAuth2.Client{token: token}} ->
-              Logger.debug("OAuth token received: #{inspect(token, pretty: true)}")
+              Logger.debug("OAuth token received: #{token.scope}")
 
               # The OAuth2 library sometimes returns the JSON response as a string in access_token
               # Parse it if needed
