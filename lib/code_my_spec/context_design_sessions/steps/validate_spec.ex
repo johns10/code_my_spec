@@ -17,12 +17,10 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
       {:ok, %{}, Map.put(result, :status, :ok)}
     else
       {:error, error} ->
-        error_message = format_error(error)
-
         updated_result =
           result
           |> Map.put(:status, :error)
-          |> Map.put(:error_message, error_message)
+          |> Map.put(:error_message, error)
 
         {:ok, %{}, updated_result}
     end
@@ -83,10 +81,4 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
     #{description}
     """
   end
-
-  defp format_error(%Ecto.Changeset{} = changeset) do
-    Utils.changeset_error_to_string(changeset)
-  end
-
-  defp format_error(error) when is_binary(error), do: error
 end

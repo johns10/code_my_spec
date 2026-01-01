@@ -44,15 +44,9 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.ReviseSpec do
   defp validate_and_get_errors(spec_content, component) do
     case Documents.create_dynamic_document(spec_content, component.type) do
       {:ok, _} -> {:error, "spec is valid - no revision needed"}
-      {:error, error} -> {:ok, format_error(error)}
+      {:error, error} -> {:ok, error}
     end
   end
-
-  defp format_error(%Ecto.Changeset{} = changeset) do
-    Utils.changeset_error_to_string(changeset)
-  end
-
-  defp format_error(error) when is_binary(error), do: error
 
   defp build_revision_prompt(validation_errors) do
     """

@@ -6,6 +6,7 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
   Each implementation handles execution in its specific context (CLI with tmux, Server, VSCode).
   """
 
+  alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Environments.Environment
 
   @doc """
@@ -27,7 +28,7 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
 
   Returns :ok for async execution (CLI) or {:ok, output} for sync execution (Server).
   """
-  @callback run_command(env :: Environment.t(), command :: String.t(), opts :: keyword()) ::
+  @callback run_command(env :: Environment.t(), command :: Command.t(), opts :: keyword()) ::
               :ok | {:ok, map()} | {:error, term()}
 
   @doc """

@@ -30,24 +30,20 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   Validates that both components exist within the same project.
   """
   @spec add_similar_component(Scope.t(), Component.t(), Component.t()) ::
-          {:ok, SimilarComponent.t()} | {:error, Ecto.Changeset.t() | atom()}
+          {:ok, SimilarComponent.t()} | {:error, Ecto.Changeset.t() | :components_not_in_same_project}
   def add_similar_component(
         %Scope{active_project_id: project_id},
         %Component{id: component_id},
         %Component{id: similar_component_id}
       ) do
     # Validate both components belong to same project
-    case validate_same_project(component_id, similar_component_id, project_id) do
-      :ok ->
-        %SimilarComponent{}
-        |> SimilarComponent.changeset(%{
-          component_id: component_id,
-          similar_component_id: similar_component_id
-        })
-        |> Repo.insert()
-
-      {:error, reason} ->
-        {:error, reason}
+    with :ok <- validate_same_project(component_id, similar_component_id, project_id) do
+      %SimilarComponent{}
+      |> SimilarComponent.changeset(%{
+        component_id: component_id,
+        similar_component_id: similar_component_id
+      })
+      |> Repo.insert()
     end
   end
 
@@ -80,7 +76,7 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   Syncs similar components for a component to match the given list of IDs.
   Removes relationships not in the list and adds new ones.
   """
-  @spec sync_similar_components(Scope.t(), Component.t(), [integer()]) ::
+  @spec sync_similar_components(Scope.t(), Component.t(), [Ecto.UUID.t()]) ::
           {:ok, Component.t()} | {:error, any()}
   def sync_similar_components(%Scope{} = scope, %Component{} = component, similar_ids)
       when is_list(similar_ids) do
@@ -166,7 +162,7 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
 
   # Private Functions
 
-  @spec validate_same_project(integer(), integer(), integer()) ::
+  @spec validate_same_project(Ecto.UUID.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
           :ok | {:error, :components_not_in_same_project}
   defp validate_same_project(component_id, similar_component_id, project_id) do
     components =

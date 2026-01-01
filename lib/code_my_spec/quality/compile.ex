@@ -75,10 +75,6 @@ defmodule CodeMySpec.Quality.Compile do
     Diagnostic.parse_json(json)
   end
 
-  defp parse_diagnostics(_data) do
-    {:error, "Compiler data must be JSON string"}
-  end
-
   defp evaluate_diagnostics(diagnostics) do
     errors = Diagnostic.filter_by_severity(diagnostics, :error)
     warnings = Diagnostic.filter_by_severity(diagnostics, :warning)

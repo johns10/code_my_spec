@@ -15,12 +15,10 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.ValidateSpec do
       {:ok, %{}, Map.put(result, :status, :ok)}
     else
       {:error, error} ->
-        error_message = format_error(error)
-
         updated_result =
           result
           |> Map.put(:status, :error)
-          |> Map.put(:error_message, error_message)
+          |> Map.put(:error_message, error)
 
         {:ok, %{}, updated_result}
     end
@@ -41,10 +39,4 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.ValidateSpec do
   defp validate_document(component_design, component) do
     Documents.create_dynamic_document(component_design, component.type)
   end
-
-  defp format_error(%Ecto.Changeset{} = changeset) do
-    Utils.changeset_error_to_string(changeset)
-  end
-
-  defp format_error(error) when is_binary(error), do: error
 end
