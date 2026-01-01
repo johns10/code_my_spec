@@ -1,11 +1,48 @@
 defmodule CodeMySpec.Environments.Local do
   @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
 
-  def environment_setup_command(%{}) do
+  alias CodeMySpec.Sessions.Command
+  alias CodeMySpec.Environments.Environment
+
+  @impl true
+  def create(opts) do
+    working_dir = Keyword.get(opts, :working_dir, File.cwd!())
+    {:ok, %Environment{type: :local, ref: %{working_dir: working_dir}}}
+  end
+
+  @impl true
+  def destroy(_env), do: :ok
+
+  @impl true
+  def run_command(_env, %Command{} = command, _opts) do
+    {output, exit_code} = cmd("sh", ["-c", command.command], stderr_to_stdout: true)
+    {:ok, %{output: output, exit_code: exit_code}}
+  end
+
+  @impl true
+  def read_file(_env, path) do
+    File.read(path)
+  end
+
+  @impl true
+  def list_directory(_env, path) do
+    File.ls(path)
+  end
+
+  @impl true
+  def write_file(_env, path, content) do
+    with :ok <- File.mkdir_p(Path.dirname(path)) do
+      File.write(path, content)
+    end
+  end
+
+  @impl true
+  def environment_setup_command(_env, %{}) do
     ""
   end
 
-  def docs_environment_teardown_command(%{
+  @impl true
+  def docs_environment_teardown_command(_env, %{
         context_name: context_name,
         context_type: context_type,
         working_dir: working_dir,
@@ -20,7 +57,8 @@ defmodule CodeMySpec.Environments.Local do
     """
   end
 
-  def test_environment_teardown_command(%{
+  @impl true
+  def test_environment_teardown_command(_env, %{
         context_name: context_name,
         working_dir: working_dir,
         test_file_name: test_file_name,
@@ -34,7 +72,8 @@ defmodule CodeMySpec.Environments.Local do
     """
   end
 
-  def code_environment_teardown_command(%{
+  @impl true
+  def code_environment_teardown_command(_env, %{
         context_name: context_name,
         working_dir: working_dir,
         code_file_name: code_file_name,
