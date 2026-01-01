@@ -3,6 +3,8 @@ defmodule CodeMySpec.Components.Sync do
   Synchronizes context components and their child components from filesystem to database.
   """
 
+  require Logger
+
   alias CodeMySpec.Components
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Users.Scope
@@ -68,7 +70,9 @@ defmodule CodeMySpec.Components.Sync do
 
     {:ok, synced_contexts}
   rescue
-    error -> {:error, error}
+    error ->
+      Logger.error("Error during context sync: #{inspect(error)}")
+      {:error, error}
   end
 
   @doc """
@@ -102,7 +106,12 @@ defmodule CodeMySpec.Components.Sync do
 
     {:ok, synced_components}
   rescue
-    error -> {:error, error}
+    error ->
+      Logger.error(
+        "Error syncing components for #{parent_component.module_name}: #{inspect(error)}"
+      )
+
+      {:error, error}
   end
 
   # Private functions
@@ -166,11 +175,21 @@ defmodule CodeMySpec.Components.Sync do
     impl_path = Path.join(base_dir, "lib/#{Paths.module_to_path(module_name)}")
 
     if File.dir?(impl_path) do
-      Path.wildcard("#{impl_path}/**/*.ex")
-      |> Enum.reject(&(Path.basename(&1, ".ex") == Path.basename(impl_path)))
+      files = Path.wildcard("#{impl_path}/**/*.ex")
+      parent_basename = Path.basename(impl_path)
+
+      filtered_files =
+        files
+        |> Enum.reject(fn file ->
+          basename = Path.basename(file, ".ex")
+          basename == parent_basename
+        end)
+
+      filtered_files
       |> Enum.map(&parse_impl_file/1)
       |> Enum.reject(&is_nil/1)
     else
+      Logger.debug("Implementation path does not exist or is not a directory: #{impl_path}")
       []
     end
   end
@@ -229,8 +248,16 @@ defmodule CodeMySpec.Components.Sync do
     # Extract type from Type field
     type =
       case Regex.run(~r/\*\*Type\*\*:\s*(\w+)/m, content) do
-        [_, type_str] -> String.to_existing_atom(type_str)
-        _ -> nil
+        [_, type_str] ->
+          # Convert to atom safely - default to :other if invalid
+          try do
+            String.to_existing_atom(type_str)
+          rescue
+            ArgumentError -> String.to_atom(type_str)
+          end
+
+        _ ->
+          nil
       end
 
     # Extract description
@@ -269,7 +296,7 @@ defmodule CodeMySpec.Components.Sync do
     if module_name do
       %{
         module_name: module_name,
-        type: nil,
+        type: :other,
         description: nil,
         spec_path: nil,
         impl_path: path
