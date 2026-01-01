@@ -66,6 +66,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegrationTest do
 
   setup do
     ExVCR.Config.cassette_library_dir("test/fixtures/vcr_cassettes")
+    ExVCR.Config.filter_sensitive_data("github_pat_[a-zA-Z0-9_]+", "FILTERED_TOKEN")
 
     user = user_fixture()
     account = account_with_owner_fixture(user)
@@ -120,6 +121,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegrationTest do
   describe "connected?/1" do
     test "returns true when GitHub integration exists", %{scope: scope, user: user} do
       # Create integration if it doesn't exist
+
       case CodeMySpec.Integrations.get_integration(scope, :github) do
         {:ok, _} -> :ok
         {:error, :not_found} -> ensure_github_integration(scope, user)
@@ -259,6 +261,7 @@ defmodule CodeMySpec.ProjectSetupWizard.GithubIntegrationTest do
 
         # URL should contain sanitized name: my-cool-project-code
         assert String.contains?(updated_project.code_repo, "my-cool-project")
+        cleanup_github_repo(scope, updated_project.code_repo)
       end
     end
 
