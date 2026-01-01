@@ -34,7 +34,10 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
         %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{"path" => path}},
         _opts
       ) do
-    read_file(env, path)
+    case read_file(env, path) do
+      {:ok, content} -> {:ok, %{content: content}}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def run_command(
@@ -72,10 +75,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   def read_file(env, path) do
     resolved_path = resolve_path(path, env.cwd)
 
-    case File.read(resolved_path) do
-      {:ok, content} -> {:ok, %{content: content}}
-      {:error, reason} -> {:error, reason}
-    end
+    File.read(resolved_path)
   end
 
   @impl true

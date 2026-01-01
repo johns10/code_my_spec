@@ -34,10 +34,6 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ReviseSpec do
     {:ok, environment} = Environments.create(session.environment, opts)
 
     Environments.read_file(environment, path)
-    |> case do
-      {:ok, %{content: content}} -> {:ok, content}
-      {:error, error} -> {:error, "failed to read file #{error}"}
-    end
   end
 
   defp validate_and_get_errors(spec_content) do

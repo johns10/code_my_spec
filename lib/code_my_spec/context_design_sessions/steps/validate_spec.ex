@@ -18,9 +18,12 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
     else
       {:error, error} ->
         error_message = format_error(error)
-        updated_result = result
+
+        updated_result =
+          result
           |> Map.put(:status, :error)
           |> Map.put(:error_message, error_message)
+
         {:ok, %{}, updated_result}
     end
   end

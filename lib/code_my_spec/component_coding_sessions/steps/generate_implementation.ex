@@ -43,7 +43,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
 
     %{
-      design_file: design_file_path,
+      spec_file: spec_file_path,
       code_file: code_file_path,
       test_file: test_file_path
     } = Utils.component_files(component, project)
@@ -60,7 +60,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementation do
       Component Description: #{component.description || "No description provided"}
       Type: #{component.type}
 
-      Design File: #{design_file_path}
+      Design File: #{spec_file_path}
       Test File: #{test_file_path}
 
       Implementation Instructions:
