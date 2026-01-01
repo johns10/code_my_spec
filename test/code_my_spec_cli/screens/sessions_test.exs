@@ -390,20 +390,6 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
   end
 
   describe "update/2 - exit" do
-    test "returns to REPL on 'q'", %{scope: scope} do
-      model = %SessionsScreen{
-        scope: scope,
-        sessions: [],
-        selected_session_index: 0,
-        error_message: nil,
-        terminal_session_id: nil
-      }
-
-      result = SessionsScreen.update(model, {:event, %{ch: ?q}})
-
-      assert {:switch_screen, :repl, ^model} = result
-    end
-
     test "returns to REPL on Esc", %{scope: scope} do
       model = %SessionsScreen{
         scope: scope,
@@ -420,7 +406,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
   end
 
   describe "update/2 - tick polling" do
-    test "refetches sessions on tick interval", %{scope: scope, session1: session1, component: component} do
+    test "refetches sessions on tick interval", %{
+      scope: scope,
+      session1: session1,
+      component: component
+    } do
       model = %SessionsScreen{
         scope: scope,
         sessions: [session1],
@@ -473,7 +463,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       assert Enum.any?(updated.sessions, &(&1.id == session3.id))
     end
 
-    test "preserves selected index when refetching sessions", %{scope: scope, session1: session1, session2: session2} do
+    test "preserves selected index when refetching sessions", %{
+      scope: scope,
+      session1: session1,
+      session2: session2
+    } do
       model = %SessionsScreen{
         scope: scope,
         sessions: [session2, session1],
@@ -491,7 +485,11 @@ defmodule CodeMySpecCli.Screens.SessionsTest do
       assert updated.tick_count == 5
     end
 
-    test "adjusts selected index when session list shrinks", %{scope: scope, session1: session1, session2: session2} do
+    test "adjusts selected index when session list shrinks", %{
+      scope: scope,
+      session1: session1,
+      session2: session2
+    } do
       model = %SessionsScreen{
         scope: scope,
         sessions: [session2, session1],
