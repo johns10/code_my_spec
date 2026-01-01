@@ -143,10 +143,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
       {:event, %{ch: ?k}} ->
         handle_destroy_terminal(model)
 
-      # 'q' or Esc key - exit
-      {:event, %{ch: ?q}} ->
-        handle_exit(model)
-
+      # Esc key - exit
       {:event, %{key: @esc}} ->
         handle_exit(model)
 
@@ -323,7 +320,7 @@ defmodule CodeMySpecCli.Screens.Sessions do
               # Instructions
               label(
                 content:
-                  "↑/↓: navigate | Enter: details | n: next cmd | t: terminal | c: close pane | d: delete | k: kill | q: exit",
+                  "↑/↓: navigate | Enter: details | n: next cmd | t: terminal | c: close pane | d: delete | k: kill | Esc: exit",
                 color: :cyan
               )
             ]

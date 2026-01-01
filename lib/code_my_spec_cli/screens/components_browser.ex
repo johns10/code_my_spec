@@ -80,9 +80,6 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
         end
 
       # List state - handle character input first (typeahead)
-      {:list, {:event, %{ch: ?q}}} when model.filter == "" ->
-        {:switch_screen, :repl, model}
-
       {:list, {:event, %{ch: ch}}} when ch >= 32 and ch <= 126 ->
         new_filter = model.filter <> <<ch::utf8>>
         {:ok, %{model | filter: new_filter, selected_index: 0}}
@@ -253,7 +250,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
       row do
         column(size: 12) do
           panel(title: title) do
-            label(content: "Use ↑/↓ to navigate, Enter to view details, 'q' or Esc to exit")
+            label(content: "Use ↑/↓ to navigate, Enter to view details, Esc to exit")
           end
         end
       end,

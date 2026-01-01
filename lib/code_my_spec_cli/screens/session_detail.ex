@@ -84,10 +84,7 @@ defmodule CodeMySpecCli.Screens.SessionDetail do
       {:event, %{ch: ?n}} ->
         handle_cancel_delete(model)
 
-      # 'q' or Esc key - exit to sessions list
-      {:event, %{ch: ?q}} ->
-        handle_exit(model)
-
+      # Esc key - exit to sessions list
       {:event, %{key: @esc}} ->
         handle_exit(model)
 
@@ -207,7 +204,7 @@ defmodule CodeMySpecCli.Screens.SessionDetail do
             [
               # Instructions
               label(
-                content: "↑/↓: navigate | d: delete | q/esc: back",
+                content: "↑/↓: navigate | d: delete | Esc: back",
                 color: :cyan
               ),
               if interaction_count == 0 do
