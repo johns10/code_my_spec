@@ -12,7 +12,11 @@ defmodule CodeMySpec.MixProject do
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
-      dialyzer: [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}, flags: [:incremental]],
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_deps: :app_tree,
+        ignore_warnings: ".dialyzer_ignore.exs"
+      ],
       releases: releases()
     ]
   end
@@ -42,8 +46,8 @@ defmodule CodeMySpec.MixProject do
     [
       # Phoenix default deps
       {:bcrypt_elixir, "~> 3.0"},
-      {:phoenix, "~> 1.8.0-rc.4", override: true},
-      {:phoenix_ecto, "~> 4.5"},
+      {:phoenix, "~> 1.8.1", override: true},
+      {:phoenix_ecto, "~> 4.7"},
       {:ecto_sql, "~> 3.13"},
       {:ecto_sqlite3, "~> 0.18"},
       {:postgrex, ">= 0.0.0"},
@@ -147,6 +151,10 @@ defmodule CodeMySpec.MixProject do
             # linux: [os: :linux, cpu: :x86_64],
             # linux_aarch64: [os: :linux, cpu: :aarch64],
             # windows: [os: :windows, cpu: :x86_64]
+          ],
+          extra_steps: [
+            # Include the tmux startup script in the release
+            {:copy, "scripts/start-with-tmux.sh", "bin/start-with-tmux"}
           ],
           debug: true,
           no_clean: false
