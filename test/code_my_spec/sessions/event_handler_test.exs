@@ -45,41 +45,49 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
     test "missing required fields fails validation", %{scope: scope, interaction: interaction} do
       # Missing event_type
-      event_attrs =
-        valid_event_attrs()
-        |> Map.delete("event_type")
+      capture_log(fn ->
+        event_attrs =
+          valid_event_attrs()
+          |> Map.delete("event_type")
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
-      assert %{event_type: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+        assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+        assert %{event_type: ["can't be blank"]} = errors_on(changeset)
+        assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+      end)
 
       # Missing sent_at
-      event_attrs =
-        valid_event_attrs()
-        |> Map.delete("sent_at")
+      capture_log(fn ->
+        event_attrs =
+          valid_event_attrs()
+          |> Map.delete("sent_at")
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
-      assert %{sent_at: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+        assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+        assert %{sent_at: ["can't be blank"]} = errors_on(changeset)
+        assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+      end)
 
       # Missing data
-      event_attrs =
-        valid_event_attrs()
-        |> Map.delete("data")
+      capture_log(fn ->
+        event_attrs =
+          valid_event_attrs()
+          |> Map.delete("data")
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
-      assert %{data: ["can't be blank"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+        assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+        assert %{data: ["can't be blank"]} = errors_on(changeset)
+        assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+      end)
     end
 
     test "invalid event_type fails validation", %{scope: scope, interaction: interaction} do
-      event_attrs =
-        valid_event_attrs()
-        |> Map.put("event_type", :invalid_event_type)
+      capture_log(fn ->
+        event_attrs =
+          valid_event_attrs()
+          |> Map.put("event_type", :invalid_event_type)
 
-      assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
-      assert %{event_type: ["is invalid"]} = errors_on(changeset)
-      assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+        assert {:error, changeset} = EventHandler.handle_event(scope, interaction.id, event_attrs)
+        assert %{event_type: ["is invalid"]} = errors_on(changeset)
+        assert Repo.all(CodeMySpec.Sessions.InteractionEvent) == []
+      end)
     end
 
     test "data field accepts any map structure", %{scope: scope, interaction: interaction} do
@@ -270,17 +278,20 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
       interaction: interaction
     } do
       # Test various event types that should have no side effects
-      event_types = [:proxy_request, :proxy_response, :session_start]
+      event_types_with_data = [
+        {:proxy_request, %{"tool_name" => "Read"}},
+        {:proxy_response, %{"tool_name" => "Read", "result" => "success"}}
+      ]
 
       original_status = session.status
       original_state = session.state
       original_conversation_id = session.external_conversation_id
 
-      for event_type <- event_types do
+      for {event_type, data} <- event_types_with_data do
         event_attrs =
           valid_event_attrs(%{
             "event_type" => event_type,
-            "data" => %{"test" => "data"}
+            "data" => data
           })
 
         assert {:ok, updated_session} =
@@ -294,7 +305,7 @@ defmodule CodeMySpec.Sessions.EventHandlerTest do
 
       # All events persisted
       events = Repo.all(CodeMySpec.Sessions.InteractionEvent)
-      assert length(events) == length(event_types)
+      assert length(events) == length(event_types_with_data)
     end
   end
 

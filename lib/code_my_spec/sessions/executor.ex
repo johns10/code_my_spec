@@ -26,7 +26,7 @@ defmodule CodeMySpec.Sessions.Executor do
   def execute(scope, session_id, opts \\ []) do
     with {:ok, session} <- Orchestrator.next_command(scope, session_id, opts),
          {:ok, interaction} <- get_latest_interaction(session),
-         {:ok, env} <- create_environment(session),
+         {:ok, env} <- create(session),
          result <-
            Environments.run_command(env, interaction.command,
              session_id: session.id,
@@ -73,7 +73,7 @@ defmodule CodeMySpec.Sessions.Executor do
 
   defp get_latest_interaction(%Session{interactions: [latest | _]}), do: {:ok, latest}
 
-  defp create_environment(%Session{environment: type, id: session_id, state: state}) do
+  defp create(%Session{environment: type, id: session_id, state: state}) do
     opts = [session_id: session_id]
 
     opts =

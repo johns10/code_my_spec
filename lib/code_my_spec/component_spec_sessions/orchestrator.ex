@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
+defmodule CodeMySpec.ComponentSpecSessions.Orchestrator do
   @moduledoc """
   Stateless orchestrator for component design session workflows.
   All state lives in the Session record and its embedded Interactions.
@@ -7,7 +7,7 @@ defmodule CodeMySpec.ComponentDesignSessions.Orchestrator do
   @behaviour CodeMySpec.Sessions.OrchestratorBehaviour
 
   alias CodeMySpec.Sessions.{Interaction, Result, Utils, Session}
-  alias CodeMySpec.ComponentDesignSessions.Steps
+  alias CodeMySpec.ComponentSpecSessions.Steps
 
   @step_modules [
     Steps.Initialize,

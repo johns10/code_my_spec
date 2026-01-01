@@ -26,6 +26,7 @@ defmodule CodeMySpec.Environments.Cli do
   ## Options
 
   - `:session_id` - Used for window naming (e.g., "session-123")
+  - `:working_dir` - Current working directory for the environment
   - `:metadata` - Optional metadata to include in Environment struct
 
   ## Returns
@@ -40,12 +41,14 @@ defmodule CodeMySpec.Environments.Cli do
     else
       session_id = Keyword.get(opts, :session_id, :rand.uniform(10000))
       window_name = "session-#{session_id}"
+      working_dir = Keyword.get(opts, :working_dir)
       metadata = Keyword.get(opts, :metadata, %{})
 
       {:ok,
        %Environment{
          type: :cli,
          ref: window_name,
+         cwd: working_dir,
          metadata: metadata
        }}
     end

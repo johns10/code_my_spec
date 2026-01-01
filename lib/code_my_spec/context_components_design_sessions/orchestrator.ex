@@ -14,7 +14,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Orchestrator do
 
   @step_modules [
     Steps.Initialize,
-    Steps.SpawnComponentDesignSessions,
+    Steps.SpawnComponentSpecSessions,
     Steps.SpawnReviewSession,
     Steps.Finalize
   ]
@@ -46,18 +46,18 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Orchestrator do
   defp extract_status(%Interaction{result: %Result{status: status}}), do: status
 
   # Initialize step transitions
-  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.SpawnComponentDesignSessions}
+  defp get_next_step(:ok, Steps.Initialize), do: {:ok, Steps.SpawnComponentSpecSessions}
   defp get_next_step(_, Steps.Initialize), do: {:ok, Steps.Initialize}
 
-  # SpawnComponentDesignSessions step transitions with validation loop
-  defp get_next_step(:ok, Steps.SpawnComponentDesignSessions),
+  # SpawnComponentSpecSessions step transitions with validation loop
+  defp get_next_step(:ok, Steps.SpawnComponentSpecSessions),
     do: {:ok, Steps.SpawnReviewSession}
 
-  defp get_next_step(:error, Steps.SpawnComponentDesignSessions),
-    do: {:ok, Steps.SpawnComponentDesignSessions}
+  defp get_next_step(:error, Steps.SpawnComponentSpecSessions),
+    do: {:ok, Steps.SpawnComponentSpecSessions}
 
-  defp get_next_step(_, Steps.SpawnComponentDesignSessions),
-    do: {:ok, Steps.SpawnComponentDesignSessions}
+  defp get_next_step(_, Steps.SpawnComponentSpecSessions),
+    do: {:ok, Steps.SpawnComponentSpecSessions}
 
   # SpawnReviewSession step transitions with validation loop
   defp get_next_step(:ok, Steps.SpawnReviewSession), do: {:ok, Steps.Finalize}

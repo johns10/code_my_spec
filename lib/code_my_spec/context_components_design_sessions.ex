@@ -12,7 +12,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions do
   The context components design session follows these orchestrated steps:
 
   1. **Initialize** - Creates git branch and loads context components list
-  2. **SpawnComponentDesignSessions** - Creates child ComponentDesignSession records in agentic mode
+  2. **SpawnComponentSpecSessions** - Creates child ComponentDesignSession records in agentic mode
      for each component, returns command with child_session_ids for parallel execution
   3. **SpawnReviewSession** - Creates ComponentDesignReviewSession in agentic mode to validate
      consistency across all component designs, returns command with review_session_id
@@ -20,7 +20,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions do
 
   ## Validation and Retry Logic
 
-  Steps that spawn child sessions (SpawnComponentDesignSessions, SpawnReviewSession) include
+  Steps that spawn child sessions (SpawnComponentSpecSessions, SpawnReviewSession) include
   validation in their handle_result implementation:
   - Verify all child sessions reached terminal state (:complete, :failed, :cancelled)
   - Verify expected design files exist on filesystem

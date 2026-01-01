@@ -1,10 +1,10 @@
-defmodule CodeMySpec.ComponentDesignSessions.Steps.Initialize do
+defmodule CodeMySpec.ComponentSpecSessions.Steps.Initialize do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Command
   alias CodeMySpec.Environments
   alias CodeMySpec.Sessions.Session
-  alias CodeMySpec.ComponentDesignSessions.Utils
+  alias CodeMySpec.ComponentSpecSessions.Utils
 
   @impl true
   def get_command(

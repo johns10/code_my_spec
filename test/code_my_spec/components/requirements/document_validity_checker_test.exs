@@ -80,7 +80,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions",
+        satisfied_by: "ComponentSpecSessions",
         document_type: :spec
       }
 
@@ -101,7 +101,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions",
+        satisfied_by: "ComponentSpecSessions",
         document_type: :schema
       }
 
@@ -123,7 +123,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions",
+        satisfied_by: "ComponentSpecSessions",
         document_type: :spec
       }
 
@@ -159,7 +159,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions",
+        satisfied_by: "ComponentSpecSessions",
         document_type: :spec
       }
 
@@ -180,7 +180,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions",
+        satisfied_by: "ComponentSpecSessions",
         document_type: :spec
       }
 
@@ -198,7 +198,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions"
+        satisfied_by: "ComponentSpecSessions"
         # document_type is missing
       }
 
@@ -219,7 +219,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       requirement_spec = %{
         name: :spec_valid,
         checker: DocumentValidityChecker,
-        satisfied_by: "ComponentDesignSessions",
+        satisfied_by: "ComponentSpecSessions",
         document_type: :spec
       }
 

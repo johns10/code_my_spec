@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ComponentDesignSessions do
+defmodule CodeMySpec.ComponentSpecSessions do
   @moduledoc """
   Component Design Sessions context for orchestrating AI-driven component design workflows.
 
@@ -22,7 +22,7 @@ defmodule CodeMySpec.ComponentDesignSessions do
   which handles the orchestration and state management.
   """
 
-  alias CodeMySpec.ComponentDesignSessions.Orchestrator
+  alias CodeMySpec.ComponentSpecSessions.Orchestrator
 
   defdelegate get_next_interaction(step_module_atom), to: Orchestrator
   defdelegate steps(), to: Orchestrator

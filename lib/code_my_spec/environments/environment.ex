@@ -10,6 +10,7 @@ defmodule CodeMySpec.Environments.Environment do
 
   - `type` - Environment type identifier (`:cli`, `:server`, `:vscode`)
   - `ref` - Implementation-specific reference (window_ref, process_id, connection_id)
+  - `cwd` - Current working directory for the environment
   - `metadata` - Optional context information
 
   ## Examples
@@ -18,6 +19,7 @@ defmodule CodeMySpec.Environments.Environment do
       %Environment{
         type: :cli,
         ref: "@12",
+        cwd: "/path/to/project",
         metadata: %{session_id: 123}
       }
 
@@ -25,6 +27,7 @@ defmodule CodeMySpec.Environments.Environment do
       %Environment{
         type: :server,
         ref: nil,
+        cwd: "/path/to/project",
         metadata: %{}
       }
 
@@ -32,15 +35,17 @@ defmodule CodeMySpec.Environments.Environment do
       %Environment{
         type: :vscode,
         ref: "conn-abc123",
-        metadata: %{workspace: "/path/to/project"}
+        cwd: "/path/to/workspace",
+        metadata: %{workspace: "/path/to/workspace"}
       }
   """
 
   @type t :: %__MODULE__{
           type: atom(),
           ref: term(),
+          cwd: String.t() | nil,
           metadata: map()
         }
 
-  defstruct [:type, :ref, metadata: %{}]
+  defstruct [:type, :ref, :cwd, metadata: %{}]
 end

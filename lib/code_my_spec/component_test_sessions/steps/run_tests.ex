@@ -30,7 +30,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.{Quality, Sessions, Utils}
+  alias CodeMySpec.{Quality, Sessions, Utils, Environments}
   require Logger
 
   @required_alignment_score 0.9
@@ -197,6 +197,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
 
   defp check_implementation_exists(session, code_file_path) do
     # Create environment to check file existence
-    CodeMySpec.Environments.file_exists?(session.environment, code_file_path)
+    {:ok, environment} = Environments.create(session.environment)
+    CodeMySpec.Environments.file_exists?(environment, code_file_path)
   end
 end

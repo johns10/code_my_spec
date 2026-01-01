@@ -2,7 +2,11 @@ defmodule CodeMySpec.Components.Requirements.FileExistenceChecker do
   @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
   alias CodeMySpec.Components.Component
 
-  def check(%{name: name} = requirement_spec, %Component{component_status: component_status}, _opts \\ []) do
+  def check(
+        %{name: name} = requirement_spec,
+        %Component{component_status: component_status},
+        _opts \\ []
+      ) do
     {satisfied, details} =
       case {name, component_status} do
         {:spec_file, %{spec_exists: true}} ->

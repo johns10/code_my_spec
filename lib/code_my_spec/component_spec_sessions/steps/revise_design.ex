@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ContextSpecSessions.Steps.ReviseSpec do
+defmodule CodeMySpec.ComponentSpecSessions.Steps.ReviseSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
   alias CodeMySpec.Sessions.Steps.Helpers
@@ -6,15 +6,15 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ReviseSpec do
 
   @impl true
   def get_command(_scope, session, opts \\ []) do
-    with {:ok, spec_content} <- read_current_spec(session, opts),
-         {:ok, validation_errors} <- validate_and_get_errors(spec_content),
+    with {:ok, spec_content} <- read_current_spec(session),
+         {:ok, validation_errors} <- validate_and_get_errors(spec_content, session.component),
          prompt <- build_revision_prompt(validation_errors),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
              session,
-             :context_designer,
-             "context-design-reviser",
+             :component_designer,
+             "component-design-reviser",
              prompt,
              opts
            ) do
@@ -25,23 +25,24 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ReviseSpec do
   end
 
   @impl true
-  def handle_result(_scope, _session, result, _opts \\ []) do
-    {:ok, %{}, result}
+  def handle_result(_scope, session, result, _opts \\ []) do
+    revised_design = result.stdout
+    updated_state = Map.put(session.state || %{}, "component_design", revised_design)
+    {:ok, %{state: updated_state}, result}
   end
 
-  defp read_current_spec(session, opts) do
+  defp read_current_spec(session) do
     %{spec_file: path} = Utils.component_files(session.component, session.project)
-    {:ok, environment} = Environments.create(session.environment, opts)
+    {:ok, environment} = Environments.create(session.environment)
 
-    Environments.read_file(environment, path)
-    |> case do
+    case Environments.read_file(environment, path) do
       {:ok, %{content: content}} -> {:ok, content}
-      {:error, error} -> {:error, "failed to read file #{error}"}
+      {:error, error} -> {:error, "Failed to read file #{path} due to #{error}"}
     end
   end
 
-  defp validate_and_get_errors(spec_content) do
-    case Documents.create_dynamic_document(spec_content, :context_spec) do
+  defp validate_and_get_errors(spec_content, component) do
+    case Documents.create_dynamic_document(spec_content, component.type) do
       {:ok, _} -> {:error, "spec is valid - no revision needed"}
       {:error, error} -> {:ok, format_error(error)}
     end
@@ -55,12 +56,12 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ReviseSpec do
 
   defp build_revision_prompt(validation_errors) do
     """
-    The context design failed validation:
+    The component design failed validation:
 
     Validation errors:
     #{validation_errors}
 
-    Please revise the context design to address these validation errors while maintaining the overall structure and intent of the design.
+    Please revise the component design to address these validation errors while maintaining the overall structure and intent of the design.
     """
   end
 end

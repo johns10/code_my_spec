@@ -1,17 +1,17 @@
-defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentSpec do
+defmodule CodeMySpec.ComponentSpecSessions.Steps.GenerateComponentSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Rules, Utils}
+  alias CodeMySpec.{Rules, Utils, Environments}
   alias CodeMySpec.Sessions.{Session, Steps.Helpers}
   alias CodeMySpec.Documents.DocumentSpecProjector
 
   def get_command(
         scope,
-        %Session{project: project, component: component, state: state} = session,
+        %Session{component: component, state: state} = session,
         opts \\ []
       ) do
     with {:ok, rules} <- get_design_rules(scope, component),
-         {:ok, prompt} <- build_spec_prompt(project, component, rules, state),
+         {:ok, prompt} <- build_spec_prompt(session, rules, state),
          {:ok, command} <-
            Helpers.build_agent_command(
              __MODULE__,
@@ -38,25 +38,44 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.GenerateComponentSpec do
     end
   end
 
-  defp build_spec_prompt(project, component, rules, _state) do
+  defp build_spec_prompt(session, rules, _state) do
+    %{project: project, component: component} = session
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
     document_spec = DocumentSpecProjector.project_spec(component.type)
     %{spec_file: spec_file_path} = Utils.component_files(component, project)
 
     parent_component = component.parent_component
-    %{spec_file: parent_spec_file_path} = Utils.component_files(parent_component, project)
+
+    %{spec_file: parent_spec_file_path, code_file: code_file, test_file: test_file} =
+      Utils.component_files(parent_component, project)
+
+    {:ok, environment} = Environments.create(session.environment)
+
+    existing_implementation_clause =
+      if Environments.file_exists?(environment, code_file) do
+        "Existing Implementation: #{code_file}."
+      else
+        "The implementation doesn't exist yet."
+      end
+
+    existing_test_clause =
+      if Environments.file_exists?(environment, test_file) do
+        "Existing tests: #{test_file}"
+      else
+        "The tests don't exist yet."
+      end
 
     prompt =
       """
       Generate a Phoenix component spec for the following.
-
       Project: #{project.name}
       Project Description: #{project.description}
       Component Name: #{component.name}
       Component Description: #{component.description || "No description provided"}
       Type: #{component.type}
-
       Parent Context Design File: #{parent_spec_file_path}
+      #{existing_implementation_clause}
+      #{existing_test_clause}
 
       Design Rules:
       #{rules_text}

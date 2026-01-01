@@ -2,26 +2,25 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
   require Logger
 
-  alias CodeMySpec.Documents
-  alias CodeMySpec.Environments
+  alias CodeMySpec.{Documents, Environments, Utils}
   alias CodeMySpec.Sessions.Command
-  alias CodeMySpec.Sessions
-  alias CodeMySpec.Utils
 
   def get_command(_scope, %{component: component, project: project}, _opts \\ []) do
     %{spec_file: spec_file} = Utils.component_files(component, project)
     {:ok, Command.new(__MODULE__, "read_file", metadata: %{path: spec_file})}
   end
 
-  def handle_result(scope, session, result, _opts \\ []) do
+  def handle_result(_scope, session, result, _opts \\ []) do
     with {:ok, component_design} <- get_component_design(result),
-         {:ok, document} <-
-           Documents.create_dynamic_document(component_design, :context_spec),
-         {:ok, _created} <- create_spec_files(scope, session, document.sections) do
-      {:ok, %{}, result}
+         {:ok, document} <- validate_document(component_design),
+         {:ok, _created} <- create_spec_files(session, document.sections) do
+      {:ok, %{}, Map.put(result, :status, :ok)}
     else
       {:error, error} ->
-        updated_result = update_result_with_error(scope, result, error)
+        error_message = format_error(error)
+        updated_result = result
+          |> Map.put(:status, :error)
+          |> Map.put(:error_message, error_message)
         {:ok, %{}, updated_result}
     end
   end
@@ -38,7 +37,11 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
     {:error, "component_design not found in result"}
   end
 
-  defp create_spec_files(_scope, session, %{"components" => components})
+  defp validate_document(component_design) do
+    Documents.create_dynamic_document(component_design, :context_spec)
+  end
+
+  defp create_spec_files(session, %{"components" => components})
        when is_list(components) do
     {:ok, environment} = Environments.create(session.environment)
 
@@ -66,7 +69,7 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
     end
   end
 
-  defp create_spec_files(_scope, _session, _sections) do
+  defp create_spec_files(_session, _sections) do
     {:error, "components section missing or invalid"}
   end
 
@@ -76,20 +79,6 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
 
     #{description}
     """
-  end
-
-  defp update_result_with_error(scope, result, error) do
-    error_message = format_error(error)
-    attrs = %{status: :error, error_message: error_message}
-
-    case Sessions.update_result(scope, result, attrs) do
-      {:ok, updated_result} ->
-        updated_result
-
-      {:error, changeset} ->
-        Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
-        result
-    end
   end
 
   defp format_error(%Ecto.Changeset{} = changeset) do

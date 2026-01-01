@@ -1,22 +1,27 @@
-defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateSpec do
+defmodule CodeMySpec.ComponentSpecSessions.Steps.ValidateSpec do
   @behaviour CodeMySpec.Sessions.StepBehaviour
 
-  alias CodeMySpec.{Documents, Sessions, Utils}
-  alias CodeMySpec.Sessions.{Command}
-  require Logger
+  alias CodeMySpec.{Documents, Utils}
+  alias CodeMySpec.Sessions.Command
 
   def get_command(_scope, %{component: component, project: project}, _opts \\ []) do
     %{spec_file: path} = Utils.component_files(component, project)
     {:ok, Command.new(__MODULE__, "read_file", metadata: %{path: path})}
   end
 
-  def handle_result(scope, session, result, _opts \\ []) do
+  def handle_result(_scope, session, result, _opts \\ []) do
     with {:ok, component_design} <- get_component_design(result),
-         {:ok, _document} <- create_document(component_design, session.component) do
+         {:ok, _document} <- validate_document(component_design, session.component) do
       {:ok, %{}, Map.put(result, :status, :ok)}
     else
       {:error, error} ->
-        updated_result = update_result_with_error(scope, result, error)
+        error_message = format_error(error)
+
+        updated_result =
+          result
+          |> Map.put(:status, :error)
+          |> Map.put(:error_message, error_message)
+
         {:ok, %{}, updated_result}
     end
   end
@@ -33,22 +38,8 @@ defmodule CodeMySpec.ComponentDesignSessions.Steps.ValidateSpec do
     {:error, "component_design not found in result"}
   end
 
-  defp create_document(component_design, component) do
+  defp validate_document(component_design, component) do
     Documents.create_dynamic_document(component_design, component.type)
-  end
-
-  defp update_result_with_error(scope, result, error) do
-    error_message = format_error(error)
-    attrs = %{status: :error, error_message: error_message}
-
-    case Sessions.update_result(scope, result, attrs) do
-      {:ok, updated_result} ->
-        updated_result
-
-      {:error, changeset} ->
-        Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
-        result
-    end
   end
 
   defp format_error(%Ecto.Changeset{} = changeset) do

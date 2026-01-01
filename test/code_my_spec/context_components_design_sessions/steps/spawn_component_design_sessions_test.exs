@@ -1,7 +1,7 @@
-defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignSessionsTest do
+defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSessionsTest do
   use CodeMySpec.DataCase, async: true
 
-  alias CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignSessions
+  alias CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSessions
   alias CodeMySpec.Sessions.{Command, Result, Session}
 
   import CodeMySpec.UsersFixtures
@@ -85,9 +85,9 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       parent_session: parent_session
     } do
       assert {:ok, %Command{} = command} =
-               SpawnComponentDesignSessions.get_command(scope, parent_session, [])
+               SpawnComponentSpecSessions.get_command(scope, parent_session, [])
 
-      assert command.module == SpawnComponentDesignSessions
+      assert command.module == SpawnComponentSpecSessions
       assert command.command == "spawn_sessions"
       assert is_map(command.metadata)
       assert is_list(command.metadata.child_session_ids)
@@ -98,7 +98,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       scope: scope,
       parent_session: parent_session
     } do
-      {:ok, command} = SpawnComponentDesignSessions.get_command(scope, parent_session, [])
+      {:ok, command} = SpawnComponentSpecSessions.get_command(scope, parent_session, [])
 
       # Fetch created child sessions
       child_sessions =
@@ -110,7 +110,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
 
       # Verify all child sessions have correct basic attributes
       for child_session <- child_sessions do
-        assert child_session.type == CodeMySpec.ComponentDesignSessions
+        assert child_session.type == CodeMySpec.ComponentSpecSessions
         assert child_session.session_id == parent_session.id
         assert child_session.execution_mode == :agentic
         assert child_session.agent == :claude_code
@@ -145,7 +145,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       orphan_session = CodeMySpec.Repo.preload(orphan_session, [:project, :component])
 
       assert {:error, "No child components found for context"} =
-               SpawnComponentDesignSessions.get_command(scope, orphan_session, [])
+               SpawnComponentSpecSessions.get_command(scope, orphan_session, [])
     end
 
     test "returns error when context component is not found", %{
@@ -161,7 +161,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       }
 
       assert {:error, "Context component not found"} =
-               SpawnComponentDesignSessions.get_command(scope, invalid_session, [])
+               SpawnComponentSpecSessions.get_command(scope, invalid_session, [])
     end
 
     test "handles partial session creation failures gracefully", %{
@@ -173,7 +173,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       # In practice, session creation rarely fails if data is valid
       # but the step should handle this gracefully
 
-      {:ok, command} = SpawnComponentDesignSessions.get_command(scope, parent_session, [])
+      {:ok, command} = SpawnComponentSpecSessions.get_command(scope, parent_session, [])
 
       # Should still return ok with successfully created sessions
       assert {:ok, %Command{}} = {:ok, command}
@@ -185,7 +185,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       scope: scope,
       parent_session: parent_session
     } do
-      {:ok, command} = SpawnComponentDesignSessions.get_command(scope, parent_session, [])
+      {:ok, command} = SpawnComponentSpecSessions.get_command(scope, parent_session, [])
 
       assert %DateTime{} = command.timestamp
     end
@@ -235,7 +235,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       # Create child sessions
       child_session1 =
         session_fixture(scope, %{
-          type: CodeMySpec.ComponentDesignSessions,
+          type: CodeMySpec.ComponentSpecSessions,
           component_id: child1.id,
           project_id: project.id,
           session_id: parent_session.id,
@@ -245,7 +245,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
 
       child_session2 =
         session_fixture(scope, %{
-          type: CodeMySpec.ComponentDesignSessions,
+          type: CodeMySpec.ComponentSpecSessions,
           component_id: child2.id,
           project_id: project.id,
           session_id: parent_session.id,
@@ -286,7 +286,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       end)
 
       assert {:ok, session_updates, updated_result} =
-               SpawnComponentDesignSessions.handle_result(scope, parent_session, result, [])
+               SpawnComponentSpecSessions.handle_result(scope, parent_session, result, [])
 
       assert session_updates == %{}
       assert updated_result.status == :ok
@@ -304,7 +304,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       result = Result.success(%{message: "Checking status"})
 
       assert {:ok, _session_updates, updated_result} =
-               SpawnComponentDesignSessions.handle_result(scope, parent_session, result, [])
+               SpawnComponentSpecSessions.handle_result(scope, parent_session, result, [])
 
       assert updated_result.status == :error
       assert updated_result.error_message =~ "Child sessions still running"
@@ -322,7 +322,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
       result = Result.success(%{message: "Checking status"})
 
       assert {:error, "Session not found"} =
-               SpawnComponentDesignSessions.handle_result(scope, invalid_session, result, [])
+               SpawnComponentSpecSessions.handle_result(scope, invalid_session, result, [])
     end
   end
 end

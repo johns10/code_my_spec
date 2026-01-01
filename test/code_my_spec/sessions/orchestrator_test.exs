@@ -27,7 +27,7 @@ defmodule CodeMySpec.Sessions.OrchestratorTest do
     } do
       {:ok, session} =
         Sessions.create_session(scope, %{
-          type: CodeMySpec.ComponentDesignSessions,
+          type: CodeMySpec.ComponentSpecSessions,
           component_id: component.id,
           environment: :local
         })
@@ -46,7 +46,7 @@ defmodule CodeMySpec.Sessions.OrchestratorTest do
     } do
       {:ok, session} =
         Sessions.create_session(scope, %{
-          type: CodeMySpec.ComponentDesignSessions,
+          type: CodeMySpec.ComponentSpecSessions,
           component_id: component.id,
           environment: :local
         })
@@ -71,7 +71,7 @@ defmodule CodeMySpec.Sessions.OrchestratorTest do
     } do
       {:ok, session} =
         Sessions.create_session(scope, %{
-          type: CodeMySpec.ComponentDesignSessions,
+          type: CodeMySpec.ComponentSpecSessions,
           component_id: component.id,
           environment: :local
         })
@@ -103,14 +103,14 @@ defmodule CodeMySpec.Sessions.OrchestratorTest do
     end
 
     test "returns error when session is complete", %{scope: scope} do
-      {:ok, session} = Sessions.create_session(scope, %{type: CodeMySpec.ComponentDesignSessions})
+      {:ok, session} = Sessions.create_session(scope, %{type: CodeMySpec.ComponentSpecSessions})
       {:ok, completed_session} = Sessions.update_session(scope, session, %{status: :complete})
 
       assert {:error, :complete} = Sessions.next_command(scope, completed_session.id)
     end
 
     test "returns error when session is failed", %{scope: scope} do
-      {:ok, session} = Sessions.create_session(scope, %{type: CodeMySpec.ComponentDesignSessions})
+      {:ok, session} = Sessions.create_session(scope, %{type: CodeMySpec.ComponentSpecSessions})
       {:ok, failed_session} = Sessions.update_session(scope, session, %{status: :failed})
 
       assert {:error, :failed} = Sessions.next_command(scope, failed_session.id)

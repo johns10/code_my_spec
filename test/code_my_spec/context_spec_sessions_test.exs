@@ -208,7 +208,7 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
                          }}
 
         # Step 4: ReviseSpec (after validation failure)
-        {:ok, session} = Sessions.execute(scope, session.id)
+        {:ok, session} = Sessions.execute(scope, session.id, working_dir: project_dir)
         [interaction | _] = session.interactions
         assert interaction.command.module == ReviseSpec
 

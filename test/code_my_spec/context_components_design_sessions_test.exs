@@ -6,7 +6,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
 
   alias CodeMySpec.ContextComponentsDesignSessions.Steps.{
     Initialize,
-    SpawnComponentDesignSessions,
+    SpawnComponentSpecSessions,
     SpawnReviewSession,
     Finalize
   }
@@ -105,10 +105,10 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       [last_interaction | _] = session.interactions
       assert last_interaction.result.status == :ok
 
-      # Step 2: SpawnComponentDesignSessions
+      # Step 2: SpawnComponentSpecSessions
       {:ok, session} = Sessions.next_command(scope, session.id)
       [interaction | _] = session.interactions
-      assert interaction.command.module == SpawnComponentDesignSessions
+      assert interaction.command.module == SpawnComponentSpecSessions
       assert interaction.command.command == "spawn_sessions"
       assert is_list(interaction.command.metadata["child_session_ids"])
       assert length(interaction.command.metadata["child_session_ids"]) == 3
@@ -222,7 +222,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       result = %{status: :ok, stdout: "Created branch", stderr: "", exit_code: 0}
       {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, result)
 
-      # Step 2: SpawnComponentDesignSessions - first attempt
+      # Step 2: SpawnComponentSpecSessions - first attempt
       {:ok, session} = Sessions.next_command(scope, session.id)
       [interaction | _] = session.interactions
       child_session_ids = interaction.command.metadata["child_session_ids"]
@@ -243,10 +243,10 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       # Should return error due to validation failure
       assert last_interaction.result.status == :error
 
-      # Step 3: Should retry SpawnComponentDesignSessions
+      # Step 3: Should retry SpawnComponentSpecSessions
       {:ok, session} = Sessions.next_command(scope, session.id)
       [interaction | _] = session.interactions
-      assert interaction.command.module == SpawnComponentDesignSessions
+      assert interaction.command.module == SpawnComponentSpecSessions
 
       # The retry should return the SAME child session IDs (not create new ones)
       retry_child_session_ids = interaction.command.metadata["child_session_ids"]
@@ -284,7 +284,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
     } do
       Sessions.subscribe_sessions(scope)
 
-      # Create session and complete through SpawnComponentDesignSessions
+      # Create session and complete through SpawnComponentSpecSessions
       {:ok, session} =
         Sessions.create_session(scope, %{
           type: ContextComponentsDesignSessions,
@@ -299,7 +299,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       result = %{status: :ok, stdout: "Created branch", stderr: "", exit_code: 0}
       {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, result)
 
-      # SpawnComponentDesignSessions - complete successfully
+      # SpawnComponentSpecSessions - complete successfully
       {:ok, session} = Sessions.next_command(scope, session.id)
       [interaction | _] = session.interactions
       child_session_ids = interaction.command.metadata["child_session_ids"]

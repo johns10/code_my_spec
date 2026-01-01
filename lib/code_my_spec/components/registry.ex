@@ -50,20 +50,20 @@ defmodule CodeMySpec.Components.Registry do
   @design_file %{
     name: :spec_file,
     checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
-    satisfied_by: "ComponentDesignSessions"
+    satisfied_by: "ComponentSpecSessions"
   }
 
   @component_spec_validity %{
     name: :spec_valid,
     checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
-    satisfied_by: "ComponentDesignSessions",
+    satisfied_by: "ComponentSpecSessions",
     document_type: :spec
   }
 
   @schema_spec_validity %{
     name: :spec_valid,
     checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
-    satisfied_by: "ComponentDesignSessions",
+    satisfied_by: "ComponentSpecSessions",
     document_type: :schema
   }
 

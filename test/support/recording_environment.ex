@@ -18,7 +18,8 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
      %Environment{
        type: :cli,
        ref: nil,
-       metadata: %{session_id: session_id, working_dir: working_dir}
+       cwd: working_dir,
+       metadata: %{session_id: session_id}
      }}
   end
 
@@ -33,13 +34,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
         %CodeMySpec.Sessions.Command{command: "read_file", metadata: %{"path" => path}},
         _opts
       ) do
-    # Resolve path relative to working_dir if it's a relative path
-    resolved_path = resolve_path(path, env.metadata[:working_dir])
-
-    case File.read(resolved_path) do
-      {:ok, content} -> {:ok, %{content: content}}
-      {:error, reason} -> {:error, reason}
-    end
+    read_file(env, path)
   end
 
   def run_command(
@@ -74,8 +69,13 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
-  def read_file(_env, path) do
-    File.read(path)
+  def read_file(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+
+    case File.read(resolved_path) do
+      {:ok, content} -> {:ok, %{content: content}}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @impl true
@@ -160,7 +160,7 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
 
   defp resolve_path(path, working_dir) do
     if Path.type(path) == :relative do
-      Path.join(working_dir, path)
+      Path.join(working_dir, path) |> Path.absname()
     else
       path
     end

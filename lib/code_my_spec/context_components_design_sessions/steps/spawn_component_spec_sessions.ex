@@ -1,4 +1,4 @@
-defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignSessions do
+defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSessions do
   @moduledoc """
   Creates child ComponentDesignSession records for each component within the target context.
 
@@ -88,7 +88,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
   defp validate_child_sessions_type(child_sessions) do
     invalid_sessions =
       Enum.reject(child_sessions, fn session ->
-        session.type == CodeMySpec.ComponentDesignSessions
+        session.type == CodeMySpec.ComponentSpecSessions
       end)
 
     case invalid_sessions do
@@ -97,7 +97,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
 
       [session | _] ->
         {:error,
-         "Invalid child session type: expected ComponentDesignSessions, got #{inspect(session.type)}"}
+         "Invalid child session type: expected ComponentSpecSessions, got #{inspect(session.type)}"}
     end
   end
 
@@ -166,7 +166,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentDesignS
          context_design_path
        ) do
     attrs = %{
-      type: CodeMySpec.ComponentDesignSessions,
+      type: CodeMySpec.ComponentSpecSessions,
       component_id: component.id,
       session_id: parent_session.id,
       execution_mode: :agentic,
