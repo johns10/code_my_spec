@@ -14,8 +14,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.DeleteDependencyTest do
   describe "DeleteDependency tool" do
     test "executes with valid params and scope" do
       scope = full_scope_fixture()
-      source_component = component_fixture(scope, %{name: "SourceComponent", type: :context})
-      target_component = component_fixture(scope, %{name: "TargetComponent", type: :schema})
+      source_component = component_fixture(scope, %{name: "SourceComponent", type: "context"})
+      target_component = component_fixture(scope, %{name: "TargetComponent", type: "schema"})
 
       # Create a dependency to delete
       {:ok, dependency} =

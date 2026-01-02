@@ -20,7 +20,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         component_fixture(scope, %{
           name: "Accounts",
           module_name: "Accounts",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -140,7 +140,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSessionTes
         component_fixture(scope, %{
           name: "Accounts",
           module_name: "Accounts",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 

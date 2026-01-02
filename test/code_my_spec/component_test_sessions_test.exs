@@ -32,7 +32,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
       {:ok, blog_context} =
         Components.create_component(scope, %{
           name: "Blog",
-          type: :context,
+          type: "context",
           module_name: "TestPhoenixProject.Blog",
           description: "Blog context for managing posts"
         })
@@ -41,7 +41,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
       {:ok, post_cache} =
         Components.create_component(scope, %{
           name: "PostCache",
-          type: :genserver,
+          type: "genserver",
           module_name: "TestPhoenixProject.Blog.PostCache",
           description: "GenServer for caching posts",
           parent_component_id: blog_context.id

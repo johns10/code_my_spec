@@ -27,7 +27,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       {:ok, accounts_context} =
         Components.create_component(scope, %{
           name: "Accounts",
-          type: :context,
+          type: "context",
           module_name: "MyApp.Accounts",
           description: "Accounts context for managing users and authentication"
         })
@@ -36,7 +36,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       {:ok, user_schema} =
         Components.create_component(scope, %{
           name: "User",
-          type: :schema,
+          type: "schema",
           module_name: "MyApp.Accounts.User",
           description: "User schema",
           parent_component_id: accounts_context.id,
@@ -46,7 +46,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       {:ok, user_repository} =
         Components.create_component(scope, %{
           name: "UserRepository",
-          type: :repository,
+          type: "repository",
           module_name: "MyApp.Accounts.UserRepository",
           description: "Repository for user persistence",
           parent_component_id: accounts_context.id,
@@ -56,7 +56,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessionsTest do
       {:ok, accounts_live} =
         Components.create_component(scope, %{
           name: "AccountsLive",
-          type: :other,
+          type: "other",
           module_name: "MyApp.AccountsLive",
           description: "LiveView for accounts management",
           parent_component_id: accounts_context.id,

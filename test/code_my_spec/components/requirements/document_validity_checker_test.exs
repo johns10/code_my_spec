@@ -57,7 +57,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ContextSpecSessions",
-        document_type: :context_spec
+        document_type: "context_spec"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
@@ -66,7 +66,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       assert result.name == "spec_valid"
       assert result.type == :document_validity
       assert result.details.status == "Document is valid"
-      assert result.details.document_type == :context_spec
+      assert result.details.document_type == "context_spec"
 
       cleanup_spec_file(spec_path)
     end
@@ -81,13 +81,13 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ComponentSpecSessions",
-        document_type: :spec
+        document_type: "spec"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
 
       assert result.satisfied == true
-      assert result.details.document_type == :spec
+      assert result.details.document_type == "spec"
 
       cleanup_spec_file(spec_path)
     end
@@ -102,12 +102,12 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ComponentSpecSessions",
-        document_type: :schema
+        document_type: "schema"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
       assert result.satisfied == true
-      assert result.details.document_type == :schema
+      assert result.details.document_type == "schema"
 
       cleanup_spec_file(spec_path)
     end
@@ -124,7 +124,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ComponentSpecSessions",
-        document_type: :spec
+        document_type: "spec"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
@@ -132,7 +132,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
       assert result.satisfied == false
       assert result.details.reason == "Document validation failed"
       assert result.details.error =~ "Missing required sections"
-      assert result.details.document_type == :spec
+      assert result.details.document_type == "spec"
 
       cleanup_spec_file(spec_path)
     end
@@ -160,7 +160,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ComponentSpecSessions",
-        document_type: :spec
+        document_type: "spec"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
@@ -181,7 +181,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ComponentSpecSessions",
-        document_type: :spec
+        document_type: "spec"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)
@@ -220,7 +220,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ComponentSpecSessions",
-        document_type: :spec
+        document_type: "spec"
       }
 
       result = DocumentValidityChecker.check(requirement_spec, component)

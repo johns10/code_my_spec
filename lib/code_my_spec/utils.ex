@@ -24,7 +24,7 @@ defmodule CodeMySpec.Utils do
     }
 
     # Add review_file for context components (both :context and :coordination_context)
-    if type in [:context, :coordination_context] do
+    if type in ["context", "coordination_context"] do
       Map.put(base_files, :review_file, "docs/design/#{module_path}/design_review.md")
     else
       base_files

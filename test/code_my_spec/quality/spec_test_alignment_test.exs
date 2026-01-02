@@ -10,7 +10,7 @@ defmodule CodeMySpec.QualityTest do
       # Test against the Blog context with intentional misalignment
       component = %Component{
         module_name: "Blog",
-        type: :context
+        type: "context"
       }
 
       project = %Project{
@@ -43,7 +43,7 @@ defmodule CodeMySpec.QualityTest do
       # The PostRepository tests are organized exactly according to the spec
       component = %Component{
         module_name: "Blog.PostRepository",
-        type: :repository
+        type: "repository"
       }
 
       project = %Project{

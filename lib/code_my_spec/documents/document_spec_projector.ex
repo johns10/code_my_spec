@@ -30,7 +30,6 @@ defmodule CodeMySpec.Documents.DocumentSpecProjector do
 
   defp format_type_name(component_type) do
     component_type
-    |> Atom.to_string()
     |> String.split("_")
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")

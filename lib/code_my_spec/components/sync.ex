@@ -207,9 +207,8 @@ defmodule CodeMySpec.Components.Sync do
     # Extract type from Type field
     type =
       case Regex.run(~r/\*\*Type\*\*:\s*(\w+)/m, content) do
-        [_, "context"] -> :context
-        [_, "coordination_context"] -> :coordination_context
-        _ -> :context
+        [_, type_str] -> type_str
+        _ -> "context"
       end
 
     # Extract description (text after type, before next section)
@@ -248,16 +247,8 @@ defmodule CodeMySpec.Components.Sync do
     # Extract type from Type field
     type =
       case Regex.run(~r/\*\*Type\*\*:\s*(\w+)/m, content) do
-        [_, type_str] ->
-          # Convert to atom safely - default to :other if invalid
-          try do
-            String.to_existing_atom(type_str)
-          rescue
-            ArgumentError -> String.to_atom(type_str)
-          end
-
-        _ ->
-          nil
+        [_, type_str] -> type_str
+        _ -> nil
       end
 
     # Extract description
@@ -296,7 +287,7 @@ defmodule CodeMySpec.Components.Sync do
     if module_name do
       %{
         module_name: module_name,
-        type: :other,
+        type: "other",
         description: nil,
         spec_path: nil,
         impl_path: path

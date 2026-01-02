@@ -20,7 +20,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.FinalizeTest do
         component_fixture(scope, %{
           name: "Accounts",
           module_name: "Accounts",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -137,7 +137,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.FinalizeTest do
         component_fixture(scope, %{
           name: "User::Management",
           module_name: "UserManagement",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -168,7 +168,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.FinalizeTest do
         component_fixture(scope, %{
           name: "User---Admin:::System",
           module_name: "UserAdminSystem",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -227,7 +227,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.FinalizeTest do
         component_fixture(scope, %{
           name: "Accounts",
           module_name: "Accounts",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 

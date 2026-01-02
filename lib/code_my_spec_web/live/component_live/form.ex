@@ -16,13 +16,7 @@ defmodule CodeMySpecWeb.ComponentLive.Form do
 
       <.form for={@form} id="component-form" phx-change="validate" phx-submit="save">
         <.input field={@form[:name]} type="text" label="Name" />
-        <.input
-          field={@form[:type]}
-          type="select"
-          label="Type"
-          prompt="Choose a type"
-          options={Ecto.Enum.values(CodeMySpec.Components.Component, :type)}
-        />
+        <.input field={@form[:type]} type="text" label="Type" />
         <.input field={@form[:module_name]} type="text" label="Module Name" />
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:priority]} type="number" label="Priority" />

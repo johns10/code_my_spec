@@ -13,8 +13,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
   describe "CreateDependency tool" do
     test "executes with valid params and scope" do
       scope = full_scope_fixture()
-      source_component = component_fixture(scope, %{name: "SourceComponent", type: :context})
-      target_component = component_fixture(scope, %{name: "TargetComponent", type: :schema})
+      source_component = component_fixture(scope, %{name: "SourceComponent", type: "context"})
+      target_component = component_fixture(scope, %{name: "TargetComponent", type: "schema"})
 
       params = %{
         source_component_id: source_component.id,
@@ -38,7 +38,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
 
     test "prevents self-dependencies" do
       scope = full_scope_fixture()
-      component = component_fixture(scope, %{name: "SelfComponent", type: :context})
+      component = component_fixture(scope, %{name: "SelfComponent", type: "context"})
 
       params = %{
         source_component_id: component.id,
@@ -54,8 +54,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
 
     test "detects circular dependencies" do
       scope = full_scope_fixture()
-      component_a = component_fixture(scope, %{name: "ComponentA", type: :context})
-      component_b = component_fixture(scope, %{name: "ComponentB", type: :context})
+      component_a = component_fixture(scope, %{name: "ComponentA", type: "context"})
+      component_b = component_fixture(scope, %{name: "ComponentB", type: "context"})
 
       # Create first dependency A -> B
       first_params = %{

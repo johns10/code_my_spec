@@ -17,7 +17,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.FinalizeTest do
     context_component =
       component_fixture(scope, %{
         name: Keyword.get(opts, :context_name, "TestContext"),
-        type: :context,
+        type: "context",
         module_name: Keyword.get(opts, :context_module, "TestContext")
       })
 
@@ -28,7 +28,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.FinalizeTest do
       Enum.map(0..(child_count - 1), fn idx ->
         component_fixture(scope, %{
           name: "ChildComponent#{idx}",
-          type: :schema,
+          type: "schema",
           module_name: "ChildComponent#{idx}",
           parent_component_id: context_component.id
         })
@@ -276,7 +276,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.FinalizeTest do
 
     test "returns error when no child sessions exist" do
       scope = full_scope_fixture()
-      context_component = component_fixture(scope, %{name: "EmptyContext", type: :context})
+      context_component = component_fixture(scope, %{name: "EmptyContext", type: "context"})
       parent_session = create_parent_session(scope, context_component)
 
       # Reload parent session (will have no children)

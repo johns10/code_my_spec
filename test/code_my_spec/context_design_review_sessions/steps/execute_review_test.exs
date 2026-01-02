@@ -24,7 +24,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Sessions",
           module_name: "Sessions",
-          type: :context,
+          type: "context",
           project_id: project.id,
           description: "Manages user sessions and workflows"
         })
@@ -34,7 +34,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "SessionsRepository",
           module_name: "Sessions.SessionsRepository",
-          type: :repository,
+          type: "repository",
           project_id: project.id,
           parent_component_id: context_component.id,
           description: "Data access for sessions"
@@ -44,7 +44,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Session",
           module_name: "Sessions.Session",
-          type: :schema,
+          type: "schema",
           project_id: project.id,
           parent_component_id: context_component.id,
           description: "Session schema"
@@ -54,7 +54,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "SessionsLive",
           module_name: "SessionsWeb.SessionsLive",
-          type: :liveview,
+          type: "liveview",
           project_id: project.id,
           parent_component_id: context_component.id,
           description: "LiveView for sessions"
@@ -231,7 +231,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Standalone",
           module_name: "Standalone",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -257,7 +257,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "NoStories",
           module_name: "NoStories",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -341,7 +341,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "TestContext",
           module_name: "TestContext",
-          type: :context
+          type: "context"
         })
 
       # Session without project
@@ -367,7 +367,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Ordering",
           module_name: "Ordering",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -376,7 +376,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "HighPriority",
           module_name: "Ordering.HighPriority",
-          type: :repository,
+          type: "repository",
           project_id: project.id,
           parent_component_id: context_component.id,
           priority: 100
@@ -386,7 +386,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "LowPriority",
           module_name: "Ordering.LowPriority",
-          type: :schema,
+          type: "schema",
           project_id: project.id,
           parent_component_id: context_component.id,
           priority: 1
@@ -438,7 +438,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "TestContext",
           module_name: "TestContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -465,7 +465,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "NestedContext",
           module_name: "MyApp.Sub.NestedContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -494,7 +494,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Stories",
           module_name: "Stories",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -548,7 +548,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "MixedTypes",
           module_name: "MixedTypes",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -557,7 +557,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Repo",
           module_name: "MixedTypes.Repo",
-          type: :repository,
+          type: "repository",
           project_id: project.id,
           parent_component_id: context_component.id
         })
@@ -566,7 +566,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Schema",
           module_name: "MixedTypes.Schema",
-          type: :schema,
+          type: "schema",
           project_id: project.id,
           parent_component_id: context_component.id
         })
@@ -575,7 +575,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Live",
           module_name: "MixedTypes.Live",
-          type: :other,
+          type: "other",
           project_id: project.id,
           parent_component_id: context_component.id
         })
@@ -584,7 +584,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Server",
           module_name: "MixedTypes.Server",
-          type: :genserver,
+          type: "genserver",
           project_id: project.id,
           parent_component_id: context_component.id
         })
@@ -593,7 +593,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "Helper",
           module_name: "MixedTypes.Helper",
-          type: :other,
+          type: "other",
           project_id: project.id,
           parent_component_id: context_component.id
         })
@@ -641,7 +641,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "TestContext",
           module_name: "TestContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -714,7 +714,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "TestContext",
           module_name: "TestContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -784,7 +784,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "TestContext",
           module_name: "TestContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -827,7 +827,7 @@ defmodule CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReviewTest do
         component_fixture(scope, %{
           name: "TestContext",
           module_name: "TestContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 

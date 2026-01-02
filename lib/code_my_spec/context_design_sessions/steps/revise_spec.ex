@@ -37,7 +37,7 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ReviseSpec do
   end
 
   defp validate_and_get_errors(spec_content) do
-    case Documents.create_dynamic_document(spec_content, :context_spec) do
+    case Documents.create_dynamic_document(spec_content, "context_spec") do
       {:ok, _} -> {:error, "spec is valid - no revision needed"}
       {:error, error} -> {:ok, error}
     end

@@ -17,7 +17,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context
+          type: "context"
         })
 
       # Fetch component with proper preloads
@@ -55,7 +55,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context
+          type: "context"
         })
 
       # Fetch component with proper preloads
@@ -92,7 +92,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context
+          type: "context"
         })
 
       # Fetch component with proper preloads
@@ -141,14 +141,14 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context
+          type: "context"
         })
 
       created_posts =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Posts",
           module_name: "Posts",
-          type: :context
+          type: "context"
         })
 
       # Fetch components with proper preloads
@@ -201,7 +201,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
           module_name: "Users",
-          type: :context
+          type: "context"
         })
 
       # Fetch component with proper preloads
@@ -251,7 +251,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
         ComponentsFixtures.component_fixture(scope, %{
           name: "UserProfile",
           module_name: "Accounts.UserProfile",
-          type: :schema
+          type: "schema"
         })
 
       # Fetch component with proper preloads

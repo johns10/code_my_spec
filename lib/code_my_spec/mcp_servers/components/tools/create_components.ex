@@ -18,7 +18,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponents do
               name: {:required, :string},
               type:
                 {:required, :string,
-                 enum: [:context, :coordination_context],
+                 enum: ["context", "coordination_context"],
                  description:
                    "Must be one of: context (domain contexts that own entities), :coordination_context (orchestrate workflows across domain context)"},
               module_name: {:required, :string},

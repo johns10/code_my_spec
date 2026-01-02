@@ -44,7 +44,7 @@ defmodule CodeMySpec.Components.Registry do
     name: :spec_valid,
     checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
     satisfied_by: "ContextSpecSessions",
-    document_type: :context_spec
+    document_type: "context_spec"
   }
 
   @design_file %{
@@ -57,14 +57,14 @@ defmodule CodeMySpec.Components.Registry do
     name: :spec_valid,
     checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
     satisfied_by: "ComponentSpecSessions",
-    document_type: :spec
+    document_type: "spec"
   }
 
   @schema_spec_validity %{
     name: :spec_valid,
     checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
     satisfied_by: "ComponentSpecSessions",
-    document_type: :schema
+    document_type: "schema"
   }
 
   @implementation_file %{
@@ -100,14 +100,14 @@ defmodule CodeMySpec.Components.Registry do
   ]
 
   @type_definitions %{
-    genserver: %{
+    "genserver" => %{
       requirements: @default_requirements,
       display_name: "GenServer",
       description: "Stateful process that handles requests and maintains state",
       icon: "cpu-chip",
       color: "green"
     },
-    context: %{
+    "context" => %{
       requirements: [
         @context_design_file,
         @context_spec_validity,
@@ -124,7 +124,7 @@ defmodule CodeMySpec.Components.Registry do
       icon: "squares-2x2",
       color: "purple"
     },
-    coordination_context: %{
+    "coordination_context" => %{
       requirements: [
         @context_design_file,
         @context_spec_validity,
@@ -141,7 +141,7 @@ defmodule CodeMySpec.Components.Registry do
       icon: "arrow-path",
       color: "orange"
     },
-    schema: %{
+    "schema" => %{
       requirements: [
         @design_file,
         @schema_spec_validity,
@@ -152,28 +152,28 @@ defmodule CodeMySpec.Components.Registry do
       icon: "table-cells",
       color: "blue"
     },
-    repository: %{
+    "repository" => %{
       requirements: @default_requirements,
       display_name: "Repository",
       description: "Data access layer abstracting database operations",
       icon: "archive-box",
       color: "indigo"
     },
-    task: %{
+    "task" => %{
       requirements: @default_requirements,
       display_name: "Task",
       description: "Background job or one-time operation",
       icon: "clock",
       color: "yellow"
     },
-    registry: %{
+    "registry" => %{
       requirements: @default_requirements,
       display_name: "Registry",
       description: "Process registry for dynamic process lookup",
       icon: "book-open",
       color: "teal"
     },
-    behaviour: %{
+    "behaviour" => %{
       requirements: [
         @design_file,
         @component_spec_validity,
@@ -184,7 +184,7 @@ defmodule CodeMySpec.Components.Registry do
       icon: "book-open",
       color: "teal"
     },
-    other: %{
+    "other" => %{
       requirements: @default_requirements,
       display_name: "Other",
       description: "Custom component type",
@@ -195,8 +195,8 @@ defmodule CodeMySpec.Components.Registry do
 
   @spec get_type(Component.component_type()) :: type_definition()
   def get_type(component_type) do
-    case Map.get(@type_definitions, component_type) do
-      nil when is_nil(component_type) ->
+    case Map.get(@type_definitions, component_type, nil) do
+      nil ->
         # Return default requirements for components without a type
         %{
           requirements: @default_requirements,
@@ -205,9 +205,6 @@ defmodule CodeMySpec.Components.Registry do
           icon: "question-mark-circle",
           color: "gray"
         }
-
-      nil ->
-        raise "Unknown component type: #{component_type}"
 
       type_def ->
         type_def

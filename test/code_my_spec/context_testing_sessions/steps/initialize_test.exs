@@ -221,7 +221,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
       parent_component =
         component_fixture(scope, %{
           name: "Accounts",
-          type: :context,
+          type: "context",
           module_name: "Accounts"
         })
 
@@ -247,7 +247,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
       parent_component =
         component_fixture(scope, %{
           name: "Accounts",
-          type: :context,
+          type: "context",
           module_name: "Accounts"
         })
 
@@ -275,7 +275,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
       parent_component =
         component_fixture(scope, %{
           name: "Accounts",
-          type: :context,
+          type: "context",
           module_name: "Accounts"
         })
 

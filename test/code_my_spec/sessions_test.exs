@@ -151,7 +151,7 @@ defmodule CodeMySpec.SessionsTest do
       {:ok, component} =
         CodeMySpec.Components.create_component(scope, %{
           name: "TestContext",
-          type: :context,
+          type: "context",
           module_name: "TestContext",
           description: "Test context"
         })

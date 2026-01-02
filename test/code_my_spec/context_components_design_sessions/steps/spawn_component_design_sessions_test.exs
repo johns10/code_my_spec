@@ -19,7 +19,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "Accounts",
           module_name: "Accounts",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -28,7 +28,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "User",
           module_name: "User",
-          type: :schema,
+          type: "schema",
           project_id: project.id,
           parent_component_id: context_component.id,
           priority: 10
@@ -38,7 +38,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "UserRepository",
           module_name: "UserRepository",
-          type: :repository,
+          type: "repository",
           project_id: project.id,
           parent_component_id: context_component.id,
           priority: 5
@@ -48,7 +48,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "AccountsLive",
           module_name: "AccountsLive",
-          type: :other,
+          type: "other",
           project_id: project.id,
           parent_component_id: context_component.id,
           priority: 1
@@ -131,7 +131,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "OrphanContext",
           module_name: "OrphanContext",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -201,7 +201,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "Accounts",
           module_name: "Accounts",
-          type: :context,
+          type: "context",
           project_id: project.id
         })
 
@@ -210,7 +210,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "User",
           module_name: "User",
-          type: :schema,
+          type: "schema",
           project_id: project.id,
           parent_component_id: context_component.id
         })
@@ -219,7 +219,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnComponentSpecSes
         component_fixture(scope, %{
           name: "UserRepository",
           module_name: "UserRepository",
-          type: :repository,
+          type: "repository",
           project_id: project.id,
           parent_component_id: context_component.id
         })

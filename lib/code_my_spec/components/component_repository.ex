@@ -82,7 +82,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def list_contexts(%Scope{active_project_id: project_id}) do
     Component
     |> where([c], c.project_id == ^project_id)
-    |> where([c], c.type == :context or c.type == :coordination_context)
+    |> where([c], c.type == "context" or c.type == "coordination_context")
     |> Repo.all()
   end
 
@@ -90,7 +90,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def list_contexts_with_dependencies(%Scope{active_project_id: project_id}) do
     Component
     |> where([c], c.project_id == ^project_id)
-    |> where([c], c.type == :context or c.type == :coordination_context)
+    |> where([c], c.type == "context" or c.type == "coordination_context")
     |> preload([
       :project,
       :dependencies,
@@ -217,7 +217,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
     # Filter for contexts that have no stories and are not dependencies of entry points
     all_components
     |> Enum.filter(fn c ->
-      c.type == :context and
+      c.type == "context" and
         length(c.stories || []) == 0 and
         not MapSet.member?(dependency_ids, c.id)
     end)

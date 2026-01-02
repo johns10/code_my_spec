@@ -8,7 +8,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
   setup [:register_log_in_setup_account, :setup_active_account, :setup_active_project]
 
   defp create_story_with_component(%{scope: scope}) do
-    component = component_fixture(scope, %{name: "UserService", type: :genserver})
+    component = component_fixture(scope, %{name: "UserService", type: "genserver"})
     story = story_fixture(scope, %{title: "User Login", component_id: component.id})
     %{component: component, story: story}
   end
@@ -46,7 +46,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "displays satisfied stories section", %{conn: conn, scope: scope} do
-      component = component_fixture(scope, %{name: "UserService", type: :genserver})
+      component = component_fixture(scope, %{name: "UserService", type: "genserver"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
       {:ok, _live, html} = live(conn, ~p"/app/architecture")
@@ -57,8 +57,8 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "displays component type badges correctly", %{conn: conn, scope: scope} do
-      genserver = component_fixture(scope, %{name: "UserService", type: :genserver})
-      repository = component_fixture(scope, %{name: "UserRepo", type: :repository})
+      genserver = component_fixture(scope, %{name: "UserService", type: "genserver"})
+      repository = component_fixture(scope, %{name: "UserRepo", type: "repository"})
 
       _story1 = story_fixture(scope, %{title: "User Login", component_id: genserver.id})
       _story2 = story_fixture(scope, %{title: "User Data", component_id: repository.id})
@@ -70,7 +70,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "displays collapsible menu structure", %{conn: conn, scope: scope} do
-      component = component_fixture(scope, %{name: "UserService", type: :genserver})
+      component = component_fixture(scope, %{name: "UserService", type: "genserver"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
       {:ok, _live, html} = live(conn, ~p"/app/architecture")
@@ -81,8 +81,8 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "shows edit links for components in dependencies", %{conn: conn, scope: scope} do
-      component1 = component_fixture(scope, %{name: "UserService", type: :genserver})
-      component2 = component_fixture(scope, %{name: "UserRepo", type: :repository})
+      component1 = component_fixture(scope, %{name: "UserService", type: "genserver"})
+      component2 = component_fixture(scope, %{name: "UserRepo", type: "repository"})
       _story = story_fixture(scope, %{title: "User Login", component_id: component1.id})
 
       # Create dependency
@@ -99,7 +99,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "shows edit story links", %{conn: conn, scope: scope} do
-      component = component_fixture(scope, %{name: "UserService", type: :genserver})
+      component = component_fixture(scope, %{name: "UserService", type: "genserver"})
       story = story_fixture(scope, %{title: "User Login", component_id: component.id})
 
       {:ok, _live, html} = live(conn, ~p"/app/architecture")
@@ -117,7 +117,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
     end
 
     test "displays component with story count", %{conn: conn, scope: scope} do
-      component = component_fixture(scope, %{name: "UserService", type: :genserver})
+      component = component_fixture(scope, %{name: "UserService", type: "genserver"})
       _story1 = story_fixture(scope, %{title: "User Login", component_id: component.id})
       _story2 = story_fixture(scope, %{title: "User Logout", component_id: component.id})
 
@@ -138,7 +138,7 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
       refute html =~ "EmailService"
 
       # Create a new component with story
-      component = component_fixture(scope, %{name: "EmailService", type: :task})
+      component = component_fixture(scope, %{name: "EmailService", type: "task"})
       _story = story_fixture(scope, %{title: "Send Email", component_id: component.id})
 
       # Should now see the new component in the updated architecture
@@ -225,8 +225,8 @@ defmodule CodeMySpecWeb.ArchitectureLive.IndexTest do
   describe "Data processing" do
     test "groups components by story correctly", %{conn: conn, scope: scope} do
       # Create multiple components for same story
-      component1 = component_fixture(scope, %{name: "AuthService", type: :genserver})
-      component2 = component_fixture(scope, %{name: "UserRepo", type: :repository})
+      component1 = component_fixture(scope, %{name: "AuthService", type: "genserver"})
+      component2 = component_fixture(scope, %{name: "UserRepo", type: "repository"})
 
       _story = story_fixture(scope, %{title: "User Authentication", component_id: component1.id})
 

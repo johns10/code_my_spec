@@ -50,7 +50,7 @@ defmodule CodeMySpec.ProjectSyncTest do
 
       # Verify all contexts have valid types
       Enum.each(contexts, fn context ->
-        assert context.type in [:context, :coordination_context, nil]
+        assert context.type in ["context", "coordination_context", nil]
         assert not is_nil(context.module_name)
         assert String.starts_with?(context.module_name, "TestPhoenixProject")
       end)
@@ -178,7 +178,7 @@ defmodule CodeMySpec.ProjectSyncTest do
         Components.create_component(scope, %{
           name: "StaleContext",
           module_name: "TestPhoenixProject.StaleContext",
-          type: :context
+          type: "context"
         })
 
       assert Components.get_component(scope, fake_context.id) != nil
@@ -205,7 +205,7 @@ defmodule CodeMySpec.ProjectSyncTest do
         Components.create_component(scope, %{
           name: "StaleComponent",
           module_name: "#{context.module_name}.StaleComponent",
-          type: :schema,
+          type: "schema",
           parent_component_id: context.id
         })
 

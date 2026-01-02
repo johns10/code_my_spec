@@ -8,12 +8,12 @@ defmodule CodeMySpec.Sessions.OrchestratorTest do
 
   setup do
     scope = full_scope_fixture()
-    context = component_fixture(scope, %{name: "TestContext", type: :context})
+    context = component_fixture(scope, %{name: "TestContext", type: "context"})
 
     component =
       component_fixture(scope, %{
         name: "TestComponent",
-        type: :other,
+        type: "other",
         parent_component_id: context.id
       })
 

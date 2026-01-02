@@ -20,9 +20,9 @@ defmodule CodeMySpec.DocumentsTest do
       - CodeMySpec.MyModule
       """
 
-      {:ok, document} = Documents.create_dynamic_document(markdown, :schema)
+      {:ok, document} = Documents.create_dynamic_document(markdown, "schema")
 
-      assert document.type == :schema
+      assert document.type == "schema"
       assert is_list(document.sections["fields"])
     end
 
@@ -34,7 +34,7 @@ defmodule CodeMySpec.DocumentsTest do
       Only has purpose.
       """
 
-      {:error, error} = Documents.create_dynamic_document(markdown, :schema)
+      {:error, error} = Documents.create_dynamic_document(markdown, "schema")
 
       assert error =~ "Missing required sections"
       assert error =~ "fields"
@@ -79,7 +79,7 @@ defmodule CodeMySpec.DocumentsTest do
       - func/1: Other.func/1
       """
 
-      {:ok, document} = Documents.create_dynamic_document(markdown, :dynamic_document)
+      {:ok, document} = Documents.create_dynamic_document(markdown, "dynamic_document")
 
       assert document.sections["custom section"] == "Extra content allowed for contexts."
     end
@@ -103,7 +103,7 @@ defmodule CodeMySpec.DocumentsTest do
       This should not be allowed for specs!
       """
 
-      {:error, error} = Documents.create_dynamic_document(markdown, :spec)
+      {:error, error} = Documents.create_dynamic_document(markdown, "spec")
 
       assert error =~ "Disallowed sections found"
       assert error =~ "custom section"
@@ -131,7 +131,7 @@ defmodule CodeMySpec.DocumentsTest do
       Also not allowed.
       """
 
-      {:error, error} = Documents.create_dynamic_document(markdown, :spec)
+      {:error, error} = Documents.create_dynamic_document(markdown, "spec")
 
       assert error =~ "Disallowed sections found"
       assert error =~ "custom one"
@@ -159,9 +159,9 @@ defmodule CodeMySpec.DocumentsTest do
       | name | string | Yes |
       """
 
-      {:ok, document} = Documents.create_dynamic_document(markdown, :spec)
+      {:ok, document} = Documents.create_dynamic_document(markdown, "spec")
 
-      assert document.type == :spec
+      assert document.type == "spec"
       assert is_list(document.sections["fields"])
     end
 
@@ -181,9 +181,9 @@ defmodule CodeMySpec.DocumentsTest do
       """
 
       # Temporarily test with context_spec which has [["delegates", "functions"], "dependencies", "components"]
-      {:ok, document} = Documents.create_dynamic_document(markdown, :context_spec)
+      {:ok, document} = Documents.create_dynamic_document(markdown, "context_spec")
 
-      assert document.type == :context_spec
+      assert document.type == "context_spec"
     end
 
     test "validates OR logic - succeeds when second alternative is present" do
@@ -202,9 +202,9 @@ defmodule CodeMySpec.DocumentsTest do
       Component list.
       """
 
-      {:ok, document} = Documents.create_dynamic_document(markdown, :context_spec)
+      {:ok, document} = Documents.create_dynamic_document(markdown, "context_spec")
 
-      assert document.type == :context_spec
+      assert document.type == "context_spec"
     end
 
     test "validates OR logic - fails when none of the alternatives are present" do
@@ -218,7 +218,7 @@ defmodule CodeMySpec.DocumentsTest do
       Component list.
       """
 
-      {:error, error} = Documents.create_dynamic_document(markdown, :context_spec)
+      {:error, error} = Documents.create_dynamic_document(markdown, "context_spec")
 
       assert error =~ "Missing required sections"
       assert error =~ "delegates OR functions"
@@ -237,7 +237,7 @@ defmodule CodeMySpec.DocumentsTest do
       Component list.
       """
 
-      {:error, error} = Documents.create_dynamic_document(markdown, :context_spec)
+      {:error, error} = Documents.create_dynamic_document(markdown, "context_spec")
 
       assert error =~ "Missing required sections"
       assert error =~ "dependencies"

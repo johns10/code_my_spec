@@ -32,7 +32,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
   defp get_test_rules(_scope, component) do
     component_type = component.type
 
-    Rules.find_matching_rules(Atom.to_string(component_type), "test")
+    Rules.find_matching_rules(component_type, "test")
     |> case do
       rules when is_list(rules) -> {:ok, rules}
     end

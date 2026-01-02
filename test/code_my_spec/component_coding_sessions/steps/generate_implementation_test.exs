@@ -24,7 +24,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
         component_fixture(scope, %{
           module_name: "TestPhoenixProject.Blog.PostRepository",
           name: "PostRepository",
-          type: :repository,
+          type: "repository",
           description: "Repository for managing blog posts",
           project_id: project.id
         })
@@ -147,7 +147,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.GenerateImplementationTest do
       component =
         component_fixture(scope, %{
           module_name: "MyApp.Repository",
-          type: :repository,
+          type: "repository",
           project_id: project.id
         })
 

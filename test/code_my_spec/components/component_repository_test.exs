@@ -111,14 +111,14 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     test "creates component with valid attributes", %{scope: scope} do
       attrs = %{
         name: "NewComponent",
-        type: :context,
+        type: "context",
         module_name: "MyApp.NewComponent",
         description: "A new component"
       }
 
       assert {:ok, component} = ComponentRepository.create_component(scope, attrs)
       assert component.name == "NewComponent"
-      assert component.type == :context
+      assert component.type == "context"
       assert component.module_name == "MyApp.NewComponent"
       assert component.description == "A new component"
       assert component.project_id == scope.active_project_id
@@ -142,7 +142,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     test "returns error with invalid module name format", %{scope: scope} do
       attrs = %{
         name: "TestComponent",
-        type: :context,
+        type: "context",
         module_name: "invalid_module_name"
       }
 
@@ -155,11 +155,12 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
 
       attrs = %{
         name: "DifferentName",
-        type: :context,
+        type: "context",
         module_name: "MyApp.Duplicate"
       }
 
       assert {:error, changeset} = ComponentRepository.create_component(scope, attrs)
+
       # With deterministic UUIDs, duplicate module_name generates same ID, hitting primary key constraint
       assert errors_on(changeset) == %{id: ["component already exists"]}
     end
@@ -175,7 +176,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
 
       attrs = %{
         name: "SameName",
-        type: :context,
+        type: "context",
         module_name: "MyApp.SameName"
       }
 
@@ -320,11 +321,11 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     test "returns components filtered by type", %{scope: scope} do
       genserver_comp = genserver_component_fixture(scope)
       schema_comp = schema_component_fixture(scope)
-      _context_comp = component_fixture(scope, %{type: :context})
+      _context_comp = component_fixture(scope, %{type: "context"})
 
-      genserver_result = ComponentRepository.list_components_by_type(scope, :genserver)
-      schema_result = ComponentRepository.list_components_by_type(scope, :schema)
-      context_result = ComponentRepository.list_components_by_type(scope, :context)
+      genserver_result = ComponentRepository.list_components_by_type(scope, "genserver")
+      schema_result = ComponentRepository.list_components_by_type(scope, "schema")
+      context_result = ComponentRepository.list_components_by_type(scope, "context")
 
       assert length(genserver_result) == 1
       assert hd(genserver_result).id == genserver_comp.id
@@ -336,7 +337,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     end
 
     test "returns empty list when no components of type exist", %{scope: scope} do
-      result = ComponentRepository.list_components_by_type(scope, :registry)
+      result = ComponentRepository.list_components_by_type(scope, "registry")
       assert result == []
     end
   end
@@ -394,13 +395,13 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       component_attrs_list = [
         %{
           name: "Component1",
-          type: :context,
+          type: "context",
           module_name: "MyApp.Component1",
           description: "First component"
         },
         %{
           name: "Component2",
-          type: :schema,
+          type: "schema",
           module_name: "MyApp.Component2",
           description: "Second component"
         }
@@ -438,12 +439,12 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       component_attrs_list = [
         %{
           name: "ValidComponent",
-          type: :context,
+          type: "context",
           module_name: "MyApp.ValidComponent"
         },
         %{
           name: "DuplicateComponent",
-          type: :context,
+          type: "context",
           module_name: "MyApp.Duplicate"
         }
       ]
@@ -466,7 +467,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       component_attrs_list = [
         %{
           name: "Component1",
-          type: :context,
+          type: "context",
           module_name: "MyApp.Component1"
         }
       ]
@@ -499,7 +500,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       component_attrs_list = [
         %{
           name: "Component1",
-          type: :context,
+          type: "context",
           module_name: "MyApp.Component1"
         }
       ]
@@ -523,7 +524,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       component_attrs_list = [
         %{
           name: "SourceComponent",
-          type: :context,
+          type: "context",
           module_name: "MyApp.SourceComponent"
         }
       ]
@@ -561,7 +562,7 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
       component_attrs_list = [
         %{
           name: "NewName",
-          type: :context,
+          type: "context",
           module_name: "MyApp.ExistingComponent",
           description: "New description"
         }

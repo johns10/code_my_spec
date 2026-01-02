@@ -17,7 +17,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
     context_component =
       component_fixture(scope, %{
         name: Keyword.get(opts, :context_name, "TestContext"),
-        type: :context,
+        type: "context",
         module_name: Keyword.get(opts, :context_module, "TestContext")
       })
 
@@ -31,7 +31,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
 
         component_fixture(scope, %{
           name: "ChildComponent#{idx}",
-          type: :schema,
+          type: "schema",
           module_name: "ChildComponent#{idx}",
           parent_component_id: context_component.id,
           priority: priority
@@ -166,7 +166,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       context_component =
         component_fixture(scope, %{
           name: "TestContext",
-          type: :context,
+          type: "context",
           module_name: "TestContext"
         })
 
@@ -174,7 +174,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       _child_a =
         component_fixture(scope, %{
           name: "Alpha",
-          type: :schema,
+          type: "schema",
           module_name: "Alpha",
           parent_component_id: context_component.id,
           priority: 1
@@ -183,7 +183,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       _child_b =
         component_fixture(scope, %{
           name: "Beta",
-          type: :schema,
+          type: "schema",
           module_name: "Beta",
           parent_component_id: context_component.id,
           priority: 3
@@ -192,7 +192,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       _child_c =
         component_fixture(scope, %{
           name: "Charlie",
-          type: :schema,
+          type: "schema",
           module_name: "Charlie",
           parent_component_id: context_component.id,
           priority: 1
@@ -236,7 +236,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessionsTes
       context_component =
         component_fixture(scope, %{
           name: "EmptyContext",
-          type: :context,
+          type: "context",
           module_name: "EmptyContext"
         })
 

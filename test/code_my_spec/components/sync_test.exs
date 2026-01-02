@@ -41,7 +41,7 @@ defmodule CodeMySpec.Components.SyncTest do
 
       # Should find context spec files
       assert length(contexts) > 0
-      assert Enum.all?(contexts, &(&1.type in [:context, :coordination_context]))
+      assert Enum.all?(contexts, &(&1.type in ["context", "coordination_context"]))
     end
 
     test "finds all context implementation files in lib/", %{scope: scope, tmp_dir: tmp_dir} do
@@ -93,7 +93,7 @@ defmodule CodeMySpec.Components.SyncTest do
         Components.create_component(scope, %{
           name: "FakeContext",
           module_name: "#{scope.active_project.module_name}.FakeContext",
-          type: :context
+          type: "context"
         })
 
       # Second sync should remove it
@@ -144,7 +144,7 @@ defmodule CodeMySpec.Components.SyncTest do
       Enum.each(contexts_with_specs, fn context ->
         assert context.module_name != nil
         assert context.name != nil
-        assert context.type in [:context, :coordination_context]
+        assert context.type in ["context", "coordination_context"]
       end)
     end
 
@@ -243,7 +243,7 @@ defmodule CodeMySpec.Components.SyncTest do
           Components.create_component(scope, %{
             name: "FakeComponent",
             module_name: "#{context.module_name}.FakeComponent",
-            type: :schema,
+            type: "schema",
             parent_component_id: context.id
           })
 
@@ -347,7 +347,7 @@ defmodule CodeMySpec.Components.SyncTest do
       if spec_file do
         {:ok, context} = Sync.sync_context(scope, spec_file)
 
-        assert context.type in [:context, :coordination_context]
+        assert context.type in ["context", "coordination_context"]
         assert not is_nil(context.module_name)
       end
     end

@@ -13,8 +13,8 @@ defmodule CodeMySpec.Components.DependencyRepositoryTest do
       scope = full_scope_fixture()
 
       # Create components and dependencies in the scoped project
-      source = component_fixture(scope, %{name: "Source", type: :context})
-      target = component_fixture(scope, %{name: "Target", type: :schema})
+      source = component_fixture(scope, %{name: "Source", type: "context"})
+      target = component_fixture(scope, %{name: "Target", type: "schema"})
 
       dependency = dependency_fixture(scope, source, target)
 

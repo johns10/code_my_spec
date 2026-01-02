@@ -17,7 +17,7 @@ defmodule CodeMySpec.ComponentsFixtures do
     attrs =
       Enum.into(attrs, %{
         name: "TestComponent#{unique_id}",
-        type: :context,
+        type: "context",
         module_name: "TestComponent#{unique_id}",
         description: "A test component"
       })
@@ -36,7 +36,7 @@ defmodule CodeMySpec.ComponentsFixtures do
       Map.merge(
         %{
           name: "ParentComponent#{unique_id}",
-          type: :context,
+          type: "context",
           module_name: "ParentComponent#{unique_id}"
         },
         attrs
@@ -44,7 +44,7 @@ defmodule CodeMySpec.ComponentsFixtures do
 
     child_attrs = %{
       name: "ChildComponent#{unique_id}",
-      type: :schema,
+      type: "schema",
       module_name: "ChildComponent#{unique_id}"
     }
 
@@ -69,7 +69,7 @@ defmodule CodeMySpec.ComponentsFixtures do
     attrs =
       Enum.into(attrs, %{
         name: "TestGenServer",
-        type: :genserver,
+        type: "genserver",
         module_name: "TestGenServer",
         description: "A test GenServer"
       })
@@ -84,7 +84,7 @@ defmodule CodeMySpec.ComponentsFixtures do
     attrs =
       Enum.into(attrs, %{
         name: "TestSchema",
-        type: :schema,
+        type: "schema",
         module_name: "TestSchema",
         description: "A test schema"
       })
@@ -99,7 +99,7 @@ defmodule CodeMySpec.ComponentsFixtures do
     attrs =
       Enum.into(attrs, %{
         name: "TestRepository",
-        type: :repository,
+        type: "repository",
         module_name: "TestRepository",
         description: "A test repository"
       })

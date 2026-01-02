@@ -141,7 +141,7 @@ defmodule CodeMySpec.Documents.Registry do
   }
 
   @document_definitions %{
-    schema: %{
+    "schema" => %{
       overview: """
       Schema components represent Ecto schema entities that define data structures,
       relationships, and validation rules for persistence in the database. Each schema
@@ -156,7 +156,7 @@ defmodule CodeMySpec.Documents.Registry do
         "fields" => @spec_fields
       }
     },
-    context_spec: %{
+    "context_spec" => %{
       overview: """
       Spec documents provide comprehensive documentation for Elixir modules following a
       structured format. Each spec includes module metadata, public API documentation,
@@ -177,7 +177,7 @@ defmodule CodeMySpec.Documents.Registry do
         "components" => @spec_components
       }
     },
-    dynamic_document: %{
+    "dynamic_document" => %{
       overview: "A fully dynamic document",
       required_sections: [],
       optional_sections: [],
@@ -185,8 +185,8 @@ defmodule CodeMySpec.Documents.Registry do
     }
   }
 
-  @spec get_definition(atom()) :: document_definition()
-  def get_definition(component_type) do
+  @spec get_definition(String.t()) :: document_definition()
+  def get_definition(component_type) when is_binary(component_type) do
     Map.get(@document_definitions, component_type, @default_spec_definition)
   end
 end

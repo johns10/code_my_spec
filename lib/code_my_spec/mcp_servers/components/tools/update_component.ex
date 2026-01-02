@@ -16,7 +16,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponent do
     field :name, :string
 
     field :type, :enum,
-      enum: [:context, :coordination_context],
+      enum: ["context", "coordination_context"],
       description:
         "Must be one of: context (domain contexts that own entities), :coordination_context (orchestrate workflows across domain context)"
 

@@ -297,7 +297,7 @@ defmodule CodeMySpec.Components.DependencyTreeTest do
       component =
         component_fixture(scope, %{
           name: "TestComponent",
-          type: :context,
+          type: "context",
           module_name: "MyApp.TestComponent",
           description: "Test description"
         })
@@ -307,7 +307,7 @@ defmodule CodeMySpec.Components.DependencyTreeTest do
 
       result_component = hd(result)
       assert result_component.name == "TestComponent"
-      assert result_component.type == :context
+      assert result_component.type == "context"
       assert result_component.module_name == "MyApp.TestComponent"
       assert result_component.description == "Test description"
       assert result_component.id == component.id

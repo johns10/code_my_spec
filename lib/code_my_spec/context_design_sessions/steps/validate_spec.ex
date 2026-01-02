@@ -39,7 +39,7 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
   end
 
   defp validate_document(component_design) do
-    Documents.create_dynamic_document(component_design, :context_spec)
+    Documents.create_dynamic_document(component_design, "context_spec")
   end
 
   defp create_spec_files(session, %{"components" => components})

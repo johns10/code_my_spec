@@ -12,21 +12,21 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       component_fixture(scope, %{
         name: "High Priority Component",
         priority: 1,
-        type: :context
+        type: "context"
       })
 
     medium_priority =
       component_fixture(scope, %{
         name: "Medium Priority Component",
         priority: 5,
-        type: :context
+        type: "context"
       })
 
     no_priority =
       component_fixture(scope, %{
         name: "No Priority Component",
         priority: nil,
-        type: :context
+        type: "context"
       })
 
     %{
@@ -86,7 +86,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       {:ok, _scheduler_live, html} = live(conn, ~p"/app/components/scheduler")
 
       assert html =~ high_priority.name
-      assert html =~ high_priority.type |> Atom.to_string()
+      assert html =~ high_priority.type
       assert html =~ high_priority.module_name
     end
 
@@ -198,7 +198,7 @@ defmodule CodeMySpecWeb.ComponentLive.SchedulerTest do
       new_component =
         component_fixture(scope, %{
           name: "New Test Component",
-          type: :context,
+          type: "context",
           priority: 10
         })
 

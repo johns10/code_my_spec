@@ -6,14 +6,14 @@ defmodule CodeMySpecWeb.ComponentLive.FormTest do
 
   @create_attrs %{
     name: "UserService",
-    type: :genserver,
+    type: "genserver",
     module_name: "CodeMySpec.Services.UserService",
     description: "Handles user operations",
     priority: 1
   }
   @update_attrs %{
     name: "UpdatedUserService",
-    type: :context,
+    type: "context",
     module_name: "CodeMySpec.Contexts.UpdatedUserService",
     description: "Updated user operations",
     priority: 2

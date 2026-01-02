@@ -15,7 +15,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponentTest do
 
       params = %{
         name: "LoginButton",
-        type: :context,
+        type: "context",
         module_name: "MyApp.LoginButton",
         description: "A button component for user login"
       }

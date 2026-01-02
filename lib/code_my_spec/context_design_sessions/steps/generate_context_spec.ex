@@ -37,7 +37,7 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.GenerateContextSpec do
     rules_text = Enum.map_join(rules, "\n\n", & &1.content)
     stories_text = format_stories(stories)
     similar_text = format_similar_components(project, similar_components)
-    document_spec = DocumentSpecProjector.project_spec(:context_spec)
+    document_spec = DocumentSpecProjector.project_spec("context_spec")
     %{spec_file: spec_file_path} = Utils.component_files(context, project)
 
     prompt = """

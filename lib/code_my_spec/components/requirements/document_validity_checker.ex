@@ -13,7 +13,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityChecker do
   Checks if a document file exists and contains valid content.
 
   The requirement_spec must include a `document_type` field specifying which
-  document type to validate against (e.g., :context, :context_spec, :schema, :spec).
+  document type to validate against (e.g., "context", "context_spec", "schema", "spec").
 
   ## Examples
 
@@ -21,7 +21,7 @@ defmodule CodeMySpec.Components.Requirements.DocumentValidityChecker do
         name: :spec_valid,
         checker: DocumentValidityChecker,
         satisfied_by: "ContextSpecSessions",
-        document_type: :context_spec
+        document_type: "context_spec"
       }
   """
   def check(requirement_spec, component, opts \\ [])

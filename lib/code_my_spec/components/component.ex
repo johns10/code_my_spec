@@ -22,7 +22,7 @@ defmodule CodeMySpec.Components.Component do
   @type t :: %__MODULE__{
           id: Ecto.UUID.t(),
           name: String.t(),
-          type: atom(),
+          type: String.t(),
           module_name: String.t(),
           description: String.t() | nil,
           priority: integer() | nil,
@@ -53,7 +53,7 @@ defmodule CodeMySpec.Components.Component do
   schema "components" do
     field :name, :string
 
-    field :type, Ecto.Enum, values: ComponentType.values()
+    field :type, :string
     field :module_name, :string
     field :description, :string
     field :priority, :integer

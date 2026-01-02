@@ -32,7 +32,7 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
       {:ok, blog_context} =
         Components.create_component(scope, %{
           name: "Blog",
-          type: :context,
+          type: "context",
           module_name: "TestPhoenixProject.Blog",
           description: "Blog context for managing posts and comments"
         })

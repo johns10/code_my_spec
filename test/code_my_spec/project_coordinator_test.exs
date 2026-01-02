@@ -26,7 +26,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       {:ok, blog_context} =
         Components.create_component(scope, %{
           name: "Blog",
-          type: :context,
+          type: "context",
           module_name: "TestPhoenixProject.Blog",
           description: "Blog context"
         })
@@ -34,7 +34,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       {:ok, post_schema} =
         Components.create_component(scope, %{
           name: "Post",
-          type: :schema,
+          type: "schema",
           module_name: "TestPhoenixProject.Blog.Post",
           description: "Post schema"
         })
@@ -47,7 +47,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       {:ok, post_repository} =
         Components.create_component(scope, %{
           name: "PostRepository",
-          type: :repository,
+          type: "repository",
           module_name: "TestPhoenixProject.Blog.PostRepository",
           description: "Post repository"
         })
@@ -60,7 +60,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       {:ok, post_cache} =
         Components.create_component(scope, %{
           name: "PostCache",
-          type: :genserver,
+          type: "genserver",
           module_name: "TestPhoenixProject.Blog.PostCache",
           description: "Post cache"
         })
