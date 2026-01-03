@@ -5,7 +5,7 @@ defmodule CodeMySpec.Components.Registry do
   display properties, workflow rules, and validation logic.
   """
 
-  alias CodeMySpec.Components.Requirements.Requirement
+  alias CodeMySpec.Requirements.Requirement
   alias CodeMySpec.Components.Component
 
   @type type_definition :: %{
@@ -18,76 +18,76 @@ defmodule CodeMySpec.Components.Registry do
 
   @child_designs %{
     name: :children_designs,
-    checker: CodeMySpec.Components.Requirements.HierarchicalChecker,
+    checker: CodeMySpec.Requirements.HierarchicalChecker,
     satisfied_by: "ContextComponentsDesignSessions"
   }
 
   @child_implementations %{
     name: :children_implementations,
-    checker: CodeMySpec.Components.Requirements.HierarchicalChecker,
+    checker: CodeMySpec.Requirements.HierarchicalChecker,
     satisfied_by: "ContextCodingSessions"
   }
 
   @dependencies %{
     name: :dependencies_satisfied,
-    checker: CodeMySpec.Components.Requirements.DependencyChecker,
+    checker: CodeMySpec.Requirements.DependencyChecker,
     satisfied_by: nil
   }
 
   @context_design_file %{
     name: :spec_file,
-    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    checker: CodeMySpec.Requirements.FileExistenceChecker,
     satisfied_by: "ContextSpecSessions"
   }
 
   @context_spec_validity %{
     name: :spec_valid,
-    checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
+    checker: CodeMySpec.Requirements.DocumentValidityChecker,
     satisfied_by: "ContextSpecSessions",
     document_type: "context_spec"
   }
 
   @design_file %{
     name: :spec_file,
-    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    checker: CodeMySpec.Requirements.FileExistenceChecker,
     satisfied_by: "ComponentSpecSessions"
   }
 
   @component_spec_validity %{
     name: :spec_valid,
-    checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
+    checker: CodeMySpec.Requirements.DocumentValidityChecker,
     satisfied_by: "ComponentSpecSessions",
     document_type: "spec"
   }
 
   @schema_spec_validity %{
     name: :spec_valid,
-    checker: CodeMySpec.Components.Requirements.DocumentValidityChecker,
+    checker: CodeMySpec.Requirements.DocumentValidityChecker,
     satisfied_by: "ComponentSpecSessions",
     document_type: "schema"
   }
 
   @implementation_file %{
     name: :implementation_file,
-    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    checker: CodeMySpec.Requirements.FileExistenceChecker,
     satisfied_by: "ComponentCodingSessions"
   }
 
   @test_file %{
     name: :test_file,
-    checker: CodeMySpec.Components.Requirements.FileExistenceChecker,
+    checker: CodeMySpec.Requirements.FileExistenceChecker,
     satisfied_by: "ComponentTestSessions"
   }
 
   @review_file %{
     name: :review_file,
-    checker: CodeMySpec.Components.Requirements.ContextReviewFileChecker,
+    checker: CodeMySpec.Requirements.ContextReviewFileChecker,
     satisfied_by: "ContextDesignReviewSessions"
   }
 
   @tests_passing %{
     name: :tests_passing,
-    checker: CodeMySpec.Components.Requirements.TestStatusChecker,
+    checker: CodeMySpec.Requirements.TestStatusChecker,
     satisfied_by: nil
   }
 

@@ -5,10 +5,16 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   with ComponentStatus embedded and nested dependency trees.
   """
 
-  alias CodeMySpec.Components.{Component, ComponentStatus, DependencyTree, HierarchicalTree}
-  alias CodeMySpec.Components
-  alias CodeMySpec.Utils
-  alias CodeMySpec.Components.{Registry, Requirements.Requirement}
+  alias CodeMySpec.Components.{
+    Component,
+    ComponentStatus,
+    DependencyTree,
+    HierarchicalTree,
+    Registry
+  }
+
+  alias CodeMySpec.{Requirements, Utils, Components}
+  alias CodeMySpec.Requirements.Requirement
   alias CodeMySpec.Tests.TestResult
   alias CodeMySpec.Users.Scope
   require Logger
@@ -25,7 +31,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
     scope = Keyword.get(opts, :scope, %Scope{})
 
     components
-    |> Enum.map(&Components.clear_requirements(scope, &1, opts))
+    |> Enum.map(&Requirements.clear_requirements(scope, &1, opts))
     |> Enum.map(&analyze_local_component_status(&1, file_list, failures, scope, opts))
     |> Enum.map(&check_local_requirements(&1, scope, opts))
     |> DependencyTree.build()
@@ -64,12 +70,12 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
   defp check_local_requirements(component, scope, opts) do
     requirements =
-      Components.check_requirements(
+      Requirements.check_requirements(
         component,
         Keyword.put(opts, :exclude, @hierarchy_checks ++ @dependency_checks)
       )
       |> Enum.map(fn requirement_attrs ->
-        case Components.create_requirement(
+        case Requirements.create_requirement(
                scope,
                component,
                requirement_attrs,
@@ -93,12 +99,12 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
   defp check_dependency_requirements(component, scope, opts) do
     dependency_requirements =
-      Components.check_requirements(
+      Requirements.check_requirements(
         component,
         Keyword.put(opts, :include, @dependency_checks ++ @hierarchy_checks)
       )
       |> Enum.map(fn requirement_attrs ->
-        case Components.create_requirement(
+        case Requirements.create_requirement(
                scope,
                component,
                requirement_attrs,

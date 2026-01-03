@@ -1,10 +1,10 @@
-defmodule CodeMySpec.Components.RequirementsRepository do
+defmodule CodeMySpec.Requirements.RequirementsRepository do
   import Ecto.Query, warn: false
 
   alias CodeMySpec.Repo
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Components.Component
-  alias CodeMySpec.Components.Requirements.Requirement
+  alias CodeMySpec.Requirements.Requirement
 
   @type requirement_attrs :: %{
           name: String.t(),
@@ -51,34 +51,5 @@ defmodule CodeMySpec.Components.RequirementsRepository do
     component
     |> Map.put(:outgoing_dependencies, [])
     |> Map.put(:incoming_dependencies, [])
-  end
-
-  @spec components_with_unsatisfied_requirements(Scope.t()) :: [Component.t()]
-  def components_with_unsatisfied_requirements(%Scope{active_project_id: project_id}) do
-    Component
-    |> where([c], c.project_id == ^project_id)
-    |> join(:inner, [c], r in assoc(c, :requirements))
-    |> where([c, r], r.satisfied == false)
-    |> distinct([c], c.id)
-    |> preload(:requirements)
-    |> Repo.all()
-  end
-
-  @spec components_ready_for_work(Scope.t()) :: [Component.t()]
-  def components_ready_for_work(%Scope{active_project_id: project_id}) do
-    # Get components that either have no requirements or all requirements are satisfied
-    components_with_requirements =
-      Component
-      |> where([c], c.project_id == ^project_id)
-      |> join(:inner, [c], r in assoc(c, :requirements))
-      |> where([c, r], r.satisfied == false)
-      |> select([c], c.id)
-      |> Repo.all()
-
-    Component
-    |> where([c], c.project_id == ^project_id)
-    |> where([c], c.id not in ^components_with_requirements)
-    |> preload(:requirements)
-    |> Repo.all()
   end
 end

@@ -1,10 +1,10 @@
 defmodule CodeMySpec.RequirementsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `CodeMySpec.Components.RequirementsRepository` context.
+  entities via the `CodeMySpec.RequirementsRepository` context.
   """
 
-  alias CodeMySpec.Components.RequirementsRepository
+  alias CodeMySpec.Requirements.RequirementsRepository
 
   @doc """
   Generate a requirement.
@@ -15,7 +15,7 @@ defmodule CodeMySpec.RequirementsFixtures do
         name: "design_file",
         type: :file_existence,
         description: "Component design documentation exists",
-        checker_module: "CodeMySpec.Components.Requirements.FileExistenceChecker",
+        checker_module: "CodeMySpec.Requirements.FileExistenceChecker",
         satisfied_by: nil,
         satisfied: false,
         checked_at: DateTime.utc_now(),
@@ -35,7 +35,7 @@ defmodule CodeMySpec.RequirementsFixtures do
         name: "design_file",
         type: :file_existence,
         description: "Component design documentation exists",
-        checker_module: "CodeMySpec.Components.Requirements.FileExistenceChecker",
+        checker_module: "CodeMySpec.Requirements.FileExistenceChecker",
         satisfied_by: nil,
         satisfied: false,
         checked_at: DateTime.utc_now(),

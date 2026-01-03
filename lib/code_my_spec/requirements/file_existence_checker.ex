@@ -1,5 +1,5 @@
-defmodule CodeMySpec.Components.Requirements.FileExistenceChecker do
-  @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
+defmodule CodeMySpec.Requirements.FileExistenceChecker do
+  @behaviour CodeMySpec.Requirements.CheckerBehaviour
   alias CodeMySpec.Components.Component
 
   def check(

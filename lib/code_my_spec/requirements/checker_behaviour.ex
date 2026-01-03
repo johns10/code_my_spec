@@ -1,5 +1,5 @@
-defmodule CodeMySpec.Components.Requirements.CheckerBehaviour do
-  alias CodeMySpec.Components.Requirements.Requirement
+defmodule CodeMySpec.Requirements.CheckerBehaviour do
+  alias CodeMySpec.Requirements.Requirement
   alias CodeMySpec.Components.Component
 
   @type requirement_attrs :: %{

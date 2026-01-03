@@ -8,8 +8,7 @@ defmodule CodeMySpec.Components do
     ComponentRepository,
     DependencyRepository,
     SimilarComponentRepository,
-    Registry,
-    RequirementsRepository
+    Registry
   }
 
   alias CodeMySpec.Users.Scope
@@ -132,33 +131,15 @@ defmodule CodeMySpec.Components do
     Component.changeset(component, attrs, scope)
   end
 
-  def check_requirements(component, opts) do
-    include_types = Keyword.get(opts, :include, [])
-    exclude_types = Keyword.get(opts, :exclude, [])
-
-    Registry.get_requirements_for_type(component.type)
-    |> Enum.filter(fn %{name: name} ->
-      exclude = length(exclude_types) > 0 and name in exclude_types
-
-      include =
-        (length(include_types) > 0 and name in include_types) or length(include_types) == 0
-
-      include && !exclude
-    end)
-    |> Enum.map(fn requirement_spec ->
-      checker = requirement_spec.checker
-      checker.check(requirement_spec, component, opts)
-    end)
-  end
-
-  defdelegate clear_requirements(scope, component, opts \\ []), to: RequirementsRepository
-  defdelegate create_requirement(scope, component, attrs, opts \\ []), to: RequirementsRepository
-  defdelegate components_with_unsatisfied_requirements(scope), to: RequirementsRepository
+  defdelegate components_with_unsatisfied_requirements(scope), to: ComponentRepository
   defdelegate list_dependencies(scope), to: DependencyRepository
   defdelegate get_dependency!(scope, id), to: DependencyRepository
   defdelegate create_dependency(scope, attrs), to: DependencyRepository
   defdelegate delete_dependency(scope, dependency), to: DependencyRepository
   defdelegate validate_dependency_graph(scope), to: DependencyRepository
+
+  @spec resolve_dependency_order(CodeMySpec.Users.Scope.t()) ::
+          {:ok, [CodeMySpec.Components.Component.t()]}
   defdelegate resolve_dependency_order(scope), to: DependencyRepository
 
   # Similar Components
@@ -175,4 +156,5 @@ defmodule CodeMySpec.Components do
 
   defdelegate preload_similar_components(scope, components), to: SimilarComponentRepository
   defdelegate list_referenced_by(scope, component), to: SimilarComponentRepository
+  defdelegate get_requirements_for_type(component_type), to: Registry
 end

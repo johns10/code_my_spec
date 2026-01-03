@@ -1,8 +1,8 @@
-defmodule CodeMySpec.Components.Requirements.DocumentValidityCheckerTest do
+defmodule CodeMySpec.Requirements.DocumentValidityCheckerTest do
   use ExUnit.Case, async: true
-  doctest CodeMySpec.Components.Requirements.DocumentValidityChecker
+  doctest CodeMySpec.Requirements.DocumentValidityChecker
 
-  alias CodeMySpec.Components.Requirements.DocumentValidityChecker
+  alias CodeMySpec.Requirements.DocumentValidityChecker
   alias CodeMySpec.Components.Component
 
   @valid_context_spec_content """

@@ -15,9 +15,11 @@ defmodule CodeMySpec.Components.Component do
   alias CodeMySpec.Components.SimilarComponent
   alias CodeMySpec.Components.ComponentType
   alias CodeMySpec.Projects.Project
-  alias CodeMySpec.Components.Requirements.Requirement
+  alias CodeMySpec.Requirements.Requirement
   alias CodeMySpec.Components.ComponentStatus
   alias CodeMySpec.Accounts.Account
+  alias CodeMySpec.Requirements.Requirement
+  alias CodeMySpec.Stories.Story
 
   @type t :: %__MODULE__{
           id: Ecto.UUID.t(),
@@ -74,7 +76,7 @@ defmodule CodeMySpec.Components.Component do
     has_many :similar_components, through: [:outgoing_similar_components, :similar_component]
     has_many :referenced_by_components, through: [:incoming_similar_components, :component]
 
-    has_many :stories, CodeMySpec.Stories.Story
+    has_many :stories, Story
     has_many :requirements, Requirement
 
     embeds_one :component_status, ComponentStatus

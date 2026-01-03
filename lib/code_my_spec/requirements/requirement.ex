@@ -1,4 +1,4 @@
-defmodule CodeMySpec.Components.Requirements.Requirement do
+defmodule CodeMySpec.Requirements.Requirement do
   @moduledoc """
   Embedded schema representing a component requirement with its satisfaction status.
   Maps to requirement_definition from Registry but includes computed satisfaction state.

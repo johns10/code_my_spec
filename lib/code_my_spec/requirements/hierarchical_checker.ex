@@ -1,5 +1,5 @@
-defmodule CodeMySpec.Components.Requirements.HierarchicalChecker do
-  @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
+defmodule CodeMySpec.Requirements.HierarchicalChecker do
+  @behaviour CodeMySpec.Requirements.CheckerBehaviour
   require Logger
   alias CodeMySpec.Components.Component
 

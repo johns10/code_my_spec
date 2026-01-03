@@ -1,10 +1,10 @@
-defmodule CodeMySpec.Components.Requirements.DocumentValidityChecker do
+defmodule CodeMySpec.Requirements.DocumentValidityChecker do
   @moduledoc """
   Validates that a document file contains valid content according to its document type definition.
   Uses CodeMySpec.Documents.create_dynamic_document/2 to validate the document structure.
   """
 
-  @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
+  @behaviour CodeMySpec.Requirements.CheckerBehaviour
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Documents
   alias CodeMySpec.Utils

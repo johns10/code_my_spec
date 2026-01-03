@@ -1,5 +1,5 @@
-defmodule CodeMySpec.Components.Requirements.DependencyChecker do
-  @behaviour CodeMySpec.Components.Requirements.CheckerBehaviour
+defmodule CodeMySpec.Requirements.DependencyChecker do
+  @behaviour CodeMySpec.Requirements.CheckerBehaviour
   alias CodeMySpec.Components.Component
 
   def check(%{name: name} = requirement_spec, %Component{dependencies: dependencies}, _opts \\ []) do

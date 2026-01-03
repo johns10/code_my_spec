@@ -44,21 +44,21 @@ defmodule CodeMySpec.Components.HierarchicalTreeTest do
       middle = %Component{
         id: 2,
         name: "Requirements",
-        module_name: "CodeMySpec.Components.Requirements",
+        module_name: "CodeMySpec.Requirements",
         parent_component_id: 1
       }
 
       leaf1 = %Component{
         id: 3,
         name: "Checker",
-        module_name: "CodeMySpec.Components.Requirements.Checker",
+        module_name: "CodeMySpec.Requirements.Checker",
         parent_component_id: 2
       }
 
       leaf2 = %Component{
         id: 4,
         name: "Requirement",
-        module_name: "CodeMySpec.Components.Requirements.Requirement",
+        module_name: "CodeMySpec.Requirements.Requirement",
         parent_component_id: 2
       }
 
