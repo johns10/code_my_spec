@@ -402,9 +402,8 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
 
   defp format_type(nil), do: "Other"
 
-  defp format_type(type) when is_atom(type) do
+  defp format_type(type) do
     type
-    |> Atom.to_string()
     |> String.replace("_", " ")
     |> String.split()
     |> Enum.map(&String.capitalize/1)
