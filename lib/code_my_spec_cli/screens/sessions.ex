@@ -205,6 +205,10 @@ defmodule CodeMySpecCli.Screens.Sessions do
     if length(model.sessions) > 0 and model.selected_session_index < length(model.sessions) do
       session = Enum.at(model.sessions, model.selected_session_index)
 
+      if TerminalPanes.terminal_open?() do
+        TerminalPanes.hide_terminal()
+      end
+
       case TerminalPanes.show_terminal(session.id) do
         :ok ->
           {:ok, %{model | terminal_session_id: session.id, error_message: nil}}

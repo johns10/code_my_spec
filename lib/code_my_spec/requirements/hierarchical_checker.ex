@@ -1,21 +1,35 @@
 defmodule CodeMySpec.Requirements.HierarchicalChecker do
   @behaviour CodeMySpec.Requirements.CheckerBehaviour
   require Logger
-  alias CodeMySpec.Components.Component
 
-  def check(%{name: name} = requirement_spec, %Component{} = component, _opts \\ []) do
+  alias CodeMySpec.Components.Component
+  alias CodeMySpec.Requirements.RequirementDefinition
+  alias CodeMySpec.Users.Scope
+
+  def check(
+        %Scope{},
+        %RequirementDefinition{
+          name: name,
+          artifact_type: artifact_type,
+          description: description,
+          checker: checker,
+          satisfied_by: satisfied_by
+        } = _requirement_definition,
+        %Component{} = component,
+        _opts \\ []
+      ) do
     {satisfied, details} =
       case name do
-        :children_designs ->
-          check_children_requirements(component, "design_file")
+        "children_designs" ->
+          check_children_requirements(component, "spec_file")
 
-        :children_implementations ->
+        "children_implementations" ->
           check_children_requirements(component, "implementation_file")
 
-        :children_tests ->
+        "children_tests" ->
           check_children_requirements(component, "test_file")
 
-        :children_complete ->
+        "children_complete" ->
           check_all_children_requirements(component)
 
         _ ->
@@ -24,12 +38,13 @@ defmodule CodeMySpec.Requirements.HierarchicalChecker do
       end
 
     %{
-      name: Atom.to_string(requirement_spec.name),
-      type: :hierarchy,
-      description: generate_description(requirement_spec.name),
-      checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by: requirement_spec.satisfied_by,
+      name: name,
+      artifact_type: artifact_type,
+      description: description,
+      checker_module: checker,
+      satisfied_by: satisfied_by,
       satisfied: satisfied,
+      score: if(satisfied, do: 1.0, else: 0.0),
       checked_at: DateTime.utc_now(),
       details: details
     }
@@ -118,19 +133,4 @@ defmodule CodeMySpec.Requirements.HierarchicalChecker do
   end
 
   defp fully_complete?(_), do: false
-
-  defp generate_description(:children_designs),
-    do: "All child component design files exist"
-
-  defp generate_description(:children_implementations),
-    do: "All child component implementation files exist"
-
-  defp generate_description(:children_tests),
-    do: "All child component test files exist"
-
-  defp generate_description(:children_complete),
-    do: "All child components are fully implemented and tested"
-
-  defp generate_description(name),
-    do: "Hierarchical requirement #{name} is satisfied"
 end

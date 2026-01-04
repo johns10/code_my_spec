@@ -271,12 +271,13 @@ defmodule CodeMySpec.Environments.Cli do
   @doc """
   Read a file from the server-side file system.
 
-  The environment reference is not used since file operations are server-side.
+  Resolves paths relative to the environment's working directory if set.
   """
   @spec read_file(env :: Environment.t(), path :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def read_file(_env, path) do
-    File.read(path)
+  def read_file(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+    File.read(resolved_path)
   end
 
   @doc """
@@ -310,11 +311,12 @@ defmodule CodeMySpec.Environments.Cli do
   @doc """
   Check if a file exists on the server-side file system.
 
-  The environment reference is not used since file operations are server-side.
+  Resolves paths relative to the environment's working directory if set.
   """
   @spec file_exists?(env :: Environment.t(), path :: String.t()) :: boolean()
-  def file_exists?(_env, path) do
-    File.exists?(path)
+  def file_exists?(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+    File.exists?(resolved_path)
   end
 
   def environment_setup_command(_, _) do
@@ -377,11 +379,11 @@ defmodule CodeMySpec.Environments.Cli do
       |> Enum.map(&shell_escape/1)
       |> Enum.join(" ")
 
-    # Build piped command: cat "tempfile" | claude [args]
+    # Build claude command with read @ syntax: claude [args] "read @tempfile"
     if args_string == "" do
-      "cat #{shell_escape(temp_path)} | claude"
+      "claude \"read @#{temp_path}\""
     else
-      "cat #{shell_escape(temp_path)} | claude #{args_string}"
+      "claude #{args_string} \"read @#{temp_path}\""
     end
   end
 
@@ -407,6 +409,17 @@ defmodule CodeMySpec.Environments.Cli do
     path
     |> Path.dirname()
     |> File.mkdir_p()
+  end
+
+  # Resolve path relative to working_dir if it's a relative path
+  defp resolve_path(path, nil), do: path
+
+  defp resolve_path(path, working_dir) do
+    if Path.type(path) == :relative do
+      Path.join(working_dir, path) |> Path.absname()
+    else
+      path
+    end
   end
 
   defp send_keys(window_name, full_command) do

@@ -141,6 +141,7 @@ defmodule CodeMySpec.Documents.Registry do
   }
 
   @document_definitions %{
+    "spec" => @default_spec_definition,
     "schema" => %{
       overview: """
       Schema components represent Ecto schema entities that define data structures,

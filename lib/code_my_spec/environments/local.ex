@@ -20,8 +20,9 @@ defmodule CodeMySpec.Environments.Local do
   end
 
   @impl true
-  def read_file(_env, path) do
-    File.read(path)
+  def read_file(env, path) do
+    resolved_path = resolve_path(path, env.ref.working_dir)
+    File.read(resolved_path)
   end
 
   @impl true
@@ -141,6 +142,17 @@ defmodule CodeMySpec.Environments.Local do
           # If all else fails, return empty string
           _ -> ""
         end
+    end
+  end
+
+  # Resolve path relative to working_dir if it's a relative path
+  defp resolve_path(path, nil), do: path
+
+  defp resolve_path(path, working_dir) do
+    if Path.type(path) == :relative do
+      Path.join(working_dir, path) |> Path.absname()
+    else
+      path
     end
   end
 end

@@ -5,7 +5,7 @@ defmodule CodeMySpec.Requirements do
   defdelegate clear_requirements(scope, component, opts \\ []), to: RequirementsRepository
   defdelegate create_requirement(scope, component, attrs, opts \\ []), to: RequirementsRepository
 
-  def check_requirements(component, opts) do
+  def check_requirements(scope, component, opts) do
     include_types = Keyword.get(opts, :include, [])
     exclude_types = Keyword.get(opts, :exclude, [])
 
@@ -20,7 +20,7 @@ defmodule CodeMySpec.Requirements do
     end)
     |> Enum.map(fn requirement_spec ->
       checker = requirement_spec.checker
-      checker.check(requirement_spec, component, opts)
+      checker.check(scope, requirement_spec, component, opts)
     end)
   end
 end

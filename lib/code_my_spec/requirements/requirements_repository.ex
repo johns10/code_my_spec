@@ -6,18 +6,7 @@ defmodule CodeMySpec.Requirements.RequirementsRepository do
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Requirements.Requirement
 
-  @type requirement_attrs :: %{
-          name: String.t(),
-          type: atom(),
-          description: String.t(),
-          checker_module: String.t(),
-          satisfied_by: String.t() | nil,
-          satisfied: boolean(),
-          checked_at: DateTime.t() | nil,
-          details: map()
-        }
-
-  @spec create_requirement(Scope.t(), Component.t(), requirement_attrs(), keyword()) ::
+  @spec create_requirement(Scope.t(), Component.t(), Requirement.requirement_attrs(), keyword()) ::
           {:ok, Requirement.t()} | {:error, Ecto.Changeset.t()}
   def create_requirement(%Scope{}, %Component{} = component, attrs, opts \\ []) do
     changeset =
@@ -32,7 +21,7 @@ defmodule CodeMySpec.Requirements.RequirementsRepository do
     end
   end
 
-  @spec update_requirement(Scope.t(), Requirement.t(), requirement_attrs()) ::
+  @spec update_requirement(Scope.t(), Requirement.t(), Requirement.requirement_attrs()) ::
           {:ok, Requirement.t()} | {:error, Ecto.Changeset.t()}
   def update_requirement(%Scope{}, %Requirement{} = requirement, attrs) do
     requirement

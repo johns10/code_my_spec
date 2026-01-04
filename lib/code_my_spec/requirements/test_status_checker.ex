@@ -1,14 +1,24 @@
 defmodule CodeMySpec.Requirements.TestStatusChecker do
   @behaviour CodeMySpec.Requirements.CheckerBehaviour
+
   alias CodeMySpec.Components.Component
+  alias CodeMySpec.Requirements.RequirementDefinition
+  alias CodeMySpec.Users.Scope
 
   def check(
-        %{name: name} = requirement_spec,
+        %Scope{},
+        %RequirementDefinition{
+          name: name,
+          artifact_type: artifact_type,
+          description: description,
+          checker: checker,
+          satisfied_by: satisfied_by
+        } = _requirement_definition,
         %Component{component_status: component_status},
         _opts \\ []
       ) do
     {satisfied, details} =
-      case {name, component_status} do
+      case {String.to_existing_atom(name), component_status} do
         {:tests_passing, %{test_exists: false}} ->
           {false, %{reason: "No test file exists"}}
 
@@ -31,17 +41,15 @@ defmodule CodeMySpec.Requirements.TestStatusChecker do
       end
 
     %{
-      name: Atom.to_string(requirement_spec.name),
-      type: :test_status,
-      description: generate_description(requirement_spec.name),
-      checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by: requirement_spec.satisfied_by,
+      name: name,
+      artifact_type: artifact_type,
+      description: description,
+      checker_module: checker,
+      satisfied_by: satisfied_by,
       satisfied: satisfied,
+      score: if(satisfied, do: 1.0, else: 0.0),
       checked_at: DateTime.utc_now(),
       details: details
     }
   end
-
-  defp generate_description(:tests_passing), do: "Component tests are passing"
-  defp generate_description(name), do: "Test requirement #{name} is satisfied"
 end

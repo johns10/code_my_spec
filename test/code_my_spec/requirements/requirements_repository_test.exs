@@ -28,7 +28,6 @@ defmodule CodeMySpec.Requirements.RequirementsRepositoryTest do
                RequirementsRepository.create_requirement(scope, component, attrs)
 
       assert requirement.name == "design_file"
-      assert requirement.type == :file_existence
       assert requirement.satisfied == false
       assert requirement.component_id == component.id
     end

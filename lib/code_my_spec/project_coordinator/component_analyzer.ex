@@ -19,8 +19,8 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   alias CodeMySpec.Users.Scope
   require Logger
 
-  @dependency_checks [:dependencies_satisfied]
-  @hierarchy_checks [:children_designs, :children_implementations, :children_tests]
+  @dependency_checks ["dependencies_satisfied"]
+  @hierarchy_checks ["children_designs", "children_implementations", "children_tests"]
 
   @spec analyze_components([Component.t()], [String.t()], [TestResult.t()], keyword()) ::
           [Component.t()]
@@ -71,6 +71,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   defp check_local_requirements(component, scope, opts) do
     requirements =
       Requirements.check_requirements(
+        scope,
         component,
         Keyword.put(opts, :exclude, @hierarchy_checks ++ @dependency_checks)
       )
@@ -100,6 +101,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   defp check_dependency_requirements(component, scope, opts) do
     dependency_requirements =
       Requirements.check_requirements(
+        scope,
         component,
         Keyword.put(opts, :include, @dependency_checks ++ @hierarchy_checks)
       )
@@ -162,8 +164,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
 
     requirements
     |> Enum.sort_by(fn requirement ->
-      requirement_name = String.to_existing_atom(requirement.name)
-      Map.get(requirement_order, requirement_name, 999)
+      Map.get(requirement_order, requirement.name, 999)
     end)
   end
 end

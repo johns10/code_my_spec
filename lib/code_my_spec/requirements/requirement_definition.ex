@@ -1,0 +1,151 @@
+defmodule CodeMySpec.Requirements.RequirementDefinition do
+  @moduledoc """
+  Immutable template defining what needs to be checked for a component.
+  Maps to runtime Requirement instances which track satisfaction status.
+  Enables artifact type categorization for UI grouping and clear separation
+  between definition (what to check) and instance (whether satisfied).
+  """
+
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias CodeMySpec.Requirements.CheckerType
+  alias CodeMySpec.Sessions.SessionType
+
+  @type artifact_type ::
+          :specification
+          | :review
+          | :code
+          | :tests
+          | :dependencies
+          | :hierarchy
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          checker: module(),
+          satisfied_by: module() | nil,
+          artifact_type: artifact_type(),
+          description: String.t(),
+          threshold: float(),
+          config: map()
+        }
+
+  @artifact_types [
+    :specification,
+    :review,
+    :code,
+    :tests,
+    :dependencies,
+    :hierarchy
+  ]
+
+  @primary_key false
+  embedded_schema do
+    field :name, :string
+    field :checker, CheckerType
+    field :satisfied_by, SessionType
+    field :artifact_type, Ecto.Enum, values: @artifact_types
+    field :description, :string
+    field :threshold, :float, default: 1.0
+    field :config, :map, default: %{}
+  end
+
+  @doc """
+  Creates a new requirement definition from attributes map with validation.
+
+  ## Process
+  1. Extract required fields from attrs map
+  2. Default threshold to 1.0 if not provided
+  3. Validate threshold is between 0.0 and 1.0 if provided
+  4. Default config to empty map if not provided
+  5. Build and return RequirementDefinition struct
+
+  ## Examples
+
+      iex> new(%{
+      ...>   name: :spec_file,
+      ...>   checker: CodeMySpec.Requirements.FileExistenceChecker,
+      ...>   satisfied_by: CodeMySpec.ComponentSpecSessions,
+      ...>   artifact_type: :specification,
+      ...>   description: "Component spec file exists"
+      ...> })
+      {:ok, %RequirementDefinition{}}
+
+      iex> new(%{name: :spec_file, checker: InvalidChecker})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec new(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def new(attrs) when is_map(attrs) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> case do
+      %Ecto.Changeset{valid?: true} = changeset ->
+        {:ok, Ecto.Changeset.apply_changes(changeset)}
+
+      %Ecto.Changeset{valid?: false} = changeset ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Changeset for creating/validating a requirement definition.
+  """
+  def changeset(requirement_definition, attrs) do
+    requirement_definition
+    |> cast(attrs, [
+      :name,
+      :checker,
+      :satisfied_by,
+      :artifact_type,
+      :description,
+      :threshold,
+      :config
+    ])
+    |> validate_required([
+      :name,
+      :checker,
+      :artifact_type,
+      :description
+    ])
+    |> validate_name()
+    |> validate_threshold()
+  end
+
+  defp validate_name(changeset) do
+    case fetch_change(changeset, :name) do
+      {:ok, name} when is_atom(name) ->
+        # Convert atom to string for Ecto storage
+        put_change(changeset, :name, Atom.to_string(name))
+
+      {:ok, name} when is_binary(name) ->
+        # Already a string, keep as-is
+        changeset
+
+      {:ok, _other} ->
+        add_error(changeset, :name, "must be an atom or string")
+
+      :error ->
+        # No change to validate
+        changeset
+    end
+  end
+
+  defp validate_threshold(changeset) do
+    changeset
+    |> validate_number(:threshold,
+      greater_than_or_equal_to: 0.0,
+      less_than_or_equal_to: 1.0
+    )
+  end
+
+  @doc """
+  Returns the name as an atom for pattern matching.
+  """
+  @spec name_atom(t()) :: atom()
+  def name_atom(%__MODULE__{name: name}) when is_binary(name) do
+    String.to_existing_atom(name)
+  end
+
+  def name_atom(%__MODULE__{name: name}) when is_atom(name), do: name
+end

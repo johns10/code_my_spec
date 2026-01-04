@@ -1,61 +1,59 @@
 defmodule CodeMySpec.Requirements.FileExistenceChecker do
   @behaviour CodeMySpec.Requirements.CheckerBehaviour
+
   alias CodeMySpec.Components.Component
+  alias CodeMySpec.Requirements.RequirementDefinition
+  alias CodeMySpec.Utils
+  alias CodeMySpec.Environments
+  alias CodeMySpec.Users.Scope
 
   def check(
-        %{name: name} = requirement_spec,
-        %Component{component_status: component_status},
-        _opts \\ []
+        %Scope{active_project: project},
+        %RequirementDefinition{
+          name: name,
+          artifact_type: artifact_type,
+          description: description,
+          checker: checker,
+          satisfied_by: satisfied_by
+        } = _requirement_definition,
+        %Component{} = component,
+        opts \\ []
       ) do
+    files = Utils.component_files(component, project)
+    file_key = file_key(name)
+    file_path = Map.get(files, file_key)
+    environment_type = Keyword.get(opts, :environment_type, :cli)
+    {:ok, environment} = Environments.create(environment_type, opts)
+
     {satisfied, details} =
-      case {name, component_status} do
-        {:spec_file, %{spec_exists: true}} ->
-          {true, %{status: "Design file exists"}}
+      case Environments.file_exists?(environment, file_path) do
+        true ->
+          {true, %{status: "File exists", path: file_path}}
 
-        {:spec_file, %{spec_exists: false}} ->
-          {false, %{reason: "Design file missing"}}
+        false ->
+          {false, %{reason: "File missing", path: file_path}}
 
-        {:design_file, %{design_exists: true}} ->
-          {true, %{status: "Design file exists"}}
-
-        {:design_file, %{design_exists: false}} ->
-          {false, %{reason: "Design file missing"}}
-
-        {:implementation_file, %{code_exists: true}} ->
-          {true, %{status: "Implementation file exists"}}
-
-        {:implementation_file, %{code_exists: false}} ->
-          {false, %{reason: "Implementation file missing"}}
-
-        {:test_file, %{test_exists: true}} ->
-          {true, %{status: "Test file exists"}}
-
-        {:test_file, %{test_exists: false}} ->
-          {false, %{reason: "Test file missing"}}
-
-        # Handle case where component_status is nil (shouldn't happen but defensive)
-        {_, nil} ->
-          {false, %{reason: "Component status not available"}}
-
-        # Handle case where component_status doesn't match expected structure
-        {_, _} ->
-          {false, %{reason: "Invalid component status structure"}}
+        {:error, reason} ->
+          {false, %{reason: "Error checking file: #{inspect(reason)}", path: file_path}}
       end
 
     %{
-      name: Atom.to_string(requirement_spec.name),
-      type: :file_existence,
-      description: generate_description(requirement_spec.name),
-      checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by: requirement_spec.satisfied_by,
+      name: name,
+      artifact_type: artifact_type,
+      description: description,
+      checker_module: checker,
+      satisfied_by: satisfied_by,
       satisfied: satisfied,
+      score: if(satisfied, do: 1.0, else: 0.0),
       checked_at: DateTime.utc_now(),
       details: details
     }
   end
 
-  defp generate_description(:design_file), do: "Component design documentation exists"
-  defp generate_description(:implementation_file), do: "Component implementation file exists"
-  defp generate_description(:test_file), do: "Component test file exists"
-  defp generate_description(name), do: "File requirement #{name} is satisfied"
+  # TODO: Fragile
+  def file_key("spec_file"), do: :spec_file
+  def file_key("code_file"), do: :code_file
+  def file_key("implementation_file"), do: :code_file
+  def file_key("test_file"), do: :test_file
+  def file_key("review_file"), do: :review_file
 end

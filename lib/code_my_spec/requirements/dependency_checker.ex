@@ -1,10 +1,24 @@
 defmodule CodeMySpec.Requirements.DependencyChecker do
   @behaviour CodeMySpec.Requirements.CheckerBehaviour
-  alias CodeMySpec.Components.Component
 
-  def check(%{name: name} = requirement_spec, %Component{dependencies: dependencies}, _opts \\ []) do
+  alias CodeMySpec.Components.Component
+  alias CodeMySpec.Requirements.RequirementDefinition
+  alias CodeMySpec.Users.Scope
+
+  def check(
+        %Scope{},
+        %RequirementDefinition{
+          name: name,
+          artifact_type: artifact_type,
+          description: description,
+          checker: checker,
+          satisfied_by: satisfied_by
+        } = _requirement_definition,
+        %Component{dependencies: dependencies},
+        _opts \\ []
+      ) do
     {satisfied, details} =
-      case {name, dependencies} do
+      case {String.to_existing_atom(name), dependencies} do
         {:dependencies_satisfied, []} ->
           {true, %{status: "No dependencies to satisfy"}}
 
@@ -39,12 +53,13 @@ defmodule CodeMySpec.Requirements.DependencyChecker do
       end
 
     %{
-      name: Atom.to_string(requirement_spec.name),
-      type: :dependencies_satisfied,
-      description: generate_description(requirement_spec.name),
-      checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by: requirement_spec.satisfied_by,
+      name: name,
+      artifact_type: artifact_type,
+      description: description,
+      checker_module: checker,
+      satisfied_by: satisfied_by,
       satisfied: satisfied,
+      score: if(satisfied, do: 1.0, else: 0.0),
       checked_at: DateTime.utc_now(),
       details: details
     }
@@ -61,9 +76,4 @@ defmodule CodeMySpec.Requirements.DependencyChecker do
   end
 
   defp dependency_satisfied?(_), do: false
-
-  defp generate_description(:dependencies_satisfied),
-    do: "All component dependencies are satisfied"
-
-  defp generate_description(name), do: "Dependency requirement #{name} is satisfied"
 end

@@ -79,7 +79,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
     @tag :integration
     test "syncs project requirements with real test project", %{scope: scope} do
       project_dir =
-        "../code_my_spec_test_repos/component_coding_session_#{System.unique_integer([:positive])}"
+        "../code_my_spec_test_repos/project_coordinator_test_#{System.unique_integer([:positive])}"
 
       # Setup test project using TestAdapter
       {:ok, ^project_dir} =
@@ -98,7 +98,7 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
       # Sync project requirements
       result =
         ProjectCoordinator.sync_project_requirements(scope, file_list, test_results,
-          cwd: project_dir
+          working_dir: project_dir
         )
 
       post_cache = Enum.find(result, &(&1.name == "PostCache"))

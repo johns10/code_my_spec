@@ -133,8 +133,8 @@ defmodule CodeMySpec.Environments do
     impl(environment).code_environment_teardown_command(environment, attrs)
   end
 
-  def file_exists?(%Environment{type: type} = env, attrs) do
-    impl(type).file_exists?(env, attrs)
+  def file_exists?(%Environment{type: type} = env, path) do
+    impl(type).file_exists?(env, path)
   end
 
   def cmd(environment, command, args, opts \\ []),

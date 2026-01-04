@@ -1,141 +1,267 @@
 defmodule CodeMySpec.Requirements.Requirement do
   @moduledoc """
-  Embedded schema representing a component requirement with its satisfaction status.
-  Maps to requirement_definition from Registry but includes computed satisfaction state.
+  Embedded schema representing a component requirement instance with its satisfaction status.
+  Created from RequirementDefinition templates and tracks runtime satisfaction state.
+  Supports both boolean pass/fail via satisfied field and incremental quality scoring (0.0 to 1.0)
+  for nuanced requirement assessment.
   """
 
   use Ecto.Schema
   import Ecto.Changeset
 
-  @type requirement_type ::
-          :file_existence
-          | :test_status
-          | :cross_component
-          | :manual_review
-          | :dependencies_satisfied
+  alias CodeMySpec.Requirements.RequirementDefinition
+  alias CodeMySpec.Requirements.CheckerType
+  alias CodeMySpec.Sessions.SessionType
+  alias CodeMySpec.Components.Component
+
+  @type artifact_type ::
+          :specification
+          | :review
+          | :code
+          | :tests
+          | :dependencies
           | :hierarchy
-          | :context_review
-          | :document_validity
 
-  @type requirement_spec :: %{
-          name: atom(),
-          checker: module(),
-          satisfied_by: module() | nil
-        }
-
-  @type t :: %__MODULE__{
-          name: atom(),
-          type: requirement_type(),
+  @type requirement_attrs :: %{
+          name: String.t(),
+          artifact_type: artifact_type(),
           description: String.t(),
-          checker_module: module(),
-          satisfied_by: module() | nil,
+          checker_module: String.t(),
+          satisfied_by: String.t() | nil,
           satisfied: boolean(),
-          checked_at: DateTime.t() | nil,
+          score: float() | nil,
+          checked_at: DateTime.t(),
           details: map()
         }
 
+  @type t :: %__MODULE__{
+          id: Ecto.UUID.t() | nil,
+          name: String.t() | nil,
+          artifact_type: artifact_type() | nil,
+          description: String.t() | nil,
+          checker_module: CheckerType.t() | nil,
+          satisfied_by: SessionType.t() | nil,
+          satisfied: boolean(),
+          score: float() | nil,
+          checked_at: DateTime.t() | nil,
+          details: map(),
+          component_id: Ecto.UUID.t() | nil,
+          component: Component.t() | Ecto.Association.NotLoaded.t(),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  @artifact_types [:specification, :review, :code, :tests, :dependencies, :hierarchy]
+
   schema "requirements" do
     field :name, :string
-
-    field :type, Ecto.Enum,
-      values: [
-        :file_existence,
-        :test_status,
-        :cross_component,
-        :manual_review,
-        :dependencies_satisfied,
-        :hierarchy,
-        :context_review,
-        :document_validity
-      ]
-
+    field :artifact_type, Ecto.Enum, values: @artifact_types
     field :description, :string
-    field :checker_module, :string
-    field :satisfied_by, :string
+    field :checker_module, CheckerType
+    field :satisfied_by, SessionType
     field :satisfied, :boolean, default: false
+    field :score, :float
     field :checked_at, :utc_datetime
     field :details, :map, default: %{}
-
-    belongs_to :component, CodeMySpec.Components.Component, type: :binary_id
+    belongs_to :component, Component, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end
 
   @doc """
-  Creates a requirement from a Registry requirement_spec with computed satisfaction status.
-  """
-  def from_spec(requirement_spec, component_status) do
-    checker = requirement_spec.checker
-    check_result = checker.check(requirement_spec, component_status)
+  Creates a passing requirement result with perfect score.
 
+  ## Examples
+
+      iex> ok()
+      %Requirement{satisfied: true, score: 1.0, details: %{}}
+
+  """
+  @spec ok() :: t()
+  def ok do
     %__MODULE__{
-      name: Atom.to_string(requirement_spec.name),
-      type: infer_type_from_name(requirement_spec.name),
-      description: generate_description(requirement_spec.name),
-      checker_module: Atom.to_string(requirement_spec.checker),
-      satisfied_by: requirement_spec.satisfied_by,
-      satisfied: check_result.satisfied,
-      checked_at: DateTime.utc_now(),
-      details: check_result.details
+      satisfied: true,
+      score: 1.0,
+      details: %{}
     }
   end
 
-  defp infer_type_from_name(:design_file), do: :file_existence
-  defp infer_type_from_name(:implementation_file), do: :file_existence
-  defp infer_type_from_name(:test_file), do: :file_existence
-  defp infer_type_from_name(:review_file), do: :context_review
-  defp infer_type_from_name(:tests_passing), do: :test_status
-  defp infer_type_from_name(:dependencies_satisfied), do: :dependencies_satisfied
-  defp infer_type_from_name(_), do: :manual_review
+  @doc """
+  Creates a failing requirement result with the given errors.
 
-  defp generate_description(:design_file), do: "Component design documentation exists"
-  defp generate_description(:implementation_file), do: "Component implementation file exists"
-  defp generate_description(:test_file), do: "Component test file exists"
-  defp generate_description(:review_file), do: "Context design review documentation exists"
-  defp generate_description(:tests_passing), do: "Component tests are passing"
+  ## Examples
 
-  defp generate_description(:dependencies_satisfied),
-    do: "All component dependencies are satisfied"
+      iex> error(["File not found"])
+      %Requirement{satisfied: false, score: 0.0, details: %{errors: ["File not found"]}}
 
-  defp generate_description(name), do: "Requirement #{name} is satisfied"
+  """
+  @spec error([String.t()]) :: t()
+  def error(errors) when is_list(errors) do
+    %__MODULE__{
+      satisfied: false,
+      score: 0.0,
+      details: %{errors: errors}
+    }
+  end
 
   @doc """
-  Changeset for creating a new requirement.
+  Creates a requirement result with a custom score and errors for partial satisfaction scenarios.
+
+  Score must be between 0.0 and 1.0. Satisfied is determined by comparing score to threshold (>= 0.7).
+
+  ## Examples
+
+      iex> partial(0.8, [])
+      %Requirement{satisfied: true, score: 0.8, details: %{errors: []}}
+
+      iex> partial(0.5, ["Some warnings"])
+      %Requirement{satisfied: false, score: 0.5, details: %{errors: ["Some warnings"]}}
+
   """
-  def changeset(requirement, attrs) do
+  @spec partial(float(), [String.t()]) :: t()
+  def partial(score, errors) when is_float(score) and is_list(errors) do
+    threshold = 0.7
+
+    cond do
+      score < 0.0 ->
+        raise ArgumentError, "score must be >= 0.0, got: #{score}"
+
+      score > 1.0 ->
+        raise ArgumentError, "score must be <= 1.0, got: #{score}"
+
+      true ->
+        %__MODULE__{
+          satisfied: score >= threshold,
+          score: score,
+          details: %{errors: errors}
+        }
+    end
+  end
+
+  @doc """
+  Creates a requirement instance from a RequirementDefinition template with computed satisfaction status.
+
+  Calls the checker module's check/3 function and uses the threshold from the requirement definition
+  to determine if the requirement is satisfied.
+
+  ## Examples
+
+      iex> from_spec(requirement_definition, component)
+      %Requirement{satisfied: true, score: 1.0, ...}
+
+  """
+  @spec from_spec(RequirementDefinition.t(), Component.t()) :: t()
+  def from_spec(%RequirementDefinition{} = requirement_definition, %Component{} = component) do
+    checker = requirement_definition.checker
+    check_result = checker.check(requirement_definition, component, [])
+
+    # Extract score from check result or default based on satisfied
+    score =
+      case Map.get(check_result, :score) do
+        nil -> if check_result.satisfied, do: 1.0, else: 0.0
+        score -> score
+      end
+
+    # Determine satisfied by comparing score to threshold
+    threshold = requirement_definition.threshold
+    satisfied = score >= threshold
+
+    %__MODULE__{
+      name: requirement_definition.name,
+      artifact_type: requirement_definition.artifact_type,
+      description: requirement_definition.description,
+      checker_module: requirement_definition.checker,
+      satisfied_by: requirement_definition.satisfied_by,
+      satisfied: satisfied,
+      score: score,
+      checked_at: DateTime.utc_now(),
+      details: check_result.details,
+      component_id: component.id
+    }
+  end
+
+  @doc """
+  Creates a changeset for inserting or updating a requirement.
+
+  Validates all required fields and score range.
+  """
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
+  def changeset(requirement \\ %__MODULE__{}, attrs) do
     requirement
     |> cast(attrs, [
       :name,
-      :type,
+      :artifact_type,
       :description,
       :checker_module,
       :satisfied_by,
       :satisfied,
+      :score,
       :checked_at,
-      :details
+      :details,
+      :component_id
     ])
-    |> validate_required([:name, :type, :description, :checker_module, :satisfied])
-    |> unique_constraint([:component_id, :name], name: :requirements_component_id_name_index)
+    |> validate_required([:name, :artifact_type, :description, :checker_module, :satisfied])
+    |> validate_score()
   end
 
   @doc """
-  Changeset for updating requirement satisfaction status.
+  Creates a changeset for updating requirement satisfaction status and score only.
+
+  Does not allow modification of name, artifact_type, description, or checker fields.
   """
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(requirement, attrs) do
     requirement
-    |> cast(attrs, [:satisfied, :checked_at, :details])
+    |> cast(attrs, [:satisfied, :score, :checked_at, :details])
     |> validate_required([:satisfied])
+    |> validate_score()
   end
 
   @doc """
-  Returns the requirement name as an atom for pattern matching.
+  Returns the requirement name as an atom for pattern matching against Registry definitions.
+
+  ## Examples
+
+      iex> name_atom(%Requirement{name: "spec_file"})
+      :spec_file
+
   """
-  def name_atom(%__MODULE__{name: name}), do: String.to_existing_atom(name)
+  @spec name_atom(t()) :: atom()
+  def name_atom(%__MODULE__{name: name}) when is_binary(name) do
+    String.to_existing_atom(name)
+  end
 
   @doc """
   Returns the checker module for requirement validation.
+
+  ## Examples
+
+      iex> checker_module(%Requirement{checker_module: "CodeMySpec.Requirements.FileExistenceChecker"})
+      CodeMySpec.Requirements.FileExistenceChecker
+
   """
-  def checker_module(%__MODULE__{checker_module: module_string}) do
+  @spec checker_module(t()) :: module()
+  def checker_module(%__MODULE__{checker_module: module}) when is_atom(module) do
+    module
+  end
+
+  def checker_module(%__MODULE__{checker_module: module_string}) when is_binary(module_string) do
     String.to_existing_atom("Elixir." <> module_string)
+  end
+
+  # Private functions
+
+  defp validate_score(changeset) do
+    case get_change(changeset, :score) do
+      nil ->
+        changeset
+
+      score ->
+        if score < 0.0 or score > 1.0 do
+          add_error(changeset, :score, "must be between 0.0 and 1.0")
+        else
+          changeset
+        end
+    end
   end
 end

@@ -75,7 +75,7 @@ defmodule CodeMySpec.ProjectSync.FileWatcherServer do
     Process.sleep(1000)
 
     with %Scope{} = scope <- Scope.for_cli(),
-         {:ok, _result} <- Sync.sync_all(scope, persist: true) do
+         {:ok, _result} <- Sync.sync_all(scope, persist: true, environment_type: :cli) do
       Logger.info("Initial sync completed for project #{scope.active_project_id}")
     end
 
@@ -133,7 +133,7 @@ defmodule CodeMySpec.ProjectSync.FileWatcherServer do
     broadcast_status_change(true)
 
     with %Scope{} = scope <- Scope.for_cli(),
-         {:ok, _result} <- Sync.sync_all(scope, persist: true) do
+         {:ok, _result} <- Sync.sync_all(scope, persist: true, environment_type: :cli) do
       Logger.info("Project sync completed for project #{scope.active_project_id}")
     end
 

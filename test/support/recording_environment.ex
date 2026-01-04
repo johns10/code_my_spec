@@ -151,8 +151,9 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
     end
   end
 
-  def file_exists?(_env, path) do
-    File.exists?(path)
+  def file_exists?(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+    File.exists?(resolved_path)
   end
 
   # Resolve path relative to working_dir if it's a relative path

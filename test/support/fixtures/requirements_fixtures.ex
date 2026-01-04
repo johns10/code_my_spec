@@ -13,9 +13,9 @@ defmodule CodeMySpec.RequirementsFixtures do
     attrs =
       Enum.into(attrs, %{
         name: "design_file",
-        type: :file_existence,
+        artifact_type: :specification,
         description: "Component design documentation exists",
-        checker_module: "CodeMySpec.Requirements.FileExistenceChecker",
+        checker_module: CodeMySpec.Requirements.FileExistenceChecker,
         satisfied_by: nil,
         satisfied: false,
         checked_at: DateTime.utc_now(),
@@ -33,9 +33,9 @@ defmodule CodeMySpec.RequirementsFixtures do
     Map.merge(
       %{
         name: "design_file",
-        type: :file_existence,
+        artifact_type: :specification,
         description: "Component design documentation exists",
-        checker_module: "CodeMySpec.Requirements.FileExistenceChecker",
+        checker_module: CodeMySpec.Requirements.FileExistenceChecker,
         satisfied_by: nil,
         satisfied: false,
         checked_at: DateTime.utc_now(),
