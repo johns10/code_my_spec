@@ -11,6 +11,8 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
   alias CodeMySpec.Components
   alias CodeMySpec.Users.Scope
 
+  require Logger
+
   # States: :list, :detail
   defstruct [
     :state,
@@ -141,7 +143,9 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
           k == key(:enter) and length(requirements) > 0 and
               model.selected_requirement_index < length(requirements) ->
             selected_requirement = Enum.at(requirements, model.selected_requirement_index)
-            create_session_for_requirement(model, selected_requirement)
+            r = create_session_for_requirement(model, selected_requirement)
+            Logger.debug(inspect(r))
+            r
 
           true ->
             {:ok, model}
@@ -173,11 +177,8 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
   defp create_session_for_requirement(model, requirement) do
     alias CodeMySpec.Sessions
 
-    # Determine session type from requirement's satisfied_by field
-    session_type = parse_session_type(requirement.satisfied_by)
-
     session_attrs = %{
-      type: session_type,
+      type: requirement.satisfied_by,
       agent: :claude_code,
       environment: :cli,
       execution_mode: :manual,
@@ -189,29 +190,10 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
       {:ok, _session} ->
         {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
 
-      {:error, _changeset} ->
+      {:error, changeset} ->
         # If session creation fails, just return to list
+        Logger.debug("error creating session: #{inspect(changeset)}")
         {:ok, %{model | state: :list, detail_component: nil, selected_requirement_index: 0}}
-    end
-  end
-
-  # Parse the session type from the satisfied_by module name
-  defp parse_session_type(nil), do: CodeMySpec.ComponentCodingSessions
-  defp parse_session_type(""), do: CodeMySpec.ComponentCodingSessions
-
-  defp parse_session_type(satisfied_by) when is_binary(satisfied_by) do
-    # Extract session type from module name like "CodeMySpec.ComponentSpecSessions"
-    case satisfied_by do
-      "ContextSpecSessions" -> CodeMySpec.ContextSpecSessions
-      "ContextComponentsDesignSessions" -> CodeMySpec.ContextComponentsDesignSessions
-      "ContextDesignReviewSessions" -> CodeMySpec.ContextDesignReviewSessions
-      "ContextCodingSessions" -> CodeMySpec.ContextCodingSessions
-      "ContextTestingSessions" -> CodeMySpec.ContextTestingSessions
-      "ComponentSpecSessions" -> CodeMySpec.ComponentSpecSessions
-      "ComponentDesignReviewSessions" -> CodeMySpec.ComponentDesignReviewSessions
-      "ComponentTestSessions" -> CodeMySpec.ComponentTestSessions
-      "ComponentCodingSessions" -> CodeMySpec.ComponentCodingSessions
-      "IntegrationSessions" -> CodeMySpec.IntegrationSessions
     end
   end
 

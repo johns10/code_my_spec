@@ -88,6 +88,7 @@ defmodule CodeMySpec.Components.Component do
     component
     |> cast(attrs, [:name, :type, :module_name, :description, :priority, :parent_component_id])
     |> validate_required([:name, :module_name])
+    |> put_default_type()
     |> validate_length(:name, min: 1, max: 255)
     |> validate_length(:module_name, min: 1, max: 255)
     |> validate_format(:module_name, ~r/^[A-Z][a-zA-Z0-9_.]*$/,
@@ -123,6 +124,14 @@ defmodule CodeMySpec.Components.Component do
       end
     else
       changeset
+    end
+  end
+
+  @spec put_default_type(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  defp put_default_type(changeset) do
+    case get_field(changeset, :type) do
+      nil -> put_change(changeset, :type, "module")
+      _type -> changeset
     end
   end
 
