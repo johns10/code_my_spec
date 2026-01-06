@@ -12,7 +12,7 @@ defmodule CodeMySpec.Sessions do
   alias CodeMySpec.Sessions.{
     Session,
     ResultHandler,
-    Orchestrator,
+    CommandResolver,
     SessionsBroadcaster,
     Executor,
     Interaction
@@ -187,7 +187,7 @@ defmodule CodeMySpec.Sessions do
 
   def next_command(%Scope{} = scope, session_id, opts \\ []) do
     with {:ok, %Session{} = session} <-
-           Orchestrator.next_command(scope, session_id, opts) do
+           CommandResolver.next_command(scope, session_id, opts) do
       SessionsBroadcaster.broadcast_updated(scope, session)
       {:ok, session}
     end

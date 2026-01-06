@@ -2,11 +2,11 @@ defmodule CodeMySpec.Sessions.Executor do
   @moduledoc """
   Unified execution for both sync and async session steps.
 
-  Delegates to Orchestrator for command/interaction management,
+  Delegates to CommandResolver for command/interaction management,
   then handles execution and result processing.
   """
 
-  alias CodeMySpec.Sessions.{Session, Orchestrator}
+  alias CodeMySpec.Sessions.{Session, CommandResolver}
   alias CodeMySpec.Environments
 
   require Logger
@@ -24,7 +24,7 @@ defmodule CodeMySpec.Sessions.Executor do
   - `{:error, reason}` - Execution failed
   """
   def execute(scope, session_id, opts \\ []) do
-    with {:ok, session} <- Orchestrator.next_command(scope, session_id, opts),
+    with {:ok, session} <- CommandResolver.next_command(scope, session_id, opts),
          {:ok, interaction} <- get_latest_interaction(session),
          {:ok, env} <- create_environment(session),
          result <-
@@ -40,7 +40,7 @@ defmodule CodeMySpec.Sessions.Executor do
             interaction_id: interaction.id
           )
 
-          Orchestrator.get_session(scope, session_id)
+          CommandResolver.get_session(scope, session_id)
 
         {:ok, output} ->
           # Sync execution - got result, handle immediately

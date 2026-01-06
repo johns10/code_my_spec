@@ -1,4 +1,4 @@
-defmodule CodeMySpec.Sessions.OrchestratorTest do
+defmodule CodeMySpec.Sessions.CommandResolverTest do
   use CodeMySpec.DataCase
 
   alias CodeMySpec.Sessions

@@ -1,4 +1,4 @@
-defmodule CodeMySpec.Sessions.Orchestrator do
+defmodule CodeMySpec.Sessions.CommandResolver do
   alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction, InteractionsRepository}
 
   def next_command(scope, session_id, opts \\ []) do
