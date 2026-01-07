@@ -31,10 +31,12 @@ defmodule CodeMySpec.SessionsFixtures do
   Generate an interaction for a session.
   """
   def interaction_fixture(session, attrs \\ %{}) do
-    # Create a test command
+    # Create a test command - use a valid step module from the session type
+    module = Map.get(attrs, :module, get_default_step_module(session.type))
+
     command =
       Command.new(
-        Map.get(attrs, :module, CodeMySpec.ContextSpecSessions),
+        module,
         Map.get(attrs, :command, "claude"),
         metadata: Map.get(attrs, :metadata, %{prompt: "Test prompt"})
       )
@@ -47,6 +49,20 @@ defmodule CodeMySpec.SessionsFixtures do
 
     created_interaction
   end
+
+  defp get_default_step_module(CodeMySpec.ComponentTestSessions),
+    do: CodeMySpec.ComponentTestSessions.Steps.Initialize
+
+  defp get_default_step_module(CodeMySpec.ContextSpecSessions),
+    do: CodeMySpec.ContextSpecSessions.Steps.Initialize
+
+  defp get_default_step_module(CodeMySpec.ComponentSpecSessions),
+    do: CodeMySpec.ComponentSpecSessions.Steps.Initialize
+
+  defp get_default_step_module(CodeMySpec.ComponentCodingSessions),
+    do: CodeMySpec.ComponentCodingSessions.Steps.Initialize
+
+  defp get_default_step_module(_), do: CodeMySpec.ComponentTestSessions.Steps.Initialize
 
   @doc """
   Generate valid event attributes for testing.

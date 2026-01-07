@@ -4,6 +4,7 @@ defmodule CodeMySpec.Agents do
   """
 
   alias CodeMySpec.Agents.{Agent, AgentTypes}
+  alias CodeMySpec.Utils
 
   @doc """
   Creates an agent instance from an agent type.
@@ -20,9 +21,17 @@ defmodule CodeMySpec.Agents do
            implementation: implementation,
            config: config
          },
-         changeset <- Agent.changeset(%Agent{}, attrs),
-         {:ok, agent} <- Ecto.Changeset.apply_action(changeset, :insert) do
-      {:ok, agent}
+         changeset <- Agent.changeset(%Agent{}, attrs) do
+      case Ecto.Changeset.apply_action(changeset, :insert) do
+        {:ok, agent} ->
+          {:ok, agent}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:error, Utils.changeset_error_to_string(changeset)}
+      end
+    else
+      {:error, :unknown_type} ->
+        {:error, "Unknown agent type: #{agent_type_name}"}
     end
   end
 
