@@ -23,7 +23,7 @@ defmodule CodeMySpec.Sessions.Executor do
   - `{:ok, session}` - Execution result
   - `{:error, reason}` - Execution failed
   """
-  def execute(scope, session_id, opts \\ []) do
+  def execute_command(scope, session_id, opts \\ []) do
     with {:ok, session} <- CommandResolver.next_command(scope, session_id, opts),
          {:ok, interaction} <- get_latest_interaction(session),
          {:ok, env} <- create_environment(session),

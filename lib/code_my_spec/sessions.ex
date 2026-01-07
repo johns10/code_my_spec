@@ -194,7 +194,7 @@ defmodule CodeMySpec.Sessions do
   end
 
   def execute(%Scope{} = scope, session_id, opts \\ []) do
-    with {:ok, %Session{} = session} <- Executor.execute(scope, session_id, opts) do
+    with {:ok, %Session{} = session} <- Executor.execute_command(scope, session_id, opts) do
       SessionsBroadcaster.broadcast_updated(scope, session)
       {:ok, session}
     end
