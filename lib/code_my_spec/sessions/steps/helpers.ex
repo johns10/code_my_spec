@@ -120,6 +120,7 @@ defmodule CodeMySpec.Sessions.Steps.Helpers do
     command = %CodeMySpec.Sessions.Command{
       module: step_module,
       command: command_string,
+      execution_strategy: :sync,
       metadata: %{},
       timestamp: DateTime.utc_now()
     }

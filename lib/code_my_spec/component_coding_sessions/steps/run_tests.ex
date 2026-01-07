@@ -17,7 +17,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTests do
         seed -> base_args ++ ["--seed", to_string(seed)]
       end
 
-    {:ok, Command.new(__MODULE__, "mix_test", metadata: %{args: args})}
+    {:ok, Command.new(__MODULE__, "mix_test", metadata: %{args: args}, execution_strategy: :task)}
   end
 
   def handle_result(scope, _session, result, _opts \\ []) do

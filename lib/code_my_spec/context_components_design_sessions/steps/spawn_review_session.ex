@@ -25,7 +25,8 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.SpawnReviewSession do
         Command.new(__MODULE__, "spawn_sessions",
           metadata: %{
             child_session_ids: [review_session.id],
-            session_type: :component_design_review
+            session_type: :component_design_review,
+            execution_strategy: :async
           }
         )
 

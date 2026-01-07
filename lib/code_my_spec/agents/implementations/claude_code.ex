@@ -50,6 +50,7 @@ defmodule CodeMySpec.Agents.Implementations.ClaudeCode do
        # Caller should set this to their step module
        module: nil,
        command: "claude",
+       execution_strategy: :async,
        metadata: %{
          prompt: prompt,
          args: cli_args,

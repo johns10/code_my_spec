@@ -28,7 +28,8 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessions do
 
       command =
         Command.new(__MODULE__, "spawn_sessions",
-          metadata: %{child_session_ids: child_session_ids}
+          metadata: %{child_session_ids: child_session_ids},
+          execution_strategy: :async
         )
 
       {:ok, command}

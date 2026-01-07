@@ -57,7 +57,8 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
       test: %{args: test_args}
     }
 
-    {:ok, Command.new(__MODULE__, "run_checks", metadata: %{checks: checks})}
+    {:ok,
+     Command.new(__MODULE__, "run_checks", execution_strategy: :task, metadata: %{checks: checks})}
   end
 
   def handle_result(scope, session, result, opts \\ []) do

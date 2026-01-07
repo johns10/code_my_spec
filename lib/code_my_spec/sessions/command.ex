@@ -12,6 +12,7 @@ defmodule CodeMySpec.Sessions.Command do
   @type t :: %__MODULE__{
           id: binary() | nil,
           module: String.t() | nil,
+          execution_strategy: atom() | nil,
           command: String.t() | nil,
           metadata: map() | nil,
           pipe: String.t() | nil,
@@ -21,6 +22,7 @@ defmodule CodeMySpec.Sessions.Command do
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :module, CommandModuleType
+    field :execution_strategy, Ecto.Enum, values: [:task, :async, :sync], default: :sync
     field :command, :string
     field :pipe, :string
     field :metadata, :map, default: %{}
@@ -29,7 +31,7 @@ defmodule CodeMySpec.Sessions.Command do
 
   def changeset(command \\ %__MODULE__{}, attrs) do
     command
-    |> cast(attrs, [:module, :command, :pipe, :metadata])
+    |> cast(attrs, [:module, :execution_strategy, :command, :pipe, :metadata])
     |> validate_required([:module, :command])
     |> put_timestamp()
   end
@@ -64,6 +66,7 @@ defmodule CodeMySpec.Sessions.Command do
     %__MODULE__{
       module: module,
       command: command,
+      execution_strategy: Keyword.get(opts, :execution_strategy, :sync),
       metadata: Keyword.get(opts, :metadata, %{}),
       timestamp: DateTime.utc_now()
     }
