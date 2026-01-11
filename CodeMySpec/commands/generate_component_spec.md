@@ -1,7 +1,13 @@
 ---
-description: Generate a component specification for the codebase
-allowed-tools: Bash(MIX_ENV=cli:*)
-argument-hint: <ModuleName>
+description: Generate a component specification using agent task session
+allowed-tools: Bash(CodeMySpec/scripts/*), Read
+argument-hint: [ModuleName]
+hooks:
+  Stop:
+    - matcher: "*"
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/scripts/evaluate_agent_task.sh"
 ---
 
-!`MIX_ENV=cli mix cli generate-component-spec $ARGUMENTS`
+!`CodeMySpec/scripts/start_agent_task.sh component_spec $ARGUMENTS`

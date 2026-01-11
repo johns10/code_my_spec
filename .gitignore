@@ -45,4 +45,4 @@ vpn.conf
 /priv/plts/*.plt.hash
 .elixir_ls
 /burrito_out/
-.code_my_spec/cli.log
+.code_my_spec/internal/
