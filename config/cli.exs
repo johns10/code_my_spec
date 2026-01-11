@@ -26,7 +26,7 @@ config :logger, :default_handler, false
 
 # Configure file backend for logging (added at runtime in Application.start/2)
 config :logger, :file_log,
-  path: Path.expand(".code_my_spec/cli.log"),
+  path: Path.expand(".code_my_spec/internal/cli.log"),
   level: :debug,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id, :mfa]
