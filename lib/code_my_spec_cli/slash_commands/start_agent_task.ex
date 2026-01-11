@@ -154,7 +154,10 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
 
   defp output_sync_metrics(%{timings: timings}) do
     # Output to stderr so prompt on stdout is clean
-    IO.puts(:stderr, "Sync: contexts=#{timings.contexts_sync_ms}ms requirements=#{timings.requirements_sync_ms}ms total=#{timings.total_ms}ms")
+    IO.puts(
+      :stderr,
+      "Sync: contexts=#{timings.contexts_sync_ms}ms requirements=#{timings.requirements_sync_ms}ms total=#{timings.total_ms}ms"
+    )
   end
 
   defp format_error(reason) when is_binary(reason), do: reason
