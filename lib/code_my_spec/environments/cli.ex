@@ -36,22 +36,18 @@ defmodule CodeMySpec.Environments.Cli do
   """
   @spec create(opts :: keyword()) :: {:ok, Environment.t()} | {:error, term()}
   def create(opts \\ []) do
-    unless adapter().inside_tmux?() do
-      {:error, "Not running inside tmux"}
-    else
-      session_id = Keyword.get(opts, :session_id, :rand.uniform(10000))
-      window_name = "session-#{session_id}"
-      working_dir = Keyword.get(opts, :working_dir)
-      metadata = Keyword.get(opts, :metadata, %{})
+    session_id = Keyword.get(opts, :session_id, :rand.uniform(10000))
+    window_name = "session-#{session_id}"
+    working_dir = Keyword.get(opts, :working_dir)
+    metadata = Keyword.get(opts, :metadata, %{})
 
-      {:ok,
-       %Environment{
-         type: :cli,
-         ref: window_name,
-         cwd: working_dir,
-         metadata: metadata
-       }}
-    end
+    {:ok,
+     %Environment{
+       type: :cli,
+       ref: window_name,
+       cwd: working_dir,
+       metadata: metadata
+     }}
   end
 
   @doc """

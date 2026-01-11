@@ -136,7 +136,7 @@ defmodule CodeMySpec.MixProject do
         "esbuild code_my_spec --minify",
         "phx.digest"
       ],
-      cli: ["run --no-halt"]
+      tui: ["run --no-halt"]
     ]
   end
 

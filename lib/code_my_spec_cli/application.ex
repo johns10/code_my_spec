@@ -1,7 +1,7 @@
 defmodule CodeMySpecCli.Application do
   @impl true
   use Application
-  import Ratatouille.Constants, only: [key: 1]
+  # import Ratatouille.Constants, only: [key: 1]
 
   def start(_type, _args) do
     ensure_db_directory()
@@ -18,9 +18,9 @@ defmodule CodeMySpecCli.Application do
       {Phoenix.PubSub, name: CodeMySpec.PubSub},
       # Registry for OAuth callback coordination
       {Registry, keys: :unique, name: CodeMySpecCli.Registry},
-      CodeMySpec.ProjectSync.FileWatcherServer,
-      CodeMySpec.Sessions.InteractionRegistry,
-      {CodeMySpecCli.WebServer, port: 8314}
+      # CodeMySpec.ProjectSync.FileWatcherServer,
+      CodeMySpec.Sessions.InteractionRegistry
+      # {CodeMySpecCli.WebServer, port: 8314}
     ]
 
     {:ok, supervisor} =
@@ -29,10 +29,10 @@ defmodule CodeMySpecCli.Application do
     # Start the TUI after all services are running
     # This blocks until the user quits
     # Override quit_events to only use Ctrl+C, not 'q'
-    Ratatouille.run(CodeMySpecCli.Screens.Main,
-      interval: 100,
-      quit_events: [{:key, key(:ctrl_c)}]
-    )
+    # Ratatouille.run(CodeMySpecCli.Screens.Main,
+    #   interval: 100,
+    #   quit_events: [{:key, key(:ctrl_c)}]
+    # )
 
     {:ok, supervisor}
   end
