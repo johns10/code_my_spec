@@ -177,21 +177,13 @@ defmodule CodeMySpecCli.Screens.Sessions do
     if length(model.sessions) > 0 and model.selected_session_index < length(model.sessions) do
       session = Enum.at(model.sessions, model.selected_session_index)
 
-      case Sessions.execute(model.scope, session.id) do
-        {:ok, updated_session} ->
-          # Update the session in the list
-          new_sessions =
-            model.sessions
-            |> Enum.map(fn s -> if s.id == updated_session.id, do: updated_session, else: s end)
-            |> sort_sessions()
+      case Sessions.run(model.scope, session.id) do
+        {:ok, _interaction_info} ->
+          # Execution started successfully, polling will pick up the updated session
+          {:ok, %{model | error_message: nil}}
 
-          {:ok, %{model | sessions: new_sessions, error_message: nil}}
-
-        {:error, :interaction_pending} ->
-          {:ok, %{model | error_message: "Session has pending interaction"}}
-
-        {:error, :session_complete} ->
-          {:ok, %{model | error_message: "Session is already complete"}}
+        {:error, :execution_in_progress} ->
+          {:ok, %{model | error_message: "Session execution already in progress"}}
 
         {:error, reason} ->
           {:ok, %{model | error_message: "Failed to execute: #{inspect(reason)}"}}
@@ -492,10 +484,6 @@ defmodule CodeMySpecCli.Screens.Sessions do
   defp status_color(:failed), do: :red
   defp status_color(:cancelled), do: :yellow
   defp status_color(_), do: :white
-
-  defp sort_sessions(sessions) do
-    Enum.sort_by(sessions, & &1.inserted_at, {:desc, DateTime})
-  end
 
   # Get runtime status indicator for a session's pending interaction.
   # Returns a tuple of {indicator, color} based on RuntimeInteraction data.

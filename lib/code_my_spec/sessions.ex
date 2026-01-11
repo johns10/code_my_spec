@@ -14,8 +14,8 @@ defmodule CodeMySpec.Sessions do
     ResultHandler,
     CommandResolver,
     SessionsBroadcaster,
-    Executor,
-    Interaction
+    Interaction,
+    SessionServer
   }
 
   alias CodeMySpec.Users.Scope
@@ -193,10 +193,84 @@ defmodule CodeMySpec.Sessions do
     end
   end
 
+  @doc """
+  Executes a session step synchronously using SessionServer.
+
+  Starts a SessionServer if one doesn't exist for this session.
+  Blocks until the step completes or fails.
+
+  Note: SessionServer handles broadcasting, so this function doesn't broadcast.
+  """
   def execute(%Scope{} = scope, session_id, opts \\ []) do
-    with {:ok, %Session{} = session} <- Executor.execute_command(scope, session_id, opts) do
-      SessionsBroadcaster.broadcast_updated(scope, session)
-      {:ok, session}
+    with {:ok, server} <- get_or_start_session_server(session_id) do
+      GenServer.call(server, {:run, scope, opts}, :infinity)
+    end
+  end
+
+  @doc """
+  Runs a session step asynchronously using SessionServer.
+
+  Creates the interaction synchronously, then spawns a task for execution.
+  Returns interaction info immediately so caller can track progress.
+
+  ## Returns
+  - `{:ok, %{interaction_id: id, command_module: module, task_pid: pid}}` - Interaction created, execution started
+  - `{:error, reason}` - Failed to create interaction or start server
+
+  ## Sandbox Access
+  In tests, you can use the task_pid to grant sandbox access:
+  ```
+  {:ok, %{task_pid: pid}} = Sessions.run(scope, session_id)
+  Ecto.Adapters.SQL.Sandbox.allow(Repo, self(), pid)
+  ```
+  """
+  def run(%Scope{} = scope, session_id, opts \\ []) do
+    with {:ok, server} <- get_or_start_session_server(session_id) do
+      GenServer.call(server, {:run, scope, opts}, :infinity)
+    end
+  end
+
+  @doc """
+  Delivers an external result to a waiting SessionServer.
+
+  Used for truly async operations like Claude sessions where results
+  come back through callbacks/webhooks.
+
+  ## Parameters
+  - `session_id` - Session ID
+  - `interaction_id` - Interaction ID
+  - `result` - Result map
+  - `opts` - Optional keyword list (e.g., cwd for file operations)
+  """
+  def deliver_result_to_server(session_id, interaction_id, result, opts \\ []) do
+    require Logger
+    Logger.info("Sessions.deliver_result_to_server: session_id=#{session_id}, interaction_id=#{interaction_id}")
+
+    case get_session_server(session_id) do
+      {:ok, server} ->
+        Logger.info("Sessions.deliver_result_to_server: Found server #{inspect(server)}, casting message")
+        GenServer.cast(server, {:deliver_result, interaction_id, result, opts})
+        :ok
+
+      {:error, :not_found} ->
+        Logger.error("Sessions.deliver_result_to_server: SessionServer not found for session #{session_id}")
+        {:error, :session_server_not_found}
+    end
+  end
+
+  # Private helpers for SessionServer management
+
+  defp get_or_start_session_server(session_id) do
+    case get_session_server(session_id) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, :not_found} -> SessionServer.start(session_id)
+    end
+  end
+
+  defp get_session_server(session_id) do
+    case Registry.lookup(CodeMySpec.Sessions.SessionRegistry, session_id) do
+      [{pid, _}] -> {:ok, pid}
+      [] -> {:error, :not_found}
     end
   end
 

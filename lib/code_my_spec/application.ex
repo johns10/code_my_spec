@@ -18,6 +18,7 @@ defmodule CodeMySpec.Application do
         {Phoenix.PubSub, name: CodeMySpec.PubSub},
         CodeMySpecWeb.Presence,
         CodeMySpec.Sessions.InteractionRegistry,
+        {Registry, keys: :unique, name: CodeMySpec.Sessions.SessionRegistry},
         Hermes.Server.Registry,
         {CodeMySpec.MCPServers.StoriesServer, transport: :streamable_http},
         {CodeMySpec.MCPServers.ComponentsServer, transport: :streamable_http},

@@ -158,22 +158,16 @@ defmodule CodeMySpec.Environments.Cli do
     interaction_id = Keyword.fetch!(opts, :interaction_id)
     session_id = Keyword.fetch!(opts, :session_id)
 
-    Task.start(fn ->
-      result = CodeMySpec.Tests.execute(args, interaction_id)
-      scope = CodeMySpec.Users.Scope.for_cli()
+    result = CodeMySpec.Tests.execute(args, interaction_id)
+    scope = CodeMySpec.Users.Scope.for_cli()
 
-      case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, result) do
-        {:ok, _updated_session} ->
-          Logger.info("Test execution completed for session #{session_id}")
+    case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, result) do
+      {:ok, _updated_session} ->
+        Logger.info("Test execution completed for session #{session_id}")
 
-        {:error, reason} ->
-          Logger.error(
-            "Failed to handle test result for session #{session_id}: #{inspect(reason)}"
-          )
-      end
-    end)
-
-    :ok
+      {:error, reason} ->
+        Logger.error("Failed to handle test result for session #{session_id}: #{inspect(reason)}")
+    end
   end
 
   def run_command(
@@ -186,66 +180,65 @@ defmodule CodeMySpec.Environments.Cli do
          {:ok, session_id} <- Keyword.fetch(opts, :session_id),
          {compile_args, test_args} <- extract_check_args(checks) do
       # Run checks in a Task, calling synchronous versions
-      Task.start(fn ->
-        # Set initial state
-        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-          agent_state: "running_compiler"
-        })
+      # Set initial state
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "running_compiler"
+      })
 
-        # Run compilation synchronously
-        compile_result = CodeMySpec.Compile.execute(compile_args)
+      # Run compilation synchronously
+      compile_result = CodeMySpec.Compile.execute(compile_args)
 
-        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-          agent_state: "compiler_finished"
-        })
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "compiler_finished"
+      })
 
-        # Check if compilation has errors
-        results = %{compile: compile_result}
+      # Check if compilation has errors
+      results = %{compile: compile_result}
 
-        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-          agent_state: "running_tests"
-        })
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "running_tests"
+      })
 
-        Logger.info(inspect(test_args))
+      Logger.info(inspect(test_args))
 
-        final_results =
-          case check_compilation_errors(results) do
-            {:ok, _} ->
-              # No compilation errors, run tests
-              test_result = CodeMySpec.Tests.execute(test_args, interaction_id)
-              %{compile: compile_result, test: test_result}
+      final_results =
+        case check_compilation_errors(results) do
+          {:ok, _} ->
+            # No compilation errors, run tests
+            test_result = CodeMySpec.Tests.execute(test_args, interaction_id)
+            %{compile: compile_result, test: test_result}
 
-            {:error, _} ->
-              # Compilation errors, skip tests
-              %{compile: compile_result}
-          end
-
-        # Mark as complete
-        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-          agent_state: "tests_complete"
-        })
-
-        # Mark as complete
-        CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-          agent_state: "checks_complete"
-        })
-
-        # Merge and handle results
-        merged_result = merge_check_results(final_results)
-        scope = CodeMySpec.Users.Scope.for_cli()
-
-        case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, merged_result) do
-          {:ok, _updated_session} ->
-            Logger.info("Checks execution completed for session #{session_id}")
-
-          {:error, reason} ->
-            Logger.error(
-              "Failed to handle checks result for session #{session_id}: #{inspect(reason)}"
-            )
+          {:error, _} ->
+            # Compilation errors, skip tests
+            %{compile: compile_result}
         end
-      end)
 
-      :ok
+      # Mark as complete
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "tests_complete"
+      })
+
+      # Mark as complete
+      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
+        agent_state: "checks_complete"
+      })
+
+      # Merge and handle results
+      merged_result = merge_check_results(final_results)
+      scope = CodeMySpec.Users.Scope.for_cli()
+
+      case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, merged_result) do
+        {:ok, updated_session} ->
+          Logger.info("Checks execution completed for session #{session_id}")
+          {:ok, updated_session}
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to handle checks result for session #{session_id}: #{inspect(reason)}"
+          )
+
+          {:error, reason}
+      end
     else
       :error -> {:error, :missing_required_option}
     end

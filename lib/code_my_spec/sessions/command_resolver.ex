@@ -1,5 +1,6 @@
 defmodule CodeMySpec.Sessions.CommandResolver do
-  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction, InteractionsRepository}
+  require Logger
+  alias CodeMySpec.Sessions.{Session, SessionsRepository, Interaction, InteractionsRepository, SessionsBroadcaster}
 
   def next_command(scope, session_id, opts \\ []) do
     with {:ok, %Session{type: session_module} = session} <- get_session(scope, session_id),
@@ -9,8 +10,12 @@ defmodule CodeMySpec.Sessions.CommandResolver do
          {:ok, command} <-
            next_interaction_module.get_command(scope, session, opts),
          interaction <- Interaction.new_with_command(command),
-         {:ok, _created_interaction} <- InteractionsRepository.create(session.id, interaction),
+         {:ok, created_interaction} <- InteractionsRepository.create(session.id, interaction),
          refreshed_session <- SessionsRepository.get_session(scope, session.id) do
+      # Broadcast step_started with the new interaction
+      Logger.info("CommandResolver: Broadcasting step_started for interaction #{created_interaction.id}")
+      SessionsBroadcaster.broadcast_step_started(scope, refreshed_session, created_interaction.id)
+
       {:ok, refreshed_session}
     else
       {%Interaction{} = _pending_interaction, session} ->

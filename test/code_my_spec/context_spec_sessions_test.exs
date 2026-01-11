@@ -1,5 +1,4 @@
 defmodule CodeMySpec.ContextSpecSessionsTest do
-  alias CodeMySpec.Sessions.Interaction
   use CodeMySpec.DataCase
   import CodeMySpec.Support.CLIRecorder
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
@@ -64,7 +63,6 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
     end
 
     @tag timeout: 300_000
-    # @tag :integration
     test "executes complete context design workflow", %{
       scope: scope,
       blog_context: blog_context
@@ -90,14 +88,30 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
             state: %{working_dir: project_dir}
           })
 
-        # Step 1: Initialize
-        {_, _, session} = execute_step(scope, session.id, Initialize)
-        assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
+        # Consume the :created broadcast from session creation
+        assert_receive {:created, %CodeMySpec.Sessions.Session{id: session_id}}, 1000
+        assert session_id == session.id
 
-        # Step 2: GenerateContextSpec
-        {:ok, session} = Sessions.execute(scope, session.id)
+        # Step 1: Initialize
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == Initialize
+
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}}
         [interaction | _] = session.interactions
-        assert interaction.command.module == GenerateContextSpec
+        assert interaction.result != nil
+
+        # Step 2: GenerateContextSpec (async)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == GenerateContextSpec
 
         # Create the design file that would have been created by Claude
         design_file =
@@ -113,31 +127,47 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
         File.write!(design_file, valid_blog_context_content())
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 3: Validate Design
-        {_, _, session} = execute_step(scope, session.id, ValidateSpec)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [interaction, _, _]
-                         }}
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == ValidateSpec
 
-        assert %Interaction{result: %{status: :ok}} = interaction
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
 
-        # Step 4: Finalize
-        {:ok, session} = Sessions.execute(scope, session.id)
         [interaction | _] = session.interactions
-        assert interaction.command.module == Finalize
+        assert interaction.result.status == :ok
+
+        # Step 4: Finalize (async)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == Finalize
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _, _, _]}}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 5: Session should be complete
         assert {:error, :complete} = Sessions.next_command(scope, session.id)
@@ -145,7 +175,6 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
     end
 
     @tag timeout: 300_000
-    # @tag :integration
     test "handles validation failure and retry", %{
       scope: scope,
       blog_context: blog_context
@@ -171,14 +200,30 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
             state: %{working_dir: project_dir}
           })
 
-        # Step 1: Initialize
-        {_, _, session} = execute_step(scope, session.id, Initialize)
-        assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
+        # Consume the :created broadcast from session creation
+        assert_receive {:created, %CodeMySpec.Sessions.Session{id: session_id}}, 1000
+        assert session_id == session.id
 
-        # Step 2: GenerateContextSpec
-        {:ok, session} = Sessions.execute(scope, session.id)
+        # Step 1: Initialize
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == Initialize
+
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}}
         [interaction | _] = session.interactions
-        assert interaction.command.module == GenerateContextSpec
+        assert interaction.result != nil
+
+        # Step 2: GenerateContextSpec (async)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == GenerateContextSpec
 
         # Create an invalid design file (missing required sections)
         design_file =
@@ -194,71 +239,88 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
         File.write!(design_file, invalid_blog_context_content())
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 3: Validate Design (should fail)
-        {_, _, session} = execute_step(scope, session.id, ValidateSpec)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{result: %{status: :error}}, _, _]
-                         }}
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == ValidateSpec
 
-        # Step 4: ReviseSpec (after validation failure)
-        {:ok, session} = Sessions.execute(scope, session.id, working_dir: project_dir)
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
         [interaction | _] = session.interactions
-        assert interaction.command.module == ReviseSpec
+        assert interaction.result.status == :error
+
+        # Step 4: ReviseSpec (async - after validation failure)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id, working_dir: project_dir)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == ReviseSpec
 
         # Update the design file with valid content
         File.write!(design_file, valid_blog_context_content())
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _, _, _]}}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 5: Revalidate Design (should pass)
-        {_, _, session} = execute_step(scope, session.id, ValidateSpec)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [interaction, _, _, _, _]
-                         }}
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == ValidateSpec
 
-        assert %Interaction{result: %{status: :ok}} = interaction
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
 
-        # Step 6: Finalize
-        {:ok, session} = Sessions.execute(scope, session.id)
         [interaction | _] = session.interactions
-        assert interaction.command.module == Finalize
+        assert interaction.result.status == :ok
+
+        # Step 6: Finalize (async)
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == Finalize
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{}, _, _, _, _, _]
-                         }}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 7: Session should be complete
         assert {:error, :complete} = Sessions.next_command(scope, session.id)
       end
     end
-  end
-
-  # Helper function to execute a session step with common pattern
-  defp execute_step(scope, session_id, expected_module, opts \\ []) do
-    {:ok, session} = Sessions.execute(scope, session_id, opts)
-    [interaction | _] = session.interactions
-    assert interaction.command.module == expected_module
-
-    final_result = Map.get(interaction, :result)
-
-    {interaction, final_result, session}
   end
 
   defp invalid_blog_context_content() do

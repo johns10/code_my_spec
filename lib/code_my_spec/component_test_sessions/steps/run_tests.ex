@@ -76,7 +76,6 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
       {:ok, %{}, updated_result}
     else
       # Compilation passed (possibly with warnings) - continue with other checks
-      Logger.info(inspect(result))
       tdd_state_result = Quality.check_tdd_state(result)
       alignment_result = Quality.spec_test_alignment(component, project, opts)
 

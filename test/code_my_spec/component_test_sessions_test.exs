@@ -1,5 +1,4 @@
 defmodule CodeMySpec.ComponentTestSessionsTest do
-  alias CodeMySpec.Sessions.Interaction
   use CodeMySpec.DataCase
   import CodeMySpec.Support.CLIRecorder
   import CodeMySpec.{UsersFixtures, AccountsFixtures, ProjectsFixtures}
@@ -50,8 +49,6 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
       %{scope: scope, blog_context: blog_context, post_cache: post_cache}
     end
 
-    @tag timeout: 300_000
-    # @tag :integration
     test "executes complete component test workflow with undefined module fix", %{
       scope: scope,
       post_cache: post_cache
@@ -77,28 +74,51 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
             state: %{working_dir: project_dir}
           })
 
+        # Consume the :created broadcast from session creation
+        assert_receive {:created, %CodeMySpec.Sessions.Session{id: session_id}}, 1000
+        assert session_id == session.id
+
         # Step 1: Initialize
-        {_, _, session} = execute_step(scope, session.id, Initialize)
-        assert_received {:updated, %CodeMySpec.Sessions.Session{interactions: [%Interaction{}]}}
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == Initialize
+
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}}
+        [interaction | _] = session.interactions
+        assert interaction.result != nil
 
         # Step 2: GenerateTestsAndFixtures (async)
-        {:ok, session} = Sessions.execute(scope, session.id)
-        [interaction | _] = session.interactions
-        assert interaction.command.module == GenerateTestsAndFixtures
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == GenerateTestsAndFixtures
 
         # Write the test files that would have been generated
         write_test_files_with_undefined_module(project_dir)
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{interactions: [%Interaction{}, _]}}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 3: RunTests (async - should fail with undefined module error)
-        {:ok, session} = Sessions.execute(scope, session.id)
-        [interaction | _] = session.interactions
-        assert interaction.command.module == RunTests
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == RunTests
 
         # Mock test failure result with clean compilation and failing tests
         compiler_errors = File.read!(CodeMySpec.Support.TestAdapter.compiler_errors_cache_path())
@@ -112,34 +132,43 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         }
 
         # Complete the async interaction with error result
-        {:ok, session} =
-          Sessions.handle_result(scope, session.id, interaction.id, test_failure_result)
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, test_failure_result)
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{result: %{status: :error}}, _, _]
-                         }}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :error
 
         # Step 4: FixCompilationErrors (async)
-        {:ok, session} = Sessions.execute(scope, session.id)
-        [interaction | _] = session.interactions
-        assert interaction.command.module == FixCompilationErrors
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == FixCompilationErrors
 
         # Actually fix the undefined module error
         write_failing_test_module(project_dir)
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{}, _, _, _]
-                         }}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 5: RunTests Again (async - should pass now)
-        {:ok, session} = Sessions.execute(scope, session.id)
-        [interaction | _] = session.interactions
-        assert interaction.command.module == RunTests
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == RunTests
 
         compiler_ok = File.read!(CodeMySpec.Support.TestAdapter.compiler_ok_cache_path())
 
@@ -168,44 +197,39 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         File.cp("test/fixtures/component_coding/post_cache_test._ex", test_path)
 
         # Complete the async interaction with success result
-        {:ok, session} =
-          Sessions.handle_result(scope, session.id, interaction.id, test_success_result,
+        :ok =
+          Sessions.deliver_result_to_server(session.id, interaction_id, test_success_result,
             cwd: project_dir
           )
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{result: %{status: :ok}}, _, _, _, _]
-                         }}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}}
+
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
 
         # Step 6: Finalize (async)
-        {:ok, session} = Sessions.execute(scope, session.id)
-        [interaction | _] = session.interactions
-        assert interaction.command.module == Finalize
+        {:ok,
+         %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
+          Sessions.run(scope, session.id)
+
+        Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
+        assert command_module == Finalize
 
         # Complete the async interaction
-        {:ok, session} = Sessions.handle_result(scope, session.id, interaction.id, %{status: :ok})
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, %{status: :ok})
 
-        assert_received {:updated,
-                         %CodeMySpec.Sessions.Session{
-                           interactions: [%Interaction{}, _, _, _, _, _]
-                         }}
+        # Wait for step to complete
+        assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}},
+                       5000
 
-        # Session should be complete
-        assert {:error, :complete} = Sessions.execute(scope, session.id)
+        [completed_interaction | _] = session.interactions
+        assert completed_interaction.result.status == :ok
+
+        # Session should be complete - next_command should return :complete
+        assert {:error, :complete} = Sessions.next_command(scope, session.id)
       end
     end
-  end
-
-  # Helper function to execute a session step with common pattern
-  defp execute_step(scope, session_id, expected_module, opts \\ []) do
-    {:ok, session} = Sessions.execute(scope, session_id, opts)
-    [interaction | _] = session.interactions
-    assert interaction.command.module == expected_module
-
-    final_result = Map.get(interaction, :result)
-
-    {interaction, final_result, session}
   end
 
   # Write test files with undefined module error to the test project

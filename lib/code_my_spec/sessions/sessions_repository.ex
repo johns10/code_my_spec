@@ -2,8 +2,13 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
   import Ecto.Query, warn: false
   alias CodeMySpec.Repo
 
-  alias CodeMySpec.Sessions.Session
+  alias CodeMySpec.Sessions.{Session, Interaction}
   alias CodeMySpec.Users.Scope
+
+  # Query for interactions ordered by inserted_at descending (most recent first)
+  defp interactions_query do
+    from i in Interaction, order_by: [desc: i.inserted_at]
+  end
 
   @doc """
   Gets a single session.
@@ -24,7 +29,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
     |> preload([
       :project,
       :component,
-      :interactions,
+      [interactions: ^interactions_query()],
       [component: :parent_component],
       [child_sessions: [component: :project]]
     ])
@@ -37,7 +42,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
     |> preload([
       :project,
       :component,
-      :interactions,
+      [interactions: ^interactions_query()],
       [component: :parent_component],
       [child_sessions: [component: :project]]
     ])
@@ -53,7 +58,7 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
       Repo.preload(session, [
         :project,
         :component,
-        :interactions,
+        [interactions: interactions_query()],
         [component: :parent_component],
         [child_sessions: [component: :project]]
       ])

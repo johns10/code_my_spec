@@ -51,6 +51,33 @@ defmodule CodeMySpec.Sessions.SessionsBroadcaster do
     broadcast_to_channels(scope, message)
   end
 
+  @doc """
+  Broadcasts when a new interaction/step is started.
+  """
+  def broadcast_step_started(%Scope{} = scope, %Session{} = session, interaction_id) do
+    # Find the interaction to get command info
+    interaction = Enum.find(session.interactions, &(&1.id == interaction_id))
+    command_module = if interaction, do: interaction.command.module, else: nil
+
+    message =
+      {:step_started,
+       %{
+         session: session,
+         interaction_id: interaction_id,
+         command_module: command_module
+       }}
+
+    broadcast_to_channels(scope, message)
+  end
+
+  @doc """
+  Broadcasts when an interaction/step completes (success or error).
+  """
+  def broadcast_step_completed(%Scope{} = scope, %Session{} = session, interaction_id) do
+    message = {:step_completed, %{session: session, interaction_id: interaction_id}}
+    broadcast_to_channels(scope, message)
+  end
+
   # Private helper to broadcast to both account and user channels
   defp broadcast_to_channels(%Scope{} = scope, message) do
     account_key = scope.active_account_id

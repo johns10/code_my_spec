@@ -1,6 +1,11 @@
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(CodeMySpec.Repo, :manual)
 
+case System.get_env("LOG_LEVEL") do
+  nil -> :warning
+  level -> Logger.configure(level: String.to_existing_atom(level))
+end
+
 # Define mock for environments in tests
 Mox.defmock(CodeMySpec.MockEnvironment, for: CodeMySpec.Environments.EnvironmentsBehaviour)
 

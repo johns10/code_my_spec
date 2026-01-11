@@ -1,86 +1,131 @@
 defmodule CodeMySpec.Sessions.Executor do
   @moduledoc """
-  Unified execution for both sync and async session steps.
+  Executes commands to completion, handling all concurrency patterns.
 
-  Delegates to CommandResolver for command/interaction management,
-  then handles execution and result processing.
+  Takes an InteractionContext and executes the command, handling:
+  - Sync execution (immediate result)
+  - Task execution (spawned by command, awaited here)
+  - Async execution (external, wait for message)
+
+  Always returns a final result, never a task or :ok.
   """
 
-  alias CodeMySpec.Sessions.{Session, CommandResolver}
+  alias CodeMySpec.Sessions.InteractionContext
   alias CodeMySpec.Environments
 
   require Logger
 
   @doc """
-  Execute the next step in a session.
+  Execute a command to completion.
+
+  ## Process
+  1. Run command via environment
+  2. Handle execution result based on what command returned:
+     - `{:ok, %Task{}}` - Command spawned task, await it
+     - `{:ok, result}` - Sync result, return it
+     - `:ok` - Async execution, wait for message
+  3. Return final result
 
   ## Parameters
-  - `scope` - User scope
-  - `session_id` - Session ID
-  - `opts` - Options passed to step's get_command
+  - `context` - InteractionContext with command and environment prepared
 
   ## Returns
-  - `{:ok, session}` - Execution result
+  - `result` - Final execution result (map)
   - `{:error, reason}` - Execution failed
   """
-  def execute_command(scope, session_id, opts \\ []) do
-    with {:ok, session} <- CommandResolver.next_command(scope, session_id, opts),
-         {:ok, interaction} <- get_latest_interaction(session),
-         {:ok, env} <- create_environment(session),
-         result <-
-           Environments.run_command(env, interaction.command,
-             session_id: session.id,
-             interaction_id: interaction.id
-           ) do
-      case result do
-        :ok ->
-          # Async execution (CLI) - interaction is pending, waiting for user
-          Logger.info("Async step #{interaction.command.module} executing in background",
-            session_id: session_id,
-            interaction_id: interaction.id
-          )
+  @spec execute(InteractionContext.t()) :: map() | {:error, term()}
+  def execute(%InteractionContext{} = context) do
+    Logger.info("Executing command",
+      session_id: context.session.id,
+      interaction_id: context.interaction.id,
+      command_module: context.command.module
+    )
 
-          CommandResolver.get_session(scope, session_id)
+    # Run command via environment
+    execution_result = Environments.run_command(
+      context.environment,
+      context.command,
+      context.execution_opts
+    )
 
-        {:ok, output} ->
-          # Sync execution - got result, handle immediately
-          Logger.info("Sync step completed, processing result",
-            session_id: session_id,
-            interaction_id: interaction.id
-          )
+    # Handle different execution patterns to completion
+    handle_execution_result(execution_result, context)
+  end
 
-          CodeMySpec.Sessions.ResultHandler.handle_result(
-            scope,
-            session_id,
-            interaction.id,
-            %{status: :ok, data: output},
-            opts
-          )
+  # Private functions
 
-        {:error, reason} ->
-          Logger.error("Execution failed",
-            session_id: session_id,
-            interaction_id: interaction.id,
-            reason: reason
-          )
+  # Command spawned a task - await it
+  defp handle_execution_result({:ok, %Task{} = task}, context) do
+    Logger.info("Task spawned by command, awaiting completion",
+      session_id: context.session.id,
+      interaction_id: context.interaction.id,
+      task_pid: task.pid
+    )
 
-          {:error, reason}
-      end
+    result = Task.await(task, :infinity)
+    normalize_result(result)
+  end
+
+  # Sync execution - result available immediately
+  defp handle_execution_result({:ok, result}, context) when is_map(result) do
+    Logger.info("Sync execution completed",
+      session_id: context.session.id,
+      interaction_id: context.interaction.id
+    )
+
+    normalize_result(result)
+  end
+
+  # Async execution - wait for message
+  defp handle_execution_result(:ok, context) do
+    Logger.info("Async execution started, waiting for result message",
+      session_id: context.session.id,
+      interaction_id: context.interaction.id
+    )
+
+    receive do
+      {:interaction_result, interaction_id, result_attrs, delivered_opts}
+      when interaction_id == context.interaction.id ->
+        Logger.info("Received async result message",
+          session_id: context.session.id,
+          interaction_id: context.interaction.id
+        )
+
+        # Return both result and opts so caller can merge them
+        {normalize_result(result_attrs), delivered_opts}
+    after
+      # Timeout after 30 minutes
+      1_800_000 ->
+        Logger.error("Timeout waiting for async result",
+          session_id: context.session.id,
+          interaction_id: context.interaction.id
+        )
+
+        {:error, :async_result_timeout}
     end
   end
 
-  defp get_latest_interaction(%Session{interactions: []}), do: {:error, :no_interactions}
+  # Execution failed
+  defp handle_execution_result({:error, reason} = error, context) do
+    Logger.error("Execution failed",
+      session_id: context.session.id,
+      interaction_id: context.interaction.id,
+      reason: inspect(reason)
+    )
 
-  defp get_latest_interaction(%Session{interactions: [latest | _]}), do: {:ok, latest}
-
-  defp create_environment(%Session{environment: type, id: session_id, state: state}) do
-    opts = [session_id: session_id]
-
-    opts =
-      if state && Map.has_key?(state, "working_dir"),
-        do: Keyword.put(opts, :working_dir, state["working_dir"]),
-        else: opts
-
-    Environments.create(type, opts)
+    error
   end
+
+  # Normalize various result formats into a consistent map
+  defp normalize_result(result) when is_map(result) do
+    # If already in expected format with :status, use as-is
+    # Otherwise wrap in standard format
+    if Map.has_key?(result, :status) or Map.has_key?(result, "status") do
+      result
+    else
+      %{status: :ok, data: result}
+    end
+  end
+
+  defp normalize_result({:error, _reason} = error), do: error
 end
