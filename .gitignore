@@ -46,4 +46,3 @@ vpn.conf
 .elixir_ls
 /burrito_out/
 .code_my_spec/internal/
-Mnesia.nonode@nohost/

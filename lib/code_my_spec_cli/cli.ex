@@ -61,13 +61,15 @@ defmodule CodeMySpecCli.Cli do
               ]
             ]
           ],
-          validate_component_spec: [
-            name: "validate-component-spec",
-            about: "Validate generated component specification",
-            args: [
-              module_name: [
-                value_name: "MODULE_NAME",
-                help: "Component module name (e.g., 'MyApp.Accounts')",
+          evaluate_agent_task: [
+            name: "evaluate-agent-task",
+            about: "Evaluate/validate an agent task session's output",
+            options: [
+              session_id: [
+                value_name: "SESSION_ID",
+                short: "-s",
+                long: "--session-id",
+                help: "Session ID from start-agent-task",
                 required: true,
                 parser: :string
               ]
@@ -158,6 +160,12 @@ defmodule CodeMySpecCli.Cli do
 
       {[:hook], _} ->
         CodeMySpecCli.Hooks.run()
+
+      {[:start_agent_task], %{options: opts}} ->
+        CodeMySpecCli.SlashCommands.StartAgentTask.run(opts)
+
+      {[:evaluate_agent_task], %{options: opts}} ->
+        CodeMySpecCli.SlashCommands.EvaluateAgentTask.run(opts)
 
       _ ->
         # No subcommand - launch TUI

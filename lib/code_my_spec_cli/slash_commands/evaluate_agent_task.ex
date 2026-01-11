@@ -24,6 +24,7 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   alias CodeMySpec.Sessions
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
+
   @doc """
   Run evaluation and return the result map for hook output.
   Does not perform any IO - caller is responsible for output.
