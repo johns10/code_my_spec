@@ -15,7 +15,12 @@ defmodule CodeMySpec.ProjectSync.Sync do
   @type sync_result :: %{
           contexts: [Components.Component.t()],
           requirements_updated: integer(),
-          errors: [term()]
+          errors: [term()],
+          timings: %{
+            contexts_sync_ms: integer(),
+            requirements_sync_ms: integer(),
+            total_ms: integer()
+          }
         }
 
   @doc """
@@ -39,19 +44,36 @@ defmodule CodeMySpec.ProjectSync.Sync do
   """
   @spec sync_all(Scope.t(), keyword()) :: {:ok, sync_result()} | {:error, term()}
   def sync_all(%Scope{} = scope, opts \\ []) do
+    total_start = System.monotonic_time(:millisecond)
     base_dir = Keyword.get(opts, :base_dir, File.cwd!())
 
-    with {:ok, contexts_result} <- Components.Sync.sync_contexts(scope, base_dir: base_dir),
-         file_list <- get_file_list(base_dir),
-         test_run <- get_latest_test_run(base_dir) do
+    # Time context sync
+    contexts_start = System.monotonic_time(:millisecond)
+
+    with {:ok, contexts_result} <- Components.Sync.sync_contexts(scope, base_dir: base_dir) do
+      contexts_sync_ms = System.monotonic_time(:millisecond) - contexts_start
+
+      # Time requirements sync
+      requirements_start = System.monotonic_time(:millisecond)
+      file_list = get_file_list(base_dir)
+      test_run = get_latest_test_run(base_dir)
+
       # Sync project requirements - pass opts through for persist control
       _components = ProjectCoordinator.sync_project_requirements(scope, file_list, test_run, opts)
+      requirements_sync_ms = System.monotonic_time(:millisecond) - requirements_start
+
+      total_ms = System.monotonic_time(:millisecond) - total_start
 
       {:ok,
        %{
          contexts: contexts_result,
          requirements_updated: 0,
-         errors: []
+         errors: [],
+         timings: %{
+           contexts_sync_ms: contexts_sync_ms,
+           requirements_sync_ms: requirements_sync_ms,
+           total_ms: total_ms
+         }
        }}
     else
       {:error, reason} ->

@@ -28,8 +28,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Project root is two levels up from CodeMySpec/scripts/
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Call the Elixir CLI and capture output
-OUTPUT=$(cd "$PROJECT_ROOT" && MIX_ENV=cli mix cli evaluate-agent-task -s "$SESSION_ID" 2>/dev/null)
+# Call the Elixir CLI and capture output (stderr goes to a temp file for error reporting)
+STDERR_FILE=$(mktemp)
+OUTPUT=$(cd "$PROJECT_ROOT" && MIX_ENV=cli mix cli evaluate-agent-task -s "$SESSION_ID" 2>"$STDERR_FILE") || {
+    echo "CLI command failed. stderr:" >&2
+    cat "$STDERR_FILE" >&2
+    rm -f "$STDERR_FILE"
+    exit 1
+}
+rm -f "$STDERR_FILE"
 
 # Function to extract a simple field value (single line after marker)
 extract_field() {

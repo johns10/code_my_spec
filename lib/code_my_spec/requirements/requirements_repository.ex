@@ -6,6 +6,21 @@ defmodule CodeMySpec.Requirements.RequirementsRepository do
   alias CodeMySpec.Components.Component
   alias CodeMySpec.Requirements.Requirement
 
+  @doc """
+  Clears all requirements for the entire project.
+  """
+  @spec clear_all_project_requirements(Scope.t()) :: {integer(), nil}
+  def clear_all_project_requirements(%Scope{active_project_id: project_id}) do
+    component_ids =
+      Component
+      |> where([c], c.project_id == ^project_id)
+      |> select([c], c.id)
+
+    Requirement
+    |> where([r], r.component_id in subquery(component_ids))
+    |> Repo.delete_all()
+  end
+
   @spec create_requirement(Scope.t(), Component.t(), Requirement.requirement_attrs(), keyword()) ::
           {:ok, Requirement.t()} | {:error, Ecto.Changeset.t()}
   def create_requirement(%Scope{}, %Component{} = component, attrs, opts \\ []) do

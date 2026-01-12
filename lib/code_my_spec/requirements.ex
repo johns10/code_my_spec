@@ -2,6 +2,7 @@ defmodule CodeMySpec.Requirements do
   alias CodeMySpec.Requirements.RequirementsRepository
   alias CodeMySpec.Components
 
+  defdelegate clear_all_project_requirements(scope), to: RequirementsRepository
   defdelegate clear_requirements(scope, component, opts \\ []), to: RequirementsRepository
   defdelegate create_requirement(scope, component, attrs, opts \\ []), to: RequirementsRepository
 
