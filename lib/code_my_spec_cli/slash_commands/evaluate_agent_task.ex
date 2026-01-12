@@ -21,10 +21,14 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
 
   alias CodeMySpec.Sessions
   alias CodeMySpec.Sessions.AgentTasks
+  alias CodeMySpec.ProjectSync.Sync
+  alias CodeMySpec.Requirements
 
   # Maps session type modules to their AgentTask modules
   @session_type_map %{
-    CodeMySpec.ComponentSpecSessions => AgentTasks.ComponentSpec
+    CodeMySpec.ComponentSpecSessions => AgentTasks.ComponentSpec,
+    CodeMySpec.ContextSpecSessions => AgentTasks.ContextSpec,
+    CodeMySpec.ContextComponentsDesignSessions => AgentTasks.ContextComponentSpecs
     # Add more as they're implemented:
     # CodeMySpec.ComponentCodingSessions => AgentTasks.ComponentCoding,
   }
@@ -36,7 +40,9 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
          {:ok, session} <- get_session(scope, session_id),
          {:ok, agent_task_module} <- resolve_agent_task(session.type),
          {:ok, task_session} <- build_task_session(session),
+         {:ok, sync_result} <- sync_project(scope),
          result <- agent_task_module.evaluate(scope, task_session) do
+      output_sync_metrics(sync_result)
       handle_result(result)
     else
       {:error, reason} ->
@@ -117,6 +123,28 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
     IO.puts(format_error(reason))
     IO.puts(">>>ERROR_END")
   end
+
+  defp sync_project(scope) do
+    # Clear all requirements before resyncing
+    Requirements.clear_all_project_requirements(scope)
+
+    case Sync.sync_all(scope) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, "Sync failed: #{inspect(reason)}"}
+    end
+  end
+
+  defp output_sync_metrics(%{timings: timings}) do
+    IO.puts(":::SYNC_TIMINGS:::")
+    IO.puts("contexts_sync_ms: #{timings.contexts_sync_ms}")
+    IO.puts("requirements_sync_ms: #{timings.requirements_sync_ms}")
+    IO.puts("total_ms: #{timings.total_ms}")
+  end
+
+  defp output_sync_metrics(_), do: :ok
 
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset.errors)

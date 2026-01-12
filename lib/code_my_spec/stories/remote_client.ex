@@ -56,10 +56,13 @@ defmodule CodeMySpec.Stories.RemoteClient do
         Enum.map(stories, &deserialize_story/1)
 
       {:ok, %{status: 401}} ->
-        {:error, :token_expired}
+        []
 
-      {:error, reason} ->
-        raise "Failed to list component stories: #{inspect(reason)}"
+      {:error, :not_authenticated} ->
+        []
+
+      {:error, _reason} ->
+        []
     end
   end
 
@@ -181,48 +184,52 @@ defmodule CodeMySpec.Stories.RemoteClient do
 
   defp get_request(scope, path) do
     base_url = get_base_url()
-    token = get_oauth_token(scope)
 
-    Req.get(
-      url: "#{base_url}#{path}",
-      headers: [{"authorization", "Bearer #{token}"}],
-      decode_json: [keys: :strings]
-    )
+    with {:ok, token} <- get_oauth_token(scope) do
+      Req.get(
+        url: "#{base_url}#{path}",
+        headers: [{"authorization", "Bearer #{token}"}],
+        decode_json: [keys: :strings]
+      )
+    end
   end
 
   defp post_request(scope, path, body) do
     base_url = get_base_url()
-    token = get_oauth_token(scope)
 
-    Req.post(
-      url: "#{base_url}#{path}",
-      json: body,
-      headers: [{"authorization", "Bearer #{token}"}],
-      decode_json: [keys: :strings]
-    )
+    with {:ok, token} <- get_oauth_token(scope) do
+      Req.post(
+        url: "#{base_url}#{path}",
+        json: body,
+        headers: [{"authorization", "Bearer #{token}"}],
+        decode_json: [keys: :strings]
+      )
+    end
   end
 
   defp put_request(scope, path, body) do
     base_url = get_base_url()
-    token = get_oauth_token(scope)
 
-    Req.put(
-      url: "#{base_url}#{path}",
-      json: body,
-      headers: [{"authorization", "Bearer #{token}"}],
-      decode_json: [keys: :strings]
-    )
+    with {:ok, token} <- get_oauth_token(scope) do
+      Req.put(
+        url: "#{base_url}#{path}",
+        json: body,
+        headers: [{"authorization", "Bearer #{token}"}],
+        decode_json: [keys: :strings]
+      )
+    end
   end
 
   defp delete_request(scope, path) do
     base_url = get_base_url()
-    token = get_oauth_token(scope)
 
-    Req.delete(
-      url: "#{base_url}#{path}",
-      headers: [{"authorization", "Bearer #{token}"}],
-      decode_json: [keys: :strings]
-    )
+    with {:ok, token} <- get_oauth_token(scope) do
+      Req.delete(
+        url: "#{base_url}#{path}",
+        headers: [{"authorization", "Bearer #{token}"}],
+        decode_json: [keys: :strings]
+      )
+    end
   end
 
   defp get_base_url do
@@ -232,8 +239,8 @@ defmodule CodeMySpec.Stories.RemoteClient do
 
   defp get_oauth_token(%Scope{} = _scope) do
     case CodeMySpecCli.Auth.OAuthClient.get_token() do
-      {:ok, token} -> token
-      {:error, _} -> raise "Not authenticated. Please run `code login` first."
+      {:ok, token} -> {:ok, token}
+      {:error, _} -> {:error, :not_authenticated}
     end
   end
 

@@ -30,10 +30,14 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   alias CodeMySpec.Components
   alias CodeMySpec.Sessions
   alias CodeMySpec.Sessions.AgentTasks
+  alias CodeMySpec.ProjectSync.Sync
+  alias CodeMySpec.Requirements
 
   # Maps CLI session type names to {SessionModule, AgentTaskModule}
   @session_type_map %{
-    "component_spec" => {CodeMySpec.ComponentSpecSessions, AgentTasks.ComponentSpec}
+    "component_spec" => {CodeMySpec.ComponentSpecSessions, AgentTasks.ComponentSpec},
+    "context_spec" => {CodeMySpec.ContextSpecSessions, AgentTasks.ContextSpec},
+    "context_component_specs" => {CodeMySpec.ContextComponentsDesignSessions, AgentTasks.ContextComponentSpecs}
     # Add more as they're implemented:
     # "component_coding" => {CodeMySpec.ComponentCodingSessions, AgentTasks.ComponentCoding},
   }
@@ -45,9 +49,11 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     with {:ok, {session_module, agent_task_module}} <- resolve_session_type(session_type),
          {:ok, component} <- get_component(scope, module_name),
          {:ok, project} <- get_project(scope),
+         {:ok, sync_result} <- sync_project(scope),
          {:ok, db_session} <- create_session(scope, session_module, component),
          {:ok, task_session} <- build_task_session(component, project),
          {:ok, prompt} <- agent_task_module.command(scope, task_session) do
+      output_sync_metrics(sync_result)
       output_structured_response(db_session, session_type, component, prompt)
       :ok
     else
@@ -138,6 +144,28 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     IO.puts(content)
     IO.puts(">>>#{name}_END")
   end
+
+  defp sync_project(scope) do
+    # Clear all requirements before resyncing
+    Requirements.clear_all_project_requirements(scope)
+
+    case Sync.sync_all(scope) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, "Sync failed: #{inspect(reason)}"}
+    end
+  end
+
+  defp output_sync_metrics(%{timings: timings}) do
+    IO.puts(":::SYNC_TIMINGS:::")
+    IO.puts("contexts_sync_ms: #{timings.contexts_sync_ms}")
+    IO.puts("requirements_sync_ms: #{timings.requirements_sync_ms}")
+    IO.puts("total_ms: #{timings.total_ms}")
+  end
+
+  defp output_sync_metrics(_), do: :ok
 
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset.errors)
