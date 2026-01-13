@@ -50,7 +50,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
   """
   def evaluate(_scope, session, _opts \\ []) do
     with {:ok, spec_content} <- read_spec_file(session),
-         {:ok, _document} <- validate_document(spec_content) do
+         {:ok, document} <- validate_document(spec_content),
+         {:ok, _paths} <- create_child_spec_files(session, document.sections) do
       {:ok, :valid}
     else
       {:error, validation_errors} when is_binary(validation_errors) ->
@@ -169,6 +170,39 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
 
   defp validate_document(spec_content) do
     Documents.create_dynamic_document(spec_content, "context_spec")
+  end
+
+  defp create_child_spec_files(session, %{"components" => components})
+       when is_list(components) do
+    {:ok, environment} = Environments.create(session.environment)
+
+    results =
+      Enum.map(components, fn %{module_name: module_name, description: description} ->
+        %{spec_file: file_path} = Utils.component_files(module_name)
+        content = build_child_spec_content(module_name, description)
+
+        IO.inspect(file_path)
+
+        case Environments.write_file(environment, file_path, content) do
+          :ok -> {:ok, file_path}
+          {:error, reason} -> {:error, reason}
+        end
+      end)
+
+    case Enum.find(results, &match?({:error, _}, &1)) do
+      nil -> {:ok, Enum.map(results, fn {:ok, path} -> path end)}
+      {:error, reason} -> {:error, "Failed to create child spec files: #{inspect(reason)}"}
+    end
+  end
+
+  defp create_child_spec_files(_session, _sections), do: {:ok, []}
+
+  defp build_child_spec_content(module_name, description) do
+    """
+    # #{module_name}
+
+    #{description}
+    """
   end
 
   defp build_revision_feedback(validation_errors) do
