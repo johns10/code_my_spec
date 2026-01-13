@@ -63,7 +63,7 @@ CMS_EVAL_STATUS=$(extract_field "STATUS")
 
 case "$CMS_EVAL_STATUS" in
     "valid")
-        echo "Component specification is valid!" >&2
+        echo "All checks passed!" >&2
         exit 1  # Show to user that it ran
         ;;
     "invalid")
