@@ -45,30 +45,28 @@ defmodule CodeMySpec.Components.Sync do
     base_dir = Keyword.get(opts, :base_dir, ".")
     project_module_name = scope.active_project.module_name
 
-    # Scan for spec files
-    spec_contexts = find_spec_contexts(project_module_name, base_dir)
+    # Scan for all spec files recursively
+    spec_components = find_spec_contexts(project_module_name, base_dir)
 
-    # Scan for implementation files
-    impl_contexts = find_impl_contexts(project_module_name, base_dir)
+    # Scan for all implementation files recursively
+    impl_components = find_impl_contexts(project_module_name, base_dir)
 
-    # Merge the lists
-    merged_contexts = merge_context_lists(spec_contexts, impl_contexts)
+    # Merge the lists by module name
+    merged_components = merge_context_lists(spec_components, impl_components)
 
-    # Upsert each context
-    synced_contexts =
-      Enum.map(merged_contexts, fn context_data ->
-        upsert_context(scope, context_data)
+    # Upsert each component (initially without parent relationships)
+    synced_components =
+      Enum.map(merged_components, fn component_data ->
+        upsert_context(scope, component_data)
       end)
 
-    # Sync components for each context
-    Enum.each(synced_contexts, fn context ->
-      sync_components(scope, context, opts)
-    end)
+    # Derive parent relationships from module names
+    derive_parent_relationships(scope, synced_components)
 
-    # Remove contexts that no longer exist
-    cleanup_removed_contexts(scope, synced_contexts)
+    # Remove components that no longer exist
+    cleanup_removed_contexts(scope, synced_components)
 
-    {:ok, synced_contexts}
+    {:ok, synced_components}
   rescue
     error ->
       Logger.error("Error during context sync: #{inspect(error)}")
@@ -116,35 +114,27 @@ defmodule CodeMySpec.Components.Sync do
 
   # Private functions
 
-  defp find_spec_contexts(project_module_name, base_dir) do
-    spec_dir = Path.join(base_dir, "docs/spec/#{Paths.module_to_path(project_module_name)}")
+  defp find_spec_contexts(_project_module_name, base_dir) do
+    spec_dir = Path.join(base_dir, "docs/spec")
 
     if File.dir?(spec_dir) do
-      spec_dir
-      |> File.ls!()
-      |> Enum.filter(&String.ends_with?(&1, ".spec.md"))
-      |> Enum.map(fn filename ->
-        path = Path.join(spec_dir, filename)
-        parse_context_spec(path)
-      end)
+      # Find all spec files recursively
+      Path.wildcard("#{spec_dir}/**/*.spec.md")
+      |> Enum.map(&parse_context_spec/1)
       |> Enum.reject(&is_nil/1)
     else
       []
     end
   end
 
-  defp find_impl_contexts(project_module_name, base_dir) do
-    lib_dir = Path.join(base_dir, "lib/#{Paths.module_to_path(project_module_name)}")
+  defp find_impl_contexts(_project_module_name, base_dir) do
+    lib_dir = Path.join(base_dir, "lib")
 
     if File.dir?(lib_dir) do
-      lib_dir
-      |> File.ls!()
-      |> Enum.filter(&String.ends_with?(&1, ".ex"))
+      # Find all .ex files recursively
+      Path.wildcard("#{lib_dir}/**/*.ex")
       |> Enum.reject(&should_skip_file?/1)
-      |> Enum.map(fn filename ->
-        path = Path.join(lib_dir, filename)
-        parse_impl_file(path)
-      end)
+      |> Enum.map(&parse_impl_file/1)
       |> Enum.reject(&is_nil/1)
     else
       []
@@ -365,11 +355,44 @@ defmodule CodeMySpec.Components.Sync do
     Components.upsert_component(scope, attrs)
   end
 
+  defp derive_parent_relationships(scope, components) do
+    # Build a map of module_name -> component for quick lookup
+    component_map = Map.new(components, fn c -> {c.module_name, c} end)
+
+    Enum.each(components, fn component ->
+      parent_module_name = parent_module(component.module_name)
+
+      case Map.get(component_map, parent_module_name) do
+        nil ->
+          # No parent found, leave as-is (already has parent_component_id: nil)
+          :ok
+
+        parent when parent.id != component.id ->
+          # Update the component with its parent
+          Components.update_component(scope, component, %{parent_component_id: parent.id})
+
+        _ ->
+          # Self-reference, skip
+          :ok
+      end
+    end)
+  end
+
+  defp parent_module(module_name) do
+    parts = String.split(module_name, ".")
+
+    if length(parts) > 1 do
+      parts |> Enum.drop(-1) |> Enum.join(".")
+    else
+      nil
+    end
+  end
+
   defp cleanup_removed_contexts(%Scope{} = scope, synced_contexts) do
     synced_ids = Enum.map(synced_contexts, & &1.id)
 
     scope
-    |> Components.list_contexts()
+    |> Components.list_components()
     |> Enum.reject(&(&1.id in synced_ids))
     |> Enum.each(&Components.delete_component(scope, &1))
   end

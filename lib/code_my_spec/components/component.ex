@@ -28,6 +28,7 @@ defmodule CodeMySpec.Components.Component do
           module_name: String.t(),
           description: String.t() | nil,
           priority: integer() | nil,
+          synced_at: DateTime.t() | nil,
           account_id: integer(),
           project_id: Ecto.UUID.t(),
           parent_component_id: Ecto.UUID.t() | nil,
@@ -59,6 +60,7 @@ defmodule CodeMySpec.Components.Component do
     field :module_name, :string
     field :description, :string
     field :priority, :integer
+    field :synced_at, :utc_datetime
 
     belongs_to :account, Account
     belongs_to :project, Project, type: :binary_id
@@ -86,7 +88,7 @@ defmodule CodeMySpec.Components.Component do
 
   def changeset(component, attrs, %CodeMySpec.Users.Scope{} = scope) do
     component
-    |> cast(attrs, [:name, :type, :module_name, :description, :priority, :parent_component_id])
+    |> cast(attrs, [:name, :type, :module_name, :description, :priority, :parent_component_id, :synced_at])
     |> validate_required([:name, :module_name])
     |> put_default_type()
     |> validate_length(:name, min: 1, max: 255)
