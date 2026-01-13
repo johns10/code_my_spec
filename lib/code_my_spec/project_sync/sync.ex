@@ -10,7 +10,6 @@ defmodule CodeMySpec.ProjectSync.Sync do
   alias CodeMySpec.Components
   alias CodeMySpec.ProjectCoordinator
   alias CodeMySpec.Tests.TestRun
-  alias CodeMySpec.Utils.Paths
 
   @type sync_result :: %{
           contexts: [Components.Component.t()],
@@ -50,7 +49,7 @@ defmodule CodeMySpec.ProjectSync.Sync do
     # Time context sync
     contexts_start = System.monotonic_time(:millisecond)
 
-    with {:ok, contexts_result} <- Components.Sync.sync_contexts(scope, base_dir: base_dir) do
+    with {:ok, contexts_result, _errors} <- Components.Sync.sync_all(scope, base_dir: base_dir) do
       contexts_sync_ms = System.monotonic_time(:millisecond) - contexts_start
 
       # Time requirements sync
@@ -81,64 +80,12 @@ defmodule CodeMySpec.ProjectSync.Sync do
     end
   end
 
-  @doc """
-  Synchronizes a context when any of its files change (spec or implementation).
-
-  ## Process
-  1. Uses Paths utilities to derive the spec path from any file
-  2. Syncs the context record and components
-  3. Recalculates ALL project requirements (contexts have dependencies)
-
-  ## Parameters
-    - `scope` - The user scope
-    - `file_path` - Path to the changed file
-
-  ## Returns
-    - `:ok` on success
-    - `{:error, reason}` on failure
-  """
-  @spec sync_context(Scope.t(), file_path :: String.t()) ::
-          :ok | {:error, term()}
-  def sync_context(%Scope{} = scope, file_path) do
-    with {:ok, spec_path} <- Paths.spec_path(file_path),
-         {:ok, _context} <- Components.Sync.sync_context(scope, spec_path),
-         :ok <- recalculate_requirements(scope) do
-      :ok
-    else
-      {:error, :not_a_context_path} ->
-        # Not a context file - orphaned file, not an error
-        :ok
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
-  Recalculates all component requirements after a sync operation.
-
-  ## Parameters
-    - `scope` - The user scope
-
-  ## Returns
-    - `:ok` on success
-    - `{:error, reason}` on failure
-  """
-  @spec recalculate_requirements(Scope.t()) :: :ok | {:error, term()}
-  def recalculate_requirements(%Scope{} = scope) do
-    file_list = get_file_list()
-    test_run = get_latest_test_run()
-
-    _components = ProjectCoordinator.sync_project_requirements(scope, file_list, test_run, [])
-
-    :ok
-  end
 
   # Private Functions
 
   # Gets the list of all files in the project
-  defp get_file_list(base_dir \\ nil) do
-    project_root = base_dir || File.cwd!()
+  defp get_file_list(base_dir) do
+    project_root = base_dir
 
     # Recursively list all files, excluding common directories
     # Return paths relative to project root
@@ -151,8 +98,8 @@ defmodule CodeMySpec.ProjectSync.Sync do
   end
 
   # Gets the latest test run, or creates an empty one if none exists
-  defp get_latest_test_run(base_dir \\ nil) do
-    project_root = base_dir || File.cwd!()
+  defp get_latest_test_run(base_dir) do
+    project_root = base_dir
 
     # For now, return an empty test run
     # In the future, this could query from a TestRuns context/repository

@@ -181,8 +181,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
         %{spec_file: file_path} = Utils.component_files(module_name)
         content = build_child_spec_content(module_name, description)
 
-        IO.inspect(file_path)
-
         case Environments.write_file(environment, file_path, content) do
           :ok -> {:ok, file_path}
           {:error, reason} -> {:error, reason}
