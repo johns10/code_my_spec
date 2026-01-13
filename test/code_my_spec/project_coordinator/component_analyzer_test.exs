@@ -16,7 +16,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       created_component =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
-          module_name: "Users",
+          module_name: "MyApp.Users",
           type: "context"
         })
 
@@ -54,7 +54,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       created_component =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
-          module_name: "Users",
+          module_name: "MyApp.Users",
           type: "context"
         })
 
@@ -91,7 +91,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       created_component =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
-          module_name: "Users",
+          module_name: "MyApp.Users",
           type: "context"
         })
 
@@ -140,14 +140,14 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       created_users =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
-          module_name: "Users",
+          module_name: "MyApp.Users",
           type: "context"
         })
 
       created_posts =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Posts",
-          module_name: "Posts",
+          module_name: "MyApp.Posts",
           type: "context"
         })
 
@@ -200,7 +200,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       created_component =
         ComponentsFixtures.component_fixture(scope, %{
           name: "Users",
-          module_name: "Users",
+          module_name: "MyApp.Users",
           type: "context"
         })
 
@@ -250,7 +250,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       created_component =
         ComponentsFixtures.component_fixture(scope, %{
           name: "UserProfile",
-          module_name: "Accounts.UserProfile",
+          module_name: "MyApp.Accounts.UserProfile",
           type: "schema"
         })
 
@@ -288,7 +288,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzerTest do
       {_parent, _child} =
         ComponentsFixtures.component_with_dependencies_fixture(scope, %{
           name: "UserContext",
-          module_name: "UserContext"
+          module_name: "MyApp.UserContext"
         })
 
       # Use the proper Components context function that preloads dependencies

@@ -9,7 +9,7 @@ defmodule CodeMySpec.QualityTest do
     test "detects partial alignment in Blog context" do
       # Test against the Blog context with intentional misalignment
       component = %Component{
-        module_name: "Blog",
+        module_name: "TestPhoenixProject.Blog",
         type: "context"
       }
 
@@ -42,7 +42,7 @@ defmodule CodeMySpec.QualityTest do
       # Test against the test_phoenix_project fixture
       # The PostRepository tests are organized exactly according to the spec
       component = %Component{
-        module_name: "Blog.PostRepository",
+        module_name: "TestPhoenixProject.Blog.PostRepository",
         type: "repository"
       }
 
