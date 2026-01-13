@@ -46,19 +46,18 @@ defmodule CodeMySpec.ProjectSync.ChangeHandler do
   defp do_handle_file_change(scope, file_path) do
     case determine_file_type(file_path) do
       :spec ->
-        Sync.sync_context(scope, file_path)
+        Sync.sync_all(scope)
+        :ok
 
       :implementation ->
-        Sync.sync_context(scope, file_path)
+        Sync.sync_all(scope)
+        :ok
 
       :other ->
-        # No-op for unrecognized file types
         :ok
     end
   rescue
-    # Handle malformed paths or other exceptions gracefully
-    error ->
-      {:error, error}
+    error -> {:error, error}
   end
 
   @doc """

@@ -1,384 +1,281 @@
 defmodule CodeMySpec.Components.Sync do
   @moduledoc """
-  Synchronizes context components and their child components from filesystem to database.
+  Synchronizes components from filesystem to database. Parent-child relationships
+  are derived from module name hierarchy.
   """
 
   require Logger
 
   alias CodeMySpec.Components
   alias CodeMySpec.Components.Component
+  alias CodeMySpec.Components.Sync.FileInfo
   alias CodeMySpec.Users.Scope
-  alias CodeMySpec.Utils.Paths
 
   @doc """
-  Synchronizes a single context component from a spec file path.
+  Synchronizes all components from spec files and implementation files.
+
+  Module names come from:
+  1. Implementation's declared module name (highest priority)
+  2. Spec's H1 title
+  3. Path-derived name (lowest priority)
+
+  Component type is determined by namespace depth:
+  - 2 parts (e.g., MyApp.Accounts) → context_spec
+  - 3+ parts (e.g., MyApp.Accounts.User) → spec
+
+  ## Options
+
+  - `:base_dir` - Base directory to scan (defaults to current working directory)
+  - `:force` - When true, ignores mtime and syncs all files (defaults to false)
   """
-  @spec sync_context(Scope.t(), spec_path :: String.t()) ::
-          {:ok, Component.t()} | {:error, term()}
-  def sync_context(%Scope{} = scope, spec_path) do
-    # Parse the spec file
-    context_data = parse_context_spec(spec_path)
+  @type parse_error :: {path :: String.t(), reason :: term()}
 
-    if context_data do
-      # Upsert the context
-      context = upsert_context(scope, context_data)
-
-      # Sync its components
-      sync_components(scope, context)
-
-      {:ok, context}
-    else
-      {:error, :invalid_spec}
-    end
-  rescue
-    error -> {:error, error}
-  end
-
-  @doc """
-  Synchronizes all context components from both spec files and implementation files in the project.
-
-  Options:
-  - `:base_dir` - Base directory to search for files (defaults to current working directory)
-  """
-  @spec sync_contexts(Scope.t(), keyword()) :: {:ok, [Component.t()]} | {:error, term()}
-  def sync_contexts(%Scope{} = scope, opts \\ []) do
+  @spec sync_all(Scope.t(), keyword()) :: {:ok, [Component.t()], [parse_error()]} | {:error, term()}
+  def sync_all(%Scope{} = scope, opts \\ []) do
     base_dir = Keyword.get(opts, :base_dir, ".")
-    project_module_name = scope.active_project.module_name
+    force = Keyword.get(opts, :force, false)
 
-    # Scan for all spec files recursively
-    spec_components = find_spec_contexts(project_module_name, base_dir)
+    existing_components = Components.list_components(scope)
+    synced_at_map = Map.new(existing_components, fn c -> {c.module_name, c.synced_at} end)
 
-    # Scan for all implementation files recursively
-    impl_components = find_impl_contexts(project_module_name, base_dir)
+    # Parse spec and impl files
+    spec_file_infos = FileInfo.collect_files(base_dir, "docs/spec/**/*.spec.md")
+    impl_file_infos = FileInfo.collect_files(base_dir, "lib/**/*.ex")
 
-    # Merge the lists by module name
-    merged_components = merge_context_lists(spec_components, impl_components)
+    {spec_data, spec_errors} = parse_files(spec_file_infos, &parse_spec_file(&1, base_dir))
+    {impl_data, impl_errors} = parse_files(impl_file_infos, &parse_impl_file(&1, base_dir))
 
-    # Upsert each component (initially without parent relationships)
-    synced_components =
-      Enum.map(merged_components, fn component_data ->
-        upsert_context(scope, component_data)
-      end)
+    parse_errors = spec_errors ++ impl_errors
+    Enum.each(parse_errors, fn {path, error} ->
+      Logger.warning("Failed to parse #{path}: #{inspect(error)}")
+    end)
 
-    # Derive parent relationships from module names
-    derive_parent_relationships(scope, synced_components)
+    # Merge by module name (impl takes precedence)
+    merged = merge_by_module_name(spec_data, impl_data)
 
-    # Remove components that no longer exist
-    cleanup_removed_contexts(scope, synced_components)
+    # Filter to components needing sync
+    {to_sync, unchanged} =
+      Enum.split_with(merged, &needs_sync?(&1, synced_at_map, force))
 
-    {:ok, synced_components}
+    # Upsert changed components
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    synced = Enum.map(to_sync, &upsert_from_data(scope, &1, now))
+
+    # Get unchanged from DB
+    unchanged_names = MapSet.new(unchanged, & &1.module_name)
+    unchanged_components = Enum.filter(existing_components, &(&1.module_name in unchanged_names))
+
+    all_components = synced ++ unchanged_components
+
+    # Derive parent relationships and cleanup
+    derive_parent_relationships(scope, all_components)
+    cleanup_removed(scope, existing_components, MapSet.new(merged, & &1.module_name))
+
+    {:ok, all_components, parse_errors}
   rescue
     error ->
-      Logger.error("Error during context sync: #{inspect(error)}")
+      Logger.error("Error during sync: #{inspect(error)}")
       {:error, error}
   end
 
-  @doc """
-  Synchronizes all child components belonging to a parent context component from both spec files and implementation files.
+  # --- Parsing ---
 
-  Options:
-  - `:base_dir` - Base directory to search for files (defaults to current working directory)
-  """
-  @spec sync_components(Scope.t(), parent_component :: Component.t(), keyword()) ::
-          {:ok, [Component.t()]} | {:error, term()}
-  def sync_components(%Scope{} = scope, %Component{} = parent_component, opts \\ []) do
-    base_dir = Keyword.get(opts, :base_dir, ".")
-
-    # Find component specs
-    spec_components = find_spec_components(parent_component, base_dir)
-
-    # Find implementation files
-    impl_components = find_impl_components(parent_component, base_dir)
-
-    # Merge the lists
-    merged_components = merge_component_lists(spec_components, impl_components)
-
-    # Upsert each component
-    synced_components =
-      Enum.map(merged_components, fn component_data ->
-        upsert_component(scope, parent_component, component_data)
+  defp parse_files(file_infos, parse_fn) do
+    {successes, failures} =
+      file_infos
+      |> Enum.map(fn file_info ->
+        try do
+          {:ok, parse_fn.(file_info)}
+        rescue
+          error -> {:error, file_info.path, error}
+        end
       end)
+      |> Enum.split_with(&match?({:ok, _}, &1))
 
-    # Remove components that no longer exist
-    cleanup_removed_components(scope, parent_component, synced_components)
-
-    {:ok, synced_components}
-  rescue
-    error ->
-      Logger.error(
-        "Error syncing components for #{parent_component.module_name}: #{inspect(error)}"
-      )
-
-      {:error, error}
+    data = Enum.map(successes, fn {:ok, d} -> d end)
+    errors = Enum.map(failures, fn {:error, path, err} -> {path, err} end)
+    {data, errors}
   end
 
-  # Private functions
-
-  defp find_spec_contexts(_project_module_name, base_dir) do
-    spec_dir = Path.join(base_dir, "docs/spec")
-
-    if File.dir?(spec_dir) do
-      # Find all spec files recursively
-      Path.wildcard("#{spec_dir}/**/*.spec.md")
-      |> Enum.map(&parse_context_spec/1)
-      |> Enum.reject(&is_nil/1)
-    else
-      []
-    end
-  end
-
-  defp find_impl_contexts(_project_module_name, base_dir) do
-    lib_dir = Path.join(base_dir, "lib")
-
-    if File.dir?(lib_dir) do
-      # Find all .ex files recursively
-      Path.wildcard("#{lib_dir}/**/*.ex")
-      |> Enum.reject(&should_skip_file?/1)
-      |> Enum.map(&parse_impl_file/1)
-      |> Enum.reject(&is_nil/1)
-    else
-      []
-    end
-  end
-
-  # Skip common infrastructure files that aren't contexts
-  defp should_skip_file?(filename) do
-    base_name = Path.basename(filename, ".ex")
-    String.downcase(base_name) in ["mailer", "repo", "application"]
-  end
-
-  defp find_spec_components(%Component{module_name: module_name}, base_dir) do
-    spec_dir = Path.join(base_dir, "docs/spec/#{Paths.module_to_path(module_name)}")
-
-    if File.dir?(spec_dir) do
-      Path.wildcard("#{spec_dir}/**/*.spec.md")
-      |> Enum.reject(&(Path.basename(&1) == "#{Path.basename(spec_dir)}.spec.md"))
-      |> Enum.map(&parse_component_spec/1)
-      |> Enum.reject(&is_nil/1)
-    else
-      []
-    end
-  end
-
-  defp find_impl_components(%Component{module_name: module_name}, base_dir) do
-    # Convert module name to lib path
-    impl_path = Path.join(base_dir, "lib/#{Paths.module_to_path(module_name)}")
-
-    if File.dir?(impl_path) do
-      files = Path.wildcard("#{impl_path}/**/*.ex")
-      parent_basename = Path.basename(impl_path)
-
-      filtered_files =
-        files
-        |> Enum.reject(fn file ->
-          basename = Path.basename(file, ".ex")
-          basename == parent_basename
-        end)
-
-      filtered_files
-      |> Enum.map(&parse_impl_file/1)
-      |> Enum.reject(&is_nil/1)
-    else
-      Logger.debug("Implementation path does not exist or is not a directory: #{impl_path}")
-      []
-    end
-  end
-
-  defp parse_context_spec(path) do
+  defp parse_spec_file(%FileInfo{path: path, mtime: mtime}, base_dir) do
     content = File.read!(path)
 
-    # Extract module name from title (first H1)
-    module_name =
-      case Regex.run(~r/^# (.+)$/m, content) do
-        [_, name] -> String.trim(name)
-        _ -> nil
-      end
+    # Get module name from H1 title
+    module_name = extract_h1_title(content) || derive_module_from_path(path, base_dir, :spec)
 
-    # Extract type from Type field
-    type =
-      case Regex.run(~r/\*\*Type\*\*:\s*(\w+)/m, content) do
-        [_, type_str] -> type_str
-        _ -> "context"
-      end
+    # Extract description from intro text (content after H1, before first H2)
+    description = extract_intro_text(content)
 
-    # Extract description (text after type, before next section)
-    description =
-      content
-      |> String.split("\n")
-      |> Enum.drop_while(&(!String.match?(&1, ~r/\*\*Type\*\*/)))
-      |> Enum.drop(1)
-      |> Enum.take_while(&(!String.match?(&1, ~r/^##/)))
-      |> Enum.join("\n")
-      |> String.trim()
-
-    if module_name do
-      %{
-        module_name: module_name,
-        type: type,
-        description: description,
-        spec_path: path,
-        impl_path: nil
-      }
-    else
-      nil
-    end
+    %{
+      module_name: module_name,
+      type: type_from_namespace(module_name),
+      description: description,
+      spec_path: path,
+      impl_path: nil,
+      mtime: mtime
+    }
   end
 
-  defp parse_component_spec(path) do
+  defp parse_impl_file(%FileInfo{path: path, mtime: mtime}, base_dir) do
     content = File.read!(path)
 
-    # Extract module name from title (first H1)
-    module_name =
-      case Regex.run(~r/^# (.+)$/m, content) do
-        [_, name] -> String.trim(name)
-        _ -> nil
-      end
-
-    # Extract type from Type field
-    type =
-      case Regex.run(~r/\*\*Type\*\*:\s*(\w+)/m, content) do
-        [_, type_str] -> type_str
-        _ -> nil
-      end
-
-    # Extract description
-    description =
-      content
-      |> String.split("\n")
-      |> Enum.drop_while(&(!String.match?(&1, ~r/\*\*Type\*\*/)))
-      |> Enum.drop(1)
-      |> Enum.take_while(&(!String.match?(&1, ~r/^##/)))
-      |> Enum.join("\n")
-      |> String.trim()
-
-    if module_name do
-      %{
-        module_name: module_name,
-        type: type,
-        description: description,
-        spec_path: path,
-        impl_path: nil
-      }
-    else
-      nil
-    end
-  end
-
-  defp parse_impl_file(path) do
-    content = File.read!(path)
-
-    # Extract module name using regex
     module_name =
       case Regex.run(~r/defmodule\s+([A-Z][a-zA-Z0-9_.]*)\s+do/m, content) do
         [_, name] -> name
-        _ -> nil
+        _ -> derive_module_from_path(path, base_dir, :impl)
       end
 
-    if module_name do
-      %{
-        module_name: module_name,
-        type: "other",
-        description: nil,
-        spec_path: nil,
-        impl_path: path
-      }
-    else
-      nil
+    %{
+      module_name: module_name,
+      type: type_from_namespace(module_name),
+      description: nil,
+      spec_path: nil,
+      impl_path: path,
+      mtime: mtime
+    }
+  end
+
+  defp extract_h1_title(content) do
+    case Regex.run(~r/^# ([A-Z][a-zA-Z0-9_.]+)$/m, content) do
+      [_, name] -> String.trim(name)
+      _ -> nil
     end
   end
 
-  defp merge_context_lists(spec_contexts, impl_contexts) do
-    # Create a map keyed by module_name
-    spec_map = Map.new(spec_contexts, fn ctx -> {ctx.module_name, ctx} end)
-    impl_map = Map.new(impl_contexts, fn ctx -> {ctx.module_name, ctx} end)
+  defp extract_intro_text(content) do
+    content
+    |> String.split("\n")
+    |> Enum.drop_while(&(!String.match?(&1, ~r/^# [A-Z]/)))
+    |> Enum.drop(1)
+    |> Enum.take_while(&(!String.match?(&1, ~r/^##/)))
+    |> Enum.join("\n")
+    |> String.trim()
+    |> case do
+      "" -> nil
+      text -> text
+    end
+  end
 
-    # Get all unique module names
-    all_module_names =
-      MapSet.union(MapSet.new(Map.keys(spec_map)), MapSet.new(Map.keys(impl_map)))
+  defp derive_module_from_path(path, base_dir, :spec) do
+    path
+    |> String.replace_prefix("#{base_dir}/", "")
+    |> String.replace_prefix("docs/spec/", "")
+    |> String.replace_suffix(".spec.md", "")
+    |> path_to_module()
+  end
 
-    # Merge data for each module
-    Enum.map(all_module_names, fn module_name ->
-      spec_data = Map.get(spec_map, module_name)
-      impl_data = Map.get(impl_map, module_name)
+  defp derive_module_from_path(path, base_dir, :impl) do
+    path
+    |> String.replace_prefix("#{base_dir}/", "")
+    |> String.replace_prefix("lib/", "")
+    |> String.replace_suffix(".ex", "")
+    |> path_to_module()
+  end
 
-      case {spec_data, impl_data} do
+  defp path_to_module(path) do
+    path
+    |> String.split("/")
+    |> Enum.map(&camelize/1)
+    |> Enum.join(".")
+  end
+
+  defp camelize(string) do
+    string
+    |> String.split("_")
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join("")
+  end
+
+  @doc """
+  Determines component type from module namespace depth.
+
+  - 2 parts (e.g., MyApp.Accounts) → "context"
+  - 3+ parts (e.g., MyApp.Accounts.User) → "module"
+  """
+  def type_from_namespace(module_name) when is_binary(module_name) do
+    parts = String.split(module_name, ".")
+
+    case length(parts) do
+      n when n <= 2 -> "context"
+      _ -> "module"
+    end
+  end
+
+  # --- Merging ---
+
+  defp merge_by_module_name(spec_data, impl_data) do
+    spec_map = Map.new(spec_data, &{&1.module_name, &1})
+    impl_map = Map.new(impl_data, &{&1.module_name, &1})
+
+    all_names = MapSet.union(MapSet.new(Map.keys(spec_map)), MapSet.new(Map.keys(impl_map)))
+
+    Enum.map(all_names, fn name ->
+      spec = Map.get(spec_map, name)
+      impl = Map.get(impl_map, name)
+
+      case {spec, impl} do
         {nil, impl} -> impl
         {spec, nil} -> spec
-        {spec, impl} -> Map.merge(spec, %{impl_path: impl.impl_path})
+        {spec, impl} -> merge_spec_impl(spec, impl)
       end
     end)
   end
 
-  defp merge_component_lists(spec_components, impl_components) do
-    # Create a map keyed by module_name
-    spec_map = Map.new(spec_components, fn comp -> {comp.module_name, comp} end)
-    impl_map = Map.new(impl_components, fn comp -> {comp.module_name, comp} end)
-
-    # Get all unique module names
-    all_module_names =
-      MapSet.union(MapSet.new(Map.keys(spec_map)), MapSet.new(Map.keys(impl_map)))
-
-    # Merge data for each module
-    Enum.map(all_module_names, fn module_name ->
-      spec_data = Map.get(spec_map, module_name)
-      impl_data = Map.get(impl_map, module_name)
-
-      case {spec_data, impl_data} do
-        {nil, impl} -> impl
-        {spec, nil} -> spec
-        {spec, impl} -> Map.merge(spec, %{impl_path: impl.impl_path})
-      end
-    end)
-  end
-
-  defp upsert_context(%Scope{} = scope, context_data) do
-    attrs = %{
-      module_name: context_data.module_name,
-      name: context_data.module_name |> String.split(".") |> List.last(),
-      type: context_data.type,
-      description: context_data.description,
-      parent_component_id: nil
+  defp merge_spec_impl(spec, impl) do
+    %{
+      module_name: impl.module_name,
+      type: spec.type || impl.type,
+      description: spec.description,
+      spec_path: spec.spec_path,
+      impl_path: impl.impl_path,
+      mtime: latest_mtime(spec.mtime, impl.mtime)
     }
-
-    Components.upsert_component(scope, attrs)
   end
 
-  defp upsert_component(%Scope{} = scope, parent_component, component_data) do
+  defp latest_mtime(nil, mtime), do: mtime
+  defp latest_mtime(mtime, nil), do: mtime
+  defp latest_mtime(m1, m2), do: if(DateTime.compare(m1, m2) == :gt, do: m1, else: m2)
+
+  # --- Sync logic ---
+
+  defp needs_sync?(_data, _map, true), do: true
+
+  defp needs_sync?(data, synced_at_map, false) do
+    case Map.get(synced_at_map, data.module_name) do
+      nil -> true
+      synced_at -> DateTime.compare(data.mtime, synced_at) == :gt
+    end
+  end
+
+  defp upsert_from_data(%Scope{} = scope, data, synced_at) do
     attrs = %{
-      module_name: component_data.module_name,
-      name: component_data.module_name |> String.split(".") |> List.last(),
-      type: component_data.type,
-      description: component_data.description,
-      parent_component_id: parent_component.id
+      module_name: data.module_name,
+      name: data.module_name |> String.split(".") |> List.last(),
+      type: data.type || "module",
+      description: data.description,
+      parent_component_id: nil,
+      synced_at: synced_at
     }
 
     Components.upsert_component(scope, attrs)
   end
 
   defp derive_parent_relationships(scope, components) do
-    # Build a map of module_name -> component for quick lookup
-    component_map = Map.new(components, fn c -> {c.module_name, c} end)
+    component_map = Map.new(components, &{&1.module_name, &1})
 
     Enum.each(components, fn component ->
-      parent_module_name = parent_module(component.module_name)
+      parent_name = parent_module_name(component.module_name)
 
-      case Map.get(component_map, parent_module_name) do
-        nil ->
-          # No parent found, leave as-is (already has parent_component_id: nil)
-          :ok
-
+      case Map.get(component_map, parent_name) do
+        nil -> :ok
         parent when parent.id != component.id ->
-          # Update the component with its parent
           Components.update_component(scope, component, %{parent_component_id: parent.id})
-
-        _ ->
-          # Self-reference, skip
-          :ok
+        _ -> :ok
       end
     end)
   end
 
-  defp parent_module(module_name) do
+  defp parent_module_name(module_name) do
     parts = String.split(module_name, ".")
 
     if length(parts) > 1 do
@@ -388,21 +285,9 @@ defmodule CodeMySpec.Components.Sync do
     end
   end
 
-  defp cleanup_removed_contexts(%Scope{} = scope, synced_contexts) do
-    synced_ids = Enum.map(synced_contexts, & &1.id)
-
-    scope
-    |> Components.list_components()
-    |> Enum.reject(&(&1.id in synced_ids))
-    |> Enum.each(&Components.delete_component(scope, &1))
-  end
-
-  defp cleanup_removed_components(%Scope{} = scope, parent_component, synced_components) do
-    synced_ids = Enum.map(synced_components, & &1.id)
-
-    scope
-    |> Components.list_child_components(parent_component.id)
-    |> Enum.reject(&(&1.id in synced_ids))
+  defp cleanup_removed(%Scope{} = scope, existing, current_names) do
+    existing
+    |> Enum.reject(&(&1.module_name in current_names))
     |> Enum.each(&Components.delete_component(scope, &1))
   end
 end
