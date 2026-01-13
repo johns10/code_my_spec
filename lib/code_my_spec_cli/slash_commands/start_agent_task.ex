@@ -33,24 +33,24 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
 
-  # Maps CLI session type names to {SessionModule, AgentTaskModule}
+  # Maps CLI session type names to AgentTask modules
   @session_type_map %{
-    "component_spec" => {CodeMySpec.ComponentSpecSessions, AgentTasks.ComponentSpec},
-    "context_spec" => {CodeMySpec.ContextSpecSessions, AgentTasks.ContextSpec},
-    "context_component_specs" => {CodeMySpec.ContextComponentsDesignSessions, AgentTasks.ContextComponentSpecs}
-    # Add more as they're implemented:
-    # "component_coding" => {CodeMySpec.ComponentCodingSessions, AgentTasks.ComponentCoding},
+    "component_spec" => AgentTasks.ComponentSpec,
+    "context_spec" => AgentTasks.ContextSpec,
+    "context_component_specs" => AgentTasks.ContextComponentSpecs,
+    "component_code" => AgentTasks.ComponentCode,
+    "component_test" => AgentTasks.ComponentTest
   }
 
   def execute(scope, args) do
     session_type = Map.get(args, :session_type)
     module_name = Map.get(args, :module_name)
 
-    with {:ok, {session_module, agent_task_module}} <- resolve_session_type(session_type),
-         {:ok, component} <- get_component(scope, module_name),
+    with {:ok, agent_task_module} <- resolve_session_type(session_type),
          {:ok, project} <- get_project(scope),
          {:ok, sync_result} <- sync_project(scope),
-         {:ok, db_session} <- create_session(scope, session_module, component),
+         {:ok, component} <- get_component(scope, module_name),
+         {:ok, db_session} <- create_session(scope, agent_task_module, component),
          {:ok, task_session} <- build_task_session(component, project),
          {:ok, prompt} <- agent_task_module.command(scope, task_session) do
       output_sync_metrics(sync_result)
@@ -78,8 +78,8 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
         valid_types = Map.keys(@session_type_map) |> Enum.join(", ")
         {:error, "Unknown session type: #{name}. Valid types: #{valid_types}"}
 
-      modules ->
-        {:ok, modules}
+      module ->
+        {:ok, module}
     end
   end
 

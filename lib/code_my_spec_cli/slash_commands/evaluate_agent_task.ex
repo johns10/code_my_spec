@@ -20,28 +20,17 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   use CodeMySpecCli.SlashCommands.SlashCommandBehaviour
 
   alias CodeMySpec.Sessions
-  alias CodeMySpec.Sessions.AgentTasks
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
-
-  # Maps session type modules to their AgentTask modules
-  @session_type_map %{
-    CodeMySpec.ComponentSpecSessions => AgentTasks.ComponentSpec,
-    CodeMySpec.ContextSpecSessions => AgentTasks.ContextSpec,
-    CodeMySpec.ContextComponentsDesignSessions => AgentTasks.ContextComponentSpecs
-    # Add more as they're implemented:
-    # CodeMySpec.ComponentCodingSessions => AgentTasks.ComponentCoding,
-  }
 
   def execute(scope, args) do
     session_id = Map.get(args, :session_id)
 
     with {:ok, session_id} <- parse_session_id(session_id),
          {:ok, session} <- get_session(scope, session_id),
-         {:ok, agent_task_module} <- resolve_agent_task(session.type),
          {:ok, task_session} <- build_task_session(session),
          {:ok, sync_result} <- sync_project(scope),
-         result <- agent_task_module.evaluate(scope, task_session) do
+         result <- session.type.evaluate(scope, task_session) do
       output_sync_metrics(sync_result)
       handle_result(result)
     else
@@ -72,13 +61,6 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
     case Sessions.get_session(scope, session_id) do
       nil -> {:error, "Session not found: #{session_id}"}
       session -> {:ok, session}
-    end
-  end
-
-  defp resolve_agent_task(session_type) do
-    case Map.get(@session_type_map, session_type) do
-      nil -> {:error, "No AgentTask module for session type: #{inspect(session_type)}"}
-      module -> {:ok, module}
     end
   end
 
