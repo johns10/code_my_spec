@@ -7,14 +7,11 @@ defmodule CodeMySpec.Utils do
   defdelegate resolve_context_path(path), to: Paths
   defdelegate module_to_path(module_name), to: Paths
 
-  # Legacy support for old Component schema
   def component_files(
-        %Component{module_name: component_module_name, type: type},
-        %Project{module_name: project_module_name}
+        %Component{module_name: module_name, type: type},
+        %Project{}
       ) do
-    component_module_name = String.replace(component_module_name, "#{project_module_name}.", "")
-    full_module_name = "#{project_module_name}.#{component_module_name}"
-    module_path = Paths.module_to_path(full_module_name)
+    module_path = Paths.module_to_path(module_name)
 
     base_files = %{
       design_file: "docs/design/#{module_path}.md",
@@ -97,4 +94,5 @@ defmodule CodeMySpec.Utils do
       end
     end)
   end
+
 end
