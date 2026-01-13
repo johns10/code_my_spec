@@ -64,12 +64,6 @@ defmodule CodeMySpecCli.CLI do
 
   defp execute(parsed) do
     case parsed do
-      {[:generate_component_spec], %{args: args}} ->
-        CodeMySpecCli.SlashCommands.GenerateComponentSpec.run(args)
-
-      {[:validate_component_spec], %{args: args}} ->
-        CodeMySpecCli.SlashCommands.ValidateComponentSpec.run(args)
-
       {[:start_agent_task], %{options: opts}} ->
         CodeMySpecCli.SlashCommands.StartAgentTask.run(opts)
 
