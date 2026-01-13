@@ -1,19 +1,10 @@
 defmodule CodeMySpec.Sessions.SessionType do
   use Ecto.Type
 
-  @type t ::
-          CodeMySpec.ContextSpecSessions
-          | CodeMySpec.ContextComponentsDesignSessions
-          | CodeMySpec.ContextDesignReviewSessions
-          | CodeMySpec.ContextCodingSessions
-          | CodeMySpec.ContextTestingSessions
-          | CodeMySpec.ComponentSpecSessions
-          | CodeMySpec.ComponentDesignReviewSessions
-          | CodeMySpec.ComponentTestSessions
-          | CodeMySpec.ComponentCodingSessions
-          | CodeMySpec.IntegrationSessions
+  alias CodeMySpec.Sessions.AgentTasks
 
-  @valid_types [
+  # Legacy orchestrator-based session types (deprecated)
+  @legacy_types [
     CodeMySpec.ContextSpecSessions,
     CodeMySpec.ContextComponentsDesignSessions,
     CodeMySpec.ContextDesignReviewSessions,
@@ -25,6 +16,19 @@ defmodule CodeMySpec.Sessions.SessionType do
     CodeMySpec.ComponentCodingSessions,
     CodeMySpec.IntegrationSessions
   ]
+
+  # New agent task types
+  @agent_task_types [
+    AgentTasks.ComponentSpec,
+    AgentTasks.ComponentCode,
+    AgentTasks.ComponentTest,
+    AgentTasks.ContextSpec,
+    AgentTasks.ContextComponentSpecs
+  ]
+
+  @valid_types @legacy_types ++ @agent_task_types
+
+  @type t :: atom()
 
   @spec type() :: :string
   def type, do: :string
