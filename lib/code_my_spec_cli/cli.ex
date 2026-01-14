@@ -54,6 +54,10 @@ defmodule CodeMySpecCli.CLI do
                 parser: :string
               ]
             ]
+          ],
+          hook: [
+            name: "hook",
+            about: "Run a Claude Code hook handler (reads JSON from stdin, routes by hook_event_name, outputs JSON)"
           ]
         ]
       )
@@ -69,6 +73,9 @@ defmodule CodeMySpecCli.CLI do
 
       {[:evaluate_agent_task], %{options: opts}} ->
         CodeMySpecCli.SlashCommands.EvaluateAgentTask.run(opts)
+
+      {[:hook], _} ->
+        CodeMySpecCli.Hooks.run()
 
       _ ->
         # No subcommand - launch TUI
