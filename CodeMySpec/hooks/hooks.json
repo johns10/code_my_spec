@@ -9,6 +9,16 @@
                     }
                 ]
             }
+        ],
+        "SubagentStop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "MIX_ENV=cli mix cli hook"
+                    }
+                ]
+            }
         ]
     }
 }

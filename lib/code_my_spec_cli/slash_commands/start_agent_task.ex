@@ -165,8 +165,6 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     IO.puts("total_ms: #{timings.total_ms}")
   end
 
-  defp output_sync_metrics(_), do: :ok
-
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset.errors)
   defp format_error(reason), do: inspect(reason)

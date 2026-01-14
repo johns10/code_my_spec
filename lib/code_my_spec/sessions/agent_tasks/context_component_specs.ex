@@ -19,18 +19,21 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   1. Fetches all child components of the context
   2. Checks spec requirements for each child
   3. For children needing specs, generates prompt files using ComponentSpec.command/3
-  4. Returns prompt instructing Claude to spawn sub-agents via Task tool
+  4. Returns prompt instructing Claude to invoke @"CodeMySpec:spec-writer (agent)" for each component
 
   Returns {:ok, prompt_text}
   """
   def command(scope, session, _opts \\ []) do
     %{component: context_component} = session
 
-    with {:ok, context_prompt_file} <- maybe_generate_context_prompt(scope, session, context_component),
+    with {:ok, context_prompt_file} <-
+           maybe_generate_context_prompt(scope, session, context_component),
          {:ok, children} <- get_child_components(scope, context_component),
          {:ok, children_needing_specs} <- filter_children_needing_specs(scope, children, session),
-         {:ok, child_prompt_files} <- generate_child_prompt_files(scope, session, children_needing_specs),
-         {:ok, prompt} <- build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files) do
+         {:ok, child_prompt_files} <-
+           generate_child_prompt_files(scope, session, children_needing_specs),
+         {:ok, prompt} <-
+           build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files) do
       {:ok, prompt}
     end
   end
@@ -46,7 +49,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   def evaluate(scope, session, _opts \\ []) do
     %{component: context_component} = session
 
-    with {:ok, context_unsatisfied} <- check_context_spec_status(scope, context_component, session),
+    with {:ok, context_unsatisfied} <-
+           check_context_spec_status(scope, context_component, session),
          {:ok, children} <- get_child_components(scope, context_component),
          {:ok, satisfied, unsatisfied} <- check_children_spec_status(scope, children, session),
          :ok <- cleanup_prompt_files(satisfied),
@@ -166,10 +170,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp build_orchestration_prompt(context_component, nil, []) do
     # No context or children need specs
-    {:ok, """
-    Context #{context_component.name} and all its child components already have valid specifications.
-    No further action required.
-    """}
+    {:ok,
+     """
+     Context #{context_component.name} and all its child components already have valid specifications.
+     No further action required.
+     """}
   end
 
   defp build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files) do
@@ -182,17 +187,10 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     task_instructions =
       all_prompt_files
       |> Enum.map(fn %{component: comp, file_path: path, type: type} ->
-        task_type = if type == :context, do: "context specification", else: "component specification"
         """
-        ## Task: Design #{comp.name} (#{task_type})
+        ## Task: Design #{comp.name}
 
-        Spawn a sub-agent to design the #{comp.name} #{task_type} using the prompt at:
-        `#{path}`
-
-        The sub-agent should:
-        1. Read the prompt file at #{path}
-        2. Follow the instructions in that prompt to create the specification
-        3. Write the spec file to the location specified in the prompt
+        Read the prompt file at #{path} and follow the instructions to create the specification. Write the spec file to the location specified in the prompt.
         """
       end)
       |> Enum.join("\n\n")
@@ -200,27 +198,28 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     context_note = if context_prompt_file, do: " (including the context itself)", else: ""
     total_count = length(all_prompt_files)
 
-    {:ok, """
-    # Context Components Design: #{context_component.name}
+    {:ok,
+     """
+     # Context Components Design: #{context_component.name}
 
-    You need to design #{total_count} specification(s) for this context#{context_note}.
+     You need to design #{total_count} specification(s) for this context#{context_note}.
 
-    ## Instructions
+     ## Instructions
 
-    For each component below, use the **Task tool** to spawn a sub-agent that will:
-    1. Read the prompt file for that component
-    2. Execute the design task described in the prompt
-    3. Create the specification file
+     For each component below, invoke the @"CodeMySpec:spec-writer (agent)" subagent to:
+     1. Read the prompt file for that component
+     2. Follow the instructions in that prompt to create the specification
+     3. Write the spec file to the specified location
 
-    You can spawn multiple sub-agents in parallel for efficiency.
+     You can invoke multiple subagents in parallel for efficiency.
 
-    #{task_instructions}
+     #{task_instructions}
 
-    ## Completion
+     ## Completion
 
-    Once all sub-agents have completed their tasks, verify that all specifications
-    have been created successfully. The stop hook will validate the results.
-    """}
+     Once all subagents have completed their tasks, verify that all specifications
+     have been created successfully. The stop hook will validate the results.
+     """}
   end
 
   defp check_context_spec_status(scope, context_component, session) do
@@ -240,7 +239,14 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
         |> Enum.reject(& &1.satisfied)
         |> Enum.map(&extract_requirement_info/1)
 
-      {:ok, [%{component: context_component, unsatisfied_requirements: unsatisfied_reqs, type: :context}]}
+      {:ok,
+       [
+         %{
+           component: context_component,
+           unsatisfied_requirements: unsatisfied_reqs,
+           type: :context
+         }
+       ]}
     end
   end
 
@@ -328,13 +334,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
     #{components_list}
 
-    Please ensure your sub-agents have completed creating the specification files for these components.
-    The sub-agents should:
+    Please ensure your `@"CodeMySpec:spec-writer (agent)"` subagents have completed creating the specification files for these components.
+    The subagents should:
     1. Read their assigned prompt file from #{@prompt_dir}/
     2. Create valid specification documents following the Document Specifications
     3. Write the spec files to the correct locations
 
-    Re-run the sub-agents for any components that failed or haven't completed.
+    Re-invoke `@"CodeMySpec:spec-writer (agent)"` for any components that failed or haven't completed.
     """
   end
 
