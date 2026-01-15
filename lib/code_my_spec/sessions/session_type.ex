@@ -23,7 +23,8 @@ defmodule CodeMySpec.Sessions.SessionType do
     AgentTasks.ComponentCode,
     AgentTasks.ComponentTest,
     AgentTasks.ContextSpec,
-    AgentTasks.ContextComponentSpecs
+    AgentTasks.ContextComponentSpecs,
+    AgentTasks.ContextImplementation
   ]
 
   @valid_types @legacy_types ++ @agent_task_types

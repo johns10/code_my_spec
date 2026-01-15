@@ -7,7 +7,6 @@ defmodule CodeMySpec.Components.Registry do
 
   alias CodeMySpec.Requirements.RequirementDefinition
   alias CodeMySpec.Requirements.RequirementDefinitionData
-  alias CodeMySpec.Components.Component
 
   @type type_definition :: %{
           requirements: [RequirementDefinition.t()],
@@ -121,7 +120,7 @@ defmodule CodeMySpec.Components.Registry do
     }
   }
 
-  @spec get_type(Component.component_type()) :: type_definition()
+  @spec get_type(String.t()) :: type_definition()
   def get_type(component_type) do
     case Map.get(@type_definitions, component_type, nil) do
       nil ->
@@ -140,7 +139,7 @@ defmodule CodeMySpec.Components.Registry do
     end
   end
 
-  @spec get_requirements_for_type(Component.component_type()) :: [RequirementDefinition.t()]
+  @spec get_requirements_for_type(String.t()) :: [RequirementDefinition.t()]
   def get_requirements_for_type(component_type) do
     get_type(component_type).requirements
   end

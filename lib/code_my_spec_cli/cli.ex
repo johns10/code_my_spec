@@ -43,21 +43,12 @@ defmodule CodeMySpecCli.CLI do
           ],
           evaluate_agent_task: [
             name: "evaluate-agent-task",
-            about: "Evaluate/validate an agent task session's output",
-            options: [
-              session_id: [
-                value_name: "SESSION_ID",
-                short: "-s",
-                long: "--session-id",
-                help: "Session ID from start-agent-task",
-                required: true,
-                parser: :string
-              ]
-            ]
+            about: "Evaluate/validate an agent task session's output"
           ],
           hook: [
             name: "hook",
-            about: "Run a Claude Code hook handler (reads JSON from stdin, routes by hook_event_name, outputs JSON)"
+            about:
+              "Run a Claude Code hook handler (reads JSON from stdin, routes by hook_event_name, outputs JSON)"
           ]
         ]
       )

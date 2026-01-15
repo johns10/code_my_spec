@@ -30,7 +30,8 @@ defmodule CodeMySpec.Components.Sync do
   """
   @type parse_error :: {path :: String.t(), reason :: term()}
 
-  @spec sync_all(Scope.t(), keyword()) :: {:ok, [Component.t()], [parse_error()]} | {:error, term()}
+  @spec sync_all(Scope.t(), keyword()) ::
+          {:ok, [Component.t()], [parse_error()]} | {:error, term()}
   def sync_all(%Scope{} = scope, opts \\ []) do
     base_dir = Keyword.get(opts, :base_dir, ".")
     force = Keyword.get(opts, :force, false)
@@ -46,6 +47,7 @@ defmodule CodeMySpec.Components.Sync do
     {impl_data, impl_errors} = parse_files(impl_file_infos, &parse_impl_file(&1, base_dir))
 
     parse_errors = spec_errors ++ impl_errors
+
     Enum.each(parse_errors, fn {path, error} ->
       Logger.warning("Failed to parse #{path}: #{inspect(error)}")
     end)
@@ -267,10 +269,14 @@ defmodule CodeMySpec.Components.Sync do
       parent_name = parent_module_name(component.module_name)
 
       case Map.get(component_map, parent_name) do
-        nil -> :ok
+        nil ->
+          :ok
+
         parent when parent.id != component.id ->
           Components.update_component(scope, component, %{parent_component_id: parent.id})
-        _ -> :ok
+
+        _ ->
+          :ok
       end
     end)
   end

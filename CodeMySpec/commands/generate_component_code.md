@@ -1,13 +1,13 @@
 ---
 description: Generate component implementation from spec using agent task session
-allowed-tools: Bash(CodeMySpec/scripts/*), Read
+allowed-tools: Bash(mix cli *), Read
 argument-hint: [ModuleName]
 hooks:
   Stop:
     - matcher: "*"
       hooks:
         - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/scripts/evaluate_agent_task.sh"
+          command: "MIX_ENV=cli mix cli evaluate-agent-task"
 ---
 
-!`CodeMySpec/scripts/start_agent_task.sh component_code $ARGUMENTS`
+!`MIX_ENV=cli mix cli start-agent-task -t component_code -m $ARGUMENTS`

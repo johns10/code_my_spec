@@ -69,12 +69,12 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   end
 
   defp check_local_requirements(component, scope, opts) do
+    filter_opts = Keyword.put(opts, :exclude, @hierarchy_checks ++ @dependency_checks)
+
+    definitions = Components.get_requirement_definitions(scope, component, filter_opts)
+
     requirements =
-      Requirements.check_requirements(
-        scope,
-        component,
-        Keyword.put(opts, :exclude, @hierarchy_checks ++ @dependency_checks)
-      )
+      Requirements.check_requirements(scope, component, definitions, opts)
       |> Enum.map(fn requirement_attrs ->
         case Requirements.create_requirement(
                scope,
@@ -99,12 +99,12 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   end
 
   defp check_dependency_requirements(component, scope, opts) do
+    filter_opts = Keyword.put(opts, :include, @dependency_checks ++ @hierarchy_checks)
+
+    definitions = Components.get_requirement_definitions(scope, component, filter_opts)
+
     dependency_requirements =
-      Requirements.check_requirements(
-        scope,
-        component,
-        Keyword.put(opts, :include, @dependency_checks ++ @hierarchy_checks)
-      )
+      Requirements.check_requirements(scope, component, definitions, opts)
       |> Enum.map(fn requirement_attrs ->
         case Requirements.create_requirement(
                scope,
@@ -126,8 +126,9 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
       |> Enum.filter(&(&1 != nil))
 
     # Merge dependency requirements with existing requirements
+    # component.requirements is already a list from check_local_requirements
     all_requirements =
-      ((component.requirements || []) ++ dependency_requirements)
+      (component.requirements ++ dependency_requirements)
       |> sort_requirements_by_registry_order(component.type)
 
     %{component | requirements: all_requirements}
@@ -152,7 +153,7 @@ defmodule CodeMySpec.ProjectCoordinator.ComponentAnalyzer do
   @doc """
   Sorts requirements according to their order in the registry type definition.
   """
-  @spec sort_requirements_by_registry_order([Requirement.t()], Component.component_type()) ::
+  @spec sort_requirements_by_registry_order([Requirement.t()], String.t()) ::
           [Requirement.t()]
   def sort_requirements_by_registry_order(requirements, component_type) do
     registry_requirements = Registry.get_requirements_for_type(component_type)

@@ -53,9 +53,6 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
       {:error, validation_errors} when is_binary(validation_errors) ->
         # Spec exists but is invalid - return errors for Claude to fix
         {:ok, :invalid, build_revision_feedback(validation_errors)}
-
-      {:error, other_error} ->
-        {:error, other_error}
     end
   end
 
