@@ -17,6 +17,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
     Component
     |> where([c], c.parent_component_id == ^parent_component_id and c.project_id == ^project_id)
     |> order_by([c], desc: c.priority, asc: c.name)
+    |> preload([:requirements])
     |> Repo.all()
   end
 
@@ -129,6 +130,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def get_component_by_module_name(%Scope{active_project_id: project_id}, module_name) do
     Component
     |> where([c], c.module_name == ^module_name and c.project_id == ^project_id)
+    |> preload([:requirements])
     |> Repo.one()
   end
 

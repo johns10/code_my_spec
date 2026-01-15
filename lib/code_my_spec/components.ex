@@ -157,4 +157,82 @@ defmodule CodeMySpec.Components do
   defdelegate preload_similar_components(scope, components), to: SimilarComponentRepository
   defdelegate list_referenced_by(scope, component), to: SimilarComponentRepository
   defdelegate get_requirements_for_type(component_type), to: Registry
+
+  @doc """
+  Returns requirement definitions for a component based on its type, with optional filtering.
+
+  Retrieves static requirement definitions from the Registry and applies
+  filtering based on options.
+
+  ## Options
+
+    * `:include` - list of requirement names to include (if empty, includes all)
+    * `:exclude` - list of requirement names to exclude
+    * `:artifact_types` - list of artifact types to filter by (if empty, includes all)
+
+  ## Examples
+
+      iex> get_requirement_definitions(scope, %Component{type: "schema"}, [])
+      [%RequirementDefinition{name: "spec_file", ...}, ...]
+
+      iex> get_requirement_definitions(scope, component, include: ["spec_file", "spec_valid"])
+      [%RequirementDefinition{name: "spec_file", ...}, %RequirementDefinition{name: "spec_valid", ...}]
+
+      iex> get_requirement_definitions(scope, component, artifact_types: [:tests])
+      [%RequirementDefinition{artifact_type: :tests, ...}, ...]
+
+  """
+  @spec get_requirement_definitions(Scope.t(), Component.t(), keyword()) :: [
+          CodeMySpec.Requirements.RequirementDefinition.t()
+        ]
+  def get_requirement_definitions(_scope, %Component{type: type}, opts \\ []) do
+    include_types = Keyword.get(opts, :include, [])
+    exclude_types = Keyword.get(opts, :exclude, [])
+    artifact_types = Keyword.get(opts, :artifact_types, [])
+
+    Registry.get_requirements_for_type(type)
+    |> Enum.filter(fn %{name: name, artifact_type: artifact_type} ->
+      exclude = length(exclude_types) > 0 and name in exclude_types
+
+      include =
+        (length(include_types) > 0 and name in include_types) or length(include_types) == 0
+
+      artifact_match =
+        length(artifact_types) == 0 or artifact_type in artifact_types
+
+      include && !exclude && artifact_match
+    end)
+  end
+
+  @doc """
+  Determines if a component is a bounded context.
+
+  Detection logic:
+  1. Primary: explicit type == "context"
+  2. Fallback: module naming convention - contexts have exactly 2 parts (MyApp.ContextName)
+
+  ## Examples
+
+      iex> context?(%Component{type: "context"})
+      true
+
+      iex> context?(%Component{type: "repository", module_name: "MyApp.Accounts.AccountRepository"})
+      false
+
+      iex> context?(%Component{type: nil, module_name: "MyApp.Accounts"})
+      true
+
+      iex> context?(%Component{type: nil, module_name: "MyApp.Accounts.User"})
+      false
+
+  """
+  @spec context?(Component.t()) :: boolean()
+  def context?(%{type: "context"}), do: true
+  def context?(%{type: type}) when not is_nil(type), do: false
+
+  def context?(%{module_name: module_name}) when is_binary(module_name) do
+    length(String.split(module_name, ".")) == 2
+  end
+
+  def context?(_), do: false
 end

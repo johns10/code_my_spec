@@ -1,7 +1,7 @@
 ---
 description: Generate specifications for all child components of a context
-allowed-tools: Bash(CodeMySpec/scripts/*), Read, Task
+allowed-tools: Bash(mix cli *), Read, Task
 argument-hint: [ContextModuleName]
 ---
 
-!`CodeMySpec/scripts/start_agent_task.sh context_component_specs $ARGUMENTS`
+!`MIX_ENV=cli mix cli start-agent-task -t context_component_specs -m $ARGUMENTS`

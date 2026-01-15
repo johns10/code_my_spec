@@ -126,7 +126,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
 
       # Detail state - navigate requirements and create sessions
       {:detail, {:event, %{key: k}}} ->
-        requirements = model.detail_component.requirements || []
+        requirements = get_requirements(model.detail_component)
 
         cond do
           k == key(:esc) ->
@@ -291,7 +291,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
 
   defp render_detail(model) do
     component = model.detail_component
-    requirements = component.requirements || []
+    requirements = get_requirements(component)
 
     [
       # Component details
@@ -381,6 +381,9 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
       String.contains?(String.downcase(module_name), filter_lower)
     end)
   end
+
+  defp get_requirements(%{requirements: requirements}) when is_list(requirements),
+    do: requirements
 
   defp format_type(nil), do: "Other"
 

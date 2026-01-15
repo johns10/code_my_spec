@@ -1,27 +1,86 @@
 defmodule CodeMySpec.Requirements do
-  alias CodeMySpec.Requirements.RequirementsRepository
-  alias CodeMySpec.Components
+  @moduledoc """
+  Manages requirement checking and persistence.
+
+  Provides two modes of checking requirements:
+  - From definitions: Runs checkers to compute satisfaction status
+  - From persisted requirements: Filters based on already-computed satisfaction
+  """
+
+  alias CodeMySpec.Requirements.{RequirementsRepository, RequirementDefinition, Requirement}
+  alias CodeMySpec.Components.Component
 
   defdelegate clear_all_project_requirements(scope), to: RequirementsRepository
   defdelegate clear_requirements(scope, component, opts \\ []), to: RequirementsRepository
   defdelegate create_requirement(scope, component, attrs, opts \\ []), to: RequirementsRepository
 
-  def check_requirements(scope, component, opts) do
+  @doc """
+  Checks requirements by either running checkers or filtering persisted records.
+
+  ## With RequirementDefinition list (run checkers)
+
+  Takes a list of RequirementDefinition structs, runs each checker, and returns
+  check results (maps with satisfaction status).
+
+  Use this when you need to compute fresh requirement status (e.g., during sync).
+
+      iex> definitions = Components.get_requirement_definitions(scope, component, [])
+      iex> check_requirements(scope, component, definitions, [])
+      [%{name: "spec_file", satisfied: true, ...}, ...]
+
+  ## With Requirement list (filter persisted)
+
+  Takes a list of Requirement structs (from the database) and filters based on
+  their already-computed `satisfied` field.
+
+  Use this when you want to check status without re-running checkers (e.g., in agent tasks).
+
+      iex> check_requirements(scope, component, component.requirements, [])
+      [%Requirement{name: "spec_file", satisfied: true, ...}, ...]
+
+      iex> check_requirements(scope, component, component.requirements, artifact_types: [:tests])
+      [%Requirement{artifact_type: :tests, ...}, ...]
+
+  ## Options (for filtering)
+
+    * `:include` - list of requirement names to include (if empty, includes all)
+    * `:exclude` - list of requirement names to exclude
+    * `:artifact_types` - list of artifact types to filter by (if empty, includes all)
+
+  """
+  @spec check_requirements(any(), Component.t(), [RequirementDefinition.t()], keyword()) :: [
+          map()
+        ]
+  @spec check_requirements(any(), Component.t(), [Requirement.t()], keyword()) :: [
+          Requirement.t()
+        ]
+  def check_requirements(scope, component, requirements_or_definitions, opts)
+
+  def check_requirements(scope, component, [%RequirementDefinition{} | _] = definitions, opts) do
+    Enum.map(definitions, fn requirement_definition ->
+      checker = requirement_definition.checker
+      checker.check(scope, requirement_definition, component, opts)
+    end)
+  end
+
+  def check_requirements(_scope, _component, [] = _empty, _opts), do: []
+
+  def check_requirements(_scope, _component, [%Requirement{} | _] = requirements, opts) do
     include_types = Keyword.get(opts, :include, [])
     exclude_types = Keyword.get(opts, :exclude, [])
+    artifact_types = Keyword.get(opts, :artifact_types, [])
 
-    Components.get_requirements_for_type(component.type)
-    |> Enum.filter(fn %{name: name} ->
+    requirements
+    |> Enum.filter(fn %Requirement{name: name, artifact_type: artifact_type} ->
       exclude = length(exclude_types) > 0 and name in exclude_types
 
       include =
         (length(include_types) > 0 and name in include_types) or length(include_types) == 0
 
-      include && !exclude
-    end)
-    |> Enum.map(fn requirement_spec ->
-      checker = requirement_spec.checker
-      checker.check(scope, requirement_spec, component, opts)
+      artifact_match =
+        length(artifact_types) == 0 or artifact_type in artifact_types
+
+      include && !exclude && artifact_match
     end)
   end
 end

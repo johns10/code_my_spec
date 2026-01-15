@@ -3,26 +3,20 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   Start an agent task session and output the first interaction prompt.
 
   Creates a database Session, looks up the component by module name, and calls
-  the appropriate AgentTask module to generate the prompt.
+  the appropriate AgentTask module to generate the prompt. Session state is
+  persisted to disk via CurrentSession for the evaluate command to pick up.
 
   ## Usage
 
   From CLI:
       MIX_ENV=cli mix cli start-agent-task -t component_spec -m MyApp.Accounts
 
-  ## Output Format
+  ## Output
 
-  Outputs marker-delimited data that bash can parse:
-      :::SESSION_ID:::
-      <session_id>
-      :::SESSION_TYPE:::
-      <type>
-      :::STATUS:::
-      ok
-      :::PROMPT:::
-      <<<PROMPT_START
-      <prompt text>
-      >>>PROMPT_END
+  On success: Outputs the prompt text directly to stdout.
+  On error: Outputs error message to stderr.
+
+  Session state is persisted to `.code_my_spec/internal/current_session/session.json`
   """
 
   use CodeMySpecCli.SlashCommands.SlashCommandBehaviour
@@ -30,53 +24,68 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   alias CodeMySpec.Components
   alias CodeMySpec.Sessions
   alias CodeMySpec.Sessions.AgentTasks
+  alias CodeMySpec.Sessions.CurrentSession
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
 
   # Maps CLI session type names to AgentTask modules
+  # Note: "spec" is handled specially in resolve_session_type/2 to auto-detect context vs component
   @session_type_map %{
     "component_spec" => AgentTasks.ComponentSpec,
     "context_spec" => AgentTasks.ContextSpec,
     "context_component_specs" => AgentTasks.ContextComponentSpecs,
+    "implement_context" => AgentTasks.ContextImplementation,
     "component_code" => AgentTasks.ComponentCode,
     "component_test" => AgentTasks.ComponentTest
   }
+
+  @valid_types ["spec" | Map.keys(@session_type_map)]
 
   def execute(scope, args) do
     session_type = Map.get(args, :session_type)
     module_name = Map.get(args, :module_name)
 
-    with {:ok, agent_task_module} <- resolve_session_type(session_type),
-         {:ok, project} <- get_project(scope),
+    # Fetch component before resolving session type so "spec" can auto-detect
+    with {:ok, project} <- get_project(scope),
          {:ok, sync_result} <- sync_project(scope),
          {:ok, component} <- get_component(scope, module_name),
+         {:ok, agent_task_module} <- resolve_session_type(session_type, component),
          {:ok, db_session} <- create_session(scope, agent_task_module, component),
          {:ok, task_session} <- build_task_session(component, project),
-         {:ok, prompt} <- agent_task_module.command(scope, task_session) do
+         {:ok, prompt} <- agent_task_module.command(scope, task_session),
+         :ok <- persist_session(db_session, session_type, component) do
       output_sync_metrics(sync_result)
-      output_structured_response(db_session, session_type, component, prompt)
+      # Output just the prompt for Claude to consume
+      IO.puts(prompt)
       :ok
     else
       {:error, reason} ->
-        output_error(reason)
+        IO.puts(:stderr, "Error: #{format_error(reason)}")
         {:error, reason}
     end
   rescue
     error ->
-      output_error(Exception.message(error))
+      IO.puts(:stderr, "Error: #{Exception.message(error)}")
       {:error, Exception.message(error)}
   end
 
-  defp resolve_session_type(nil) do
-    valid_types = Map.keys(@session_type_map) |> Enum.join(", ")
-    {:error, "Session type is required. Valid types: #{valid_types}"}
+  defp resolve_session_type(nil, _component) do
+    {:error, "Session type is required. Valid types: #{Enum.join(@valid_types, ", ")}"}
   end
 
-  defp resolve_session_type(name) do
+  # Auto-detect context vs component spec based on module structure
+  defp resolve_session_type("spec", component) do
+    if Components.context?(component) do
+      {:ok, AgentTasks.ContextSpec}
+    else
+      {:ok, AgentTasks.ComponentSpec}
+    end
+  end
+
+  defp resolve_session_type(name, _component) do
     case Map.get(@session_type_map, name) do
       nil ->
-        valid_types = Map.keys(@session_type_map) |> Enum.join(", ")
-        {:error, "Unknown session type: #{name}. Valid types: #{valid_types}"}
+        {:error, "Unknown session type: #{name}. Valid types: #{Enum.join(@valid_types, ", ")}"}
 
       module ->
         {:ok, module}
@@ -120,29 +129,14 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
      }}
   end
 
-  defp output_structured_response(db_session, session_type, component, prompt) do
-    output_field("SESSION_ID", to_string(db_session.id))
-    output_field("SESSION_TYPE", session_type)
-    output_field("COMPONENT", component.name)
-    output_field("STATUS", "ok")
-    output_multiline("PROMPT", prompt)
-  end
-
-  defp output_error(reason) do
-    output_field("STATUS", "error")
-    output_multiline("ERROR", format_error(reason))
-  end
-
-  defp output_field(name, value) do
-    IO.puts(":::#{name}:::")
-    IO.puts(value)
-  end
-
-  defp output_multiline(name, content) do
-    IO.puts(":::#{name}:::")
-    IO.puts("<<<#{name}_START")
-    IO.puts(content)
-    IO.puts(">>>#{name}_END")
+  defp persist_session(db_session, session_type, component) do
+    CurrentSession.save(%{
+      session_id: db_session.id,
+      session_type: session_type,
+      component_id: component.id,
+      component_name: component.name,
+      module_name: component.module_name
+    })
   end
 
   defp sync_project(scope) do
@@ -159,10 +153,8 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   end
 
   defp output_sync_metrics(%{timings: timings}) do
-    IO.puts(":::SYNC_TIMINGS:::")
-    IO.puts("contexts_sync_ms: #{timings.contexts_sync_ms}")
-    IO.puts("requirements_sync_ms: #{timings.requirements_sync_ms}")
-    IO.puts("total_ms: #{timings.total_ms}")
+    # Output to stderr so prompt on stdout is clean
+    IO.puts(:stderr, "Sync: contexts=#{timings.contexts_sync_ms}ms requirements=#{timings.requirements_sync_ms}ms total=#{timings.total_ms}ms")
   end
 
   defp format_error(reason) when is_binary(reason), do: reason

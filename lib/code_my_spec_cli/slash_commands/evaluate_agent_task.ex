@@ -2,60 +2,68 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   @moduledoc """
   Evaluate/validate an agent task session's output.
 
-  Looks up the session by ID, determines its type, and calls the appropriate
-  AgentTask module's evaluate/3 function to validate Claude's output.
+  Looks up the session by ID (from argument or persisted CurrentSession),
+  determines its type, and calls the appropriate AgentTask module's evaluate/3
+  function to validate Claude's output.
 
   ## Usage
 
   From CLI (typically called by stop hook):
+      MIX_ENV=cli mix cli evaluate-agent-task
       MIX_ENV=cli mix cli evaluate-agent-task -s 123
 
-  ## Output
+  If no session ID is provided, reads from CurrentSession persistence.
 
-  - If valid: Success message, exits 0
-  - If invalid: Validation errors for Claude to fix, exits 1
-  - If error: Error message, exits 1
+  ## Output (JSON for hook decision control)
+
+  Outputs JSON to stdout for Claude Code hook protocol:
+  - If valid: `{}` (empty map allows Claude to stop), clears session
+  - If invalid: `{"decision": "block", "reason": "<feedback>"}` (blocks Claude from stopping)
+  - If error: `{}` (allows Claude to stop), error message to stderr
   """
 
   use CodeMySpecCli.SlashCommands.SlashCommandBehaviour
 
   alias CodeMySpec.Sessions
+  alias CodeMySpec.Sessions.CurrentSession
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
 
   def execute(scope, args) do
-    session_id = Map.get(args, :session_id)
+    session_id_arg = Map.get(args, :session_id)
 
-    with {:ok, session_id} <- parse_session_id(session_id),
+    with {:ok, session_id} <- resolve_session_id(session_id_arg),
          {:ok, session} <- get_session(scope, session_id),
          {:ok, task_session} <- build_task_session(session),
          {:ok, sync_result} <- sync_project(scope),
          result <- session.type.evaluate(scope, task_session) do
+      IO.inspect(session.type)
       output_sync_metrics(sync_result)
       handle_result(result)
     else
       {:error, reason} ->
-        output_error(reason)
-        {:error, reason}
+        # Block Claude and provide the error as feedback so it can fix the issue
+        handle_setup_error(reason)
     end
   rescue
     error ->
-      output_error(Exception.message(error))
+      IO.puts(:stderr, "Error: #{Exception.message(error)}")
       {:error, Exception.message(error)}
   end
 
-  defp parse_session_id(nil) do
-    {:error, "Session ID is required. Use -s or --session-id"}
+  defp resolve_session_id(nil) do
+    # No argument provided, try to load from CurrentSession
+    CurrentSession.get_session_id()
   end
 
-  defp parse_session_id(id) when is_binary(id) do
+  defp resolve_session_id(id) when is_binary(id) do
     case Integer.parse(id) do
       {int_id, ""} -> {:ok, int_id}
       _ -> {:error, "Invalid session ID: #{id}"}
     end
   end
 
-  defp parse_session_id(id) when is_integer(id), do: {:ok, id}
+  defp resolve_session_id(id) when is_integer(id), do: {:ok, id}
 
   defp get_session(scope, session_id) do
     case Sessions.get_session(scope, session_id) do
@@ -75,35 +83,34 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   end
 
   defp handle_result({:ok, :valid}) do
-    IO.puts(":::STATUS:::")
-    IO.puts("valid")
-    IO.puts(":::MESSAGE:::")
-    IO.puts("Component specification is valid!")
+    CurrentSession.clear()
+    IO.puts(:stderr, "All checks passed!")
+    # Empty map = no decision = Claude can stop
+    IO.puts(Jason.encode!(%{}))
     :ok
   end
 
   defp handle_result({:ok, :invalid, feedback}) do
-    IO.puts(":::STATUS:::")
-    IO.puts("invalid")
-    IO.puts(":::FEEDBACK:::")
-    IO.puts("<<<FEEDBACK_START")
-    IO.puts(feedback)
-    IO.puts(">>>FEEDBACK_END")
-    {:error, "validation_failed"}
+    # Output JSON to stdout to block Claude from stopping
+    decision = %{"decision" => "block", "reason" => feedback}
+    IO.puts(Jason.encode!(decision))
+    :ok
   end
 
   defp handle_result({:error, reason}) do
-    output_error(reason)
+    IO.puts(:stderr, "Error: #{format_error(reason)}")
+    # Empty map = no decision = Claude can stop (even on error)
+    IO.puts(Jason.encode!(%{}))
     {:error, reason}
   end
 
-  defp output_error(reason) do
-    IO.puts(":::STATUS:::")
-    IO.puts("error")
-    IO.puts(":::ERROR:::")
-    IO.puts("<<<ERROR_START")
-    IO.puts(format_error(reason))
-    IO.puts(">>>ERROR_END")
+  defp handle_setup_error(reason) do
+    # Setup errors (no session, session not found, etc.) should block Claude
+    # and provide guidance on how to fix the issue
+    IO.puts(:stderr, "Setup error: #{format_error(reason)}")
+    decision = %{"decision" => "block", "reason" => format_error(reason)}
+    IO.puts(Jason.encode!(decision))
+    {:error, reason}
   end
 
   defp sync_project(scope) do
@@ -120,13 +127,12 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   end
 
   defp output_sync_metrics(%{timings: timings}) do
-    IO.puts(":::SYNC_TIMINGS:::")
-    IO.puts("contexts_sync_ms: #{timings.contexts_sync_ms}")
-    IO.puts("requirements_sync_ms: #{timings.requirements_sync_ms}")
-    IO.puts("total_ms: #{timings.total_ms}")
+    # Output to stderr since stdout is reserved for hook decision JSON
+    IO.puts(
+      :stderr,
+      "Sync: contexts=#{timings.contexts_sync_ms}ms requirements=#{timings.requirements_sync_ms}ms total=#{timings.total_ms}ms"
+    )
   end
-
-  defp output_sync_metrics(_), do: :ok
 
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset.errors)

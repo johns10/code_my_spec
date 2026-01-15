@@ -7,7 +7,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   - `evaluate/3` - Called by stop hook to run tests and provide feedback
   """
 
-  alias CodeMySpec.{Rules, Utils, Components, Tests}
+  alias CodeMySpec.{Rules, Utils, Components, Tests, Environments}
   alias CodeMySpec.Tests.TestRun
 
   @doc """
@@ -47,24 +47,31 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   """
   def evaluate(_scope, session, _opts \\ []) do
     %{component: component, project: project} = session
-    %{test_file: test_file_path} = Utils.component_files(component, project)
+    %{test_file: test_file_path, code_file: code_file_path} = Utils.component_files(component, project)
 
-    with {:ok, test_output} <- run_tests(test_file_path),
-         {:ok, test_run} <- parse_test_results(test_output) do
-      case test_run.stats.failures do
-        0 ->
-          {:ok, :valid}
+    # Check required files exist
+    case check_required_files(session, test_file_path, code_file_path) do
+      {:error, feedback} ->
+        {:ok, :invalid, feedback}
 
-        _count ->
-          {:ok, :invalid, build_test_failure_feedback(test_run)}
-      end
-    else
-      {:error, {:test_execution_failed, output}} ->
-        # Tests couldn't even run (compile error, etc.)
-        {:ok, :invalid, build_execution_error_feedback(output)}
+      :ok ->
+        with {:ok, test_output} <- run_tests(test_file_path),
+             {:ok, test_run} <- parse_test_results(test_output) do
+          case test_run.stats.failures do
+            0 ->
+              {:ok, :valid}
 
-      {:error, reason} ->
-        {:error, reason}
+            _count ->
+              {:ok, :invalid, build_test_failure_feedback(test_run)}
+          end
+        else
+          {:error, {:test_execution_failed, output}} ->
+            # Tests couldn't even run (compile error, etc.)
+            {:ok, :invalid, build_execution_error_feedback(output)}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
     end
   end
 
@@ -141,6 +148,51 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
       """
       |> String.trim()
     end)
+  end
+
+  defp check_required_files(session, test_file_path, code_file_path) do
+    {:ok, environment} = Environments.create(session.environment)
+
+    missing_files = []
+
+    missing_files =
+      if Environments.file_exists?(environment, code_file_path) do
+        missing_files
+      else
+        missing_files ++ [{:code, code_file_path}]
+      end
+
+    missing_files =
+      if Environments.file_exists?(environment, test_file_path) do
+        missing_files
+      else
+        missing_files ++ [{:test, test_file_path}]
+      end
+
+    case missing_files do
+      [] ->
+        :ok
+
+      files ->
+        feedback = format_missing_files_error(files)
+        {:error, feedback}
+    end
+  end
+
+  defp format_missing_files_error(missing_files) do
+    file_list =
+      missing_files
+      |> Enum.map(fn {type, path} -> "- #{type} file: #{path}" end)
+      |> Enum.join("\n")
+
+    """
+    Required files do not exist:
+
+    #{file_list}
+
+    You must write these files before evaluation can proceed.
+    Please create the files at the paths shown above.
+    """
   end
 
   defp run_tests(test_file_path) do

@@ -5,7 +5,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "${CLAUDE_PLUGIN_ROOT}/scripts/evaluate_agent_task.sh"
+                        "command": "MIX_ENV=cli mix cli evaluate-agent-task"
                     }
                 ]
             }

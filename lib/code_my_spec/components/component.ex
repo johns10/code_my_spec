@@ -13,7 +13,6 @@ defmodule CodeMySpec.Components.Component do
 
   alias CodeMySpec.Components.Dependency
   alias CodeMySpec.Components.SimilarComponent
-  alias CodeMySpec.Components.ComponentType
   alias CodeMySpec.Projects.Project
   alias CodeMySpec.Requirements.Requirement
   alias CodeMySpec.Components.ComponentStatus
@@ -50,8 +49,6 @@ defmodule CodeMySpec.Components.Component do
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
-
-  @type component_type :: ComponentType.t()
 
   schema "components" do
     field :name, :string

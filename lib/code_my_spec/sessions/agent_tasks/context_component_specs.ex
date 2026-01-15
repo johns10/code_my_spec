@@ -77,12 +77,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   end
 
   defp maybe_generate_context_prompt(scope, session, context_component) do
-    environment_type = Map.get(session, :environment, :cli)
-
+    # Filter persisted requirements to spec-related ones
     results =
-      Requirements.check_requirements(scope, context_component,
-        include: ["spec_file", "spec_valid"],
-        environment_type: environment_type
+      Requirements.check_requirements(
+        scope,
+        context_component,
+        context_component.requirements,
+        include: ["spec_file", "spec_valid"]
       )
 
     context_needs_spec = Enum.any?(results, fn result -> not result.satisfied end)
@@ -105,15 +106,16 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     end
   end
 
-  defp filter_children_needing_specs(scope, children, session) do
-    environment_type = Map.get(session, :environment, :cli)
-
+  defp filter_children_needing_specs(scope, children, _session) do
     children_needing_specs =
       Enum.filter(children, fn child ->
+        # Filter persisted requirements to spec-related ones
         results =
-          Requirements.check_requirements(scope, child,
-            include: ["spec_file", "spec_valid"],
-            environment_type: environment_type
+          Requirements.check_requirements(
+            scope,
+            child,
+            child.requirements,
+            include: ["spec_file", "spec_valid"]
           )
 
         # Child needs spec if any spec requirement is unsatisfied
@@ -186,7 +188,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
     task_instructions =
       all_prompt_files
-      |> Enum.map(fn %{component: comp, file_path: path, type: type} ->
+      |> Enum.map(fn %{component: comp, file_path: path} ->
         """
         ## Task: Design #{comp.name}
 
@@ -222,13 +224,14 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
      """}
   end
 
-  defp check_context_spec_status(scope, context_component, session) do
-    environment_type = Map.get(session, :environment, :cli)
-
+  defp check_context_spec_status(scope, context_component, _session) do
+    # Filter persisted requirements to spec-related ones
     results =
-      Requirements.check_requirements(scope, context_component,
-        include: ["spec_file", "spec_valid"],
-        environment_type: environment_type
+      Requirements.check_requirements(
+        scope,
+        context_component,
+        context_component.requirements,
+        include: ["spec_file", "spec_valid"]
       )
 
     if Enum.all?(results, & &1.satisfied) do
@@ -250,15 +253,16 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     end
   end
 
-  defp check_children_spec_status(scope, children, session) do
-    environment_type = Map.get(session, :environment, :cli)
-
+  defp check_children_spec_status(scope, children, _session) do
     {satisfied, unsatisfied} =
       Enum.split_with(children, fn child ->
+        # Filter persisted requirements to spec-related ones
         results =
-          Requirements.check_requirements(scope, child,
-            include: ["spec_file", "spec_valid"],
-            environment_type: environment_type
+          Requirements.check_requirements(
+            scope,
+            child,
+            child.requirements,
+            include: ["spec_file", "spec_valid"]
           )
 
         Enum.all?(results, & &1.satisfied)
@@ -267,9 +271,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     unsatisfied_with_details =
       Enum.map(unsatisfied, fn child ->
         results =
-          Requirements.check_requirements(scope, child,
-            include: ["spec_file", "spec_valid"],
-            environment_type: environment_type
+          Requirements.check_requirements(
+            scope,
+            child,
+            child.requirements,
+            include: ["spec_file", "spec_valid"]
           )
 
         unsatisfied_reqs =
