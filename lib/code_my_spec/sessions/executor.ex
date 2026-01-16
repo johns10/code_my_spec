@@ -84,15 +84,14 @@ defmodule CodeMySpec.Sessions.Executor do
     )
 
     receive do
-      {:interaction_result, interaction_id, result_attrs, delivered_opts}
+      {:interaction_result, interaction_id, result_attrs, _delivered_opts}
       when interaction_id == context.interaction.id ->
         Logger.info("Received async result message",
           session_id: context.session.id,
           interaction_id: context.interaction.id
         )
 
-        # Return both result and opts so caller can merge them
-        {normalize_result(result_attrs), delivered_opts}
+        normalize_result(result_attrs)
     after
       # Timeout after 30 minutes
       1_800_000 ->

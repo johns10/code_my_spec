@@ -7,12 +7,13 @@ defmodule CodeMySpec.Sessions.InteractionContext do
   """
 
   alias CodeMySpec.Sessions.{Session, Interaction}
+  alias CodeMySpec.Environments.Environment
   alias CodeMySpec.Users.Scope
 
   defstruct [:environment, :command, :execution_opts, :session, :interaction]
 
   @type t :: %__MODULE__{
-          environment: module(),
+          environment: Environment.t(),
           command: struct(),
           execution_opts: keyword(),
           session: Session.t(),
