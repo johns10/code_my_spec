@@ -165,7 +165,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         # Step 5: RunTests Again (async - should pass now)
         {:ok,
          %{interaction_id: interaction_id, command_module: command_module, task_pid: task_pid}} =
-          Sessions.run(scope, session.id)
+          Sessions.run(scope, session.id, cwd: project_dir)
 
         Ecto.Adapters.SQL.Sandbox.allow(CodeMySpec.Repo, self(), task_pid)
         assert command_module == RunTests
@@ -197,10 +197,7 @@ defmodule CodeMySpec.ComponentTestSessionsTest do
         File.cp("test/fixtures/component_coding/post_cache_test._ex", test_path)
 
         # Complete the async interaction with success result
-        :ok =
-          Sessions.deliver_result_to_server(session.id, interaction_id, test_success_result,
-            cwd: project_dir
-          )
+        :ok = Sessions.deliver_result_to_server(session.id, interaction_id, test_success_result)
 
         # Wait for step to complete
         assert_receive {:step_completed, %{session: session, interaction_id: ^interaction_id}}

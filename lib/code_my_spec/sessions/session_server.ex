@@ -58,20 +58,8 @@ defmodule CodeMySpec.Sessions.SessionServer do
           )
 
           with {:ok, context} <- InteractionContext.prepare(scope, session, opts) do
-            execution_result = Executor.execute(context)
-
-            # Handle different return types from executor
-            {result, merged_opts} = case execution_result do
-              # Async execution returns {result, delivered_opts}
-              {result, delivered_opts} when is_list(delivered_opts) ->
-                {result, Keyword.merge(opts, delivered_opts)}
-
-              # Sync/Task execution returns just result
-              result ->
-                {result, opts}
-            end
-
-            ResultHandler.handle_result(scope, state.session_id, interaction.id, result, merged_opts)
+            result = Executor.execute(context)
+            ResultHandler.handle_result(scope, state.session_id, interaction.id, result, opts)
           end
         end)
 
