@@ -22,6 +22,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   """
   def command(scope, session, _opts \\ []) do
     %{component: context_component} = session
+    # Ensure requirements are preloaded on context component
+    context_component = ComponentRepository.get_component(scope, context_component.id)
 
     with {:ok, children} <- get_child_components(scope, context_component),
          # Include context itself in the list of components to check
@@ -52,6 +54,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   """
   def evaluate(scope, session, opts \\ []) do
     %{component: context_component} = session
+    # Ensure requirements are preloaded on context component
+    context_component = ComponentRepository.get_component(scope, context_component.id)
 
     with {:ok, children} <- get_child_components(scope, context_component),
          # Include context itself in the list of components to evaluate
@@ -76,7 +80,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   # Private functions
 
   defp get_child_components(scope, context_component) do
-    children = ComponentRepository.list_child_components(scope, context_component.id)
+    # Use recursive descent to get all children, grandchildren, etc.
+    # This handles nested structures like subdirectories
+    children = ComponentRepository.list_all_descendants(scope, context_component.id)
     {:ok, children}
   end
 

@@ -266,9 +266,7 @@ defmodule CodeMySpec.Components.Sync do
     component_map = Map.new(components, &{&1.module_name, &1})
 
     Enum.each(components, fn component ->
-      parent_name = parent_module_name(component.module_name)
-
-      case Map.get(component_map, parent_name) do
+      case find_nearest_ancestor(component.module_name, component_map) do
         nil ->
           :ok
 
@@ -279,6 +277,21 @@ defmodule CodeMySpec.Components.Sync do
           :ok
       end
     end)
+  end
+
+  # Walks up the module namespace tree to find the nearest existing ancestor.
+  # For example, if "A.B.C.D" has no "A.B.C" component, it will check "A.B", then "A".
+  defp find_nearest_ancestor(module_name, component_map) do
+    case parent_module_name(module_name) do
+      nil ->
+        nil
+
+      parent_name ->
+        case Map.get(component_map, parent_name) do
+          nil -> find_nearest_ancestor(parent_name, component_map)
+          parent -> parent
+        end
+    end
   end
 
   defp parent_module_name(module_name) do

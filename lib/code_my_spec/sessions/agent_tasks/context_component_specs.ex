@@ -25,6 +25,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   """
   def command(scope, session, _opts \\ []) do
     %{component: context_component} = session
+    # Ensure requirements are preloaded on context component
+    context_component = ComponentRepository.get_component(scope, context_component.id)
 
     with {:ok, context_prompt_file} <-
            maybe_generate_context_prompt(scope, session, context_component),
@@ -48,6 +50,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   """
   def evaluate(scope, session, _opts \\ []) do
     %{component: context_component} = session
+    # Ensure requirements are preloaded on context component
+    context_component = ComponentRepository.get_component(scope, context_component.id)
 
     with {:ok, context_unsatisfied} <-
            check_context_spec_status(scope, context_component, session),
@@ -72,7 +76,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   # Private functions
 
   defp get_child_components(scope, context_component) do
-    children = ComponentRepository.list_child_components(scope, context_component.id)
+    # Use recursive descent to get all children, grandchildren, etc.
+    # This handles nested structures like analyzers/ subdirectories
+    children = ComponentRepository.list_all_descendants(scope, context_component.id)
     {:ok, children}
   end
 

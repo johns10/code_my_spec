@@ -43,7 +43,7 @@ defmodule CodeMySpec.Sessions.CurrentSession do
         end
 
       {:error, :enoent} ->
-        {:error, "No active session. Run a start command first."}
+        {:ok, nil}
 
       {:error, reason} ->
         {:error, "Failed to read session file: #{inspect(reason)}"}
@@ -57,6 +57,7 @@ defmodule CodeMySpec.Sessions.CurrentSession do
   def get_session_id do
     case load() do
       {:ok, %{session_id: id}} -> {:ok, id}
+      {:ok, nil} -> {:ok, nil}
       {:error, reason} -> {:error, reason}
     end
   end

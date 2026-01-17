@@ -85,6 +85,7 @@ defmodule CodeMySpec.MixProject do
       # Normal deps
       {:file_system, "~> 1.0"},
       {:mox, "~> 1.2"},
+      {:meck, "~> 0.9"},
       {:exvcr, "~> 0.15", only: :test},
       {:paper_trail, "~> 1.1"},
       {:hermes_mcp, "~> 0.14"},
@@ -106,6 +107,7 @@ defmodule CodeMySpec.MixProject do
       {:httpoison, "~> 2.0"},
       {:uuid, "~> 1.1.8"},
       {:inflex, "~> 2.1.0"},
+      {:ex_cli_vcr, git: "https://github.com/johns10/ex_cli_vcr", branch: "main"},
 
       # CLI deps,
       {:burrito, "~> 1.5"},

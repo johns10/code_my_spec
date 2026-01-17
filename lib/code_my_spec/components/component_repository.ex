@@ -21,6 +21,41 @@ defmodule CodeMySpec.Components.ComponentRepository do
     |> Repo.all()
   end
 
+  @doc """
+  Lists all descendants of a component recursively.
+
+  Returns all components that are children, grandchildren, etc. of the given
+  parent component, traversing the entire subtree depth-first.
+
+  Uses a single query to fetch all project components, then builds the
+  descendant list in memory to avoid N+1 query problems.
+  """
+  @spec list_all_descendants(Scope.t(), Ecto.UUID.t()) :: [Component.t()]
+  def list_all_descendants(%Scope{active_project_id: project_id} = _scope, parent_component_id) do
+    # Single query to get all components with requirements preloaded
+    all_components =
+      Component
+      |> where([c], c.project_id == ^project_id)
+      |> preload([:requirements])
+      |> Repo.all()
+
+    # Build parent->children lookup map in memory
+    children_map =
+      all_components
+      |> Enum.group_by(& &1.parent_component_id)
+
+    # Recursively collect descendants using the in-memory map
+    collect_descendants_from_map(children_map, parent_component_id, [])
+  end
+
+  defp collect_descendants_from_map(children_map, parent_id, acc) do
+    children = Map.get(children_map, parent_id, [])
+
+    Enum.reduce(children, acc ++ children, fn child, inner_acc ->
+      collect_descendants_from_map(children_map, child.id, inner_acc)
+    end)
+  end
+
   @spec get_component!(Scope.t(), integer()) :: Component.t()
   def get_component!(%Scope{active_project_id: project_id}, id) do
     Component
