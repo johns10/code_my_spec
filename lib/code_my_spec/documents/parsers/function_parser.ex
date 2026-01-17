@@ -129,7 +129,8 @@ defmodule CodeMySpec.Documents.Parsers.FunctionParser do
         {"p", [], text_content, %{}}, {assertions, :searching} ->
           text = extract_text(text_content)
 
-          if String.contains?(text, "**Test Assertions**:") do
+          # extract_text removes markdown formatting, so check for plain text
+          if String.contains?(text, "Test Assertions") do
             {:cont, {assertions, :capturing}}
           else
             {:cont, {assertions, :searching}}

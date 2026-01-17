@@ -216,6 +216,59 @@ defmodule CodeMySpec.Components.SyncTest do
       assert role.parent_component_id == accounts.id
     end
 
+    test "finds nearest ancestor when intermediate namespaces are missing", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
+      # Create hierarchy with missing intermediate namespace:
+      # MyApp.Context exists, but MyApp.Context.Submodule does not
+      # MyApp.Context.Submodule.Child should parent to MyApp.Context
+      for module <- ["MyApp.Context", "MyApp.Context.Submodule.Child1", "MyApp.Context.Submodule.Child2"] do
+        write_spec(tmp_dir, module)
+      end
+
+      {:ok, components, _errors} = Sync.sync_all(scope, base_dir: tmp_dir)
+
+      context = Enum.find(components, &(&1.module_name == "MyApp.Context"))
+
+      child1 =
+        Components.get_component(
+          scope,
+          Enum.find(components, &(&1.module_name == "MyApp.Context.Submodule.Child1")).id
+        )
+
+      child2 =
+        Components.get_component(
+          scope,
+          Enum.find(components, &(&1.module_name == "MyApp.Context.Submodule.Child2")).id
+        )
+
+      # Both children should have Context as parent (skipping missing Submodule)
+      assert child1.parent_component_id == context.id
+      assert child2.parent_component_id == context.id
+    end
+
+    test "finds nearest ancestor multiple levels up", %{scope: scope, tmp_dir: tmp_dir} do
+      # Create deeply nested component with multiple missing intermediate namespaces
+      # MyApp.Root exists, but MyApp.Root.A, MyApp.Root.A.B, MyApp.Root.A.B.C don't
+      # MyApp.Root.A.B.C.Leaf should parent to MyApp.Root
+      for module <- ["MyApp.Root", "MyApp.Root.A.B.C.Leaf"] do
+        write_spec(tmp_dir, module)
+      end
+
+      {:ok, components, _errors} = Sync.sync_all(scope, base_dir: tmp_dir)
+
+      root = Enum.find(components, &(&1.module_name == "MyApp.Root"))
+
+      leaf =
+        Components.get_component(
+          scope,
+          Enum.find(components, &(&1.module_name == "MyApp.Root.A.B.C.Leaf")).id
+        )
+
+      assert leaf.parent_component_id == root.id
+    end
+
     test "removes components no longer in filesystem", %{scope: scope, tmp_dir: tmp_dir} do
       write_spec(tmp_dir, "MyApp.Accounts")
       {:ok, _, _} = Sync.sync_all(scope, base_dir: tmp_dir)

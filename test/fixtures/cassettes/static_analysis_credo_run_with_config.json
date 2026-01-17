@@ -1,0 +1,25 @@
+{
+  "commands": [
+    {
+      "args": [
+        "credo",
+        "suggest",
+        "--format",
+        "json",
+        "--all",
+        "--all-priorities",
+        "--config-file",
+        ".nonexistent.exs"
+      ],
+      "command": "mix",
+      "exit_code": 129,
+      "opts": {
+        "cd": "../code_my_spec_test_repos/credo_test_8578",
+        "stderr_to_stdout": true
+      },
+      "output": "** (config) Given config file does not exist: /Users/johndavenport/Documents/github/code_my_spec_test_repos/credo_test_8578/.nonexistent.exs\n\n",
+      "recorded_at": "2026-01-17T04:20:34.231672Z"
+    }
+  ],
+  "ports": []
+}

@@ -42,6 +42,7 @@ defmodule CodeMySpec.Support.TestAdapter do
     generate_compiler_caches()
     generate_test_results_caches()
     generate_post_cache_failing_tests()
+    generate_dev_build()
   end
 
   @doc """
@@ -81,18 +82,35 @@ defmodule CodeMySpec.Support.TestAdapter do
   This is much faster than actually cloning from a remote and safe for
   concurrent test execution since each test gets its own copy.
 
+  ## Options
+
+    * `:include_deps` - If true, includes the deps/ directory. Default: false
+    * `:include_build` - If true, includes the _build/ directory. Default: false
+    * `:include_git` - If true, includes .git directories. Default: false
+      Note: Git-based dependencies require their .git dirs, so use this with include_deps.
+
   Assumes ensure_fixture_fresh/0 has been called during test setup.
   """
   @impl true
-  def clone(_scope, repo_url, dest_path) do
+  def clone(_scope, repo_url, dest_path, opts \\ []) do
     fixture_path = select_fixture(repo_url)
+    include_deps = Keyword.get(opts, :include_deps, false)
+    include_build = Keyword.get(opts, :include_build, false)
+    include_git = Keyword.get(opts, :include_git, false)
+
+    # Build exclude list (always include at least one exclude - rsync has sandbox issues without it)
+    excludes = ["--exclude", ".DS_Store"]
+    excludes = if include_git, do: excludes, else: excludes ++ ["--exclude", ".git"]
+    excludes = if include_deps, do: excludes, else: excludes ++ ["--exclude", "deps"]
+    excludes = if include_build, do: excludes, else: excludes ++ ["--exclude", "_build"]
 
     # Create destination directory
     File.mkdir_p!(dest_path)
 
-    # Copy contents of fixture into dest_path, excluding .git directory
-    # We don't need git history for tests, just the files
-    case System.cmd("sh", ["-c", "rsync -a --exclude='.git' #{fixture_path}/ #{dest_path}/"]) do
+    # Copy contents of fixture into dest_path
+    args = ["-a"] ++ excludes ++ ["#{fixture_path}/", "#{dest_path}/"]
+
+    case System.cmd("rsync", args) do
       {_, 0} ->
         {:ok, dest_path}
 
@@ -254,11 +272,6 @@ defmodule CodeMySpec.Support.TestAdapter do
       test_results_failing_path = Path.join(@code_repo_fixture_path, test_results_failing_file)
       File.rm!(test_results_failing_path)
 
-      # Remove deps and build to keep directory size down
-      IO.puts("[TestAdapter] Cleaning up dependencies...")
-      File.rm_rf!(Path.join(@code_repo_fixture_path, "deps"))
-      File.rm_rf!(Path.join(@code_repo_fixture_path, "_build"))
-
       IO.puts("[TestAdapter] Cache generation complete!\n")
     end
   end
@@ -394,5 +407,22 @@ defmodule CodeMySpec.Support.TestAdapter do
     end
 
     IO.puts("[TestAdapter] Compiler cache generation complete!")
+  end
+
+  defp generate_dev_build do
+    code_repo_fixture_abs = Path.expand(@code_repo_fixture_path)
+    dev_build_path = Path.join(code_repo_fixture_abs, "_build/dev")
+
+    if not File.exists?(dev_build_path) do
+      IO.puts("[TestAdapter] Compiling dev environment for static analysis tools...")
+
+      System.cmd("mix", ["compile"],
+        cd: code_repo_fixture_abs,
+        stderr_to_stdout: true,
+        env: [{"MIX_ENV", "dev"}]
+      )
+
+      IO.puts("[TestAdapter] Dev build complete!")
+    end
   end
 end

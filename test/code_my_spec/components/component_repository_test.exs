@@ -23,6 +23,96 @@ defmodule CodeMySpec.Components.ComponentRepositoryTest do
     %{scope: scope, project: project, user: user, account: account}
   end
 
+  describe "list_all_descendants/2" do
+    test "returns all descendants recursively", %{scope: scope} do
+      # Create a hierarchy: context -> child1 -> grandchild
+      context = component_fixture(scope, %{name: "Context", type: "context"})
+      child1 = component_fixture(scope, %{name: "Child1", parent_component_id: context.id})
+      grandchild = component_fixture(scope, %{name: "Grandchild", parent_component_id: child1.id})
+
+      result = ComponentRepository.list_all_descendants(scope, context.id)
+
+      assert length(result) == 2
+      result_ids = Enum.map(result, & &1.id)
+      assert child1.id in result_ids
+      assert grandchild.id in result_ids
+    end
+
+    test "returns empty list when no children exist", %{scope: scope} do
+      context = component_fixture(scope, %{name: "Context", type: "context"})
+
+      result = ComponentRepository.list_all_descendants(scope, context.id)
+
+      assert result == []
+    end
+
+    test "includes deeply nested descendants", %{scope: scope} do
+      # Create 4 levels deep: context -> child -> grandchild -> great_grandchild
+      context = component_fixture(scope, %{name: "Context", type: "context"})
+      child = component_fixture(scope, %{name: "Child", parent_component_id: context.id})
+      grandchild = component_fixture(scope, %{name: "Grandchild", parent_component_id: child.id})
+
+      great_grandchild =
+        component_fixture(scope, %{name: "GreatGrandchild", parent_component_id: grandchild.id})
+
+      result = ComponentRepository.list_all_descendants(scope, context.id)
+
+      assert length(result) == 3
+      result_ids = Enum.map(result, & &1.id)
+      assert child.id in result_ids
+      assert grandchild.id in result_ids
+      assert great_grandchild.id in result_ids
+    end
+
+    test "includes multiple branches", %{scope: scope} do
+      # Create tree:  context
+      #               /    \
+      #            child1  child2
+      #              |
+      #          grandchild
+      context = component_fixture(scope, %{name: "Context", type: "context"})
+      child1 = component_fixture(scope, %{name: "Child1", parent_component_id: context.id})
+      child2 = component_fixture(scope, %{name: "Child2", parent_component_id: context.id})
+      grandchild = component_fixture(scope, %{name: "Grandchild", parent_component_id: child1.id})
+
+      result = ComponentRepository.list_all_descendants(scope, context.id)
+
+      assert length(result) == 3
+      result_ids = Enum.map(result, & &1.id)
+      assert child1.id in result_ids
+      assert child2.id in result_ids
+      assert grandchild.id in result_ids
+    end
+
+    test "excludes components from other projects", %{scope: scope} do
+      context = component_fixture(scope, %{name: "Context", type: "context"})
+      child = component_fixture(scope, %{name: "Child", parent_component_id: context.id})
+
+      # Create in different project
+      other_user = user_fixture()
+      other_account = account_with_owner_fixture(other_user)
+      other_scope = user_scope_fixture(other_user, other_account)
+      other_project = project_fixture(other_scope)
+      other_scope = user_scope_fixture(other_user, other_account, other_project)
+      _other_component = component_fixture(other_scope, %{name: "OtherChild"})
+
+      result = ComponentRepository.list_all_descendants(scope, context.id)
+
+      assert length(result) == 1
+      assert hd(result).id == child.id
+    end
+
+    test "preloads requirements on all descendants", %{scope: scope} do
+      context = component_fixture(scope, %{name: "Context", type: "context"})
+      _child = component_fixture(scope, %{name: "Child", parent_component_id: context.id})
+
+      result = ComponentRepository.list_all_descendants(scope, context.id)
+
+      assert length(result) == 1
+      assert Ecto.assoc_loaded?(hd(result).requirements)
+    end
+  end
+
   describe "list_components/1" do
     test "returns all components for the project", %{scope: scope} do
       component1 = component_fixture(scope, %{name: "Component1"})

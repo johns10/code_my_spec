@@ -1,0 +1,21 @@
+{
+  "commands": [
+    {
+      "args": [
+        "sobelow",
+        "--format",
+        "json",
+        "--private"
+      ],
+      "command": "mix",
+      "exit_code": 2,
+      "opts": {
+        "cd": "/nonexistent/invalid/path",
+        "stderr_to_stdout": true
+      },
+      "output": "",
+      "recorded_at": "2026-01-17T04:21:28.800155Z"
+    }
+  ],
+  "ports": []
+}

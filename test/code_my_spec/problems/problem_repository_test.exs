@@ -1,0 +1,363 @@
+defmodule CodeMySpec.Problems.ProblemRepositoryTest do
+  use CodeMySpec.DataCase, async: true
+
+  import CodeMySpec.ProblemsFixtures
+  import CodeMySpec.UsersFixtures
+  import CodeMySpec.AccountsFixtures
+  import CodeMySpec.ProjectsFixtures
+
+  alias CodeMySpec.Problems.{Problem, ProblemRepository}
+  alias CodeMySpec.Repo
+
+  setup do
+    user = user_fixture()
+    account = account_with_owner_fixture(user)
+    scope = user_scope_fixture(user, account)
+    project = project_fixture(scope)
+    scope = user_scope_fixture(user, account, project)
+
+    %{scope: scope, project: project, user: user, account: account}
+  end
+
+  describe "list_project_problems/2" do
+    test "returns empty list when no problems exist for project", %{scope: scope} do
+      result = ProblemRepository.list_project_problems(scope, [])
+
+      assert result == []
+    end
+
+    test "returns all problems scoped to the project when no filters provided", %{scope: scope} do
+      problem1 = problem_fixture(scope, %{message: "Problem 1"})
+      problem2 = problem_fixture(scope, %{message: "Problem 2"})
+
+      result = ProblemRepository.list_project_problems(scope, [])
+
+      assert length(result) == 2
+      problem_ids = Enum.map(result, & &1.id)
+      assert problem1.id in problem_ids
+      assert problem2.id in problem_ids
+    end
+
+    test "filters out problems from other projects", %{scope: scope} do
+      problem1 = problem_fixture(scope, %{message: "My problem"})
+
+      # Create problem in different project
+      other_user = user_fixture()
+      other_account = account_with_owner_fixture(other_user)
+      other_scope = user_scope_fixture(other_user, other_account)
+      other_project = project_fixture(other_scope)
+      other_scope = user_scope_fixture(other_user, other_account, other_project)
+      _other_problem = problem_fixture(other_scope, %{message: "Other problem"})
+
+      result = ProblemRepository.list_project_problems(scope, [])
+
+      assert length(result) == 1
+      assert hd(result).id == problem1.id
+    end
+
+    test "filters by source when source filter provided", %{scope: scope} do
+      credo_problem = problem_fixture(scope, %{source: "credo"})
+      _dialyzer_problem = problem_fixture(scope, %{source: "dialyzer"})
+
+      result = ProblemRepository.list_project_problems(scope, source: "credo")
+
+      assert length(result) == 1
+      assert hd(result).id == credo_problem.id
+    end
+
+    test "filters by source_type when source_type filter provided", %{scope: scope} do
+      static_problem = problem_fixture(scope, %{source_type: :static_analysis})
+      _test_problem = problem_fixture(scope, %{source_type: :test})
+
+      result = ProblemRepository.list_project_problems(scope, source_type: :static_analysis)
+
+      assert length(result) == 1
+      assert hd(result).id == static_problem.id
+    end
+
+    test "filters by file_path when file_path filter provided (supports pattern matching)", %{
+      scope: scope
+    } do
+      lib_problem = problem_fixture(scope, %{file_path: "lib/my_app/accounts.ex"})
+      _test_problem = problem_fixture(scope, %{file_path: "test/my_app/accounts_test.exs"})
+
+      result = ProblemRepository.list_project_problems(scope, file_path: "lib/%")
+
+      assert length(result) == 1
+      assert hd(result).id == lib_problem.id
+    end
+
+    test "filters by category when category filter provided", %{scope: scope} do
+      readability_problem = problem_fixture(scope, %{category: "readability"})
+      _warning_problem = problem_fixture(scope, %{category: "warning"})
+
+      result = ProblemRepository.list_project_problems(scope, category: "readability")
+
+      assert length(result) == 1
+      assert hd(result).id == readability_problem.id
+    end
+
+    test "filters by severity when severity filter provided", %{scope: scope} do
+      error_problem = problem_fixture(scope, %{severity: :error})
+      _warning_problem = problem_fixture(scope, %{severity: :warning})
+
+      result = ProblemRepository.list_project_problems(scope, severity: :error)
+
+      assert length(result) == 1
+      assert hd(result).id == error_problem.id
+    end
+
+    test "supports multiple filters combined", %{scope: scope} do
+      matching_problem =
+        problem_fixture(scope, %{
+          source: "credo",
+          severity: :error,
+          category: "readability"
+        })
+
+      _wrong_source = problem_fixture(scope, %{source: "dialyzer", severity: :error})
+      _wrong_severity = problem_fixture(scope, %{source: "credo", severity: :warning})
+
+      result =
+        ProblemRepository.list_project_problems(scope,
+          source: "credo",
+          severity: :error,
+          category: "readability"
+        )
+
+      assert length(result) == 1
+      assert hd(result).id == matching_problem.id
+    end
+
+    test "orders results by severity (error, warning, info) then file path", %{scope: scope} do
+      # Create problems in specific order to test sorting
+      _info1 = problem_fixture(scope, %{severity: :info, file_path: "lib/b.ex"})
+      _error1 = problem_fixture(scope, %{severity: :error, file_path: "lib/b.ex"})
+      _warning1 = problem_fixture(scope, %{severity: :warning, file_path: "lib/a.ex"})
+      _error2 = problem_fixture(scope, %{severity: :error, file_path: "lib/a.ex"})
+
+      result = ProblemRepository.list_project_problems(scope, [])
+
+      assert length(result) == 4
+      # Errors first (sorted by file_path)
+      assert Enum.at(result, 0).severity == :error
+      assert Enum.at(result, 0).file_path == "lib/a.ex"
+      assert Enum.at(result, 1).severity == :error
+      assert Enum.at(result, 1).file_path == "lib/b.ex"
+      # Warnings second
+      assert Enum.at(result, 2).severity == :warning
+      # Info last
+      assert Enum.at(result, 3).severity == :info
+    end
+  end
+
+  describe "create_problems/2" do
+    test "successfully inserts valid problems", %{scope: scope} do
+      problems = [
+        valid_problem_attrs(%{message: "Problem 1"}),
+        valid_problem_attrs(%{message: "Problem 2"})
+      ]
+
+      assert {:ok, inserted_problems} = ProblemRepository.create_problems(scope, problems)
+
+      assert length(inserted_problems) == 2
+      assert Enum.at(inserted_problems, 0).message == "Problem 1"
+      assert Enum.at(inserted_problems, 1).message == "Problem 2"
+
+      # Verify database persistence
+      db_problems = Repo.all(Problem)
+      assert length(db_problems) == 2
+    end
+
+    test "associates problems with project from scope", %{scope: scope} do
+      problems = [valid_problem_attrs(%{message: "Test problem"})]
+
+      assert {:ok, inserted_problems} = ProblemRepository.create_problems(scope, problems)
+
+      assert hd(inserted_problems).project_id == scope.active_project_id
+    end
+
+    test "rejects problems without required fields", %{scope: scope} do
+      problems = [
+        %{message: "Invalid - missing required fields"}
+      ]
+
+      assert {:error, _changeset} = ProblemRepository.create_problems(scope, problems)
+
+      # Verify nothing was inserted
+      assert Repo.all(Problem) == []
+    end
+
+    test "handles empty list gracefully", %{scope: scope} do
+      assert {:ok, []} = ProblemRepository.create_problems(scope, [])
+
+      assert Repo.all(Problem) == []
+    end
+
+    test "rolls back transaction on validation errors", %{scope: scope} do
+      problems = [
+        valid_problem_attrs(%{message: "Valid problem"}),
+        %{message: "Invalid - missing fields"}
+      ]
+
+      assert {:error, _changeset} = ProblemRepository.create_problems(scope, problems)
+
+      # Verify transaction rollback - no problems should be inserted
+      assert Repo.all(Problem) == []
+    end
+  end
+
+  describe "replace_project_problems/2" do
+    test "removes all existing problems and stores new ones atomically", %{scope: scope} do
+      # Create initial problems
+      _existing1 = problem_fixture(scope, %{message: "Old problem 1"})
+      _existing2 = problem_fixture(scope, %{message: "Old problem 2"})
+
+      # Verify initial state
+      assert length(Repo.all(Problem)) == 2
+
+      # Replace with new problems
+      new_problems = [
+        valid_problem_attrs(%{message: "New problem 1"}),
+        valid_problem_attrs(%{message: "New problem 2"}),
+        valid_problem_attrs(%{message: "New problem 3"})
+      ]
+
+      assert {:ok, replaced_problems} =
+               ProblemRepository.replace_project_problems(scope, new_problems)
+
+      assert length(replaced_problems) == 3
+
+      # Verify database state
+      all_problems = Repo.all(Problem)
+      assert length(all_problems) == 3
+      assert Enum.all?(all_problems, &(&1.message =~ "New problem"))
+    end
+
+    test "rolls back both delete and insert on error", %{scope: scope} do
+      # Create initial problems
+      existing = problem_fixture(scope, %{message: "Existing problem"})
+
+      # Try to replace with invalid data
+      new_problems = [
+        valid_problem_attrs(%{message: "Valid problem"}),
+        %{message: "Invalid - missing fields"}
+      ]
+
+      assert {:error, _changeset} =
+               ProblemRepository.replace_project_problems(scope, new_problems)
+
+      # Verify rollback - original problem should still exist
+      all_problems = Repo.all(Problem)
+      assert length(all_problems) == 1
+      assert hd(all_problems).id == existing.id
+    end
+
+    test "handles transition from many problems to zero", %{scope: scope} do
+      # Create initial problems
+      problem_list_fixture(scope, 5)
+
+      assert length(Repo.all(Problem)) == 5
+
+      # Replace with empty list
+      assert {:ok, []} = ProblemRepository.replace_project_problems(scope, [])
+
+      # Verify all problems are deleted
+      assert Repo.all(Problem) == []
+    end
+
+    test "handles transition from zero problems to many", %{scope: scope} do
+      # Start with no problems
+      assert Repo.all(Problem) == []
+
+      # Add multiple problems
+      new_problems = [
+        valid_problem_attrs(%{message: "Problem 1"}),
+        valid_problem_attrs(%{message: "Problem 2"}),
+        valid_problem_attrs(%{message: "Problem 3"})
+      ]
+
+      assert {:ok, inserted_problems} =
+               ProblemRepository.replace_project_problems(scope, new_problems)
+
+      assert length(inserted_problems) == 3
+      assert length(Repo.all(Problem)) == 3
+    end
+
+    test "maintains problems for other projects unchanged", %{scope: scope} do
+      # Create problems in current project
+      _my_problem = problem_fixture(scope, %{message: "My problem"})
+
+      # Create problems in different project
+      other_user = user_fixture()
+      other_account = account_with_owner_fixture(other_user)
+      other_scope = user_scope_fixture(other_user, other_account)
+      other_project = project_fixture(other_scope)
+      other_scope = user_scope_fixture(other_user, other_account, other_project)
+      other_problem = problem_fixture(other_scope, %{message: "Other problem"})
+
+      # Verify initial state
+      assert length(Repo.all(Problem)) == 2
+
+      # Replace problems in current project
+      new_problems = [
+        valid_problem_attrs(%{message: "New problem"})
+      ]
+
+      assert {:ok, _replaced} = ProblemRepository.replace_project_problems(scope, new_problems)
+
+      # Verify other project's problem is unchanged
+      assert length(Repo.all(Problem)) == 2
+      assert Repo.get(Problem, other_problem.id) != nil
+    end
+  end
+
+  describe "clear_project_problems/1" do
+    test "deletes all problems for the project", %{scope: scope} do
+      problem_list_fixture(scope, 3)
+
+      assert length(Repo.all(Problem)) == 3
+
+      assert {:ok, count} = ProblemRepository.clear_project_problems(scope)
+
+      assert count == 3
+      assert Repo.all(Problem) == []
+    end
+
+    test "returns count of deleted records", %{scope: scope} do
+      problem_list_fixture(scope, 5)
+
+      assert {:ok, 5} = ProblemRepository.clear_project_problems(scope)
+    end
+
+    test "does not affect problems from other projects", %{scope: scope} do
+      # Create problems in current project
+      problem_list_fixture(scope, 2)
+
+      # Create problems in different project
+      other_user = user_fixture()
+      other_account = account_with_owner_fixture(other_user)
+      other_scope = user_scope_fixture(other_user, other_account)
+      other_project = project_fixture(other_scope)
+      other_scope = user_scope_fixture(other_user, other_account, other_project)
+      other_problem = problem_fixture(other_scope, %{message: "Other problem"})
+
+      assert length(Repo.all(Problem)) == 3
+
+      assert {:ok, 2} = ProblemRepository.clear_project_problems(scope)
+
+      # Verify only current project's problems were deleted
+      remaining = Repo.all(Problem)
+      assert length(remaining) == 1
+      assert hd(remaining).id == other_problem.id
+    end
+
+    test "handles case when no problems exist", %{scope: scope} do
+      assert Repo.all(Problem) == []
+
+      assert {:ok, 0} = ProblemRepository.clear_project_problems(scope)
+
+      assert Repo.all(Problem) == []
+    end
+  end
+end

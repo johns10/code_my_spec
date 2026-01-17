@@ -1,0 +1,23 @@
+{
+  "commands": [
+    {
+      "args": [
+        "credo",
+        "suggest",
+        "--format",
+        "json",
+        "--all",
+        "--all-priorities"
+      ],
+      "command": "mix",
+      "exit_code": 2,
+      "opts": {
+        "cd": "/nonexistent",
+        "stderr_to_stdout": true
+      },
+      "output": "",
+      "recorded_at": "2026-01-17T04:18:52.514539Z"
+    }
+  ],
+  "ports": []
+}

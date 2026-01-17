@@ -32,15 +32,17 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   def execute(scope, args) do
     session_id_arg = Map.get(args, :session_id)
 
-    with {:ok, session_id} <- resolve_session_id(session_id_arg),
+    with {:ok, session_id} when not is_nil(session_id) <- resolve_session_id(session_id_arg),
          {:ok, session} <- get_session(scope, session_id),
          {:ok, task_session} <- build_task_session(session),
          {:ok, sync_result} <- sync_project(scope),
          result <- session.type.evaluate(scope, task_session) do
-      IO.inspect(session.type)
       output_sync_metrics(sync_result)
       handle_result(result)
     else
+      {:ok, nil} ->
+        handle_result({:ok, nil})
+
       {:error, reason} ->
         # Block Claude and provide the error as feedback so it can fix the issue
         handle_setup_error(reason)
@@ -80,6 +82,10 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
        project: session.project,
        environment: session.environment
      }}
+  end
+
+  defp handle_result({:ok, nil}) do
+    :ok
   end
 
   defp handle_result({:ok, :valid}) do
