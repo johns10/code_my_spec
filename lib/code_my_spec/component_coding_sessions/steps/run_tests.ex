@@ -62,7 +62,8 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.RunTests do
   defp get_test_run_data(_result), do: {:error, "test run data not found in result"}
 
   defp validate_test_run(test_run_data) do
-    case TestRun.changeset(%TestRun{}, test_run_data) do
+    # Use parse_changeset which doesn't require project_id, file_path, ran_at
+    case TestRun.parse_changeset(%TestRun{}, test_run_data) do
       %{valid?: true} = changeset ->
         {:ok, Ecto.Changeset.apply_changes(changeset)}
 

@@ -10,10 +10,9 @@ defmodule CodeMySpec.Quality.Tdd do
   alias CodeMySpec.Tests.TestRun
 
   @doc """
-  Checks test execution state from a command result.
+  Checks test execution state from a TestRun struct or command result.
 
-  Parses test results, validates the test run data, and ensures all tests
-  are failing (correct TDD state for test generation).
+  Validates that tests are in the expected state (all failing for TDD test generation).
 
   Returns a binary score:
   - 1.0 if all tests are failing (correct TDD state)
@@ -21,11 +20,30 @@ defmodule CodeMySpec.Quality.Tdd do
 
   ## Examples
 
+      iex> check_tdd_state(%TestRun{stats: %{failures: 5, passes: 0}})
+      %Result{score: 1.0, errors: []}
+
       iex> result = %{data: %{test_results: valid_json_with_failures}}
       iex> check_tdd_state(result)
       %Result{score: 1.0, errors: []}
   """
-  def check_tdd_state(result, opts \\ []) do
+  def check_tdd_state(input, opts \\ [])
+
+  # Accept TestRun struct directly
+  def check_tdd_state(%TestRun{} = test_run, opts) do
+    full_tdd_mode = Keyword.get(opts, :tdd_mode, true)
+
+    case verify(test_run, full_tdd_mode) do
+      :ok ->
+        Result.ok()
+
+      {:error, error} ->
+        Result.error([error])
+    end
+  end
+
+  # Accept legacy format with raw JSON
+  def check_tdd_state(result, opts) when is_map(result) do
     with full_tdd_mode = Keyword.get(opts, :tdd_mode, true),
          {:ok, test_run_data} <- get_test_run_data(result),
          {:ok, test_run} <- validate_test_run(test_run_data),
@@ -56,7 +74,8 @@ defmodule CodeMySpec.Quality.Tdd do
   defp get_test_run_data(_result), do: {:error, "Test run data not found in result"}
 
   defp validate_test_run(test_run_data) do
-    case TestRun.changeset(%TestRun{}, test_run_data) do
+    # Use parse_changeset which doesn't require project_id, file_path, ran_at
+    case TestRun.parse_changeset(%TestRun{}, test_run_data) do
       %{valid?: true} = changeset ->
         {:ok, Ecto.Changeset.apply_changes(changeset)}
 

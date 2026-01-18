@@ -8,7 +8,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   """
 
   alias CodeMySpec.{Rules, Utils, Components, Tests, Environments}
-  alias CodeMySpec.Tests.TestRun
 
   @doc """
   Generate the command/prompt for Claude to implement a component.
@@ -26,7 +25,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
 
     with {:ok, rules} <- get_implementation_rules(scope, component),
          similar_components <- Components.list_similar_components(scope, component),
-         {:ok, prompt} <- build_implementation_prompt(project, component, rules, similar_components) do
+         {:ok, prompt} <-
+           build_implementation_prompt(project, component, rules, similar_components) do
       {:ok, prompt}
     end
   end
@@ -47,7 +47,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   """
   def evaluate(_scope, session, _opts \\ []) do
     %{component: component, project: project} = session
-    %{test_file: test_file_path, code_file: code_file_path} = Utils.component_files(component, project)
+
+    %{test_file: test_file_path, code_file: code_file_path} =
+      Utils.component_files(component, project)
 
     # Check required files exist
     case check_required_files(session, test_file_path, code_file_path) do
@@ -55,22 +57,19 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
         {:ok, :invalid, feedback}
 
       :ok ->
-        with {:ok, test_output} <- run_tests(test_file_path),
-             {:ok, test_run} <- parse_test_results(test_output) do
-          case test_run.stats.failures do
-            0 ->
-              {:ok, :valid}
+        case run_tests(test_file_path) do
+          {:ok, test_run} ->
+            case test_run.stats.failures do
+              0 ->
+                {:ok, :valid}
 
-            _count ->
-              {:ok, :invalid, build_test_failure_feedback(test_run)}
-          end
-        else
-          {:error, {:test_execution_failed, output}} ->
+              _count ->
+                {:ok, :invalid, build_test_failure_feedback(test_run)}
+            end
+
+          {:error, {:parse_error, output}} ->
             # Tests couldn't even run (compile error, etc.)
             {:ok, :invalid, build_execution_error_feedback(output)}
-
-          {:error, reason} ->
-            {:error, reason}
         end
     end
   end
@@ -199,36 +198,10 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
     args = ["test", test_file_path, "--formatter", "ExUnitJsonFormatter"]
     interaction_id = "component_code_#{System.unique_integer([:positive])}"
 
-    %{data: %{test_results: test_results}} = Tests.execute(args, interaction_id)
-    {:ok, test_results}
+    Tests.execute(args, interaction_id)
   end
 
-  defp parse_test_results(json_string) do
-    case Jason.decode(json_string) do
-      {:ok, data} ->
-        validate_test_run(data)
-
-      {:error, _} ->
-        {:error, {:test_execution_failed, json_string}}
-    end
-  end
-
-  defp validate_test_run(test_run_data) do
-    case TestRun.changeset(%TestRun{}, test_run_data) do
-      %{valid?: true} = changeset ->
-        {:ok, Ecto.Changeset.apply_changes(changeset)}
-
-      %{valid?: false} = changeset ->
-        errors =
-          changeset.errors
-          |> Enum.map(fn {field, {message, _opts}} -> "#{field}: #{message}" end)
-          |> Enum.join(", ")
-
-        {:error, "Invalid test run data: #{errors}"}
-    end
-  end
-
-  defp build_test_failure_feedback(%TestRun{failures: failures, stats: stats}) do
+  defp build_test_failure_feedback(%{failures: failures, stats: stats}) do
     failure_details =
       failures
       |> Enum.map(fn failure ->

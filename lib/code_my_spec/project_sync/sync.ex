@@ -105,11 +105,11 @@ defmodule CodeMySpec.ProjectSync.Sync do
     # In the future, this could query from a TestRuns context/repository
     %TestRun{
       failures: [],
-      project_path: project_root,
+      file_path: project_root,
       command: "",
       execution_status: :success,
       raw_output: "",
-      executed_at: NaiveDateTime.utc_now()
+      ran_at: DateTime.utc_now()
     }
   end
 end

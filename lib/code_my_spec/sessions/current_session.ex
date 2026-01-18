@@ -33,7 +33,7 @@ defmodule CodeMySpec.Sessions.CurrentSession do
 
   Returns {:ok, map} with atomized keys or {:error, reason}
   """
-  @spec load() :: {:ok, map()} | {:error, String.t()}
+  @spec load() :: {:ok, map() | nil} | {:error, String.t()}
   def load do
     case File.read(session_path()) do
       {:ok, content} ->
@@ -53,7 +53,7 @@ defmodule CodeMySpec.Sessions.CurrentSession do
   @doc """
   Convenience function to get just the session ID from disk.
   """
-  @spec get_session_id() :: {:ok, integer()} | {:error, String.t()}
+  @spec get_session_id() :: {:ok, integer() | nil} | {:error, String.t()}
   def get_session_id do
     case load() do
       {:ok, %{session_id: id}} -> {:ok, id}

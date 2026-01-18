@@ -74,9 +74,6 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.Credo do
     else
       {:error, _reason} = error ->
         error
-
-      error ->
-        {:error, "Unexpected error: #{inspect(error)}"}
     end
   end
 

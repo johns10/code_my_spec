@@ -256,31 +256,33 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentTest do
          _opts
        ) do
     # Run tests to get test results
-    test_output = run_tests(test_file_path)
+    case run_tests(test_file_path) do
+      {:ok, test_run} ->
+        tdd_state_result = Quality.check_tdd_state(test_run, tdd_mode: tdd_mode)
+        alignment_result = Quality.spec_test_alignment(component, project, tdd_mode: tdd_mode)
 
-    # Build a mock result structure for Quality checks
-    result = %{data: %{test_results: test_output}}
+        overall_score =
+          (compile_result.score + tdd_state_result.score + alignment_result.score) / 3
 
-    tdd_state_result = Quality.check_tdd_state(result, tdd_mode: tdd_mode)
-    alignment_result = Quality.spec_test_alignment(component, project, tdd_mode: tdd_mode)
+        case validate_quality(compile_result, tdd_state_result, alignment_result, overall_score) do
+          :ok ->
+            {:ok, :valid}
 
-    overall_score = (compile_result.score + tdd_state_result.score + alignment_result.score) / 3
+          {:error, errors} ->
+            feedback =
+              format_quality_errors(
+                errors,
+                compile_result,
+                tdd_state_result,
+                alignment_result,
+                overall_score
+              )
 
-    case validate_quality(compile_result, tdd_state_result, alignment_result, overall_score) do
-      :ok ->
-        {:ok, :valid}
+            {:ok, :invalid, feedback}
+        end
 
-      {:error, errors} ->
-        feedback =
-          format_quality_errors(
-            errors,
-            compile_result,
-            tdd_state_result,
-            alignment_result,
-            overall_score
-          )
-
-        {:ok, :invalid, feedback}
+      {:error, {:parse_error, output}} ->
+        {:ok, :invalid, "Tests could not run: #{output}"}
     end
   end
 
@@ -288,8 +290,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentTest do
     args = ["test", test_file_path, "--formatter", "ExUnitJsonFormatter"]
     interaction_id = "component_test_#{System.unique_integer([:positive])}"
 
-    %{data: %{test_results: test_results}} = Tests.execute(args, interaction_id)
-    test_results
+    Tests.execute(args, interaction_id)
   end
 
   defp validate_quality(compile_result, tdd_state_result, alignment_result, overall_score) do

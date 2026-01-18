@@ -201,7 +201,25 @@ defmodule CodeMySpec.Environments.Cli do
         case check_compilation_errors(results) do
           {:ok, _} ->
             # No compilation errors, run tests
-            test_result = CodeMySpec.Tests.execute(test_args, interaction_id)
+            test_result =
+              case CodeMySpec.Tests.execute(test_args, interaction_id) do
+                {:ok, test_run} ->
+                  %{
+                    status: test_run.execution_status,
+                    data: %{test_results: test_run},
+                    exit_code: test_run.exit_code || 0,
+                    output: test_run.raw_output || ""
+                  }
+
+                {:error, {:parse_error, raw_output}} ->
+                  %{
+                    status: :error,
+                    data: %{test_results: %{}},
+                    exit_code: 1,
+                    output: raw_output
+                  }
+              end
+
             %{compile: compile_result, test: test_result}
 
           {:error, _} ->
