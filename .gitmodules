@@ -1,3 +1,6 @@
 [submodule "docs"]
 	path = docs
 	url = https://github.com/johns10/code_my_spec_docs.git
+[submodule "test_phoenix_project"]
+	path = test/fixtures/test_phoenix_project
+	url = https://github.com/johns10/test_phoenix_project.git
