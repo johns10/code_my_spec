@@ -154,6 +154,11 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
     %{}
   end
 
+  # File not found means nothing to validate - allow rather than block
+  def format_output({:error, [:file_not_found]}) do
+    %{}
+  end
+
   def format_output({:error, errors}) when is_list(errors) do
     reason =
       case errors do

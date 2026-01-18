@@ -102,14 +102,6 @@ defmodule CodeMySpecWeb.Router do
     get "/me", UserController, :me
     get "/projects", ProjectController, :index
 
-    resources "/sessions", SessionsController, except: [:edit, :new, :update, :delete] do
-      get "/next-command", SessionsController, :next_command
-      post "/submit-result/:interaction_id", SessionsController, :submit_result
-      post "/cancel", SessionsController, :cancel
-      put "/execution_mode/:mode", SessionsController, :update_execution_mode
-      post "/events", SessionsController, :add_event
-    end
-
     post "/project-coordinator/sync-requirements",
          ProjectCoordinatorController,
          :sync_requirements
@@ -122,7 +114,11 @@ defmodule CodeMySpecWeb.Router do
     end
 
     get "/stories-list/project", StoriesController, :list_project_stories
-    get "/stories-list/by-component-priority", StoriesController, :list_project_stories_by_component_priority
+
+    get "/stories-list/by-component-priority",
+        StoriesController,
+        :list_project_stories_by_component_priority
+
     get "/stories-list/unsatisfied", StoriesController, :list_unsatisfied_stories
     get "/stories-list/component/:component_id", StoriesController, :list_component_stories
   end

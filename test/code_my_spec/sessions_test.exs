@@ -140,8 +140,9 @@ defmodule CodeMySpec.SessionsTest do
 
     test "update_execution_mode/3 with non-existent session returns error" do
       scope = full_scope_fixture()
+      fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-      assert {:error, :session_not_found} = Sessions.update_execution_mode(scope, 99999, "auto")
+      assert {:error, :session_not_found} = Sessions.update_execution_mode(scope, fake_uuid, "auto")
     end
 
     test "update_execution_mode/3 regenerates pending command with new mode" do

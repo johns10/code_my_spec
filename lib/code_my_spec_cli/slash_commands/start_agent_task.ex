@@ -2,21 +2,23 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   @moduledoc """
   Start an agent task session and output the first interaction prompt.
 
-  Creates a database Session, looks up the component by module name, and calls
-  the appropriate AgentTask module to generate the prompt. Session state is
-  persisted to disk via CurrentSession for the evaluate command to pick up.
+  Creates a database Session with the provided UUID, looks up the component by
+  module name, and calls the appropriate AgentTask module to generate the prompt.
+  Session state is persisted to disk via CurrentSession for the evaluate command
+  to pick up.
 
   ## Usage
 
   From CLI:
-      MIX_ENV=cli mix cli start-agent-task -t component_spec -m MyApp.Accounts
+      export CODE_MY_SPEC_SESSION_ID=$(uuidgen)
+      MIX_ENV=cli mix cli start-agent-task -s $CODE_MY_SPEC_SESSION_ID -t spec -m MyApp.Accounts
 
   ## Output
 
   On success: Outputs the prompt text directly to stdout.
   On error: Outputs error message to stderr.
 
-  Session state is persisted to `.code_my_spec/internal/current_session/session.json`
+  Session state is persisted to `.code_my_spec/internal/sessions/<session_id>/session.json`
   """
 
   use CodeMySpecCli.SlashCommands.SlashCommandBehaviour
@@ -42,15 +44,17 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   @valid_types ["spec" | Map.keys(@session_type_map)]
 
   def execute(scope, args) do
+    session_id = Map.get(args, :session_id)
     session_type = Map.get(args, :session_type)
     module_name = Map.get(args, :module_name)
 
     # Fetch component before resolving session type so "spec" can auto-detect
-    with {:ok, project} <- get_project(scope),
+    with {:ok, _} <- validate_session_id(session_id),
+         {:ok, project} <- get_project(scope),
          {:ok, sync_result} <- sync_project(scope),
          {:ok, component} <- get_component(scope, module_name),
          {:ok, agent_task_module} <- resolve_session_type(session_type, component),
-         {:ok, db_session} <- create_session(scope, agent_task_module, component),
+         {:ok, db_session} <- create_session(scope, session_id, agent_task_module, component),
          {:ok, task_session} <- build_task_session(component, project),
          {:ok, prompt} <- agent_task_module.command(scope, task_session),
          :ok <- persist_session(db_session, session_type, component) do
@@ -67,6 +71,17 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     error ->
       IO.puts(:stderr, "Error: #{Exception.message(error)}")
       {:error, Exception.message(error)}
+  end
+
+  defp validate_session_id(nil) do
+    {:error, "Session ID is required. Use -s or --session-id with a UUID"}
+  end
+
+  defp validate_session_id(session_id) do
+    case Ecto.UUID.cast(session_id) do
+      {:ok, _} -> {:ok, session_id}
+      :error -> {:error, "Invalid session ID format. Must be a valid UUID"}
+    end
   end
 
   defp resolve_session_type(nil, _component) do
@@ -110,8 +125,9 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     end
   end
 
-  defp create_session(scope, session_module, component) do
+  defp create_session(scope, session_id, session_module, component) do
     Sessions.create_session(scope, %{
+      id: session_id,
       type: session_module,
       environment: :cli,
       agent: :claude_code,

@@ -8,7 +8,7 @@ defmodule CodeMySpec.Sessions.Session do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-          id: integer() | nil,
+          id: Ecto.UUID.t() | nil,
           type:
             CodeMySpec.ContextSpecSessions
             | CodeMySpec.ContextComponentsDesignSessions
@@ -35,7 +35,7 @@ defmodule CodeMySpec.Sessions.Session do
           user: User.t() | Ecto.Association.NotLoaded.t() | nil,
           component_id: Ecto.UUID.t() | nil,
           component: Component.t() | Ecto.Association.NotLoaded.t() | nil,
-          session_id: integer() | nil,
+          session_id: Ecto.UUID.t() | nil,
           parent_session: t() | Ecto.Association.NotLoaded.t() | nil,
           child_sessions: [t()] | Ecto.Association.NotLoaded.t(),
           external_conversation_id: String.t() | nil,
@@ -44,6 +44,7 @@ defmodule CodeMySpec.Sessions.Session do
           updated_at: DateTime.t() | nil
         }
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "sessions" do
     field :type, CodeMySpec.Sessions.SessionType
     field :agent, Ecto.Enum, values: [:claude_code]
@@ -59,9 +60,9 @@ defmodule CodeMySpec.Sessions.Session do
     belongs_to :account, Account
     belongs_to :user, User
     belongs_to :component, Component, type: :binary_id
-    belongs_to :parent_session, __MODULE__, foreign_key: :session_id
+    belongs_to :parent_session, __MODULE__, foreign_key: :session_id, type: :binary_id
 
-    has_many :child_sessions, __MODULE__, foreign_key: :session_id
+    has_many :child_sessions, __MODULE__, foreign_key: :session_id, references: :id
     has_many :interactions, Interaction, preload_order: [desc: :inserted_at]
 
     timestamps(type: :utc_datetime)
@@ -71,6 +72,7 @@ defmodule CodeMySpec.Sessions.Session do
   def changeset(session, attrs, user_scope) do
     session
     |> cast(attrs, [
+      :id,
       :type,
       :agent,
       :environment,

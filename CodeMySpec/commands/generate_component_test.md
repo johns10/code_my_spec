@@ -2,12 +2,6 @@
 description: Generate component tests from spec using agent task session
 allowed-tools: Bash(mix cli *), Read
 argument-hint: [ModuleName]
-hooks:
-  Stop:
-    - matcher: "*"
-      hooks:
-        - type: command
-          command: "MIX_ENV=cli mix cli evaluate-agent-task"
 ---
 
-!`MIX_ENV=cli mix cli start-agent-task -t component_test -m $ARGUMENTS`
+!`source CodeMySpec/scripts/cms-start -t component_test -m $ARGUMENTS`

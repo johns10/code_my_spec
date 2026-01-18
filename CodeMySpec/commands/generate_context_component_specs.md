@@ -4,4 +4,4 @@ allowed-tools: Bash(mix cli *), Read, Task
 argument-hint: [ContextModuleName]
 ---
 
-!`MIX_ENV=cli mix cli start-agent-task -t context_component_specs -m $ARGUMENTS`
+!`source CodeMySpec/scripts/cms-start -t context_component_specs -m $ARGUMENTS`

@@ -13,8 +13,6 @@ defmodule CodeMySpecCli.Screens.Main do
   alias CodeMySpecCli.Screens.Repl
   alias CodeMySpecCli.Screens.Init
   alias CodeMySpecCli.Screens.ComponentsBrowser
-  alias CodeMySpecCli.Screens.Sessions
-  alias CodeMySpecCli.Screens.SessionDetail
 
   defstruct [
     :screen,
@@ -47,19 +45,6 @@ defmodule CodeMySpecCli.Screens.Main do
   @impl true
   def update(model, msg) do
     case {model.screen, msg} do
-      # Tick - forward to sessions screen for polling
-      {:sessions, :tick} ->
-        case Sessions.update(model.sessions_state, :tick) do
-          {:ok, new_sessions_state} ->
-            %{model | sessions_state: new_sessions_state}
-
-          other ->
-            # Unexpected return, log and continue
-            require Logger
-            Logger.warning("Unexpected return from Sessions.update(:tick): #{inspect(other)}")
-            model
-        end
-
       # Tick from interval subscription for other screens - just re-render
       {_, :tick} ->
         model
@@ -99,18 +84,6 @@ defmodule CodeMySpecCli.Screens.Main do
                 }
             end
 
-          {:switch_screen, :sessions, new_repl_state} ->
-            # Sessions.init() returns {state, command} tuple
-            case Sessions.init() do
-              {sessions_state, nil} ->
-                %{
-                  model
-                  | screen: :sessions,
-                    repl_state: new_repl_state,
-                    sessions_state: sessions_state
-                }
-            end
-
           {:switch_screen, _other_screen, new_repl_state} ->
             # Generic fallback for unknown screens
             %{model | repl_state: new_repl_state}
@@ -136,42 +109,6 @@ defmodule CodeMySpecCli.Screens.Main do
             %{model | screen: :repl}
         end
 
-      # Sessions screen
-      {:sessions, msg} ->
-        case Sessions.update(model.sessions_state, msg) do
-          {:ok, new_sessions_state} ->
-            %{model | sessions_state: new_sessions_state}
-
-          {:switch_screen, :session_detail, new_sessions_state} ->
-            # Get selected session from sessions_state
-            session = Enum.at(new_sessions_state.sessions, new_sessions_state.selected_session_index)
-
-            # Initialize detail screen with session
-            case SessionDetail.init_with_session(session) do
-              {detail_state, nil} ->
-                %{
-                  model
-                  | screen: :session_detail,
-                    sessions_state: new_sessions_state,
-                    session_detail_state: detail_state
-                }
-            end
-
-          {:switch_screen, :repl, _new_sessions_state} ->
-            %{model | screen: :repl}
-        end
-
-      # Session detail screen
-      {:session_detail, msg} ->
-        case SessionDetail.update(model.session_detail_state, msg) do
-          {:ok, new_detail_state} ->
-            %{model | session_detail_state: new_detail_state}
-
-          {:switch_screen, :sessions, _new_detail_state} ->
-            # Return to sessions list
-            %{model | screen: :sessions}
-        end
-
       _ ->
         model
     end
@@ -185,8 +122,6 @@ defmodule CodeMySpecCli.Screens.Main do
           :repl -> Repl.render(model.repl_state)
           :init -> Init.render(model.init_state)
           :components -> ComponentsBrowser.render(model.components_state)
-          :sessions -> Sessions.render(model.sessions_state)
-          :session_detail -> SessionDetail.render(model.session_detail_state)
         end
       end
     end

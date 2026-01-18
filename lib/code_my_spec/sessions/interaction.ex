@@ -13,7 +13,7 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   @type t :: %__MODULE__{
           id: binary() | nil,
-          session_id: integer() | nil,
+          session_id: Ecto.UUID.t() | nil,
           session: Session.t() | Ecto.Association.NotLoaded.t(),
           step_name: String.t() | nil,
           command: Command.t() | nil,
@@ -26,7 +26,7 @@ defmodule CodeMySpec.Sessions.Interaction do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "interactions" do
-    belongs_to :session, Session
+    belongs_to :session, Session, type: :binary_id
     field :step_name, :string
     embeds_one :command, Command
     embeds_one :result, Result, on_replace: :update

@@ -5,7 +5,11 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "MIX_ENV=cli mix cli evaluate-agent-task"
+                        "command": "scripts/record_hook.sh"
+                    },
+                    {
+                        "type": "command",
+                        "command": "MIX_ENV=cli mix cli hook"
                     }
                 ]
             }

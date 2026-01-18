@@ -1,0 +1,7 @@
+#!/bin/bash
+# End a CodeMySpec agent task session.
+# Must be sourced to clear the session ID env var: source CodeMySpec/scripts/cms-end
+#
+# Runs evaluate-agent-task and then clears the CODE_MY_SPEC_SESSION_ID env var.
+
+MIX_ENV=cli mix cli evaluate-agent-task && unset CODE_MY_SPEC_SESSION_ID

@@ -64,9 +64,6 @@ defmodule CodeMySpecCli.Hooks do
       {:ok, nil} ->
         Logger.info("[Hooks] No active session, dispatching to ValidateEdits")
         dispatch_validate_edits(hook_input, "transcript_path")
-
-      {:error, reason} ->
-        output_error(reason)
     end
   end
 

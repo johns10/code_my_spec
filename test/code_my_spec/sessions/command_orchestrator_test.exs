@@ -117,7 +117,8 @@ defmodule CodeMySpec.Sessions.CommandResolverTest do
     end
 
     test "returns error when session not found", %{scope: scope} do
-      assert {:error, :session_not_found} = Sessions.next_command(scope, 99999)
+      fake_uuid = "00000000-0000-0000-0000-000000000000"
+      assert {:error, :session_not_found} = Sessions.next_command(scope, fake_uuid)
     end
   end
 end

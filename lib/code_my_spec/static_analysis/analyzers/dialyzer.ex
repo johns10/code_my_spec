@@ -180,7 +180,6 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.Dialyzer do
   defp format_message(_type, message) when is_list(message) do
     case List.to_string(message) do
       str when is_binary(str) -> str
-      _ -> inspect(message)
     end
   rescue
     _ -> inspect(message)
