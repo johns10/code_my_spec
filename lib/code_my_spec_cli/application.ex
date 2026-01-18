@@ -19,8 +19,9 @@ defmodule CodeMySpecCli.Application do
       # Registry for OAuth callback coordination
       {Registry, keys: :unique, name: CodeMySpecCli.Registry},
       # CodeMySpec.ProjectSync.FileWatcherServer,
-      CodeMySpec.Sessions.InteractionRegistry
-      # {CodeMySpecCli.WebServer, port: 8314}
+      CodeMySpec.Sessions.InteractionRegistry,
+      # Local web server for OAuth callbacks
+      {CodeMySpecCli.WebServer, port: 8314}
     ]
 
     {:ok, supervisor} =

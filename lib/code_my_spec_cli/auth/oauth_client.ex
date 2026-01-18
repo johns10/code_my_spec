@@ -71,7 +71,7 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
         authorize_url: "#{server_base_url}/oauth/authorize",
         token_url: "#{server_base_url}/oauth/token",
         redirect_uri: Config.oauth_callback_url(),
-        request_opts: build_hackney_opts(server_base_url)
+        request_opts: build_httpc_opts(server_base_url)
       )
 
     # Build authorization URL with PKCE
@@ -104,33 +104,22 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
 
           case OAuth2.Client.get_token(client, params) do
             {:ok, %OAuth2.Client{token: token}} ->
-              Logger.debug("OAuth token received: #{token.scope}")
-
-              # The OAuth2 library sometimes returns the JSON response as a string in access_token
-              # Parse it if needed
-              {access_token, refresh_token, expires_in, scope} =
-                case Jason.decode(token.access_token) do
-                  {:ok, parsed} ->
-                    {parsed["access_token"], parsed["refresh_token"], parsed["expires_in"],
-                     parsed["scope"]}
-
-                  {:error, _} ->
-                    # Already parsed correctly
-                    {token.access_token, token.refresh_token, token.expires_at,
-                     token.other_params["scope"]}
-                end
+              # Parse token response from JSON string
+              {:ok, parsed} = Jason.decode(token.access_token)
 
               token_data = %{
-                "access_token" => access_token,
-                "refresh_token" => refresh_token,
-                "expires_in" => expires_in,
-                "token_type" => token.token_type,
-                "scope" => scope
+                "access_token" => parsed["access_token"],
+                "refresh_token" => parsed["refresh_token"],
+                "expires_in" => parsed["expires_in"],
+                "token_type" => parsed["token_type"] || "Bearer",
+                "scope" => parsed["scope"]
               }
+
+              Logger.debug("OAuth token received, expires_in: #{token_data["expires_in"]}s")
 
               # Fetch and save user info (this also saves the token to DB)
               with {:ok, %{id: user_id, email: email}} <-
-                     fetch_user_info(server_base_url, access_token),
+                     fetch_user_info(server_base_url, token_data["access_token"]),
                    {:ok, _client_user} <- save_client_user(user_id, email, token_data),
                    :ok <- CodeMySpecCli.Config.set_current_user_email(email) do
                 # Broadcast auth status change (TUI will update automatically)
@@ -315,6 +304,8 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   end
 
   defp refresh_token_for_user(user) do
+    IO.puts("refr3eshing")
+
     case user.oauth_refresh_token do
       nil ->
         # No refresh token, need to re-authenticate
@@ -330,7 +321,8 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
             client_id: client_id,
             client_secret: client_secret,
             site: server_base_url,
-            token_url: "#{server_base_url}/oauth/token"
+            token_url: "#{server_base_url}/oauth/token",
+            request_opts: build_httpc_opts(server_base_url)
           )
 
         params = [
@@ -342,41 +334,73 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
 
         case OAuth2.Client.get_token(client, params) do
           {:ok, %OAuth2.Client{token: token}} ->
-            # Parse JSON if needed (same as authenticate/1)
-            {access_token, new_refresh_token, expires_in, _scope} =
-              case Jason.decode(token.access_token) do
-                {:ok, parsed} ->
-                  {parsed["access_token"], parsed["refresh_token"], parsed["expires_in"],
-                   parsed["scope"]}
-
-                {:error, _} ->
-                  {token.access_token, token.refresh_token, token.expires_at,
-                   token.other_params["scope"]}
-              end
+            # Parse token response from JSON string
+            {:ok, parsed} = Jason.decode(token.access_token)
+            IO.inspect(parsed)
 
             # Update user in database with new tokens
             token_data = %{
-              "access_token" => access_token,
-              "refresh_token" => new_refresh_token || refresh_token,
-              "expires_in" => expires_in
+              "access_token" => parsed["access_token"],
+              "refresh_token" => parsed["refresh_token"] || refresh_token,
+              "expires_in" => parsed["expires_in"]
             }
 
+            Logger.debug("Token refreshed successfully, expires_in: #{token_data["expires_in"]}s")
+
             case save_client_user(user.id, user.email, token_data) do
-              {:ok, _} -> {:ok, access_token}
-              {:error, _} -> {:error, :needs_authentication}
+              {:ok, _} ->
+                {:ok, token_data["access_token"]}
+
+              {:error, reason} ->
+                Logger.error("Failed to save refreshed token: #{inspect(reason)}")
+                {:error, :needs_authentication}
             end
 
-          {:error, _} ->
+          {:error, %OAuth2.Error{reason: reason}} ->
+            Logger.error("Token refresh failed (OAuth2.Error): #{inspect(reason)}")
+            {:error, :needs_authentication}
+
+          {:error, %OAuth2.Response{status_code: status, body: body}} ->
+            Logger.error("Token refresh failed (HTTP #{status}): #{inspect(body)}")
+            {:error, :needs_authentication}
+
+          {:error, reason} ->
+            Logger.error("Token refresh failed: #{inspect(reason)}")
             {:error, :needs_authentication}
         end
     end
   end
 
-  defp token_expired?(%CodeMySpec.ClientUsers.ClientUser{oauth_expires_at: nil}), do: true
+  @doc """
+  Check if a user's token is expired.
+  Returns true if token is nil or expires in less than 5 minutes.
+  """
+  def token_expired?(%CodeMySpec.ClientUsers.ClientUser{oauth_expires_at: nil}), do: true
 
-  defp token_expired?(%CodeMySpec.ClientUsers.ClientUser{oauth_expires_at: expires_at}) do
+  def token_expired?(%CodeMySpec.ClientUsers.ClientUser{oauth_expires_at: expires_at}) do
     # Consider expired if less than 5 minutes remaining
     DateTime.compare(DateTime.utc_now(), DateTime.add(expires_at, -300, :second)) == :gt
+  end
+
+  @doc """
+  Extract expires_in (seconds) from an OAuth2.AccessToken struct.
+
+  The OAuth2 library stores `expires_at` as a Unix timestamp, but we need
+  `expires_in` (seconds from now) for storage. This function:
+  1. Checks `other_params["expires_in"]` first (direct from server response)
+  2. Falls back to calculating from `expires_at` timestamp
+  3. Defaults to 7200 seconds (2 hours) if neither is available
+  """
+  def extract_expires_in(%OAuth2.AccessToken{} = token) do
+    token.other_params["expires_in"] ||
+      calculate_expires_in_from_timestamp(token.expires_at) ||
+      7200
+  end
+
+  defp calculate_expires_in_from_timestamp(nil), do: nil
+
+  defp calculate_expires_in_from_timestamp(expires_at) when is_integer(expires_at) do
+    max(0, expires_at - System.system_time(:second))
   end
 
   defp generate_pkce_pair do
@@ -463,11 +487,12 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
     end
   end
 
-  # Build hackney options for OAuth2 library (used for token exchange)
-  defp build_hackney_opts(server_url) do
+  # Build SSL options for OAuth2 library (Tesla with httpc adapter)
+  defp build_httpc_opts(server_url) do
     if String.starts_with?(server_url, "https://localhost") do
       # For local HTTPS with self-signed certs, disable verification
-      [ssl_options: [{:verify, :verify_none}]]
+      # httpc adapter uses `ssl:` key (not `ssl_options:` like hackney)
+      [ssl: [verify: :verify_none]]
     else
       []
     end

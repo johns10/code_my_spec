@@ -14,9 +14,9 @@ config :code_my_spec, CodeMySpec.Repo,
   log: false
 
 # Configure Stories to use remote client for API calls
+# Note: api_base_url and oauth_base_url are set in runtime.exs after env files are loaded
 config :code_my_spec,
-  stories_implementation: CodeMySpec.Stories.RemoteClient,
-  api_base_url: System.get_env("API_BASE_URL") || "http://localhost:4000"
+  stories_implementation: CodeMySpec.Stories.RemoteClient
 
 # OAuth token will be configured at runtime or read from environment
 # config :code_my_spec, :oauth_token, System.get_env("OAUTH_TOKEN")

@@ -19,6 +19,18 @@ defmodule CodeMySpecCli.CLI do
         allow_unknown_args: false,
         parse_double_dash: true,
         subcommands: [
+          login: [
+            name: "login",
+            about: "Authenticate with the CodeMySpec server via OAuth2"
+          ],
+          logout: [
+            name: "logout",
+            about: "Clear stored authentication credentials"
+          ],
+          whoami: [
+            name: "whoami",
+            about: "Show current authenticated user (triggers token refresh if expired)"
+          ],
           start_agent_task: [
             name: "start-agent-task",
             about: "Start an agent task session and get the first prompt",
@@ -61,8 +73,67 @@ defmodule CodeMySpecCli.CLI do
     end
   end
 
+  defp run_login do
+    alias CodeMySpecCli.Auth.OAuthClient
+
+    IO.puts("Opening browser for authentication...")
+    IO.puts("Waiting for OAuth callback...")
+
+    case OAuthClient.authenticate() do
+      {:ok, _token_data} ->
+        IO.puts("Successfully authenticated!")
+
+      {:error, reason} ->
+        IO.puts(:stderr, "Authentication failed: #{reason}")
+        System.halt(1)
+    end
+  end
+
+  defp run_logout do
+    alias CodeMySpecCli.Auth.OAuthClient
+
+    case OAuthClient.logout() do
+      :ok ->
+        IO.puts("Successfully logged out.")
+    end
+  end
+
+  defp run_whoami do
+    alias CodeMySpecCli.Auth.OAuthClient
+
+    IO.puts("Checking authentication (will refresh token if expired)...")
+
+    case OAuthClient.get_token() do
+      {:ok, _token} ->
+        case CodeMySpecCli.Config.get_current_user_email() do
+          {:ok, email} ->
+            IO.puts("Authenticated as: #{email}")
+
+          {:error, _} ->
+            IO.puts("Authenticated (but no email stored)")
+        end
+
+      {:error, :not_authenticated} ->
+        IO.puts(:stderr, "Not authenticated. Run: mix cli login")
+        System.halt(1)
+
+      {:error, :needs_authentication} ->
+        IO.puts(:stderr, "Token expired and refresh failed. Run: mix cli login")
+        System.halt(1)
+    end
+  end
+
   defp execute(parsed) do
     case parsed do
+      {[:login], _} ->
+        run_login()
+
+      {[:logout], _} ->
+        run_logout()
+
+      {[:whoami], _} ->
+        run_whoami()
+
       {[:start_agent_task], %{options: opts}} ->
         CodeMySpecCli.SlashCommands.StartAgentTask.run(opts)
 

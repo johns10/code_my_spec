@@ -32,7 +32,12 @@ end
 
 # Configure OAuth providers for development
 
-if config_env() != :cli do
+if config_env() == :cli do
+  # CLI needs OAuth and API URLs from env
+  config :code_my_spec,
+    api_base_url: env!("API_BASE_URL", :string, "http://localhost:4000"),
+    oauth_base_url: env!("OAUTH_BASE_URL", :string, "http://localhost:4000")
+else
   config :code_my_spec,
     github_client_id: env!("GITHUB_CLIENT_ID"),
     github_client_secret: env!("GITHUB_CLIENT_SECRET"),
