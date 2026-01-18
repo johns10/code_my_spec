@@ -2,11 +2,14 @@ defmodule CodeMySpecCli.Hooks do
   @moduledoc """
   Dispatcher for Claude Code hook handlers.
 
-  Reads JSON from stdin, routes to the appropriate handler based on `hook_event_name`,
-  and outputs JSON to stdout.
+  Reads JSON from stdin, routes to the appropriate handler based on `hook_event_name`.
+  Each handler is responsible for its own stdout output.
 
   ## Supported Hook Events
 
+  - `Stop` - Routes based on active session:
+    - If session exists: evaluates the agent task via EvaluateAgentTask
+    - If no session: validates spec files from transcript via ValidateEdits
   - `SubagentStop` - Validates spec files edited during a subagent session
 
   ## Usage
@@ -16,10 +19,13 @@ defmodule CodeMySpecCli.Hooks do
 
   require Logger
 
+  alias CodeMySpec.Sessions.CurrentSession
+  alias CodeMySpec.Users.Scope
   alias CodeMySpecCli.Hooks.ValidateEdits
+  alias CodeMySpecCli.SlashCommands.EvaluateAgentTask
 
   @doc """
-  Run a hook. Reads JSON from stdin, dispatches based on hook_event_name, outputs JSON to stdout.
+  Run a hook. Reads JSON from stdin, dispatches based on hook_event_name.
   """
   @spec run() :: :ok
   def run do
@@ -28,13 +34,15 @@ defmodule CodeMySpecCli.Hooks do
     raw_input = IO.read(:stdio, :eof)
     Logger.info("[Hooks] Raw stdin: #{inspect(raw_input)}")
 
-    parsed = parse_hook_input(raw_input)
-    Logger.info("[Hooks] Parsed input: #{inspect(parsed)}")
+    case parse_hook_input(raw_input) do
+      {:ok, hook_input} ->
+        Logger.info("[Hooks] Parsed input: #{inspect(hook_input)}")
+        dispatch(hook_input)
 
-    result = dispatch(parsed)
-    Logger.info("[Hooks] Dispatch result: #{inspect(result)}")
-
-    format_and_output(result)
+      {:error, reason} ->
+        Logger.error("[Hooks] Parse error: #{reason}")
+        output_error(reason)
+    end
 
     :ok
   end
@@ -46,34 +54,48 @@ defmodule CodeMySpecCli.Hooks do
     end
   end
 
-  defp dispatch({:error, reason}) do
-    {:error, [reason]}
-  end
+  defp dispatch(%{"hook_event_name" => "Stop"} = hook_input) do
+    case CurrentSession.get_session_id() do
+      {:ok, session_id} when not is_nil(session_id) ->
+        Logger.info("[Hooks] Active session #{session_id}, dispatching to EvaluateAgentTask")
+        scope = Scope.for_cli()
+        EvaluateAgentTask.execute(scope, %{})
 
-  defp dispatch({:ok, %{"hook_event_name" => "SubagentStop"} = hook_input}) do
-    case Map.fetch(hook_input, "agent_transcript_path") do
-      {:ok, transcript_path} -> ValidateEdits.run(transcript_path)
-      :error -> {:error, ["SubagentStop hook missing agent_transcript_path"]}
+      {:ok, nil} ->
+        Logger.info("[Hooks] No active session, dispatching to ValidateEdits")
+        dispatch_validate_edits(hook_input, "transcript_path")
+
+      {:error, reason} ->
+        output_error(reason)
     end
   end
 
-  defp dispatch({:ok, %{"hook_event_name" => event_name}}) do
-    # Unknown hook events pass through (continue: true)
-    {:ok, :valid}
-    |> tap(fn _ -> IO.warn("Unhandled hook event: #{event_name}") end)
+  defp dispatch(%{"hook_event_name" => "SubagentStop"} = hook_input) do
+    dispatch_validate_edits(hook_input, "agent_transcript_path")
   end
 
-  defp dispatch({:ok, _hook_input}) do
-    {:error, ["Hook input missing hook_event_name"]}
+  defp dispatch(%{"hook_event_name" => event_name}) do
+    Logger.warning("[Hooks] Unhandled hook event: #{event_name}")
+    # Unknown events pass through
+    IO.puts("{}")
   end
 
-  defp format_and_output(result) do
-    formatted = ValidateEdits.format_output(result)
-    Logger.info("[Hooks] Formatted output: #{inspect(formatted)}")
+  defp dispatch(_hook_input) do
+    output_error("Hook input missing hook_event_name")
+  end
 
-    json = Jason.encode!(formatted)
-    Logger.info("[Hooks] JSON output: #{json}")
+  defp dispatch_validate_edits(hook_input, transcript_key) do
+    case Map.fetch(hook_input, transcript_key) do
+      {:ok, transcript_path} ->
+        ValidateEdits.run_and_output(transcript_path)
 
-    IO.puts(json)
+      :error ->
+        # No transcript path - pass through
+        IO.puts("{}")
+    end
+  end
+
+  defp output_error(reason) do
+    IO.puts(Jason.encode!(%{"decision" => "block", "reason" => reason}))
   end
 end

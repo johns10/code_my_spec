@@ -1,6 +1,7 @@
 defmodule CodeMySpecCli.Hooks.ValidateEdits do
   @moduledoc """
   Claude Code stop hook handler that validates spec files written or edited during an agent session.
+  Ensures all spec files conform to the expected schema.
   """
 
   require Logger
@@ -24,6 +25,18 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
 
       result
     end
+  end
+
+  @doc """
+  Run validation and output JSON result to stdout.
+  """
+  @spec run_and_output(Path.t()) :: :ok
+  def run_and_output(transcript_path) do
+    result = run(transcript_path)
+    json = Jason.encode!(format_output(result))
+    Logger.info("[ValidateEdits] JSON output: #{json}")
+    IO.puts(json)
+    :ok
   end
 
   defp parse_transcript(path) do
