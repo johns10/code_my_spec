@@ -68,7 +68,6 @@ defmodule CodeMySpec.StaticAnalysis.RunnerTest do
       # Based on spec, should include these analyzer modules
       expected_modules = [
         CodeMySpec.StaticAnalysis.Analyzers.Credo,
-        CodeMySpec.StaticAnalysis.Analyzers.Dialyzer,
         CodeMySpec.StaticAnalysis.Analyzers.Sobelow,
         CodeMySpec.StaticAnalysis.Analyzers.SpecAlignment
       ]
@@ -158,7 +157,6 @@ defmodule CodeMySpec.StaticAnalysis.RunnerTest do
       # Test each analyzer that's available
       analyzers_to_test = [
         :credo,
-        :dialyzer,
         :sobelow,
         :spec_alignment
       ]

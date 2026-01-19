@@ -25,7 +25,6 @@ defmodule CodeMySpec.ProblemsTest do
     assert function_exported?(Problems, :replace_project_problems, 2)
     assert function_exported?(Problems, :clear_project_problems, 1)
     assert function_exported?(Problems, :from_credo, 1)
-    assert function_exported?(Problems, :from_dialyzer, 1)
     assert function_exported?(Problems, :from_compiler, 1)
     assert function_exported?(Problems, :from_test_failure, 1)
   end

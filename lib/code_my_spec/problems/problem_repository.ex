@@ -18,7 +18,7 @@ defmodule CodeMySpec.Problems.ProblemRepository do
 
     * `scope` - The user scope with active project
     * `opts` - Keyword list of optional filters:
-      - `:source` - Filter by source (e.g., "credo", "dialyzer")
+      - `:source` - Filter by source (e.g., "credo")
       - `:source_type` - Filter by source_type atom (e.g., :static_analysis, :test)
       - `:file_path` - Filter by file_path (supports SQL LIKE patterns with %)
       - `:category` - Filter by category string

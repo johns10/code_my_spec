@@ -73,7 +73,18 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGenerator do
     submodule_init = build_submodule_init_section()
     success = build_success_section()
 
-    [header, validation, phx_new_check, submodules, phoenix_project, deps_update, custom_deps, phx_gen_auth, submodule_init, success]
+    [
+      header,
+      validation,
+      phx_new_check,
+      submodules,
+      phoenix_project,
+      deps_update,
+      custom_deps,
+      phx_gen_auth,
+      submodule_init,
+      success
+    ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join("\n\n")
   end
@@ -186,7 +197,6 @@ defmodule CodeMySpec.ProjectSetupWizard.ScriptGenerator do
     echo ""
     echo '  {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},'
     echo '  {:exunit_json_formatter, git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},'
-    echo '  {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},'
     echo '  {:credo, "~> 1.7.13"},'
     echo ""
     echo "After adding, run: mix deps.get"

@@ -77,11 +77,10 @@ defmodule CodeMySpec.StaticAnalysisTest do
       analyzers = StaticAnalysis.list_analyzers()
 
       assert is_list(analyzers)
-      assert length(analyzers) == 4
+      assert length(analyzers) == 3
 
       expected_modules = [
         CodeMySpec.StaticAnalysis.Analyzers.Credo,
-        CodeMySpec.StaticAnalysis.Analyzers.Dialyzer,
         CodeMySpec.StaticAnalysis.Analyzers.Sobelow,
         CodeMySpec.StaticAnalysis.Analyzers.SpecAlignment
       ]

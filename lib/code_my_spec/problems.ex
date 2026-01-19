@@ -16,7 +16,6 @@ defmodule CodeMySpec.Problems do
 
   # Converter functions
   defdelegate from_credo(credo_data), to: ProblemConverter
-  defdelegate from_dialyzer(dialyzer_data), to: ProblemConverter
   defdelegate from_compiler(compiler_data), to: ProblemConverter
   defdelegate from_test_failure(test_error), to: ProblemConverter
 end

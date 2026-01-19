@@ -39,12 +39,13 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     end
 
     test "renders compact format as single line" do
-      problem = build_problem(
-        file_path: "lib/my_app/foo.ex",
-        line: 42,
-        severity: :error,
-        message: "Module doc missing"
-      )
+      problem =
+        build_problem(
+          file_path: "lib/my_app/foo.ex",
+          line: 42,
+          severity: :error,
+          message: "Module doc missing"
+        )
 
       result = ProblemRenderer.render(problem, format: :compact)
 
@@ -55,13 +56,14 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     end
 
     test "renders text format with labeled fields" do
-      problem = build_problem(
-        file_path: "lib/my_app/foo.ex",
-        line: 42,
-        severity: :error,
-        source: "credo",
-        message: "Module doc missing"
-      )
+      problem =
+        build_problem(
+          file_path: "lib/my_app/foo.ex",
+          line: 42,
+          severity: :error,
+          source: "credo",
+          message: "Module doc missing"
+        )
 
       result = ProblemRenderer.render(problem, format: :text)
 
@@ -125,14 +127,12 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     test "groups problems by source when group_by is :source" do
       problems = [
         build_problem(source: "credo", message: "Credo issue"),
-        build_problem(source: "dialyzer", message: "Dialyzer issue"),
         build_problem(source: "credo", message: "Another credo issue")
       ]
 
       result = ProblemRenderer.render_list(problems, format: :grouped, group_by: :source)
 
       assert result =~ "credo"
-      assert result =~ "dialyzer"
     end
 
     test "groups problems by file_path when group_by is :file_path" do
@@ -235,14 +235,12 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
 
     test "groups counts by source tool" do
       problems = [
-        build_problem(source: "credo", severity: :error),
-        build_problem(source: "dialyzer", severity: :warning)
+        build_problem(source: "credo", severity: :error)
       ]
 
       result = ProblemRenderer.render_summary_by_source(problems)
 
       assert result =~ "credo"
-      assert result =~ "dialyzer"
     end
 
     test "shows severity breakdown for each source" do
@@ -262,18 +260,15 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     test "orders sources alphabetically" do
       problems = [
         build_problem(source: "sobelow", severity: :error),
-        build_problem(source: "credo", severity: :warning),
-        build_problem(source: "dialyzer", severity: :warning)
+        build_problem(source: "credo", severity: :warning)
       ]
 
       result = ProblemRenderer.render_summary_by_source(problems)
 
       credo_pos = :binary.match(result, "credo") |> elem(0)
-      dialyzer_pos = :binary.match(result, "dialyzer") |> elem(0)
       sobelow_pos = :binary.match(result, "sobelow") |> elem(0)
 
-      assert credo_pos < dialyzer_pos
-      assert dialyzer_pos < sobelow_pos
+      assert credo_pos < sobelow_pos
     end
 
     test "handles single source with multiple severities" do
@@ -294,14 +289,12 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     test "handles multiple sources with single severity each" do
       problems = [
         build_problem(source: "credo", severity: :warning),
-        build_problem(source: "dialyzer", severity: :warning),
         build_problem(source: "sobelow", severity: :error)
       ]
 
       result = ProblemRenderer.render_summary_by_source(problems)
 
       assert result =~ "credo"
-      assert result =~ "dialyzer"
       assert result =~ "sobelow"
     end
   end
@@ -316,7 +309,8 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     test "includes context header when provided" do
       problems = [build_problem()]
 
-      result = ProblemRenderer.render_for_feedback(problems, context: "Static analysis found issues:")
+      result =
+        ProblemRenderer.render_for_feedback(problems, context: "Static analysis found issues:")
 
       assert result =~ "Static analysis found issues:"
     end
@@ -335,9 +329,10 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     end
 
     test "limits output to max_problems" do
-      problems = Enum.map(1..15, fn i ->
-        build_problem(message: "Problem #{i}", line: i)
-      end)
+      problems =
+        Enum.map(1..15, fn i ->
+          build_problem(message: "Problem #{i}", line: i)
+        end)
 
       result = ProblemRenderer.render_for_feedback(problems, max_problems: 5)
 
@@ -365,9 +360,10 @@ defmodule CodeMySpec.Problems.ProblemRendererTest do
     end
 
     test "includes truncation notice when problems are limited" do
-      problems = Enum.map(1..15, fn i ->
-        build_problem(message: "Problem #{i}", line: i)
-      end)
+      problems =
+        Enum.map(1..15, fn i ->
+          build_problem(message: "Problem #{i}", line: i)
+        end)
 
       result = ProblemRenderer.render_for_feedback(problems, max_problems: 5)
 

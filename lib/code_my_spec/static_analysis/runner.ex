@@ -3,15 +3,15 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
   Orchestrates execution of static analyzers against a project. Handles parallel execution,
   error isolation, and result aggregation.
 
-  The Runner provides a unified interface for running static analysis tools (Credo, Dialyzer,
+  The Runner provides a unified interface for running static analysis tools (Credo,
   Sobelow, SpecAlignment) either individually or in parallel. It manages analyzer
   availability checks, error handling, and ensures all returned Problems have proper project_id
   assignments.
   """
 
   alias CodeMySpec.Problems.Problem
+  alias CodeMySpec.StaticAnalysis.Analyzers.{Credo, Sobelow, SpecAlignment}
   alias CodeMySpec.Users.Scope
-  alias CodeMySpec.StaticAnalysis.Analyzers.{Credo, Dialyzer, Sobelow, SpecAlignment}
 
   require Logger
 
@@ -25,7 +25,6 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
       iex> Runner.list_analyzers()
       [
         CodeMySpec.StaticAnalysis.Analyzers.Credo,
-        CodeMySpec.StaticAnalysis.Analyzers.Dialyzer,
         CodeMySpec.StaticAnalysis.Analyzers.Sobelow,
         CodeMySpec.StaticAnalysis.Analyzers.SpecAlignment
       ]
@@ -34,7 +33,6 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
   def list_analyzers do
     [
       Credo,
-      Dialyzer,
       Sobelow,
       SpecAlignment
     ]
@@ -49,7 +47,7 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
   ## Parameters
 
   - `scope` - The scope containing active account and project context
-  - `analyzer_name` - Atom identifying the analyzer (e.g., :credo, :dialyzer)
+  - `analyzer_name` - Atom identifying the analyzer (e.g., :credo, :sobelow)
   - `opts` - Keyword list of options passed through to the analyzer
 
   ## Returns
@@ -73,7 +71,7 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
     with {:ok, project} <- validate_project(scope),
          {:ok, analyzer_module} <- resolve_analyzer(analyzer_name),
          {:ok, :available} <- check_availability(analyzer_module, scope),
-         opts_with_cwd <- ensure_cwd_option(opts, project),
+         opts_with_cwd = ensure_cwd_option(opts, project),
          {:ok, problems} <- execute_analyzer(analyzer_module, scope, opts_with_cwd),
          {:ok, validated_problems} <- validate_problems(problems, scope) do
       {:ok, validated_problems}
@@ -143,14 +141,12 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
     do: {:ok, project}
 
   defp ensure_cwd_option(opts, %{code_repo: code_repo}) do
-    # Add cwd option if not already present - needed for Dialyzer and potentially other analyzers
     Keyword.put_new(opts, :cwd, code_repo)
   end
 
   defp resolve_analyzer(analyzer_name) when is_atom(analyzer_name) do
     analyzer_map = %{
       credo: Credo,
-      dialyzer: Dialyzer,
       sobelow: Sobelow,
       spec_alignment: SpecAlignment
     }
@@ -242,15 +238,7 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
     |> Enum.flat_map(fn
       {:ok, {:ok, analyzer_name, problems}} ->
         Logger.debug("Analyzer #{analyzer_name} completed with #{length(problems)} problems")
-
-        # Ensure all problems have project_id set
-        Enum.map(problems, fn problem ->
-          if is_nil(problem.project_id) do
-            Map.put(problem, :project_id, project_id)
-          else
-            problem
-          end
-        end)
+        Enum.map(problems, &ensure_project_id(&1, project_id))
 
       {:ok, {:error, analyzer_name, reason}} ->
         Logger.warning("Analyzer #{analyzer_name} failed: #{inspect(reason)}")
@@ -269,6 +257,12 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
         []
     end)
   end
+
+  defp ensure_project_id(%{project_id: nil} = problem, project_id) do
+    Map.put(problem, :project_id, project_id)
+  end
+
+  defp ensure_project_id(problem, _project_id), do: problem
 
   # Handle case when scope doesn't have active_project_id (shouldn't happen but be defensive)
   defp aggregate_results(stream_results, _scope) do

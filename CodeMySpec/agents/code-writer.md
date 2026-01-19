@@ -60,7 +60,6 @@ end
 - **Moduledoc required** - Describe the module's purpose
 - **No dead code** - Don't include unused functions or commented-out code
 - **Follow conventions** - Use project patterns for naming, error handling, etc.
-- **No dialyzer warnings** - Code must pass dialyzer without warnings
 - **No credo warnings** - Code must pass credo checks
 
 ## Common Patterns

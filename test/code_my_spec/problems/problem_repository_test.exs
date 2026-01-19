@@ -57,7 +57,6 @@ defmodule CodeMySpec.Problems.ProblemRepositoryTest do
 
     test "filters by source when source filter provided", %{scope: scope} do
       credo_problem = problem_fixture(scope, %{source: "credo"})
-      _dialyzer_problem = problem_fixture(scope, %{source: "dialyzer"})
 
       result = ProblemRepository.list_project_problems(scope, source: "credo")
 
@@ -115,7 +114,6 @@ defmodule CodeMySpec.Problems.ProblemRepositoryTest do
           category: "readability"
         })
 
-      _wrong_source = problem_fixture(scope, %{source: "dialyzer", severity: :error})
       _wrong_severity = problem_fixture(scope, %{source: "credo", severity: :warning})
 
       result =

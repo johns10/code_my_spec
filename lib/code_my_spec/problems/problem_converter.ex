@@ -1,6 +1,6 @@
 defmodule CodeMySpec.Problems.ProblemConverter do
   @moduledoc """
-  Utility module for transforming heterogeneous tool outputs (Credo, Dialyzer,
+  Utility module for transforming heterogeneous tool outputs (Credo,
   compiler warnings, test failures) into normalized Problem structs. Provides
   consistent data transformation regardless of source tool format.
   """
@@ -45,43 +45,6 @@ defmodule CodeMySpec.Problems.ProblemConverter do
         "column" => credo_data[:column] || credo_data["column"],
         "trigger" => credo_data[:trigger] || credo_data["trigger"],
         "scope" => credo_data[:scope] || credo_data["scope"]
-      }
-    }
-  end
-
-  @doc """
-  Transforms Dialyzer warnings into normalized Problem structs.
-
-  All Dialyzer warnings are mapped to :warning severity and categorized as
-  type problems. Preserves the full warning message and type information.
-
-  ## Examples
-
-      iex> dialyzer_data = %{
-      ...>   type: :warn_return_no_exit,
-      ...>   file: "lib/my_app/calculations.ex",
-      ...>   line: 23,
-      ...>   message: "Function calculate/2 has no local return.",
-      ...>   message_data: %{"function" => "calculate", "arity" => 2}
-      ...> }
-      iex> problem = ProblemConverter.from_dialyzer(dialyzer_data)
-      iex> problem.severity
-      :warning
-  """
-  @spec from_dialyzer(map()) :: %Problem{}
-  def from_dialyzer(dialyzer_data) do
-    %Problem{
-      severity: :warning,
-      source: "dialyzer",
-      source_type: :static_analysis,
-      file_path: dialyzer_data[:file] || dialyzer_data["file"],
-      line: dialyzer_data[:line] || dialyzer_data["line"],
-      message: dialyzer_data[:message] || dialyzer_data["message"],
-      category: "type",
-      rule: nil,
-      metadata: %{
-        "type" => dialyzer_data[:type] || dialyzer_data["type"],
-        "message_data" => dialyzer_data[:message_data] || dialyzer_data["message_data"]
       }
     }
   end

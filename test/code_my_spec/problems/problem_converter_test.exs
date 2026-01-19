@@ -51,50 +51,6 @@ defmodule CodeMySpec.Problems.ProblemConverterTest do
   end
 
   # ============================================================================
-  # Fixtures - Dialyzer Data
-  # ============================================================================
-
-  defp dialyzer_function_has_no_local_return do
-    %{
-      "type" => :warn_return_no_exit,
-      "file" => "lib/my_app/calculations.ex",
-      "line" => 23,
-      "message" => "Function calculate/2 has no local return.",
-      "message_data" => %{
-        "function" => "calculate",
-        "arity" => 2
-      }
-    }
-  end
-
-  defp dialyzer_type_mismatch do
-    %{
-      "type" => :warn_contract_types,
-      "file" => "lib/my_app/user.ex",
-      "line" => 56,
-      "message" =>
-        "Type specification is not equal to the success typing: (integer()) -> binary().",
-      "message_data" => %{
-        "spec" => "(String.t()) -> integer()",
-        "success_typing" => "(integer()) -> binary()"
-      }
-    }
-  end
-
-  defp dialyzer_unknown_function do
-    %{
-      "type" => :warn_callgraph,
-      "file" => "lib/my_app/api.ex",
-      "line" => 101,
-      "message" => "Call to unknown function NonExistent.do_something/1.",
-      "message_data" => %{
-        "function" => "NonExistent.do_something",
-        "arity" => 1
-      }
-    }
-  end
-
-  # ============================================================================
   # Fixtures - Compiler Data
   # ============================================================================
 
@@ -103,7 +59,8 @@ defmodule CodeMySpec.Problems.ProblemConverterTest do
       "severity" => "warning",
       "file" => "lib/my_app/service.ex",
       "line" => 34,
-      "message" => "variable \"result\" is unused (if the variable is not meant to be used, prefix it with an underscore)"
+      "message" =>
+        "variable \"result\" is unused (if the variable is not meant to be used, prefix it with an underscore)"
     }
   end
 
@@ -190,50 +147,6 @@ defmodule CodeMySpec.Problems.ProblemConverterTest do
       assert problem.metadata["check"] == "Credo.Check.Readability.ModuleDoc"
       assert problem.metadata["priority"] == 10
       assert problem.metadata["category"] == :readability
-    end
-  end
-
-  # ============================================================================
-  # from_dialyzer/1 Tests
-  # ============================================================================
-
-  describe "from_dialyzer/1" do
-    test "sets severity to :warning" do
-      no_return = ProblemConverter.from_dialyzer(dialyzer_function_has_no_local_return())
-      assert no_return.severity == :warning
-
-      type_mismatch = ProblemConverter.from_dialyzer(dialyzer_type_mismatch())
-      assert type_mismatch.severity == :warning
-
-      unknown_fn = ProblemConverter.from_dialyzer(dialyzer_unknown_function())
-      assert unknown_fn.severity == :warning
-    end
-
-    test "extracts location information correctly" do
-      problem = ProblemConverter.from_dialyzer(dialyzer_function_has_no_local_return())
-      assert problem.file_path == "lib/my_app/calculations.ex"
-      assert problem.line == 23
-    end
-
-    test "categorizes all Dialyzer output as type Problems" do
-      no_return = ProblemConverter.from_dialyzer(dialyzer_function_has_no_local_return())
-      assert no_return.category == "type"
-
-      type_mismatch = ProblemConverter.from_dialyzer(dialyzer_type_mismatch())
-      assert type_mismatch.category == "type"
-
-      unknown_fn = ProblemConverter.from_dialyzer(dialyzer_unknown_function())
-      assert unknown_fn.category == "type"
-    end
-
-    test "preserves full warning message" do
-      problem = ProblemConverter.from_dialyzer(dialyzer_function_has_no_local_return())
-      assert problem.message == "Function calculate/2 has no local return."
-
-      problem2 = ProblemConverter.from_dialyzer(dialyzer_type_mismatch())
-
-      assert problem2.message ==
-               "Type specification is not equal to the success typing: (integer()) -> binary()."
     end
   end
 

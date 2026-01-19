@@ -3,7 +3,7 @@ defmodule CodeMySpec.StaticAnalysis.AnalyzerBehaviour do
   Behaviour defining the interface that all static analyzers must implement.
 
   Specifies callbacks for running analysis and checking availability. Each analyzer
-  implements these callbacks to execute its specific tool (Credo, Dialyzer, Boundary,
+  implements these callbacks to execute its specific tool (Credo, Boundary,
   Sobelow, or custom analyzers) and normalize results into Problem structs for
   consistent reporting.
 
@@ -55,7 +55,7 @@ defmodule CodeMySpec.StaticAnalysis.AnalyzerBehaviour do
 
   ## Returns
 
-  A string identifying the analyzer (e.g., "Credo", "Dialyzer", "Boundary", "Sobelow")
+  A string identifying the analyzer (e.g., "Credo", "Boundary", "Sobelow")
   """
   @callback name() :: String.t()
 end

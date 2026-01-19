@@ -6,14 +6,14 @@ defmodule CodeMySpec.Utils.Data do
 
   require Logger
 
-  alias CodeMySpec.Repo
   alias CodeMySpec.Accounts.Account
-  alias CodeMySpec.Projects.Project
-  alias CodeMySpec.Components.Component
-  alias CodeMySpec.Sessions.Session
-  alias CodeMySpec.Users.User
   alias CodeMySpec.Accounts.Member
+  alias CodeMySpec.Components.Component
+  alias CodeMySpec.Projects.Project
+  alias CodeMySpec.Repo
+  alias CodeMySpec.Sessions.Session
   alias CodeMySpec.Stories.Story
+  alias CodeMySpec.Users.User
   alias PaperTrail.Version
 
   import Ecto.Query
@@ -38,14 +38,7 @@ defmodule CodeMySpec.Utils.Data do
     else
       Repo.transaction(fn ->
         account_id = Map.get(data.account, :id)
-
-        # Wipe existing data for this account if it has an ID
-        if account_id do
-          Logger.info("Wiping existing data for account #{account_id}...")
-          wipe_account_data(account_id)
-        else
-          Logger.info("Creating new account...")
-        end
+        maybe_wipe_account_data(account_id)
 
         # Insert fresh data in dependency order
         Logger.info("Inserting account data...")
@@ -273,6 +266,15 @@ defmodule CodeMySpec.Utils.Data do
     end
   end
 
+  defp maybe_wipe_account_data(nil) do
+    Logger.info("Creating new account...")
+  end
+
+  defp maybe_wipe_account_data(account_id) do
+    Logger.info("Wiping existing data for account #{account_id}...")
+    wipe_account_data(account_id)
+  end
+
   # Wipe all data for an account
   defp wipe_account_data(account_id) do
     # Get user IDs for this account before deleting anything
@@ -347,7 +349,6 @@ defmodule CodeMySpec.Utils.Data do
     end)
   end
 
-  @dialyzer {:nowarn_function, insert_components: 1}
   defp insert_components(components_data) do
     # Sort components so parents are inserted before children
     sorted_components = sort_components_by_dependency(components_data)
