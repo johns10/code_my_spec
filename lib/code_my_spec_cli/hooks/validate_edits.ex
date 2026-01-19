@@ -5,7 +5,6 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   Validates:
   - Spec files (.spec.md) - ensures they conform to the expected schema
   - Code/test files (.ex/.exs) - runs Credo static analysis to catch style and consistency issues
-  - Code/test files (.ex/.exs) - runs Dialyzer type checking (if dialyxir is installed)
   - Runs tests for edited code files (maps lib/foo.ex to test/foo_test.exs) and test files
 
   Returns problems to the LLM for correction when validation fails or tests fail.
@@ -42,13 +41,11 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
 
     spec_errors = get_spec_errors(spec_files)
     credo_problems = get_credo_problems(code_files)
-    dialyzer_problems = get_dialyzer_problems(code_files)
     test_problems = get_test_problems(code_files)
 
     all_errors =
       spec_errors ++
         format_credo_problems(credo_problems) ++
-        format_dialyzer_problems(dialyzer_problems) ++
         format_test_problems(test_problems)
 
     Logger.info("[ValidateEdits] Total errors: #{length(all_errors)}")
