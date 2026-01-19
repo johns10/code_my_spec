@@ -13,7 +13,7 @@ defmodule CodeMySpec.Tests do
 
   ## Parameters
 
-  - `args` - List of arguments to pass to mix test (e.g., ["test", "--only", "integration"])
+  - `args` - List of arguments to pass to mix test (e.g., ["test/my_test.exs", "--only", "integration"])
   - `interaction_id` - Interaction identifier for status updates
 
   ## Returns
@@ -23,7 +23,7 @@ defmodule CodeMySpec.Tests do
 
   ## Example
 
-      {:ok, test_run} = Tests.execute(["test", "test/my_test.exs"], interaction_id)
+      {:ok, test_run} = Tests.execute(["test/my_test.exs"], interaction_id)
       test_run.stats.failures  # => 0
   """
   @spec execute(args :: [String.t()], interaction_id :: String.t()) ::
@@ -32,8 +32,11 @@ defmodule CodeMySpec.Tests do
     # Create temp file for clean JSON test results
     {:ok, temp_file} = Briefly.create()
 
+    # Build args for mix test (alias handles routing to agent_test in target project)
+    test_args = ["test" | args]
+
     # Build the command string for the test run record
-    command = "mix " <> Enum.join(args, " ")
+    command = "mix " <> Enum.join(test_args, " ")
 
     # Extract file_path from args (first arg that looks like a path)
     file_path = extract_file_path(args)
@@ -46,7 +49,7 @@ defmodule CodeMySpec.Tests do
         :stderr_to_stdout,
         :use_stdio,
         {:line, 2048},
-        {:args, args},
+        {:args, test_args},
         {:env,
          [
            {~c"MIX_ENV", ~c"test"},

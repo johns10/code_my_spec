@@ -195,7 +195,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   end
 
   defp run_tests(test_file_path) do
-    args = ["test", test_file_path, "--formatter", "ExUnitJsonFormatter"]
+    args = [test_file_path]
     interaction_id = "component_code_#{System.unique_integer([:positive])}"
 
     Tests.execute(args, interaction_id)

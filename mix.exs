@@ -76,9 +76,9 @@ defmodule CodeMySpec.MixProject do
 
       # Added by codemyspec
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
-      {:exunit_json_formatter,
-       git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
       {:mix_machine, git: "https://github.com/johns10/mix_machine", branch: "master"},
+      {:ex_cli_vcr, git: "https://github.com/johns10/ex_cli_vcr", branch: "main"},
+      {:client_utils, git: "https://github.com/Code-My-Spec/client_utils", branch: "main"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7.13"},
 
@@ -107,7 +107,6 @@ defmodule CodeMySpec.MixProject do
       {:httpoison, "~> 2.0"},
       {:uuid, "~> 1.1.8"},
       {:inflex, "~> 2.1.0"},
-      {:ex_cli_vcr, git: "https://github.com/johns10/ex_cli_vcr", branch: "main"},
 
       # CLI deps,
       {:burrito, "~> 1.5"},
@@ -130,7 +129,7 @@ defmodule CodeMySpec.MixProject do
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "agent_test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind code_my_spec", "esbuild code_my_spec"],
       "assets.deploy": [
