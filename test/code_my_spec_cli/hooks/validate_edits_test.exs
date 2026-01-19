@@ -1,8 +1,8 @@
 defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
   use CodeMySpec.DataCase, async: true
 
-  alias CodeMySpecCli.Hooks.ValidateEdits
   alias CodeMySpec.FileEdits
+  alias CodeMySpecCli.Hooks.ValidateEdits
 
   @moduletag :tmp_dir
 
@@ -139,15 +139,40 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
       assert {:ok, :valid} = ValidateEdits.run(session_id)
     end
 
-    test "returns {:ok, :valid} when session has only non-spec file edits", %{tmp_dir: tmp_dir} do
+    test "returns {:ok, :valid} when session has only non-spec file edits that pass Credo", %{
+      tmp_dir: tmp_dir
+    } do
       session_id = generate_session_id()
       ex_file = Path.join(tmp_dir, "lib/my_module.ex")
       File.mkdir_p!(Path.dirname(ex_file))
-      File.write!(ex_file, "defmodule MyModule do\nend")
+
+      # Use a Credo-compliant module (with @moduledoc and final newline)
+      File.write!(ex_file, """
+      defmodule MyModule do
+        @moduledoc false
+      end
+      """)
 
       track_edit(session_id, ex_file)
 
       assert {:ok, :valid} = ValidateEdits.run(session_id)
+    end
+
+    test "returns {:error, errors} when code file has Credo issues", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
+      ex_file = Path.join(tmp_dir, "lib/bad_module.ex")
+      File.mkdir_p!(Path.dirname(ex_file))
+
+      # Module without @moduledoc - Credo will flag this
+      File.write!(ex_file, "defmodule BadModule do\nend")
+
+      track_edit(session_id, ex_file)
+
+      assert {:error, errors} = ValidateEdits.run(session_id)
+      assert is_list(errors)
+      assert length(errors) > 0
+      # The error should mention Credo
+      assert Enum.any?(errors, &String.contains?(&1, "Credo"))
     end
 
     test "returns {:ok, :valid} when single valid spec file was edited", %{tmp_dir: tmp_dir} do
@@ -375,6 +400,36 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
       refute ValidateEdits.spec_file?("/path/to/Makefile")
       refute ValidateEdits.spec_file?("/path/to/Dockerfile")
       refute ValidateEdits.spec_file?("README")
+    end
+  end
+
+  # ============================================================================
+  # elixir_file?/1 Tests
+  # ============================================================================
+
+  describe "elixir_file?/1" do
+    test "returns true for paths ending in .ex" do
+      assert ValidateEdits.elixir_file?("/lib/my_module.ex")
+      assert ValidateEdits.elixir_file?("/path/to/deep/nested/module.ex")
+      assert ValidateEdits.elixir_file?("module.ex")
+    end
+
+    test "returns true for paths ending in .exs" do
+      assert ValidateEdits.elixir_file?("/test/my_module_test.exs")
+      assert ValidateEdits.elixir_file?("/config/config.exs")
+      assert ValidateEdits.elixir_file?("mix.exs")
+    end
+
+    test "returns false for non-Elixir files" do
+      refute ValidateEdits.elixir_file?("/path/to/file.rb")
+      refute ValidateEdits.elixir_file?("/path/to/file.js")
+      refute ValidateEdits.elixir_file?("/path/to/README.md")
+      refute ValidateEdits.elixir_file?("/path/to/module.spec.md")
+    end
+
+    test "returns false for files without extension" do
+      refute ValidateEdits.elixir_file?("/path/to/Makefile")
+      refute ValidateEdits.elixir_file?("Dockerfile")
     end
   end
 

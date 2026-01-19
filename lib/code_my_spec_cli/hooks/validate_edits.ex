@@ -1,19 +1,26 @@
 defmodule CodeMySpecCli.Hooks.ValidateEdits do
   @moduledoc """
-  Claude Code stop hook handler that validates spec files written or edited during an agent session.
-  Ensures all spec files conform to the expected schema.
+  Claude Code stop hook handler that validates files written or edited during an agent session.
+
+  Validates:
+  - Spec files (.spec.md) - ensures they conform to the expected schema
+  - Code/test files (.ex/.exs) - runs Credo static analysis to catch style and consistency issues
   """
 
   require Logger
 
   alias CodeMySpec.Documents
   alias CodeMySpec.FileEdits
+  alias CodeMySpec.Problems
+  alias CodeMySpec.Problems.ProblemRenderer
 
   @doc """
-  Validate spec files edited during a session.
+  Validate files edited during a session.
 
   Retrieves edited files from FileEdits (tracked by TrackEdits hook during PostToolUse)
-  and validates any .spec.md files against their expected schema.
+  and validates:
+  - Spec files (.spec.md) against their expected schema
+  - Code/test files (.ex/.exs) using Credo static analysis
   """
   @spec run(String.t()) :: {:ok, :valid} | {:error, [String.t()]}
   def run(session_id) do
@@ -23,12 +30,20 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
     Logger.info("[ValidateEdits] All edited files: #{inspect(all_files)}")
 
     spec_files = Enum.filter(all_files, &spec_file?/1)
+    code_files = Enum.filter(all_files, &elixir_file?/1)
     Logger.info("[ValidateEdits] Spec files to validate: #{inspect(spec_files)}")
+    Logger.info("[ValidateEdits] Code files to check with Credo: #{inspect(code_files)}")
 
-    result = validate_spec_files(spec_files)
-    Logger.info("[ValidateEdits] Validation result: #{inspect(result)}")
+    spec_errors = get_spec_errors(spec_files)
+    credo_problems = get_credo_problems(code_files)
 
-    result
+    all_errors = spec_errors ++ format_credo_problems(credo_problems)
+    Logger.info("[ValidateEdits] Total errors: #{length(all_errors)}")
+
+    case all_errors do
+      [] -> {:ok, :valid}
+      errors -> {:error, errors}
+    end
   end
 
   @doc """
@@ -41,21 +56,6 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
     Logger.info("[ValidateEdits] JSON output: #{json}")
     IO.puts(json)
     :ok
-  end
-
-  defp validate_spec_files([]), do: {:ok, :valid}
-
-  defp validate_spec_files(spec_paths) do
-    errors =
-      spec_paths
-      |> Enum.map(&validate_with_path/1)
-      |> Enum.reject(&(&1 == :ok))
-      |> Enum.map(fn {:error, path, reason} -> "#{path}: #{reason}" end)
-
-    case errors do
-      [] -> {:ok, :valid}
-      errors -> {:error, errors}
-    end
   end
 
   defp validate_with_path(path) do
@@ -133,6 +133,122 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   @spec spec_file?(Path.t()) :: boolean()
   def spec_file?(file_path) do
     String.ends_with?(file_path, ".spec.md")
+  end
+
+  @spec elixir_file?(Path.t()) :: boolean()
+  def elixir_file?(file_path) do
+    String.ends_with?(file_path, ".ex") or String.ends_with?(file_path, ".exs")
+  end
+
+  # Extract spec validation errors as a list of strings
+  defp get_spec_errors([]), do: []
+
+  defp get_spec_errors(spec_paths) do
+    spec_paths
+    |> Enum.map(&validate_with_path/1)
+    |> Enum.reject(&(&1 == :ok))
+    |> Enum.map(fn {:error, path, reason} -> "#{path}: #{reason}" end)
+  end
+
+  # Run Credo on specific files and return Problem structs
+  defp get_credo_problems([]), do: []
+
+  defp get_credo_problems(file_paths) do
+    Logger.info("[ValidateEdits] Running Credo on #{length(file_paths)} files")
+
+    # Determine project root (cwd) from the first file path
+    cwd = find_project_root(hd(file_paths))
+
+    case cwd do
+      nil ->
+        Logger.warning("[ValidateEdits] Could not determine project root, skipping Credo")
+        []
+
+      project_root ->
+        run_credo_on_files(file_paths, project_root)
+    end
+  end
+
+  defp find_project_root(file_path) do
+    # Walk up the directory tree to find mix.exs
+    file_path
+    |> Path.dirname()
+    |> find_mix_exs_dir()
+  end
+
+  defp find_mix_exs_dir("/"), do: nil
+  defp find_mix_exs_dir(""), do: nil
+
+  defp find_mix_exs_dir(dir) do
+    if File.exists?(Path.join(dir, "mix.exs")) do
+      dir
+    else
+      parent = Path.dirname(dir)
+
+      if parent == dir do
+        nil
+      else
+        find_mix_exs_dir(parent)
+      end
+    end
+  end
+
+  defp run_credo_on_files(file_paths, project_root) do
+    # Check if Credo is available
+    credo_dir = Path.join(project_root, "deps/credo")
+
+    if File.dir?(credo_dir) do
+      execute_credo(file_paths, project_root)
+    else
+      Logger.info("[ValidateEdits] Credo not installed, skipping static analysis")
+      []
+    end
+  end
+
+  defp execute_credo(file_paths, project_root) do
+    # Build credo command with specific files
+    args = ["credo", "suggest", "--format", "json", "--all-priorities" | file_paths]
+    Logger.info("[ValidateEdits] Running: mix #{Enum.join(args, " ")}")
+
+    case System.cmd("mix", args, cd: project_root, stderr_to_stdout: true) do
+      {output, exit_code} when exit_code <= 128 ->
+        parse_credo_output(output)
+
+      {output, exit_code} ->
+        Logger.error("[ValidateEdits] Credo failed with exit code #{exit_code}: #{output}")
+        []
+    end
+  rescue
+    exception ->
+      Logger.error("[ValidateEdits] Credo execution error: #{Exception.message(exception)}")
+      []
+  end
+
+  defp parse_credo_output(output) do
+    case Jason.decode(output) do
+      {:ok, %{"issues" => issues}} when is_list(issues) ->
+        Enum.map(issues, &Problems.from_credo/1)
+
+      {:ok, %{}} ->
+        []
+
+      {:error, %Jason.DecodeError{} = error} ->
+        Logger.error("[ValidateEdits] Failed to parse Credo JSON: #{Exception.message(error)}")
+        []
+    end
+  end
+
+  # Format Problem structs into a single feedback string using the renderer
+  defp format_credo_problems([]), do: []
+
+  defp format_credo_problems(problems) do
+    feedback =
+      ProblemRenderer.render_for_feedback(problems,
+        context: "Credo static analysis found issues in edited files:",
+        max_problems: 20
+      )
+
+    [feedback]
   end
 
   @spec format_output({:ok, :valid} | {:error, [String.t()]}) :: map()
