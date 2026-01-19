@@ -7,54 +7,40 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   require Logger
 
   alias CodeMySpec.Documents
-  alias CodeMySpec.Transcripts
+  alias CodeMySpec.FileEdits
 
-  @spec run(Path.t()) :: {:ok, :valid} | {:error, [String.t()]}
-  def run(transcript_path) do
-    Logger.info("[ValidateEdits] Starting validation for transcript: #{transcript_path}")
+  @doc """
+  Validate spec files edited during a session.
 
-    with {:ok, transcript} <- parse_transcript(transcript_path) do
-      all_files = Transcripts.extract_edited_files(transcript)
-      Logger.info("[ValidateEdits] All edited files: #{inspect(all_files)}")
+  Retrieves edited files from FileEdits (tracked by TrackEdits hook during PostToolUse)
+  and validates any .spec.md files against their expected schema.
+  """
+  @spec run(String.t()) :: {:ok, :valid} | {:error, [String.t()]}
+  def run(session_id) do
+    Logger.info("[ValidateEdits] Starting validation for session: #{session_id}")
 
-      spec_files = Enum.filter(all_files, &spec_file?/1)
-      Logger.info("[ValidateEdits] Spec files to validate: #{inspect(spec_files)}")
+    all_files = FileEdits.get_edited_files(session_id)
+    Logger.info("[ValidateEdits] All edited files: #{inspect(all_files)}")
 
-      result = validate_spec_files(spec_files)
-      Logger.info("[ValidateEdits] Validation result: #{inspect(result)}")
+    spec_files = Enum.filter(all_files, &spec_file?/1)
+    Logger.info("[ValidateEdits] Spec files to validate: #{inspect(spec_files)}")
 
-      result
-    end
+    result = validate_spec_files(spec_files)
+    Logger.info("[ValidateEdits] Validation result: #{inspect(result)}")
+
+    result
   end
 
   @doc """
   Run validation and output JSON result to stdout.
   """
-  @spec run_and_output(Path.t()) :: :ok
-  def run_and_output(transcript_path) do
-    result = run(transcript_path)
+  @spec run_and_output(String.t()) :: :ok
+  def run_and_output(session_id) do
+    result = run(session_id)
     json = Jason.encode!(format_output(result))
     Logger.info("[ValidateEdits] JSON output: #{json}")
     IO.puts(json)
     :ok
-  end
-
-  defp parse_transcript(path) do
-    Logger.info("[ValidateEdits] Parsing transcript at: #{path}")
-
-    case Transcripts.parse(path) do
-      {:ok, transcript} ->
-        Logger.info("[ValidateEdits] Transcript parsed successfully")
-        {:ok, transcript}
-
-      {:error, :file_not_found} ->
-        Logger.error("[ValidateEdits] Transcript file not found: #{path}")
-        {:error, [:file_not_found]}
-
-      {:error, reason} ->
-        Logger.error("[ValidateEdits] Failed to parse transcript: #{inspect(reason)}")
-        {:error, ["Failed to parse transcript"]}
-    end
   end
 
   defp validate_spec_files([]), do: {:ok, :valid}

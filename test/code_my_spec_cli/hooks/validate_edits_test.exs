@@ -1,8 +1,8 @@
 defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
-  use ExUnit.Case, async: true
+  use CodeMySpec.DataCase, async: true
 
   alias CodeMySpecCli.Hooks.ValidateEdits
-  alias CodeMySpec.TranscriptFixtures
+  alias CodeMySpec.FileEdits
 
   @moduletag :tmp_dir
 
@@ -110,14 +110,11 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
   end
 
   # ============================================================================
-  # Fixtures - Transcript Creation
+  # Helpers
   # ============================================================================
 
-  defp create_transcript_file(tmp_dir, entries) do
-    content = TranscriptFixtures.to_jsonl_content(entries)
-    path = Path.join(tmp_dir, "transcript.jsonl")
-    File.write!(path, content)
-    path
+  defp generate_session_id do
+    Ecto.UUID.generate()
   end
 
   defp create_spec_file(tmp_dir, relative_path, content) do
@@ -127,61 +124,8 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
     full_path
   end
 
-  defp transcript_with_spec_edit(spec_path) do
-    [
-      TranscriptFixtures.user_entry_json(),
-      TranscriptFixtures.assistant_entry_with_tools([
-        TranscriptFixtures.edit_tool_json(%{
-          "input" => %{
-            "file_path" => spec_path,
-            "old_string" => "foo",
-            "new_string" => "bar"
-          }
-        })
-      ])
-    ]
-  end
-
-  defp transcript_with_multiple_spec_edits(spec_paths) do
-    tool_blocks =
-      Enum.map(spec_paths, fn path ->
-        TranscriptFixtures.edit_tool_json(%{
-          "id" => "edit_#{:erlang.phash2(path)}",
-          "input" => %{"file_path" => path, "old_string" => "a", "new_string" => "b"}
-        })
-      end)
-
-    [
-      TranscriptFixtures.user_entry_json(),
-      TranscriptFixtures.assistant_entry_with_tools(tool_blocks)
-    ]
-  end
-
-  defp transcript_with_non_spec_edit(file_path) do
-    [
-      TranscriptFixtures.user_entry_json(),
-      TranscriptFixtures.assistant_entry_with_tools([
-        TranscriptFixtures.edit_tool_json(%{
-          "input" => %{
-            "file_path" => file_path,
-            "old_string" => "foo",
-            "new_string" => "bar"
-          }
-        })
-      ])
-    ]
-  end
-
-  defp empty_transcript do
-    [TranscriptFixtures.user_entry_json(), TranscriptFixtures.assistant_entry_json()]
-  end
-
-  defp malformed_transcript_content do
-    """
-    {"type": "user", "uuid": "123"}
-    {invalid json here
-    {"type": "assistant", "uuid": "456"}
-    """
+  defp track_edit(session_id, file_path) do
+    FileEdits.track_edit(session_id, file_path)
   end
 
   # ============================================================================
@@ -189,33 +133,34 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
   # ============================================================================
 
   describe "run/1" do
-    test "returns {:ok, :valid} when transcript has no file edits", %{tmp_dir: tmp_dir} do
-      transcript_path = create_transcript_file(tmp_dir, empty_transcript())
+    test "returns {:ok, :valid} when session has no file edits" do
+      session_id = generate_session_id()
 
-      assert {:ok, :valid} = ValidateEdits.run(transcript_path)
+      assert {:ok, :valid} = ValidateEdits.run(session_id)
     end
 
-    test "returns {:ok, :valid} when transcript has only non-spec file edits", %{tmp_dir: tmp_dir} do
+    test "returns {:ok, :valid} when session has only non-spec file edits", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
       ex_file = Path.join(tmp_dir, "lib/my_module.ex")
       File.mkdir_p!(Path.dirname(ex_file))
       File.write!(ex_file, "defmodule MyModule do\nend")
 
-      entries = transcript_with_non_spec_edit(ex_file)
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, ex_file)
 
-      assert {:ok, :valid} = ValidateEdits.run(transcript_path)
+      assert {:ok, :valid} = ValidateEdits.run(session_id)
     end
 
     test "returns {:ok, :valid} when single valid spec file was edited", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
       spec_path = create_spec_file(tmp_dir, "docs/spec/my_module.spec.md", valid_spec_content())
 
-      entries = transcript_with_spec_edit(spec_path)
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, spec_path)
 
-      assert {:ok, :valid} = ValidateEdits.run(transcript_path)
+      assert {:ok, :valid} = ValidateEdits.run(session_id)
     end
 
     test "returns {:ok, :valid} when multiple valid spec files were edited", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
       spec1 = create_spec_file(tmp_dir, "docs/spec/module_a.spec.md", valid_spec_content())
 
       spec2 =
@@ -225,15 +170,17 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
           valid_spec_with_functions_content()
         )
 
-      entries = transcript_with_multiple_spec_edits([spec1, spec2])
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, spec1)
+      track_edit(session_id, spec2)
 
-      assert {:ok, :valid} = ValidateEdits.run(transcript_path)
+      assert {:ok, :valid} = ValidateEdits.run(session_id)
     end
 
     test "returns {:error, [errors]} when spec file is missing required sections", %{
       tmp_dir: tmp_dir
     } do
+      session_id = generate_session_id()
+
       spec_path =
         create_spec_file(
           tmp_dir,
@@ -241,77 +188,65 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
           spec_missing_required_sections()
         )
 
-      entries = transcript_with_spec_edit(spec_path)
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, spec_path)
 
-      assert {:error, errors} = ValidateEdits.run(transcript_path)
+      assert {:error, errors} = ValidateEdits.run(session_id)
       assert is_list(errors)
       assert length(errors) > 0
     end
 
     test "returns {:error, [errors]} when spec file has disallowed sections", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
+
       spec_path =
         create_spec_file(tmp_dir, "docs/spec/bad.spec.md", spec_with_disallowed_sections())
 
-      entries = transcript_with_spec_edit(spec_path)
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, spec_path)
 
-      assert {:error, errors} = ValidateEdits.run(transcript_path)
+      assert {:error, errors} = ValidateEdits.run(session_id)
       assert is_list(errors)
       assert Enum.any?(errors, &String.contains?(&1, "Disallowed"))
     end
 
     test "includes file path in error message for identification", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
+
       spec_path =
         create_spec_file(tmp_dir, "docs/spec/invalid.spec.md", spec_missing_required_sections())
 
-      entries = transcript_with_spec_edit(spec_path)
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, spec_path)
 
-      assert {:error, errors} = ValidateEdits.run(transcript_path)
+      assert {:error, errors} = ValidateEdits.run(session_id)
       assert Enum.any?(errors, &String.contains?(&1, spec_path))
     end
 
     test "validates all spec files before returning collected errors", %{tmp_dir: tmp_dir} do
+      session_id = generate_session_id()
+
       spec1 =
         create_spec_file(tmp_dir, "docs/spec/bad_one.spec.md", spec_missing_required_sections())
 
       spec2 =
         create_spec_file(tmp_dir, "docs/spec/bad_two.spec.md", spec_with_disallowed_sections())
 
-      entries = transcript_with_multiple_spec_edits([spec1, spec2])
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, spec1)
+      track_edit(session_id, spec2)
 
-      assert {:error, errors} = ValidateEdits.run(transcript_path)
+      assert {:error, errors} = ValidateEdits.run(session_id)
       assert length(errors) >= 2
       assert Enum.any?(errors, &String.contains?(&1, "bad_one.spec.md"))
       assert Enum.any?(errors, &String.contains?(&1, "bad_two.spec.md"))
     end
 
-    test "handles transcript parse failure gracefully", %{tmp_dir: tmp_dir} do
-      malformed_path = Path.join(tmp_dir, "malformed.jsonl")
-      File.write!(malformed_path, malformed_transcript_content())
-
-      assert {:error, _reason} = ValidateEdits.run(malformed_path)
-    end
-
     test "handles file read failure gracefully (file deleted after edit)", %{tmp_dir: tmp_dir} do
-      # Create transcript referencing a spec file that doesn't exist
+      session_id = generate_session_id()
+      # Track an edit to a spec file that doesn't exist
       nonexistent_spec = Path.join(tmp_dir, "docs/spec/deleted.spec.md")
 
-      entries = transcript_with_spec_edit(nonexistent_spec)
-      transcript_path = create_transcript_file(tmp_dir, entries)
+      track_edit(session_id, nonexistent_spec)
 
-      assert {:error, errors} = ValidateEdits.run(transcript_path)
+      assert {:error, errors} = ValidateEdits.run(session_id)
       assert is_list(errors)
-    end
-
-    test "returns {:error, [:file_not_found]} when transcript path does not exist", %{
-      tmp_dir: tmp_dir
-    } do
-      nonexistent_path = Path.join(tmp_dir, "nonexistent.jsonl")
-
-      assert {:error, [:file_not_found]} = ValidateEdits.run(nonexistent_path)
     end
   end
 

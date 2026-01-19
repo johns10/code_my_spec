@@ -28,8 +28,11 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   alias CodeMySpec.Sessions.CurrentSession
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
-
-  def execute(scope, args) do
+  @doc """
+  Run evaluation and return the result map for hook output.
+  Does not perform any IO - caller is responsible for output.
+  """
+  def run(scope, args) do
     session_id_arg = Map.get(args, :session_id)
 
     with {:ok, session_id} when not is_nil(session_id) <- resolve_session_id(session_id_arg),
@@ -38,19 +41,27 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
          {:ok, sync_result} <- sync_project(scope),
          result <- session.type.evaluate(scope, task_session) do
       output_sync_metrics(sync_result)
-      handle_result(result)
+      format_result(result)
     else
       {:ok, nil} ->
-        handle_result({:ok, nil})
+        format_result({:ok, nil})
 
       {:error, reason} ->
-        # Block Claude and provide the error as feedback so it can fix the issue
-        handle_setup_error(reason)
+        format_setup_error(reason)
     end
   rescue
     error ->
       IO.puts(:stderr, "Error: #{Exception.message(error)}")
-      {:error, Exception.message(error)}
+      %{}
+  end
+
+  @doc """
+  Execute evaluation with IO output. Legacy interface for direct CLI usage.
+  """
+  def execute(scope, args) do
+    result = run(scope, args)
+    IO.puts(Jason.encode!(result))
+    :ok
   end
 
   defp resolve_session_id(nil) do
@@ -84,39 +95,26 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
      }}
   end
 
-  defp handle_result({:ok, nil}) do
-    :ok
-  end
+  defp format_result({:ok, nil}), do: %{}
 
-  defp handle_result({:ok, :valid}) do
+  defp format_result({:ok, :valid}) do
     CurrentSession.clear()
     IO.puts(:stderr, "All checks passed!")
-    # Empty map = no decision = Claude can stop
-    IO.puts(Jason.encode!(%{}))
-    :ok
+    %{}
   end
 
-  defp handle_result({:ok, :invalid, feedback}) do
-    # Output JSON to stdout to block Claude from stopping
-    decision = %{"decision" => "block", "reason" => feedback}
-    IO.puts(Jason.encode!(decision))
-    :ok
+  defp format_result({:ok, :invalid, feedback}) do
+    %{"decision" => "block", "reason" => feedback}
   end
 
-  defp handle_result({:error, reason}) do
+  defp format_result({:error, reason}) do
     IO.puts(:stderr, "Error: #{format_error(reason)}")
-    # Empty map = no decision = Claude can stop (even on error)
-    IO.puts(Jason.encode!(%{}))
-    {:error, reason}
+    %{}
   end
 
-  defp handle_setup_error(reason) do
-    # Setup errors (no session, session not found, etc.) should block Claude
-    # and provide guidance on how to fix the issue
+  defp format_setup_error(reason) do
     IO.puts(:stderr, "Setup error: #{format_error(reason)}")
-    decision = %{"decision" => "block", "reason" => format_error(reason)}
-    IO.puts(Jason.encode!(decision))
-    {:error, reason}
+    %{"decision" => "block", "reason" => format_error(reason)}
   end
 
   defp sync_project(scope) do
