@@ -404,6 +404,33 @@ defmodule CodeMySpecCli.Hooks.ValidateEditsTest do
   end
 
   # ============================================================================
+  # test_file?/1 Tests
+  # ============================================================================
+
+  describe "test_file?/1" do
+    test "returns true for paths ending in _test.exs" do
+      assert ValidateEdits.test_file?("/test/my_module_test.exs")
+      assert ValidateEdits.test_file?("/path/to/deep/nested/foo_test.exs")
+      assert ValidateEdits.test_file?("module_test.exs")
+    end
+
+    test "returns true for paths in test directory" do
+      assert ValidateEdits.test_file?("/test/my_module.exs")
+      assert ValidateEdits.test_file?("/project/test/support/helpers.ex")
+    end
+
+    test "returns false for lib files" do
+      refute ValidateEdits.test_file?("/lib/my_module.ex")
+      refute ValidateEdits.test_file?("/lib/my_module_test.ex")
+    end
+
+    test "returns false for other files" do
+      refute ValidateEdits.test_file?("/config/config.exs")
+      refute ValidateEdits.test_file?("mix.exs")
+    end
+  end
+
+  # ============================================================================
   # elixir_file?/1 Tests
   # ============================================================================
 

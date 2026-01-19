@@ -5,6 +5,10 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   Validates:
   - Spec files (.spec.md) - ensures they conform to the expected schema
   - Code/test files (.ex/.exs) - runs Credo static analysis to catch style and consistency issues
+  - Code/test files (.ex/.exs) - runs Dialyzer type checking (if dialyxir is installed)
+  - Runs tests for edited code files (maps lib/foo.ex to test/foo_test.exs) and test files
+
+  Returns problems to the LLM for correction when validation fails or tests fail.
   """
 
   require Logger
@@ -13,6 +17,7 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   alias CodeMySpec.FileEdits
   alias CodeMySpec.Problems
   alias CodeMySpec.Problems.ProblemRenderer
+  alias CodeMySpec.Tests.TestRun
 
   @doc """
   Validate files edited during a session.
@@ -21,6 +26,7 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   and validates:
   - Spec files (.spec.md) against their expected schema
   - Code/test files (.ex/.exs) using Credo static analysis
+  - Runs tests for edited code and test files
   """
   @spec run(String.t()) :: {:ok, :valid} | {:error, [String.t()]}
   def run(session_id) do
@@ -36,8 +42,15 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
 
     spec_errors = get_spec_errors(spec_files)
     credo_problems = get_credo_problems(code_files)
+    dialyzer_problems = get_dialyzer_problems(code_files)
+    test_problems = get_test_problems(code_files)
 
-    all_errors = spec_errors ++ format_credo_problems(credo_problems)
+    all_errors =
+      spec_errors ++
+        format_credo_problems(credo_problems) ++
+        format_dialyzer_problems(dialyzer_problems) ++
+        format_test_problems(test_problems)
+
     Logger.info("[ValidateEdits] Total errors: #{length(all_errors)}")
 
     case all_errors do
@@ -246,6 +259,207 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
       ProblemRenderer.render_for_feedback(problems,
         context: "Credo static analysis found issues in edited files:",
         max_problems: 20
+      )
+
+    [feedback]
+  end
+
+  # ============================================================================
+  # Test Runner
+  # ============================================================================
+
+  # Run tests for edited code/test files and return Problem structs for failures
+  defp get_test_problems([]), do: []
+
+  defp get_test_problems(file_paths) do
+    Logger.info("[ValidateEdits] Finding tests for #{length(file_paths)} files")
+
+    # Determine project root from the first file
+    case find_project_root(hd(file_paths)) do
+      nil ->
+        Logger.warning("[ValidateEdits] Could not determine project root, skipping tests")
+        []
+
+      project_root ->
+        # Map files to their corresponding test files
+        test_files =
+          file_paths
+          |> Enum.flat_map(&find_test_files(&1, project_root))
+          |> Enum.uniq()
+          |> Enum.filter(&File.exists?/1)
+
+        Logger.info("[ValidateEdits] Test files to run: #{inspect(test_files)}")
+
+        case test_files do
+          [] ->
+            Logger.info("[ValidateEdits] No test files found, skipping tests")
+            []
+
+          files ->
+            run_tests(files, project_root)
+        end
+    end
+  end
+
+  # Find test files for a given source file
+  defp find_test_files(file_path, project_root) do
+    cond do
+      # If it's already a test file, use it directly
+      test_file?(file_path) ->
+        [file_path]
+
+      # If it's a lib file, map to corresponding test file
+      lib_file?(file_path) ->
+        [map_lib_to_test(file_path, project_root)]
+
+      # Other files (config, etc.) - no tests
+      true ->
+        []
+    end
+  end
+
+  @spec test_file?(Path.t()) :: boolean()
+  def test_file?(file_path) do
+    String.ends_with?(file_path, "_test.exs") or String.contains?(file_path, "/test/")
+  end
+
+  defp lib_file?(file_path) do
+    String.contains?(file_path, "/lib/") and String.ends_with?(file_path, ".ex")
+  end
+
+  # Map lib/foo/bar.ex to test/foo/bar_test.exs
+  defp map_lib_to_test(lib_path, project_root) do
+    # Extract the path relative to lib/
+    relative =
+      lib_path
+      |> String.replace(~r{.*/lib/}, "")
+      |> String.replace_suffix(".ex", "_test.exs")
+
+    Path.join([project_root, "test", relative])
+  end
+
+  defp run_tests(test_files, project_root) do
+    Logger.info("[ValidateEdits] Running #{length(test_files)} test files")
+
+    # Run mix test with the specific files
+    args = ["test", "--formatter", "ExUnit.CLIFormatter" | test_files]
+
+    case execute_tests(args, project_root) do
+      {:ok, %TestRun{failures: failures}} when failures != [] ->
+        Logger.info("[ValidateEdits] Found #{length(failures)} test failures")
+        convert_failures_to_problems(failures)
+
+      {:ok, %TestRun{execution_status: :error} = test_run} ->
+        Logger.error("[ValidateEdits] Test execution error: #{test_run.raw_output}")
+        # Return a single problem for the execution error
+        [
+          %Problems.Problem{
+            severity: :error,
+            source: "exunit",
+            source_type: :test,
+            file_path: hd(test_files),
+            message: "Test execution failed. Check compilation errors.",
+            category: "test_error"
+          }
+        ]
+
+      {:ok, _test_run} ->
+        Logger.info("[ValidateEdits] All tests passed")
+        []
+
+      {:error, reason} ->
+        Logger.error("[ValidateEdits] Test execution failed: #{inspect(reason)}")
+        []
+    end
+  end
+
+  defp execute_tests(args, project_root) do
+    # Create temp file for JSON test output
+    temp_file = Path.join(System.tmp_dir!(), "test_output_#{System.unique_integer([:positive])}.json")
+
+    # System.cmd expects string tuples for env, not charlists
+    env = [
+      {"MIX_ENV", "test"},
+      {"EXUNIT_JSON_OUTPUT_FILE", temp_file}
+    ]
+
+    Logger.info("[ValidateEdits] Running: mix #{Enum.join(args, " ")}")
+
+    case System.cmd("mix", args, cd: project_root, stderr_to_stdout: true, env: env) do
+      {output, exit_code} ->
+        # Read JSON from temp file
+        json_content =
+          case File.read(temp_file) do
+            {:ok, content} ->
+              File.rm(temp_file)
+              content
+
+            {:error, _} ->
+              File.rm(temp_file)
+              "{}"
+          end
+
+        parse_test_results(json_content, exit_code, output)
+    end
+  rescue
+    exception ->
+      Logger.error("[ValidateEdits] Test execution error: #{Exception.message(exception)}")
+      {:error, Exception.message(exception)}
+  end
+
+  defp parse_test_results(json_content, exit_code, raw_output) do
+    case Jason.decode(json_content) do
+      {:ok, data} ->
+        execution_status =
+          cond do
+            exit_code == 0 -> :success
+            get_in(data, ["stats", "failures"]) && get_in(data, ["stats", "failures"]) > 0 -> :failure
+            exit_code != 0 -> :error
+            true -> :error
+          end
+
+        test_run =
+          TestRun.changeset(%TestRun{}, Map.merge(data, %{
+            "exit_code" => exit_code,
+            "execution_status" => execution_status,
+            "raw_output" => raw_output
+          }))
+          |> Ecto.Changeset.apply_changes()
+
+        {:ok, test_run}
+
+      {:error, _} ->
+        # JSON parsing failed, try to determine status from exit code
+        {:ok,
+         %TestRun{
+           exit_code: exit_code,
+           execution_status: if(exit_code == 0, do: :success, else: :error),
+           raw_output: raw_output,
+           failures: []
+         }}
+    end
+  end
+
+  defp convert_failures_to_problems(failures) do
+    Enum.flat_map(failures, fn failure ->
+      case failure.error do
+        nil ->
+          []
+
+        error ->
+          [Problems.from_test_failure(error)]
+      end
+    end)
+  end
+
+  # Format test Problem structs into a single feedback string
+  defp format_test_problems([]), do: []
+
+  defp format_test_problems(problems) do
+    feedback =
+      ProblemRenderer.render_for_feedback(problems,
+        context: "Tests failed for edited files:",
+        max_problems: 10
       )
 
     [feedback]
