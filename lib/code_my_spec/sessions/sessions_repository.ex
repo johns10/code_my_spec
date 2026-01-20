@@ -53,6 +53,32 @@ defmodule CodeMySpec.Sessions.SessionsRepository do
     end
   end
 
+  @doc """
+  Gets the most recent active session by external conversation ID (Claude session ID).
+
+  Returns nil if no matching active session is found.
+  """
+  def get_active_session_by_external_id(%Scope{} = scope, external_id) do
+    Session
+    |> where([s], s.external_conversation_id == ^external_id)
+    |> where([s], s.status == :active)
+    |> where([s], s.project_id == ^scope.active_project_id)
+    |> where([s], s.user_id == ^scope.user.id)
+    |> order_by([s], desc: s.inserted_at)
+    |> limit(1)
+    |> preload([
+      :project,
+      :component,
+      [component: :parent_component],
+      [child_sessions: [component: :project]]
+    ])
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      session -> populate_display_name(session)
+    end
+  end
+
   def preload_session(%Scope{} = _scope, %Session{} = session),
     do:
       Repo.preload(session, [

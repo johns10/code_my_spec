@@ -210,5 +210,87 @@ defmodule CodeMySpec.SessionsTest do
       assert updated_session.execution_mode == :auto
       assert updated_session.interactions == []
     end
+
+    test "get_active_session_by_external_id/2 returns active session with matching external_id" do
+      scope = full_scope_fixture()
+      external_id = "claude-session-123"
+
+      session =
+        session_fixture(scope, %{
+          external_conversation_id: external_id,
+          status: :active
+        })
+
+      result = Sessions.get_active_session_by_external_id(scope, external_id)
+      assert result.id == session.id
+      assert result.external_conversation_id == external_id
+    end
+
+    test "get_active_session_by_external_id/2 returns nil when no matching session" do
+      scope = full_scope_fixture()
+      _session = session_fixture(scope, %{external_conversation_id: "other-id"})
+
+      assert Sessions.get_active_session_by_external_id(scope, "nonexistent-id") == nil
+    end
+
+    test "get_active_session_by_external_id/2 returns nil when session is not active" do
+      scope = full_scope_fixture()
+      external_id = "claude-session-456"
+
+      _session =
+        session_fixture(scope, %{
+          external_conversation_id: external_id,
+          status: :complete
+        })
+
+      assert Sessions.get_active_session_by_external_id(scope, external_id) == nil
+    end
+
+    test "get_active_session_by_external_id/2 returns most recent when multiple sessions exist" do
+      scope = full_scope_fixture()
+      external_id = "claude-session-789"
+
+      # Create first session
+      older_session =
+        session_fixture(scope, %{
+          external_conversation_id: external_id,
+          status: :active
+        })
+
+      # Backdate the older session's inserted_at to ensure ordering
+      import Ecto.Query
+      past_time = DateTime.add(DateTime.utc_now(), -3600, :second)
+
+      CodeMySpec.Repo.update_all(
+        from(s in Session, where: s.id == ^older_session.id),
+        set: [inserted_at: past_time]
+      )
+
+      # Create second session with same external_id (will have current timestamp)
+      newer_session =
+        session_fixture(scope, %{
+          external_conversation_id: external_id,
+          status: :active
+        })
+
+      result = Sessions.get_active_session_by_external_id(scope, external_id)
+      assert result.id == newer_session.id
+      assert result.id != older_session.id
+    end
+
+    test "get_active_session_by_external_id/2 respects scope boundaries" do
+      scope = full_scope_fixture()
+      other_scope = full_scope_fixture()
+      external_id = "claude-session-shared"
+
+      _session =
+        session_fixture(scope, %{
+          external_conversation_id: external_id,
+          status: :active
+        })
+
+      # Other scope should not see this session
+      assert Sessions.get_active_session_by_external_id(other_scope, external_id) == nil
+    end
   end
 end

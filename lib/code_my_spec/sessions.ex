@@ -87,6 +87,7 @@ defmodule CodeMySpec.Sessions do
 
   defdelegate get_session!(scope, id), to: SessionsRepository
   defdelegate get_session(scope, id), to: SessionsRepository
+  defdelegate get_active_session_by_external_id(scope, external_id), to: SessionsRepository
 
   defdelegate update_external_conversation_id(scope, session_id, external_conversation_id),
     to: SessionsRepository
