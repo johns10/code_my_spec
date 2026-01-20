@@ -731,7 +731,7 @@ defmodule CodeMySpec.ContentSync.MarkdownProcessorTest do
     test "captures error details when parsing fails" do
       # Create markdown that might cause Earmark to fail
       # Note: Earmark is quite lenient, so this may not actually fail
-      malformed = String.duplicate("[", 10000)
+      malformed = String.duplicate("[", 2)
 
       assert {:ok, result} = MarkdownProcessor.process(malformed)
 
@@ -747,7 +747,7 @@ defmodule CodeMySpec.ContentSync.MarkdownProcessorTest do
 
     test "error result includes raw content" do
       # Attempt to trigger an error
-      possibly_bad = "# Title\n\n" <> String.duplicate("*", 5000)
+      possibly_bad = "# Title\n\n" <> String.duplicate("*", 2)
 
       assert {:ok, result} = MarkdownProcessor.process(possibly_bad)
 

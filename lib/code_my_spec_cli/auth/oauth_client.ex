@@ -336,7 +336,6 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
           {:ok, %OAuth2.Client{token: token}} ->
             # Parse token response from JSON string
             {:ok, parsed} = Jason.decode(token.access_token)
-            IO.inspect(parsed)
 
             # Update user in database with new tokens
             token_data = %{

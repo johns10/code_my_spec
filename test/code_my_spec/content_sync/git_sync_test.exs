@@ -219,9 +219,15 @@ defmodule CodeMySpec.ContentSync.GitSyncTest do
   # ============================================================================
 
   describe "clone_to_temp/1 - integration test" do
+    setup do
+      # Use real Git.CLI for integration tests
+      Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Git.CLI)
+      on_exit(fn -> Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter) end)
+      :ok
+    end
+
     @tag :integration
     test "successfully clones real repository from GitHub" do
-      # Uses TestAdapter for fast, isolated git operations
       user = user_fixture()
       account = account_fixture(%{name: "Test Account"})
       token = "ghp_test_token_#{:rand.uniform(100_000)}"

@@ -16,12 +16,9 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
     project = project_fixture(scope, %{module_name: "TestPhoenixProject"})
     scope = user_scope_fixture(user, account, project)
 
-    # Clone test project using TestAdapter for proper isolation
-    project_dir =
-      "../code_my_spec_test_repos/spec_alignment_test_#{System.unique_integer([:positive])}"
-
-    {:ok, ^project_dir} =
-      CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+    # Clone from pool
+    {:ok, project_dir} =
+      CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url)
 
     # Update project with cloned repo path
     {:ok, updated_project} =
@@ -29,14 +26,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
 
     scope = user_scope_fixture(user, account, updated_project)
 
-    # Remove any existing spec files from the cloned project to avoid test pollution
-    spec_dir = Path.join(project_dir, "docs/spec")
-    if File.exists?(spec_dir), do: File.rm_rf!(spec_dir)
-
     on_exit(fn ->
-      if File.exists?(project_dir) do
-        File.rm_rf!(project_dir)
-      end
+      CodeMySpec.Support.TestAdapter.checkin(project_dir)
     end)
 
     %{scope: scope, project: updated_project, project_dir: project_dir}
@@ -101,7 +92,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
 
       File.write!(test_file, test_content)
 
-      assert {:ok, []} = SpecAlignment.run(scope, [])
+      # Scope to just our created spec file to avoid problems from fixture specs
+      assert {:ok, []} = SpecAlignment.run(scope, paths: ["docs/spec/my_module.spec.md"])
     end
 
     test "detects missing function implementations (function in spec but not in code)", %{
@@ -384,7 +376,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
       spec_file = Path.join(spec_dir, "non_existent_module.spec.md")
       File.write!(spec_file, spec_content)
 
-      assert {:ok, problems} = SpecAlignment.run(scope, [])
+      # Scope to just our created spec file
+      assert {:ok, problems} = SpecAlignment.run(scope, paths: ["docs/spec/non_existent_module.spec.md"])
 
       assert problems == []
     end
@@ -408,7 +401,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
 
       File.write!(impl_file, impl_content)
 
-      assert {:ok, problems} = SpecAlignment.run(scope, [])
+      # Use a path that has no spec files to test "no spec" scenario
+      assert {:ok, problems} = SpecAlignment.run(scope, paths: ["docs/spec/no_spec_module.spec.md"])
 
       assert problems == []
     end
@@ -509,7 +503,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
 
       File.write!(impl_file, impl_content)
 
-      assert {:ok, problems} = SpecAlignment.run(scope, [])
+      # Scope to just our created spec file
+      assert {:ok, problems} = SpecAlignment.run(scope, paths: ["docs/spec/my_module.spec.md"])
 
       assert problems == []
     end
@@ -743,8 +738,19 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
       assert problems == []
     end
 
-    test "returns error when spec directory doesn't exist", %{scope: scope} do
-      # Don't create spec directory - test project should not have one initially
+    test "returns error when spec directory doesn't exist", %{project_dir: project_dir} do
+      # Create a scope with a project pointing to a directory without docs/spec
+      user = user_fixture()
+      account = account_with_owner_fixture(user)
+      scope = user_scope_fixture(user, account)
+
+      # Use a temp directory without a spec folder
+      temp_dir = Path.join(project_dir, "_temp_no_spec")
+      File.mkdir_p!(temp_dir)
+
+      project = project_fixture(scope, %{code_repo: temp_dir})
+      scope = user_scope_fixture(user, account, project)
+
       assert {:error, message} = SpecAlignment.run(scope, [])
 
       assert is_binary(message)
@@ -763,7 +769,19 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
       assert SpecAlignment.available?(scope) == true
     end
 
-    test "returns false when spec directory doesn't exist", %{scope: scope} do
+    test "returns false when spec directory doesn't exist", %{project_dir: project_dir} do
+      # Create a scope with a project pointing to a directory without docs/spec
+      user = user_fixture()
+      account = account_with_owner_fixture(user)
+      scope = user_scope_fixture(user, account)
+
+      # Use a temp directory without a spec folder
+      temp_dir = Path.join(project_dir, "_temp_no_spec_avail")
+      File.mkdir_p!(temp_dir)
+
+      project = project_fixture(scope, %{code_repo: temp_dir})
+      scope = user_scope_fixture(user, account, project)
+
       assert SpecAlignment.available?(scope) == false
     end
 

@@ -20,16 +20,11 @@ defmodule CodeMySpec.ProjectSyncTest do
 
       scope = %{scope | active_project: project}
 
-      # Clone test_phoenix_project into a temp directory
-      project_dir =
-        "../code_my_spec_test_repos/project_sync_test_#{System.unique_integer([:positive])}"
-
-      # Use test adapter to clone
-      {:ok, ^project_dir} =
+      # Clone from pool
+      {:ok, project_dir} =
         CodeMySpec.Support.TestAdapter.clone(
           scope,
-          "https://github.com/johns10/test_phoenix_project.git",
-          project_dir
+          "https://github.com/johns10/test_phoenix_project.git"
         )
 
       {:ok, scope: scope, tmp_dir: project_dir}

@@ -11,6 +11,7 @@ defmodule CodeMySpec.StaticAnalysisTest do
   """
   use CodeMySpec.DataCase, async: false
 
+  use ExCliVcr
   import ExUnit.CaptureLog
   import CodeMySpec.UsersFixtures
   import CodeMySpec.AccountsFixtures
@@ -48,12 +49,9 @@ defmodule CodeMySpec.StaticAnalysisTest do
     project = project_fixture(scope, %{module_name: "TestPhoenixProject"})
     scope = user_scope_fixture(user, account, project)
 
-    # Clone test project using TestAdapter
-    project_dir =
-      "../code_my_spec_test_repos/static_analysis_test_#{System.unique_integer([:positive])}"
-
-    {:ok, ^project_dir} =
-      CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+    # Clone from pool
+    {:ok, project_dir} =
+      CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url)
 
     # Update project with cloned repo path
     {:ok, updated_project} =
@@ -61,9 +59,9 @@ defmodule CodeMySpec.StaticAnalysisTest do
 
     scope = user_scope_fixture(user, account, updated_project)
 
-    # Remove any existing spec files from the cloned project to avoid test pollution
-    spec_dir = Path.join(project_dir, "docs/spec")
-    if File.exists?(spec_dir), do: File.rm_rf!(spec_dir)
+    on_exit(fn ->
+      CodeMySpec.Support.TestAdapter.checkin(project_dir)
+    end)
 
     %{scope: scope, project: updated_project, project_dir: project_dir}
   end
@@ -104,9 +102,7 @@ defmodule CodeMySpec.StaticAnalysisTest do
       context = setup_test_project()
 
       on_exit(fn ->
-        if File.exists?(context.project_dir) do
-          File.rm_rf!(context.project_dir)
-        end
+        CodeMySpec.Support.TestAdapter.checkin(context.project_dir)
       end)
 
       context
@@ -149,9 +145,7 @@ defmodule CodeMySpec.StaticAnalysisTest do
       context = setup_test_project()
 
       on_exit(fn ->
-        if File.exists?(context.project_dir) do
-          File.rm_rf!(context.project_dir)
-        end
+        CodeMySpec.Support.TestAdapter.checkin(context.project_dir)
       end)
 
       context
@@ -162,8 +156,10 @@ defmodule CodeMySpec.StaticAnalysisTest do
       spec_dir = Path.join(scope.active_project.code_repo, "docs/spec")
       File.mkdir_p!(spec_dir)
 
-      assert {:ok, problems} = StaticAnalysis.run_all(scope)
-      assert is_list(problems)
+      use_cmd_cassette "static_analysis_run_all" do
+        assert {:ok, problems} = StaticAnalysis.run_all(scope)
+        assert is_list(problems)
+      end
     end
 
     test "delegates to Runner.run_all/2 with options", %{scope: scope} do
@@ -171,9 +167,11 @@ defmodule CodeMySpec.StaticAnalysisTest do
       spec_dir = Path.join(scope.active_project.code_repo, "docs/spec")
       File.mkdir_p!(spec_dir)
 
-      # Run with custom timeout
-      assert {:ok, problems} = StaticAnalysis.run_all(scope, timeout: 60_000)
-      assert is_list(problems)
+      use_cmd_cassette "static_analysis_run_all" do
+        # Run with custom timeout
+        assert {:ok, problems} = StaticAnalysis.run_all(scope, timeout: 60_000)
+        assert is_list(problems)
+      end
     end
 
     test "returns empty list when no analyzers are available" do
@@ -192,13 +190,15 @@ defmodule CodeMySpec.StaticAnalysisTest do
       spec_dir = Path.join(scope.active_project.code_repo, "docs/spec")
       File.mkdir_p!(spec_dir)
 
-      log =
-        capture_log(fn ->
-          StaticAnalysis.run_all(scope)
-        end)
+      use_cmd_cassette "static_analysis_run_all" do
+        log =
+          capture_log(fn ->
+            StaticAnalysis.run_all(scope)
+          end)
 
-      # Log output may contain warnings about failed or unavailable analyzers
-      assert is_binary(log)
+        # Log output may contain warnings about failed or unavailable analyzers
+        assert is_binary(log)
+      end
     end
   end
 end

@@ -3,13 +3,12 @@ defmodule CodeMySpecCli do
   Main entry point for the CodeMySpec CLI application.
   """
 
-  alias CodeMySpecCli.CLI
+  alias CodeMySpecCli.Cli
 
   @doc """
-  Main entry point called from the Application module.
+  Main entry point for the CLI.
   """
   def main(args) do
-    # Parse arguments and run CLI
-    CLI.run(args)
+    Cli.run(args)
   end
 end

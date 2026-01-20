@@ -78,12 +78,9 @@ defmodule CodeMySpec.ProjectCoordinatorTest do
 
     @tag :integration
     test "syncs project requirements with real test project", %{scope: scope} do
-      project_dir =
-        "../code_my_spec_test_repos/project_coordinator_test_#{System.unique_integer([:positive])}"
-
-      # Setup test project using TestAdapter
-      {:ok, ^project_dir} =
-        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+      # Clone from pool
+      {:ok, project_dir} =
+        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url)
 
       file_list =
         DirWalker.stream(project_dir)

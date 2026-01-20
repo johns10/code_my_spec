@@ -15,6 +15,9 @@ Mox.defmock(CodeMySpec.MockGit, for: CodeMySpec.Git.Behaviour)
 # Initialize test fixture repositories
 CodeMySpec.Support.TestAdapter.ensure_fixture_fresh()
 
+# Start the test repo pool for fast directory reuse
+{:ok, _} = CodeMySpec.Support.TestAdapter.Pool.start_link()
+
 # Use TestAdapter as default Git implementation for tests
 Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter)
 

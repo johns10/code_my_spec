@@ -1,4 +1,4 @@
-defmodule CodeMySpecCli.CLI do
+defmodule CodeMySpecCli.Cli do
   @moduledoc """
   CLI argument parser using Optimus.
 
@@ -48,6 +48,14 @@ defmodule CodeMySpecCli.CLI do
                 short: "-t",
                 long: "--session-type",
                 help: "Session type (e.g., 'component_spec')",
+                required: true,
+                parser: :string
+              ],
+              module_name: [
+                value_name: "MODULE_NAME",
+                short: "-m",
+                long: "--module-name",
+                help: "Component module name (e.g., 'MyApp.Accounts')",
                 required: true,
                 parser: :string
               ]
@@ -150,12 +158,6 @@ defmodule CodeMySpecCli.CLI do
 
       {[:hook], _} ->
         CodeMySpecCli.Hooks.run()
-
-      {[:start_agent_task], %{options: opts}} ->
-        CodeMySpecCli.SlashCommands.StartAgentTask.run(opts)
-
-      {[:evaluate_agent_task], %{options: opts}} ->
-        CodeMySpecCli.SlashCommands.EvaluateAgentTask.run(opts)
 
       _ ->
         # No subcommand - launch TUI

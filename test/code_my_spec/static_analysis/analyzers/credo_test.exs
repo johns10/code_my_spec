@@ -1,5 +1,5 @@
 defmodule CodeMySpec.StaticAnalysis.Analyzers.CredoTest do
-  use CodeMySpec.DataCase, async: false
+  use CodeMySpec.DataCase
 
   use ExCliVcr
   import ExUnit.CaptureLog
@@ -17,16 +17,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.CredoTest do
     project = project_fixture(scope, %{module_name: "TestPhoenixProject"})
     scope = user_scope_fixture(user, account, project)
 
-    # Clone test project using TestAdapter (include deps for static analysis)
-    project_dir =
-      "../code_my_spec_test_repos/credo_test_#{System.unique_integer([:positive])}"
-
-    {:ok, ^project_dir} =
-      CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir,
-        include_deps: true,
-        include_build: true,
-        include_git: true
-      )
+    # Clone from pool (fast reuse instead of rsync each time)
+    {:ok, project_dir} = CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url)
 
     # Update project with cloned repo path
     {:ok, updated_project} =
@@ -35,9 +27,7 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.CredoTest do
     scope = user_scope_fixture(user, account, updated_project)
 
     on_exit(fn ->
-      if File.exists?(project_dir) do
-        File.rm_rf!(project_dir)
-      end
+      CodeMySpec.Support.TestAdapter.checkin(project_dir)
     end)
 
     %{scope: scope, project: updated_project, project_dir: project_dir}

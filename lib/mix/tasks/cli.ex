@@ -8,6 +8,6 @@ defmodule Mix.Tasks.Cli do
     Mix.Task.run("app.start", [])
 
     # Call your CLI
-    CodeMySpecCli.CLI.run(args)
+    CodeMySpecCli.Cli.run(args)
   end
 end

@@ -258,12 +258,6 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
     end)
   end
 
-  defp ensure_project_id(%{project_id: nil} = problem, project_id) do
-    Map.put(problem, :project_id, project_id)
-  end
-
-  defp ensure_project_id(problem, _project_id), do: problem
-
   # Handle case when scope doesn't have active_project_id (shouldn't happen but be defensive)
   defp aggregate_results(stream_results, _scope) do
     stream_results
@@ -289,4 +283,10 @@ defmodule CodeMySpec.StaticAnalysis.Runner do
         []
     end)
   end
+
+  defp ensure_project_id(%{project_id: nil} = problem, project_id) do
+    Map.put(problem, :project_id, project_id)
+  end
+
+  defp ensure_project_id(problem, _project_id), do: problem
 end

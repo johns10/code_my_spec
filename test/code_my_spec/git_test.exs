@@ -100,10 +100,16 @@ defmodule CodeMySpec.GitTest do
   # ============================================================================
 
   describe "Git.CLI integration" do
+    setup do
+      # Use real Git.CLI for integration tests
+      Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Git.CLI)
+      on_exit(fn -> Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter) end)
+      :ok
+    end
+
     @tag :integration
     @tag timeout: 60_000
     test "successfully clones and pulls from real repository" do
-      # Uses TestAdapter for fast, isolated git operations
       user = user_fixture()
       token = "ghp_test_token_#{:rand.uniform(100_000)}"
       _integration = github_integration_fixture(user, %{access_token: token})

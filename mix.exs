@@ -78,8 +78,7 @@ defmodule CodeMySpec.MixProject do
       {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
       {:mix_machine, git: "https://github.com/johns10/mix_machine", branch: "master"},
       {:ex_cli_vcr, git: "https://github.com/johns10/ex_cli_vcr", branch: "main"},
-      {:client_utils, git: "https://github.com/Code-My-Spec/client_utils", branch: "main"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:client_utils, "~> 0.1.3"},
       {:credo, "~> 1.7.13"},
 
       # Normal deps
@@ -130,6 +129,11 @@ defmodule CodeMySpec.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "agent_test"],
+      user_test: [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        fn args -> Mix.Tasks.Test.run(args) end
+      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind code_my_spec", "esbuild code_my_spec"],
       "assets.deploy": [

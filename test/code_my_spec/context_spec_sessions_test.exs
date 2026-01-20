@@ -67,12 +67,9 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
       scope: scope,
       blog_context: blog_context
     } do
-      project_dir =
-        "../code_my_spec_test_repos/context_spec_session_#{System.unique_integer([:positive])}"
-
-      # Setup test project using TestAdapter
-      {:ok, ^project_dir} =
-        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+      # Clone from pool
+      {:ok, project_dir} =
+        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url)
 
       CodeMySpec.Sessions.subscribe_sessions(scope)
 
@@ -179,12 +176,9 @@ defmodule CodeMySpec.ContextSpecSessionsTest do
       scope: scope,
       blog_context: blog_context
     } do
-      project_dir =
-        "../code_my_spec_test_repos/context_spec_session_retry_#{System.unique_integer([:positive])}"
-
-      # Setup test project using TestAdapter
-      {:ok, ^project_dir} =
-        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url, project_dir)
+      # Clone from pool
+      {:ok, project_dir} =
+        CodeMySpec.Support.TestAdapter.clone(scope, @test_repo_url)
 
       CodeMySpec.Sessions.subscribe_sessions(scope)
 

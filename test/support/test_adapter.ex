@@ -76,46 +76,47 @@ defmodule CodeMySpec.Support.TestAdapter do
   def compiler_errors_cache_path, do: @compiler_errors_cache
 
   @doc """
-  Clones a repository by copying the fixture repo to the destination path.
+  Checkout a directory from the pool for fast test setup.
 
-  Matches on the repo URL to determine which fixture to use (code vs content).
-  This is much faster than actually cloning from a remote and safe for
-  concurrent test execution since each test gets its own copy.
+  Instead of rsync-ing a fresh copy each time, this reuses directories from a pool.
+  The directory is reset via git before being returned, so it's clean for tests.
+  All directories include deps, _build, and .git.
 
-  ## Options
+  Returns `{:ok, path}` where path is the directory to use.
+  """
+  def checkout(opts \\ []) do
+    __MODULE__.Pool.checkout(opts)
+  end
 
-    * `:include_deps` - If true, includes the deps/ directory. Default: false
-    * `:include_build` - If true, includes the _build/ directory. Default: false
-    * `:include_git` - If true, includes .git directories. Default: false
-      Note: Git-based dependencies require their .git dirs, so use this with include_deps.
+  @doc """
+  Return a directory to the pool after test is complete.
 
-  Assumes ensure_fixture_fresh/0 has been called during test setup.
+  This resets the git state and makes the directory available for reuse.
+  Call this in `on_exit` instead of `File.rm_rf!`.
+  """
+  def checkin(path) do
+    __MODULE__.Pool.checkin(path)
+  end
+
+  @doc """
+  Clones a repository by checking out from the pool.
+
+  Uses a pool of pre-cloned directories for fast reuse. Additional arguments
+  are ignored for backward compatibility - the pool manages paths and always
+  includes deps, _build, and .git.
+
+  Use `checkin/1` in `on_exit` to return the directory to the pool.
   """
   @impl true
-  def clone(_scope, repo_url, dest_path, opts \\ []) do
-    fixture_path = select_fixture(repo_url)
-    include_deps = Keyword.get(opts, :include_deps, false)
-    include_build = Keyword.get(opts, :include_build, false)
-    include_git = Keyword.get(opts, :include_git, false)
+  def clone(_scope, repo_url, _path \\ nil, _opts \\ []) do
+    repo_type = url_to_repo_type(repo_url)
+    __MODULE__.Pool.checkout(repo_type: repo_type)
+  end
 
-    # Build exclude list (always include at least one exclude - rsync has sandbox issues without it)
-    excludes = ["--exclude", ".DS_Store"]
-    excludes = if include_git, do: excludes, else: excludes ++ ["--exclude", ".git"]
-    excludes = if include_deps, do: excludes, else: excludes ++ ["--exclude", "deps"]
-    excludes = if include_build, do: excludes, else: excludes ++ ["--exclude", "_build"]
-
-    # Create destination directory
-    File.mkdir_p!(dest_path)
-
-    # Copy contents of fixture into dest_path
-    args = ["-a"] ++ excludes ++ ["#{fixture_path}/", "#{dest_path}/"]
-
-    case System.cmd("rsync", args) do
-      {_, 0} ->
-        {:ok, dest_path}
-
-      {output, code} ->
-        {:error, "Failed to copy fixture: #{output}, #{code}"}
+  defp url_to_repo_type(repo_url) do
+    cond do
+      String.contains?(repo_url, "test_content_repo") -> :content_repo
+      true -> :code_repo
     end
   end
 
@@ -128,15 +129,6 @@ defmodule CodeMySpec.Support.TestAdapter do
   @impl true
   def pull(_scope, _path) do
     :ok
-  end
-
-  defp select_fixture(repo_url) do
-    cond do
-      String.contains?(repo_url, "test_content_repo") -> @content_repo_fixture_path
-      String.contains?(repo_url, "test_phoenix_project") -> @code_repo_fixture_path
-      # Default to code repo for backward compatibility
-      true -> @code_repo_fixture_path
-    end
   end
 
   defp ensure_repo_fresh(fixture_path, fixture_url) do
@@ -210,7 +202,7 @@ defmodule CodeMySpec.Support.TestAdapter do
       test_results_file = "test_results.json"
 
       # env inherits all vars and overrides/adds those specified
-      System.cmd("mix", ["test", "--formatter", "ExUnitJsonFormatter"],
+      System.cmd("mix", ["test", "--formatter", "ClientUtils.TestFormatter"],
         cd: @code_repo_fixture_path,
         stderr_to_stdout: true,
         env: [{"EXUNIT_JSON_OUTPUT_FILE", test_results_file}]
@@ -245,7 +237,7 @@ defmodule CodeMySpec.Support.TestAdapter do
       IO.puts("[TestAdapter] Running tests with failing test...")
       test_results_failing_file = "test_results_failing.json"
 
-      System.cmd("mix", ["test", "--formatter", "ExUnitJsonFormatter"],
+      System.cmd("mix", ["test", "--formatter", "ClientUtils.TestFormatter"],
         cd: @code_repo_fixture_path,
         stderr_to_stdout: true,
         env: [{"EXUNIT_JSON_OUTPUT_FILE", test_results_failing_file}]
@@ -308,7 +300,7 @@ defmodule CodeMySpec.Support.TestAdapter do
           "test",
           "test/test_phoenix_project/blog/post_cache_test.exs",
           "--formatter",
-          "ExUnitJsonFormatter"
+          "ClientUtils.TestFormatter"
         ],
         cd: @code_repo_fixture_path,
         stderr_to_stdout: true,

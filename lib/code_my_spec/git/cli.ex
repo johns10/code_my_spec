@@ -120,12 +120,10 @@ defmodule CodeMySpec.Git.CLI do
   end
 
   defp set_remote_url(path, url) do
-    File.cd!(path, fn ->
-      case System.cmd("git", ["remote", "set-url", "origin", url], stderr_to_stdout: true) do
-        {_output, 0} -> :ok
-        {_output, _exit_code} -> {:error, :failed_to_update_remote}
-      end
-    end)
+    case System.cmd("git", ["remote", "set-url", "origin", url], stderr_to_stdout: true, cd: path) do
+      {_output, 0} -> :ok
+      {_output, _exit_code} -> {:error, :failed_to_update_remote}
+    end
   end
 
   defp execute_pull(path) do
