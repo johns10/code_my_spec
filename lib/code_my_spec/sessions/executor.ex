@@ -42,11 +42,12 @@ defmodule CodeMySpec.Sessions.Executor do
     )
 
     # Run command via environment
-    execution_result = Environments.run_command(
-      context.environment,
-      context.command,
-      context.execution_opts
-    )
+    execution_result =
+      Environments.run_command(
+        context.environment,
+        context.command,
+        context.execution_opts
+      )
 
     # Handle different execution patterns to completion
     handle_execution_result(execution_result, context)

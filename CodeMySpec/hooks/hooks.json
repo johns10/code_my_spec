@@ -1,39 +1,35 @@
 {
-    "hooks": {
-        "Stop": [
-            {
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": "scripts/record_hook.sh"
-                    },
-                    {
-                        "type": "command",
-                        "command": "MIX_ENV=cli mix cli hook"
-                    }
-                ]
-            }
-        ],
-        "SubagentStop": [
-            {
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": "MIX_ENV=cli mix cli hook"
-                    }
-                ]
-            }
-        ],
-        "PostToolUse": [
-            {
-                "matcher": "Write|Edit",
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": "MIX_ENV=cli mix cli hook"
-                    }
-                ]
-            }
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MIX_ENV=cli mix cli hook"
+          }
         ]
-    }
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MIX_ENV=cli mix cli hook"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MIX_ENV=cli mix cli hook"
+          }
+        ]
+      }
+    ]
+  }
 }

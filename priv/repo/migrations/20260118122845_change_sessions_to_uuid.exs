@@ -42,6 +42,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeSessionsToUuid do
     # Update sessions with new UUIDs
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE sessions SET new_id = $1 WHERE id = $2",
         [binary_uuid, old_id]
@@ -51,6 +52,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeSessionsToUuid do
     # Update session_id (parent session) references
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE sessions SET new_session_id = $1 WHERE session_id = $2",
         [binary_uuid, old_id]
@@ -60,6 +62,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeSessionsToUuid do
     # Update interactions
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE interactions SET new_session_id = $1 WHERE session_id = $2",
         [binary_uuid, old_id]

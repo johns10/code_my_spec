@@ -310,7 +310,12 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignment do
     if File.exists?(test_path) do
       case ElixirAst.get_test_assertions(test_path) do
         {:ok, test_assertions} ->
-          compare_test_assertions_with_spec(spec_functions, test_assertions, test_path, project_id)
+          compare_test_assertions_with_spec(
+            spec_functions,
+            test_assertions,
+            test_path,
+            project_id
+          )
 
         {:error, _reason} ->
           # Can't parse test file - handle gracefully

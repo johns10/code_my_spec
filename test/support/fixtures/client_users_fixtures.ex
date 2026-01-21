@@ -34,7 +34,8 @@ defmodule CodeMySpec.ClientUsersFixtures do
   """
   def authenticated_client_user_fixture(attrs \\ %{}) do
     # Create a far-future expiration date so token doesn't expire during tests
-    expires_at = DateTime.add(DateTime.utc_now(), 86400, :second)  # 24 hours from now
+    # 24 hours from now
+    expires_at = DateTime.add(DateTime.utc_now(), 86400, :second)
 
     # Use token from environment (for recording) or placeholder (for replay)
     token = System.get_env("OAUTH_TOKEN") || "test_token_placeholder"

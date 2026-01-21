@@ -177,11 +177,13 @@ defmodule CodeMySpecCli.Config do
       config
       |> Enum.map_join("\n", fn {key, value} ->
         # Quote strings if they contain special characters
-        formatted_value = if is_binary(value) and String.contains?(value, [":", "@"]) do
-          "\"#{value}\""
-        else
-          value
-        end
+        formatted_value =
+          if is_binary(value) and String.contains?(value, [":", "@"]) do
+            "\"#{value}\""
+          else
+            value
+          end
+
         "#{key}: #{formatted_value}"
       end)
       |> Kernel.<>("\n")

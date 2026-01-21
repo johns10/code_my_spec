@@ -245,16 +245,25 @@ defmodule CodeMySpec.Sessions do
   """
   def deliver_result_to_server(session_id, interaction_id, result, opts \\ []) do
     require Logger
-    Logger.info("Sessions.deliver_result_to_server: session_id=#{session_id}, interaction_id=#{interaction_id}")
+
+    Logger.info(
+      "Sessions.deliver_result_to_server: session_id=#{session_id}, interaction_id=#{interaction_id}"
+    )
 
     case get_session_server(session_id) do
       {:ok, server} ->
-        Logger.info("Sessions.deliver_result_to_server: Found server #{inspect(server)}, casting message")
+        Logger.info(
+          "Sessions.deliver_result_to_server: Found server #{inspect(server)}, casting message"
+        )
+
         GenServer.cast(server, {:deliver_result, interaction_id, result, opts})
         :ok
 
       {:error, :not_found} ->
-        Logger.error("Sessions.deliver_result_to_server: SessionServer not found for session #{session_id}")
+        Logger.error(
+          "Sessions.deliver_result_to_server: SessionServer not found for session #{session_id}"
+        )
+
         {:error, :session_server_not_found}
     end
   end

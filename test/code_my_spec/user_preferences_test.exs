@@ -67,7 +67,12 @@ defmodule CodeMySpec.UserPreferencesTest do
       scope = user_scope_fixture()
       user_preference_fixture(scope)
       project_id = Ecto.UUID.generate()
-      update_attrs = %{token: "some updated token", active_account_id: 43, active_project_id: project_id}
+
+      update_attrs = %{
+        token: "some updated token",
+        active_account_id: 43,
+        active_project_id: project_id
+      }
 
       assert {:ok, %UserPreference{} = user_preference} =
                UserPreferences.update_user_preferences(scope, update_attrs)

@@ -30,7 +30,8 @@ defmodule CodeMySpec.Components.SimilarComponentRepository do
   Validates that both components exist within the same project.
   """
   @spec add_similar_component(Scope.t(), Component.t(), Component.t()) ::
-          {:ok, SimilarComponent.t()} | {:error, Ecto.Changeset.t() | :components_not_in_same_project}
+          {:ok, SimilarComponent.t()}
+          | {:error, Ecto.Changeset.t() | :components_not_in_same_project}
   def add_similar_component(
         %Scope{active_project_id: project_id},
         %Component{id: component_id},

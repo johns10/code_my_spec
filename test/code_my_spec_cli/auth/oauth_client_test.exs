@@ -18,7 +18,7 @@ defmodule CodeMySpecCli.Auth.OAuthClientTest do
       token = %OAuth2.AccessToken{
         access_token: "test_token",
         refresh_token: "test_refresh",
-        expires_at: 1737245961,
+        expires_at: 1_737_245_961,
         other_params: %{"expires_in" => 7200, "scope" => "read write"}
       }
 
@@ -93,7 +93,7 @@ defmodule CodeMySpecCli.Auth.OAuthClientTest do
       token = %OAuth2.AccessToken{
         access_token: "test_token",
         refresh_token: "test_refresh",
-        expires_at: 1737245961,
+        expires_at: 1_737_245_961,
         other_params: %{}
       }
 
@@ -104,7 +104,7 @@ defmodule CodeMySpecCli.Auth.OAuthClientTest do
       assert result < 31_536_000, "expires_in should be less than 1 year, got #{result}"
 
       # And definitely not the raw timestamp
-      refute result == 1737245961, "Should not return raw Unix timestamp as expires_in"
+      refute result == 1_737_245_961, "Should not return raw Unix timestamp as expires_in"
     end
   end
 

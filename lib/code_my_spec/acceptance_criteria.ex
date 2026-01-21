@@ -75,7 +75,8 @@ defmodule CodeMySpec.AcceptanceCriteria do
   def update_criterion(%Scope{} = scope, %Criterion{} = criterion, attrs) do
     true = criterion.account_id == scope.active_account.id
 
-    with {:ok, criterion = %Criterion{}} <- AcceptanceCriteriaRepository.update_criterion(criterion, attrs) do
+    with {:ok, criterion = %Criterion{}} <-
+           AcceptanceCriteriaRepository.update_criterion(criterion, attrs) do
       broadcast(scope, {:updated, criterion})
       {:ok, criterion}
     end
@@ -87,7 +88,8 @@ defmodule CodeMySpec.AcceptanceCriteria do
   def delete_criterion(%Scope{} = scope, %Criterion{} = criterion) do
     true = criterion.account_id == scope.active_account.id
 
-    with {:ok, criterion = %Criterion{}} <- AcceptanceCriteriaRepository.delete_criterion(criterion) do
+    with {:ok, criterion = %Criterion{}} <-
+           AcceptanceCriteriaRepository.delete_criterion(criterion) do
       broadcast(scope, {:deleted, criterion})
       {:ok, criterion}
     end
@@ -113,7 +115,8 @@ defmodule CodeMySpec.AcceptanceCriteria do
       verified_at: DateTime.utc_now()
     }
 
-    with {:ok, criterion = %Criterion{}} <- AcceptanceCriteriaRepository.update_criterion(criterion, attrs) do
+    with {:ok, criterion = %Criterion{}} <-
+           AcceptanceCriteriaRepository.update_criterion(criterion, attrs) do
       broadcast(scope, {:updated, criterion})
       {:ok, criterion}
     end
@@ -130,7 +133,8 @@ defmodule CodeMySpec.AcceptanceCriteria do
       verified_at: nil
     }
 
-    with {:ok, criterion = %Criterion{}} <- AcceptanceCriteriaRepository.update_criterion(criterion, attrs) do
+    with {:ok, criterion = %Criterion{}} <-
+           AcceptanceCriteriaRepository.update_criterion(criterion, attrs) do
       broadcast(scope, {:updated, criterion})
       {:ok, criterion}
     end

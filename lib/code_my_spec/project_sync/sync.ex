@@ -80,7 +80,6 @@ defmodule CodeMySpec.ProjectSync.Sync do
     end
   end
 
-
   # Private Functions
 
   # Gets the list of all files in the project

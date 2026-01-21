@@ -11,7 +11,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   alias CodeMySpec.Components.ComponentRepository
   alias CodeMySpec.Sessions.AgentTasks.{ComponentSpec, ContextSpec}
 
-  defp prompt_dir(external_id), do: ".code_my_spec/internal/sessions/#{external_id}/subagent_prompts"
+  defp prompt_dir(external_id),
+    do: ".code_my_spec/internal/sessions/#{external_id}/subagent_prompts"
 
   @doc """
   Generate the orchestration prompt for designing child components.
@@ -35,7 +36,12 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
          {:ok, child_prompt_files} <-
            generate_child_prompt_files(scope, session, children_needing_specs, external_id),
          {:ok, prompt} <-
-           build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files, external_id) do
+           build_orchestration_prompt(
+             context_component,
+             context_prompt_file,
+             child_prompt_files,
+             external_id
+           ) do
       {:ok, prompt}
     end
   end
@@ -186,7 +192,12 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
      """}
   end
 
-  defp build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files, _external_id) do
+  defp build_orchestration_prompt(
+         context_component,
+         context_prompt_file,
+         child_prompt_files,
+         _external_id
+       ) do
     all_prompt_files =
       case context_prompt_file do
         nil -> child_prompt_files
@@ -298,7 +309,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp maybe_cleanup_context_prompt(context_component, [], external_id) do
     # Context is satisfied, clean up its prompt file if it exists
-    file_path = "#{prompt_dir(external_id)}/#{safe_filename(context_component.module_name)}_context.md"
+    file_path =
+      "#{prompt_dir(external_id)}/#{safe_filename(context_component.module_name)}_context.md"
 
     if File.exists?(file_path) do
       File.rm(file_path)

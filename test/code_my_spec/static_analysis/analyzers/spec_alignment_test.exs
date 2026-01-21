@@ -377,7 +377,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
       File.write!(spec_file, spec_content)
 
       # Scope to just our created spec file
-      assert {:ok, problems} = SpecAlignment.run(scope, paths: ["docs/spec/non_existent_module.spec.md"])
+      assert {:ok, problems} =
+               SpecAlignment.run(scope, paths: ["docs/spec/non_existent_module.spec.md"])
 
       assert problems == []
     end
@@ -402,7 +403,8 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.SpecAlignmentTest do
       File.write!(impl_file, impl_content)
 
       # Use a path that has no spec files to test "no spec" scenario
-      assert {:ok, problems} = SpecAlignment.run(scope, paths: ["docs/spec/no_spec_module.spec.md"])
+      assert {:ok, problems} =
+               SpecAlignment.run(scope, paths: ["docs/spec/no_spec_module.spec.md"])
 
       assert problems == []
     end

@@ -81,7 +81,9 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.Sobelow do
     # For now, we'll just ignore the timeout option in System.cmd
     # but log it if provided for debugging
     if Keyword.has_key?(opts, :timeout) do
-      Logger.debug("Timeout option provided but not used: #{inspect(Keyword.get(opts, :timeout))}")
+      Logger.debug(
+        "Timeout option provided but not used: #{inspect(Keyword.get(opts, :timeout))}"
+      )
     end
 
     case System.cmd("mix", args, cmd_opts) do
@@ -125,8 +127,9 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.Sobelow do
           # Sobelow returns findings grouped by confidence level
           all_findings =
             Map.get(findings, "high_confidence", []) ++
-            Map.get(findings, "medium_confidence", []) ++
-            Map.get(findings, "low_confidence", [])
+              Map.get(findings, "medium_confidence", []) ++
+              Map.get(findings, "low_confidence", [])
+
           {:ok, all_findings}
 
         {:ok, %{"findings" => findings}} when is_list(findings) ->
@@ -161,15 +164,18 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.Sobelow do
           nil -> potential_json
           end_pos -> binary_part(potential_json, 0, end_pos + 1)
         end
+
       :nomatch ->
         # Try with newline formatting: {\n  "findings"
         case :binary.match(output, "{\n") do
           {start, _} ->
             potential_json = binary_part(output, start, byte_size(output) - start)
+
             case find_last_brace(potential_json) do
               nil -> potential_json
               end_pos -> binary_part(potential_json, 0, end_pos + 1)
             end
+
           :nomatch ->
             output
         end
@@ -207,6 +213,7 @@ defmodule CodeMySpec.StaticAnalysis.Analyzers.Sobelow do
 
   defp build_message(finding) do
     type = finding["type"] || "Security vulnerability detected"
+
     if finding["pipeline"] do
       "#{type} (pipeline: #{finding["pipeline"]})"
     else

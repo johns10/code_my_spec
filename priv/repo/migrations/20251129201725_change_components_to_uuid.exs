@@ -75,6 +75,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update components with new UUIDs
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE components SET new_id = $1 WHERE id = $2",
         [binary_uuid, old_id]
@@ -84,6 +85,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update parent_component_id references
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE components SET new_parent_component_id = $1 WHERE parent_component_id = $2",
         [binary_uuid, old_id]
@@ -93,6 +95,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update dependencies
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE dependencies SET new_source_component_id = $1 WHERE source_component_id = $2",
         [binary_uuid, old_id]
@@ -107,6 +110,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update similar_components
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE similar_components SET new_component_id = $1 WHERE component_id = $2",
         [binary_uuid, old_id]
@@ -121,6 +125,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update stories
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE stories SET new_component_id = $1 WHERE component_id = $2",
         [binary_uuid, old_id]
@@ -130,6 +135,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update requirements
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE requirements SET new_component_id = $1 WHERE component_id = $2",
         [binary_uuid, old_id]
@@ -139,6 +145,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeComponentsToUuid do
     # Update sessions
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE sessions SET new_component_id = $1 WHERE component_id = $2",
         [binary_uuid, old_id]

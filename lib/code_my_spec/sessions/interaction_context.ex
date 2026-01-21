@@ -38,9 +38,10 @@ defmodule CodeMySpec.Sessions.InteractionContext do
          {:ok, environment} <- create_environment(session, interaction),
          command <- interaction.command do
       # Build execution options with session and interaction context
-      execution_opts = opts
-      |> Keyword.put(:session_id, session.id)
-      |> Keyword.put(:interaction_id, interaction.id)
+      execution_opts =
+        opts
+        |> Keyword.put(:session_id, session.id)
+        |> Keyword.put(:interaction_id, interaction.id)
 
       context = %__MODULE__{
         environment: environment,

@@ -71,115 +71,136 @@ defmodule CodeMySpecCli.Screens.Init do
   Returns {:ok, new_state} or {:switch_screen, screen_name, new_state}.
   """
   def update(model, msg) do
-    result = case {model.state, msg} do
-      # Handle project fetch results from Command
-      {:loading, {:projects_fetched, {:ok, []}}} ->
-        {:ok, %{model | state: :create_local}}
+    result =
+      case {model.state, msg} do
+        # Handle project fetch results from Command
+        {:loading, {:projects_fetched, {:ok, []}}} ->
+          {:ok, %{model | state: :create_local}}
 
-      {:loading, {:projects_fetched, {:ok, projects}}} ->
-        {:ok, %{model | state: :select_project, projects: projects}}
+        {:loading, {:projects_fetched, {:ok, projects}}} ->
+          {:ok, %{model | state: :select_project, projects: projects}}
 
-      {:loading, {:projects_fetched, {:error, reason}}} ->
-        {:ok, %{model | state: :error, error_message: "Failed to fetch projects: #{inspect(reason)}"}}
+        {:loading, {:projects_fetched, {:error, reason}}} ->
+          {:ok,
+           %{model | state: :error, error_message: "Failed to fetch projects: #{inspect(reason)}"}}
 
-      # Project selection navigation
-      {:select_project, {:event, %{key: k}}} ->
-        cond do
-          k == key(:arrow_up) ->
-            new_index = max(0, model.selected_index - 1)
-            {:ok, %{model | selected_index: new_index}}
+        # Project selection navigation
+        {:select_project, {:event, %{key: k}}} ->
+          cond do
+            k == key(:arrow_up) ->
+              new_index = max(0, model.selected_index - 1)
+              {:ok, %{model | selected_index: new_index}}
 
-          k == key(:arrow_down) ->
-            new_index = min(length(model.projects) - 1, model.selected_index + 1)
-            {:ok, %{model | selected_index: new_index}}
+            k == key(:arrow_down) ->
+              new_index = min(length(model.projects) - 1, model.selected_index + 1)
+              {:ok, %{model | selected_index: new_index}}
 
-          k == key(:enter) ->
-            selected_project = Enum.at(model.projects, model.selected_index)
-            save_project(selected_project)
-            broadcast_project_init(selected_project.id)
-            {:ok, %{model | state: :success, success_message: "✓ Project initialized: #{selected_project.name}"}}
+            k == key(:enter) ->
+              selected_project = Enum.at(model.projects, model.selected_index)
+              save_project(selected_project)
+              broadcast_project_init(selected_project.id)
 
-          k == key(:esc) ->
-            {:switch_screen, :repl, model}
+              {:ok,
+               %{
+                 model
+                 | state: :success,
+                   success_message: "✓ Project initialized: #{selected_project.name}"
+               }}
 
-          true ->
-            {:ok, model}
-        end
+            k == key(:esc) ->
+              {:switch_screen, :repl, model}
 
-      {:select_project, {:event, %{ch: ?c}}} ->
-        # 'c' to create local instead
-        {:ok, %{model | state: :create_local}}
+            true ->
+              {:ok, model}
+          end
 
-      # Form input for local project creation
-      {:create_local, {:event, %{key: k}}} ->
-        cond do
-          k == key(:enter) ->
-            # Move to next field or submit
-            next_field = next_form_field(model.form_field)
-            if next_field == :submit do
-              case create_local_project(model.form_data) do
-                {:ok, project} ->
-                  broadcast_project_init(project.id)
-                  {:ok, %{model | state: :success, success_message: "✓ Project initialized: #{project.name}"}}
-                {:error, reason} ->
-                  {:ok, %{model | state: :error, error_message: "Failed to create project: #{reason}"}}
+        {:select_project, {:event, %{ch: ?c}}} ->
+          # 'c' to create local instead
+          {:ok, %{model | state: :create_local}}
+
+        # Form input for local project creation
+        {:create_local, {:event, %{key: k}}} ->
+          cond do
+            k == key(:enter) ->
+              # Move to next field or submit
+              next_field = next_form_field(model.form_field)
+
+              if next_field == :submit do
+                case create_local_project(model.form_data) do
+                  {:ok, project} ->
+                    broadcast_project_init(project.id)
+
+                    {:ok,
+                     %{
+                       model
+                       | state: :success,
+                         success_message: "✓ Project initialized: #{project.name}"
+                     }}
+
+                  {:error, reason} ->
+                    {:ok,
+                     %{
+                       model
+                       | state: :error,
+                         error_message: "Failed to create project: #{reason}"
+                     }}
+                end
+              else
+                {:ok, %{model | form_field: next_field}}
               end
-            else
-              {:ok, %{model | form_field: next_field}}
-            end
 
-          k == key(:tab) ->
-            # Tab to next field
-            {:ok, %{model | form_field: next_form_field(model.form_field)}}
+            k == key(:tab) ->
+              # Tab to next field
+              {:ok, %{model | form_field: next_form_field(model.form_field)}}
 
-          k == key(:backspace) or k == key(:backspace2) ->
-            # Backspace in current field
-            field = model.form_field
-            current_value = Map.get(model.form_data, field, "")
-            new_value = String.slice(current_value, 0..-2//1)
-            {:ok, %{model | form_data: Map.put(model.form_data, field, new_value)}}
+            k == key(:backspace) or k == key(:backspace2) ->
+              # Backspace in current field
+              field = model.form_field
+              current_value = Map.get(model.form_data, field, "")
+              new_value = String.slice(current_value, 0..-2//1)
+              {:ok, %{model | form_data: Map.put(model.form_data, field, new_value)}}
 
-          k == key(:esc) ->
-            # Return to REPL
+            k == key(:esc) ->
+              # Return to REPL
+              {:switch_screen, :repl, model}
+
+            true ->
+              {:ok, model}
+          end
+
+        {:create_local, {:event, %{ch: ch}}} when ch > 0 ->
+          # Regular character input
+          field = model.form_field
+          current_value = Map.get(model.form_data, field, "")
+          new_value = current_value <> <<ch::utf8>>
+          {:ok, %{model | form_data: Map.put(model.form_data, field, new_value)}}
+
+        # Error/Success screens - press Enter to return to REPL
+        {:error, {:event, %{key: k}}} ->
+          if k == key(:enter) do
             {:switch_screen, :repl, model}
-
-          true ->
+          else
             {:ok, model}
-        end
+          end
 
-      {:create_local, {:event, %{ch: ch}}} when ch > 0 ->
-        # Regular character input
-        field = model.form_field
-        current_value = Map.get(model.form_data, field, "")
-        new_value = current_value <> <<ch::utf8>>
-        {:ok, %{model | form_data: Map.put(model.form_data, field, new_value)}}
+        {:success, {:event, %{key: k}}} ->
+          if k == key(:enter) do
+            {:switch_screen, :repl, model}
+          else
+            {:ok, model}
+          end
 
-      # Error/Success screens - press Enter to return to REPL
-      {:error, {:event, %{key: k}}} ->
-        if k == key(:enter) do
-          {:switch_screen, :repl, model}
-        else
+        # Escape always returns to REPL
+        {_, {:event, %{key: k}}} ->
+          if k == key(:esc) do
+            {:switch_screen, :repl, model}
+          else
+            {:ok, model}
+          end
+
+        _ ->
           {:ok, model}
-        end
-
-      {:success, {:event, %{key: k}}} ->
-        if k == key(:enter) do
-          {:switch_screen, :repl, model}
-        else
-          {:ok, model}
-        end
-
-      # Escape always returns to REPL
-      {_, {:event, %{key: k}}} ->
-        if k == key(:esc) do
-          {:switch_screen, :repl, model}
-        else
-          {:ok, model}
-        end
-
-      _ ->
-        {:ok, model}
-    end
+      end
 
     result
   end
@@ -215,15 +236,26 @@ defmodule CodeMySpecCli.Screens.Init do
     row do
       column(size: 12) do
         panel(title: "Select a Project") do
-          label(content: "Use ↑/↓ to navigate, Enter to select, 'c' to create local project instead")
+          label(
+            content: "Use ↑/↓ to navigate, Enter to select, 'c' to create local project instead"
+          )
+
           label(content: "")
 
           for {project, index} <- Enum.with_index(model.projects) do
             prefix = if index == model.selected_index, do: "▶ ", else: "  "
 
             label do
-              text(content: prefix, attributes: if(index == model.selected_index, do: [:bold], else: []))
-              text(content: project.name, attributes: if(index == model.selected_index, do: [:bold], else: []))
+              text(
+                content: prefix,
+                attributes: if(index == model.selected_index, do: [:bold], else: [])
+              )
+
+              text(
+                content: project.name,
+                attributes: if(index == model.selected_index, do: [:bold], else: [])
+              )
+
               if project.description do
                 text(content: " - #{project.description}", color: :cyan)
               end
@@ -238,7 +270,11 @@ defmodule CodeMySpecCli.Screens.Init do
     row do
       column(size: 12) do
         panel(title: "Create New Local Project") do
-          label(content: "Fill in the project details. Press Enter to move to next field, Tab to navigate.")
+          label(
+            content:
+              "Fill in the project details. Press Enter to move to next field, Tab to navigate."
+          )
+
           label(content: "Press Esc to cancel.")
           label(content: "")
 
@@ -248,6 +284,7 @@ defmodule CodeMySpecCli.Screens.Init do
           render_form_field("Code repository URL (optional)", :code_repo, model)
 
           label(content: "")
+
           if all_required_fields_filled?(model.form_data) do
             label(content: "Press Enter to create project", color: :green)
           else
@@ -269,6 +306,7 @@ defmodule CodeMySpecCli.Screens.Init do
         color: if(is_active, do: :cyan, else: :white),
         attributes: if(is_active, do: [:bold], else: [])
       )
+
       text(content: value)
       text(content: cursor, attributes: [:bold])
     end

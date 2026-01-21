@@ -51,7 +51,8 @@ defmodule CodeMySpec.AcceptanceCriteria.AcceptanceCriteriaRepository do
   @doc """
   Updates an existing acceptance criterion.
   """
-  @spec update_criterion(Criterion.t(), map()) :: {:ok, Criterion.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_criterion(Criterion.t(), map()) ::
+          {:ok, Criterion.t()} | {:error, Ecto.Changeset.t()}
   def update_criterion(%Criterion{} = criterion, attrs) do
     criterion
     |> Criterion.changeset(attrs)

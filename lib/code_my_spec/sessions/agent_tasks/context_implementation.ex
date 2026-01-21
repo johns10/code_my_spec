@@ -11,7 +11,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   alias CodeMySpec.Components.ComponentRepository
   alias CodeMySpec.Sessions.AgentTasks.{ComponentTest, ComponentCode}
 
-  defp prompt_dir(external_id), do: ".code_my_spec/internal/sessions/#{external_id}/subagent_prompts"
+  defp prompt_dir(external_id),
+    do: ".code_my_spec/internal/sessions/#{external_id}/subagent_prompts"
 
   @doc """
   Generate prompt files and orchestration instructions for implementing a context and its child components.
@@ -123,7 +124,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     {:ok, needing_code}
   end
 
-  defp generate_prompt_files(scope, session, components_needing_tests, components_needing_code, external_id) do
+  defp generate_prompt_files(
+         scope,
+         session,
+         components_needing_tests,
+         components_needing_code,
+         external_id
+       ) do
     %{project: project} = session
     {:ok, environment} = Environments.create(session.environment)
 

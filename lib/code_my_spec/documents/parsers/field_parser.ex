@@ -32,9 +32,10 @@ defmodule CodeMySpec.Documents.Parsers.FieldParser do
 
   defp extract_headers(table_parts) do
     case Enum.find(table_parts, &match?({"thead", _, _, _}, &1)) do
-      {"thead", [], [{("tr"), [], cells, %{}}], %{}} ->
+      {"thead", [], [{"tr", [], cells, %{}}], %{}} ->
         Enum.map(cells, fn
-          {"th", _attrs, content, %{}} -> extract_text(content) |> String.trim() |> String.downcase()
+          {"th", _attrs, content, %{}} ->
+            extract_text(content) |> String.trim() |> String.downcase()
         end)
 
       _ ->

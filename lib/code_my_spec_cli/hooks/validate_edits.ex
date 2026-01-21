@@ -372,7 +372,8 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
 
   defp execute_tests(args, project_root) do
     # Create temp file for JSON test output
-    temp_file = Path.join(System.tmp_dir!(), "test_output_#{System.unique_integer([:positive])}.json")
+    temp_file =
+      Path.join(System.tmp_dir!(), "test_output_#{System.unique_integer([:positive])}.json")
 
     # System.cmd expects string tuples for env, not charlists
     env = [
@@ -409,18 +410,28 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
       {:ok, data} ->
         execution_status =
           cond do
-            exit_code == 0 -> :success
-            get_in(data, ["stats", "failures"]) && get_in(data, ["stats", "failures"]) > 0 -> :failure
-            exit_code != 0 -> :error
-            true -> :error
+            exit_code == 0 ->
+              :success
+
+            get_in(data, ["stats", "failures"]) && get_in(data, ["stats", "failures"]) > 0 ->
+              :failure
+
+            exit_code != 0 ->
+              :error
+
+            true ->
+              :error
           end
 
         test_run =
-          TestRun.changeset(%TestRun{}, Map.merge(data, %{
-            "exit_code" => exit_code,
-            "execution_status" => execution_status,
-            "raw_output" => raw_output
-          }))
+          TestRun.changeset(
+            %TestRun{},
+            Map.merge(data, %{
+              "exit_code" => exit_code,
+              "execution_status" => execution_status,
+              "raw_output" => raw_output
+            })
+          )
           |> Ecto.Changeset.apply_changes()
 
         {:ok, test_run}

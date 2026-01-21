@@ -51,17 +51,18 @@ defmodule CodeMySpec.Sessions.SessionServer do
         }
 
         # 3. Spawn ONE task that does full execution cycle
-        task = Task.async(fn ->
-          Logger.info("SessionServer: Task started, preparing context",
-            session_id: state.session_id,
-            interaction_id: interaction.id
-          )
+        task =
+          Task.async(fn ->
+            Logger.info("SessionServer: Task started, preparing context",
+              session_id: state.session_id,
+              interaction_id: interaction.id
+            )
 
-          with {:ok, context} <- InteractionContext.prepare(scope, session, opts) do
-            result = Executor.execute(context)
-            ResultHandler.handle_result(scope, state.session_id, interaction.id, result, opts)
-          end
-        end)
+            with {:ok, context} <- InteractionContext.prepare(scope, session, opts) do
+              result = Executor.execute(context)
+              ResultHandler.handle_result(scope, state.session_id, interaction.id, result, opts)
+            end
+          end)
 
         Logger.info("SessionServer: Task spawned with pid #{inspect(task.pid)}",
           session_id: state.session_id,
@@ -90,7 +91,10 @@ defmodule CodeMySpec.Sessions.SessionServer do
   end
 
   @impl true
-  def handle_cast({:deliver_result, interaction_id, result, opts}, %{task: %Task{pid: pid}} = state)
+  def handle_cast(
+        {:deliver_result, interaction_id, result, opts},
+        %{task: %Task{pid: pid}} = state
+      )
       when not is_nil(pid) do
     Logger.info(
       "SessionServer: Delivering result to task #{inspect(pid)} for interaction #{interaction_id}"

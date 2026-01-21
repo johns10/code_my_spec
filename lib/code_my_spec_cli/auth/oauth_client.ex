@@ -59,7 +59,8 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
     web_server_pid =
       case CodeMySpecCli.WebServer.start() do
         {:ok, pid} -> pid
-        {:error, :eaddrinuse} -> nil  # Another instance has the server running
+        # Another instance has the server running
+        {:error, :eaddrinuse} -> nil
         {:error, reason} -> raise "Failed to start WebServer for OAuth: #{inspect(reason)}"
       end
 

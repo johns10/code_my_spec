@@ -12,7 +12,8 @@ defmodule CodeMySpec.AcceptanceCriteriaFixtures do
   def criterion_fixture(scope, story, attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
-        description: "Given a user is logged in, when they view the dashboard, then they see their recent activity"
+        description:
+          "Given a user is logged in, when they view the dashboard, then they see their recent activity"
       })
 
     {:ok, criterion} = AcceptanceCriteria.create_criterion(scope, story, attrs)

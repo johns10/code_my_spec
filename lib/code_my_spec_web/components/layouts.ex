@@ -189,7 +189,7 @@ defmodule CodeMySpecWeb.Layouts do
           </div>
           <div class="flex-none">
             <%= if @current_scope do %>
-              <span class="hidden"><%= @current_scope.user.email %></span>
+              <span class="hidden">{@current_scope.user.email}</span>
               <.link href={~p"/users/log-out"} method="delete" class="btn btn-ghost">Log out</.link>
               <.link href={~p"/app"} class="btn btn-primary">Open workspace</.link>
             <% else %>

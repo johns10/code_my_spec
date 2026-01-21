@@ -103,7 +103,11 @@ defmodule CodeMySpec.GitTest do
     setup do
       # Use real Git.CLI for integration tests
       Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Git.CLI)
-      on_exit(fn -> Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter) end)
+
+      on_exit(fn ->
+        Application.put_env(:code_my_spec, :git_impl_module, CodeMySpec.Support.TestAdapter)
+      end)
+
       :ok
     end
 

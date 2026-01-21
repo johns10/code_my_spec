@@ -59,6 +59,7 @@ defmodule CodeMySpec.Repo.Migrations.ChangeProjectsToUuid do
     # Update projects with new UUIDs
     Enum.each(id_mapping, fn {old_id, new_uuid} ->
       {:ok, binary_uuid} = Ecto.UUID.dump(new_uuid)
+
       repo.query!(
         "UPDATE projects SET new_id = $1 WHERE id = $2",
         [binary_uuid, old_id]

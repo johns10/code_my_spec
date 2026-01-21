@@ -85,7 +85,15 @@ defmodule CodeMySpec.Components.Component do
 
   def changeset(component, attrs, %CodeMySpec.Users.Scope{} = scope) do
     component
-    |> cast(attrs, [:name, :type, :module_name, :description, :priority, :parent_component_id, :synced_at])
+    |> cast(attrs, [
+      :name,
+      :type,
+      :module_name,
+      :description,
+      :priority,
+      :parent_component_id,
+      :synced_at
+    ])
     |> validate_required([:name, :module_name])
     |> put_default_type()
     |> validate_length(:name, min: 1, max: 255)

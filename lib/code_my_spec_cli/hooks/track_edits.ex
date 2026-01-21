@@ -60,6 +60,8 @@ defmodule CodeMySpecCli.Hooks.TrackEdits do
     :ok
   end
 
-  defp extract_file_path(%{"file_path" => file_path}) when is_binary(file_path), do: {:ok, file_path}
+  defp extract_file_path(%{"file_path" => file_path}) when is_binary(file_path),
+    do: {:ok, file_path}
+
   defp extract_file_path(_input), do: :error
 end

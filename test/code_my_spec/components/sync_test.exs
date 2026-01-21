@@ -95,7 +95,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert hd(components).module_name == "MyApp.Accounts"
     end
 
-    test "falls back to spec module name when no implementation", %{scope: scope, tmp_dir: tmp_dir} do
+    test "falls back to spec module name when no implementation", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       write_spec(tmp_dir, "MyApp.Accounts")
 
       {:ok, components, _errors} = Sync.sync_all(scope, base_dir: tmp_dir)
@@ -104,7 +107,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert hd(components).module_name == "MyApp.Accounts"
     end
 
-    test "falls back to path-derived name when neither declares module", %{scope: scope, tmp_dir: tmp_dir} do
+    test "falls back to path-derived name when neither declares module", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       write_raw_file(tmp_dir, "lib/my_app/utils/helpers.ex", "# no defmodule here")
       write_raw_file(tmp_dir, "docs/spec/my_app/utils/helpers.spec.md", "No H1 title here")
 
@@ -123,7 +129,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert hd(components).module_name == "MyApp.Users"
     end
 
-    test "creates separate components when spec and impl have different module names", %{scope: scope, tmp_dir: tmp_dir} do
+    test "creates separate components when spec and impl have different module names", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       write_spec(tmp_dir, "MyApp.Accounts")
       write_impl(tmp_dir, "MyApp.Accounts", declared_name: "MyApp.UserAccounts")
 
@@ -135,7 +144,12 @@ defmodule CodeMySpec.Components.SyncTest do
     end
 
     test "finds all spec files recursively in docs/spec/", %{scope: scope, tmp_dir: tmp_dir} do
-      for module <- ["MyApp.Accounts", "MyApp.Accounts.User", "MyApp.Accounts.Role", "MyApp.Blog.Post"] do
+      for module <- [
+            "MyApp.Accounts",
+            "MyApp.Accounts.User",
+            "MyApp.Accounts.Role",
+            "MyApp.Blog.Post"
+          ] do
         write_spec(tmp_dir, module)
       end
 
@@ -149,7 +163,12 @@ defmodule CodeMySpec.Components.SyncTest do
     end
 
     test "finds all impl files recursively in lib/", %{scope: scope, tmp_dir: tmp_dir} do
-      for module <- ["MyApp.Accounts", "MyApp.Accounts.User", "MyApp.Accounts.Role", "MyApp.Blog.Post"] do
+      for module <- [
+            "MyApp.Accounts",
+            "MyApp.Accounts.User",
+            "MyApp.Accounts.Role",
+            "MyApp.Blog.Post"
+          ] do
         write_impl(tmp_dir, module)
       end
 
@@ -162,7 +181,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert "MyApp.Blog.Post" in module_names
     end
 
-    test "merges spec and impl data when both exist for same module", %{scope: scope, tmp_dir: tmp_dir} do
+    test "merges spec and impl data when both exist for same module", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       write_spec(tmp_dir, "MyApp.Accounts", description: "Description from spec file.")
       write_impl(tmp_dir, "MyApp.Accounts")
 
@@ -208,8 +230,18 @@ defmodule CodeMySpec.Components.SyncTest do
       {:ok, components, _errors} = Sync.sync_all(scope, base_dir: tmp_dir)
 
       accounts = Enum.find(components, &(&1.module_name == "MyApp.Accounts"))
-      user = Components.get_component(scope, Enum.find(components, &(&1.module_name == "MyApp.Accounts.User")).id)
-      role = Components.get_component(scope, Enum.find(components, &(&1.module_name == "MyApp.Accounts.Role")).id)
+
+      user =
+        Components.get_component(
+          scope,
+          Enum.find(components, &(&1.module_name == "MyApp.Accounts.User")).id
+        )
+
+      role =
+        Components.get_component(
+          scope,
+          Enum.find(components, &(&1.module_name == "MyApp.Accounts.Role")).id
+        )
 
       assert accounts.parent_component_id == nil
       assert user.parent_component_id == accounts.id
@@ -223,7 +255,11 @@ defmodule CodeMySpec.Components.SyncTest do
       # Create hierarchy with missing intermediate namespace:
       # MyApp.Context exists, but MyApp.Context.Submodule does not
       # MyApp.Context.Submodule.Child should parent to MyApp.Context
-      for module <- ["MyApp.Context", "MyApp.Context.Submodule.Child1", "MyApp.Context.Submodule.Child2"] do
+      for module <- [
+            "MyApp.Context",
+            "MyApp.Context.Submodule.Child1",
+            "MyApp.Context.Submodule.Child2"
+          ] do
         write_spec(tmp_dir, module)
       end
 
@@ -273,11 +309,12 @@ defmodule CodeMySpec.Components.SyncTest do
       write_spec(tmp_dir, "MyApp.Accounts")
       {:ok, _, _} = Sync.sync_all(scope, base_dir: tmp_dir)
 
-      {:ok, orphan} = Components.create_component(scope, %{
-        name: "Orphan",
-        module_name: "MyApp.Orphan",
-        type: "context"
-      })
+      {:ok, orphan} =
+        Components.create_component(scope, %{
+          name: "Orphan",
+          module_name: "MyApp.Orphan",
+          type: "context"
+        })
 
       assert Components.get_component(scope, orphan.id) != nil
 
@@ -303,7 +340,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert hd(first_components).id != hd(other_components).id
     end
 
-    test "skips files that have not been modified since last sync", %{scope: scope, tmp_dir: tmp_dir} do
+    test "skips files that have not been modified since last sync", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       write_spec(tmp_dir, "MyApp.Accounts")
 
       {:ok, [first], _} = Sync.sync_all(scope, base_dir: tmp_dir)
@@ -313,7 +353,10 @@ defmodule CodeMySpec.Components.SyncTest do
       assert second.synced_at == first.synced_at
     end
 
-    test "syncs files when mtime is newer than component synced_at", %{scope: scope, tmp_dir: tmp_dir} do
+    test "syncs files when mtime is newer than component synced_at", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
       path = write_spec(tmp_dir, "MyApp.Accounts")
 
       {:ok, [first], _} = Sync.sync_all(scope, base_dir: tmp_dir)

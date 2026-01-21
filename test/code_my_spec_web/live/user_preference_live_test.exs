@@ -13,8 +13,16 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
     project = project_fixture(scope)
 
     %{
-      create_attrs: %{token: "some token", active_account_id: account.id, active_project_id: project.id},
-      update_attrs: %{token: "some updated token", active_account_id: account.id, active_project_id: project.id},
+      create_attrs: %{
+        token: "some token",
+        active_account_id: account.id,
+        active_project_id: project.id
+      },
+      update_attrs: %{
+        token: "some updated token",
+        active_account_id: account.id,
+        active_project_id: project.id
+      },
       account: account,
       project: project
     }
@@ -42,7 +50,11 @@ defmodule CodeMySpecWeb.UserPreferenceLiveTest do
       assert html =~ "some token"
     end
 
-    test "updates existing user preferences", %{conn: conn, scope: scope, update_attrs: update_attrs} do
+    test "updates existing user preferences", %{
+      conn: conn,
+      scope: scope,
+      update_attrs: update_attrs
+    } do
       user_preference_fixture(scope)
       {:ok, form_live, _html} = live(conn, ~p"/app/users/preferences")
 

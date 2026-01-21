@@ -154,7 +154,7 @@ defmodule CodeMySpec.Documents.Parsers.FunctionParser do
   defp format_ordered_list(items) do
     items
     |> Enum.with_index(1)
-    |> Enum.map_join("\n", fn {{("li"), [], content, %{}}, index} ->
+    |> Enum.map_join("\n", fn {{"li", [], content, %{}}, index} ->
       "#{index}. #{extract_text(content)}"
     end)
   end

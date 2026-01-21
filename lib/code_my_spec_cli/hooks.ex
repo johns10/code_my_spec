@@ -64,13 +64,19 @@ defmodule CodeMySpecCli.Hooks do
 
     case Sessions.get_active_session_by_external_id(scope, claude_session_id) do
       %{id: session_id} = session ->
-        Logger.info("[Hooks] Found active session #{session_id} for Claude session #{claude_session_id}")
+        Logger.info(
+          "[Hooks] Found active session #{session_id} for Claude session #{claude_session_id}"
+        )
+
         eval_result = EvaluateAgentTask.run(scope, %{session_id: session.id})
         # Merge results, prioritizing any blocking decision from validation
         merge_hook_results(validate_result, eval_result)
 
       nil ->
-        Logger.info("[Hooks] No active session for Claude session #{claude_session_id}, only ValidateEdits ran")
+        Logger.info(
+          "[Hooks] No active session for Claude session #{claude_session_id}, only ValidateEdits ran"
+        )
+
         validate_result
     end
   end

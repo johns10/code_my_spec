@@ -94,5 +94,4 @@ defmodule CodeMySpec.Utils do
       end
     end)
   end
-
 end

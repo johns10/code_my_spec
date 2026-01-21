@@ -20,17 +20,19 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       AcceptanceCriteria.subscribe_criteria(scope)
 
       # Test created event
-      {:ok, created_criterion} = AcceptanceCriteria.create_criterion(scope, story, %{
-        description: "Test criterion for event"
-      })
+      {:ok, created_criterion} =
+        AcceptanceCriteria.create_criterion(scope, story, %{
+          description: "Test criterion for event"
+        })
 
       assert_receive {:created, received_criterion}
       assert received_criterion.id == created_criterion.id
 
       # Test updated event
-      {:ok, updated_criterion} = AcceptanceCriteria.update_criterion(scope, created_criterion, %{
-        description: "Updated description"
-      })
+      {:ok, updated_criterion} =
+        AcceptanceCriteria.update_criterion(scope, created_criterion, %{
+          description: "Updated description"
+        })
 
       assert_receive {:updated, received_updated}
       assert received_updated.id == updated_criterion.id
@@ -97,14 +99,17 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
 
       invalid_attrs = invalid_criterion_attrs()
 
-      assert {:error, %Ecto.Changeset{}} = AcceptanceCriteria.create_criterion(scope, story, invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} =
+               AcceptanceCriteria.create_criterion(scope, story, invalid_attrs)
     end
 
     test "validates required fields (description)" do
       scope = full_scope_fixture()
       story = story_fixture(scope)
 
-      assert {:error, changeset} = AcceptanceCriteria.create_criterion(scope, story, %{description: nil})
+      assert {:error, changeset} =
+               AcceptanceCriteria.create_criterion(scope, story, %{description: nil})
+
       assert %{description: ["can't be blank"]} = errors_on(changeset)
     end
   end
@@ -129,7 +134,9 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       criterion = criterion_fixture(scope, story)
 
       assert_raise MatchError, fn ->
-        AcceptanceCriteria.update_criterion(other_scope, criterion, %{description: "Attempt update"})
+        AcceptanceCriteria.update_criterion(other_scope, criterion, %{
+          description: "Attempt update"
+        })
       end
     end
 
@@ -140,9 +147,10 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
 
       AcceptanceCriteria.subscribe_criteria(scope)
 
-      assert {:ok, updated} = AcceptanceCriteria.update_criterion(scope, criterion, %{
-        description: "Updated description"
-      })
+      assert {:ok, updated} =
+               AcceptanceCriteria.update_criterion(scope, criterion, %{
+                 description: "Updated description"
+               })
 
       assert_receive {:updated, received_criterion}
       assert received_criterion.id == updated.id
@@ -153,9 +161,10 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       story = story_fixture(scope)
       criterion = criterion_fixture(scope, story)
 
-      assert {:error, %Ecto.Changeset{}} = AcceptanceCriteria.update_criterion(scope, criterion, %{
-        description: nil
-      })
+      assert {:error, %Ecto.Changeset{}} =
+               AcceptanceCriteria.update_criterion(scope, criterion, %{
+                 description: nil
+               })
     end
   end
 
@@ -201,7 +210,8 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       story = story_fixture(scope)
       criterion = criterion_fixture(scope, story)
 
-      changeset = AcceptanceCriteria.change_criterion(scope, criterion, %{description: "New description"})
+      changeset =
+        AcceptanceCriteria.change_criterion(scope, criterion, %{description: "New description"})
 
       assert %Ecto.Changeset{} = changeset
       assert changeset.data.id == criterion.id
@@ -214,7 +224,9 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       criterion = criterion_fixture(scope, story)
 
       assert_raise MatchError, fn ->
-        AcceptanceCriteria.change_criterion(other_scope, criterion, %{description: "Attempt change"})
+        AcceptanceCriteria.change_criterion(other_scope, criterion, %{
+          description: "Attempt change"
+        })
       end
     end
 
@@ -224,7 +236,9 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       criterion = criterion_fixture(scope, story)
       original_description = criterion.description
 
-      AcceptanceCriteria.change_criterion(scope, criterion, %{description: "Different description"})
+      AcceptanceCriteria.change_criterion(scope, criterion, %{
+        description: "Different description"
+      })
 
       reloaded = AcceptanceCriteria.get_criterion(scope, criterion.id)
       assert reloaded.description == original_description
@@ -400,10 +414,10 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       strings = AcceptanceCriteria.export_to_strings(scope, story)
 
       assert strings == [
-        "First criterion",
-        "Second criterion",
-        "Third criterion"
-      ]
+               "First criterion",
+               "Second criterion",
+               "Third criterion"
+             ]
     end
 
     test "returns empty list when story has no criteria" do
@@ -423,7 +437,10 @@ defmodule CodeMySpec.AcceptanceCriteriaTest do
       story_in_other_scope = story_fixture(other_scope)
 
       criterion_fixture(scope, story_in_scope, %{description: "Scoped criterion"})
-      criterion_fixture(other_scope, story_in_other_scope, %{description: "Other scoped criterion"})
+
+      criterion_fixture(other_scope, story_in_other_scope, %{
+        description: "Other scoped criterion"
+      })
 
       strings = AcceptanceCriteria.export_to_strings(scope, story_in_scope)
 

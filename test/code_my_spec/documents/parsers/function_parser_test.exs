@@ -27,7 +27,11 @@ defmodule CodeMySpec.Documents.Parsers.FunctionParserTest do
     test "extracts spec from elixir code block" do
       ast = [
         {"h3", [], ["build/1"], %{}},
-        {"pre", [], [{"code", [{"class", "elixir"}], ["@spec build([Component.t()]) :: [Component.t()]"], %{}}], %{}}
+        {"pre", [],
+         [
+           {"code", [{"class", "elixir"}], ["@spec build([Component.t()]) :: [Component.t()]"],
+            %{}}
+         ], %{}}
       ]
 
       assert [%Function{spec: "@spec build([Component.t()]) :: [Component.t()]"}] =
@@ -99,7 +103,11 @@ defmodule CodeMySpec.Documents.Parsers.FunctionParserTest do
       ast = [
         {"h3", [], ["build/1"], %{}},
         {"p", [], ["Apply dependency tree processing."], %{}},
-        {"pre", [], [{"code", [{"class", "elixir"}], ["@spec build([Component.t()]) :: [Component.t()]"], %{}}], %{}},
+        {"pre", [],
+         [
+           {"code", [{"class", "elixir"}], ["@spec build([Component.t()]) :: [Component.t()]"],
+            %{}}
+         ], %{}},
         {"p", [], ["**Process**:"], %{}},
         {"ol", [],
          [
