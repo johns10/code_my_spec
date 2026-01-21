@@ -161,12 +161,6 @@ defmodule CodeMySpecCli.Cli do
       {[:hook], _} ->
         CodeMySpecCli.Hooks.run()
 
-      {[:start_agent_task], %{options: opts}} ->
-        CodeMySpecCli.SlashCommands.StartAgentTask.run(opts)
-
-      {[:evaluate_agent_task], %{options: opts}} ->
-        CodeMySpecCli.SlashCommands.EvaluateAgentTask.run(opts)
-
       _ ->
         # No subcommand - launch TUI
         Ratatouille.run(CodeMySpecCli.Screens.Main, interval: 100)
