@@ -113,6 +113,69 @@ defmodule CodeMySpec.Documents.Registry do
     | foreign_id  | integer      | Yes        | Foreign key           | References table.id |
   """
 
+  @review_overview """
+  Format:
+  - Use H2 heading
+  - Brief paragraph (2-4 sentences)
+
+  Content:
+  - State what was reviewed (context name and component count)
+  - Summarize the overall assessment (sound/needs work)
+  """
+
+  @review_architecture """
+  Format:
+  - Use H2 heading
+  - Bullet list of findings
+
+  Content:
+  - Assess separation of concerns
+  - Validate component type usage (schema, repository, service patterns)
+  - Check dependency relationships
+  - Flag any architectural concerns
+  """
+
+  @review_integration """
+  Format:
+  - Use H2 heading
+  - Bullet list of integration points
+
+  Content:
+  - List how components connect
+  - Identify public APIs and delegation points
+  - Note any missing or problematic integration points
+  """
+
+  @review_stories """
+  Format:
+  - Use H2 heading
+  - Bullet list mapping stories to components
+
+  Content:
+  - For each user story, confirm which components satisfy it
+  - Identify any gaps in coverage
+  """
+
+  @review_issues """
+  Format:
+  - Use H2 heading
+  - Bullet list or "None found"
+
+  Content:
+  - List any issues discovered during review
+  - For each issue, note if it was fixed and how
+  """
+
+  @review_conclusion """
+  Format:
+  - Use H2 heading
+  - Single paragraph
+
+  Content:
+  - State readiness for implementation (ready/blocked)
+  - List any remaining action items if blocked
+  """
+
   @default_spec_definition %{
     overview: """
     Spec documents provide comprehensive documentation for Elixir modules following a
@@ -181,6 +244,24 @@ defmodule CodeMySpec.Documents.Registry do
       required_sections: [],
       optional_sections: [],
       allowed_additional_sections: "*"
+    },
+    "design_review" => %{
+      overview: """
+      Design review documents summarize architectural analysis of a Phoenix context
+      and its child components. Reviews validate consistency, integration, and
+      alignment with user stories. Keep reviews concise and actionable.
+      """,
+      required_sections: ["overview", "architecture", "integration", "conclusion"],
+      optional_sections: ["stories", "issues"],
+      allowed_additional_sections: [],
+      section_descriptions: %{
+        "overview" => @review_overview,
+        "architecture" => @review_architecture,
+        "integration" => @review_integration,
+        "stories" => @review_stories,
+        "issues" => @review_issues,
+        "conclusion" => @review_conclusion
+      }
     }
   }
 

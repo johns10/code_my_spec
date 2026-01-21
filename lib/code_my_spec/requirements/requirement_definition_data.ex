@@ -5,13 +5,13 @@ defmodule CodeMySpec.Requirements.RequirementDefinitionData do
   and categorization for consistent requirement checking.
   """
 
-  alias CodeMySpec.Requirements.RequirementDefinition
-  alias CodeMySpec.Requirements.FileExistenceChecker
-  alias CodeMySpec.Requirements.DocumentValidityChecker
-  alias CodeMySpec.Requirements.TestStatusChecker
-  alias CodeMySpec.Requirements.DependencyChecker
-  alias CodeMySpec.Requirements.HierarchicalChecker
   alias CodeMySpec.Requirements.ContextReviewFileChecker
+  alias CodeMySpec.Requirements.DependencyChecker
+  alias CodeMySpec.Requirements.DocumentValidityChecker
+  alias CodeMySpec.Requirements.FileExistenceChecker
+  alias CodeMySpec.Requirements.HierarchicalChecker
+  alias CodeMySpec.Requirements.RequirementDefinition
+  alias CodeMySpec.Requirements.TestStatusChecker
 
   @spec spec_file() :: RequirementDefinition.t()
   def spec_file do
@@ -114,7 +114,7 @@ defmodule CodeMySpec.Requirements.RequirementDefinitionData do
     {:ok, definition} = RequirementDefinition.new(%{
       name: "review_file",
       checker: ContextReviewFileChecker,
-      satisfied_by: CodeMySpec.ContextDesignReviewSessions,
+      satisfied_by: CodeMySpec.Sessions.AgentTasks.ContextDesignReview,
       artifact_type: :review,
       description: "Context design review file exists"
     })

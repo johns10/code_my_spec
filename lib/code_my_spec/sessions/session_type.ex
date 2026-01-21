@@ -7,7 +7,6 @@ defmodule CodeMySpec.Sessions.SessionType do
   @legacy_types [
     CodeMySpec.ContextSpecSessions,
     CodeMySpec.ContextComponentsDesignSessions,
-    CodeMySpec.ContextDesignReviewSessions,
     CodeMySpec.ContextCodingSessions,
     CodeMySpec.ContextTestingSessions,
     CodeMySpec.ComponentSpecSessions,
@@ -24,7 +23,8 @@ defmodule CodeMySpec.Sessions.SessionType do
     AgentTasks.ComponentTest,
     AgentTasks.ContextSpec,
     AgentTasks.ContextComponentSpecs,
-    AgentTasks.ContextImplementation
+    AgentTasks.ContextImplementation,
+    AgentTasks.ContextDesignReview
   ]
 
   @valid_types @legacy_types ++ @agent_task_types

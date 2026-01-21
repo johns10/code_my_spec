@@ -12,7 +12,6 @@ defmodule CodeMySpec.Sessions.Session do
           type:
             CodeMySpec.ContextSpecSessions
             | CodeMySpec.ContextComponentsDesignSessions
-            | CodeMySpec.ContextDesignReviewSessions
             | CodeMySpec.ContextCodingSessions
             | CodeMySpec.ContextTestingSessions
             | CodeMySpec.ComponentSpecSessions
@@ -20,6 +19,7 @@ defmodule CodeMySpec.Sessions.Session do
             | CodeMySpec.ComponentTestSessions
             | CodeMySpec.ComponentCodingSessions
             | CodeMySpec.IntegrationSessions
+            | CodeMySpec.Sessions.AgentTasks.ContextDesignReview
             | nil,
           agent: :claude_code | nil,
           environment: :local | :vscode | :cli | nil,

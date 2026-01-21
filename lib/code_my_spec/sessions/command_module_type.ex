@@ -18,8 +18,6 @@ defmodule CodeMySpec.Sessions.CommandModuleType do
     CodeMySpec.ContextTestingSessions.Steps.Initialize,
     CodeMySpec.ContextTestingSessions.Steps.SpawnComponentTestingSessions,
     CodeMySpec.ContextTestingSessions.Steps.Finalize,
-    CodeMySpec.ContextDesignReviewSessions.Steps.ExecuteReview,
-    CodeMySpec.ContextDesignReviewSessions.Steps.Finalize,
     CodeMySpec.ComponentSpecSessions.Steps.Initialize,
     CodeMySpec.ComponentSpecSessions.Steps.GenerateComponentSpec,
     CodeMySpec.ComponentSpecSessions.Steps.ValidateSpec,
