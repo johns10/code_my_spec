@@ -11,7 +11,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   alias CodeMySpec.Components.ComponentRepository
   alias CodeMySpec.Sessions.AgentTasks.{ComponentSpec, ContextSpec}
 
-  defp prompt_dir(external_id), do: ".code_my_spec/sessions/#{external_id}/subagent_prompts"
+  defp prompt_dir(external_id), do: ".code_my_spec/internal/sessions/#{external_id}/subagent_prompts"
 
   @doc """
   Generate the orchestration prompt for designing child components.

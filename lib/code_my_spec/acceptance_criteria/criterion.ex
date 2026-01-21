@@ -1,0 +1,55 @@
+defmodule CodeMySpec.AcceptanceCriteria.Criterion do
+  @moduledoc """
+  Ecto schema representing a single acceptance criterion.
+
+  Acceptance criteria belong to stories and represent testable conditions
+  that define when a story is complete. Each criterion has a description,
+  verification status, and timestamp tracking.
+  """
+
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          description: String.t(),
+          verified: boolean(),
+          verified_at: DateTime.t() | nil,
+          story_id: integer() | nil,
+          project_id: Ecto.UUID.t() | nil,
+          account_id: integer() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  schema "criteria" do
+    field :description, :string
+    field :verified, :boolean, default: false
+    field :verified_at, :utc_datetime
+    field :project_id, :binary_id
+    field :account_id, :id
+
+    belongs_to :story, CodeMySpec.Stories.Story
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(criterion, attrs) do
+    criterion
+    |> cast(attrs, [
+      :description,
+      :verified,
+      :verified_at,
+      :story_id,
+      :project_id,
+      :account_id
+    ])
+    |> validate_required([
+      :description,
+      :story_id,
+      :project_id,
+      :account_id
+    ])
+  end
+end
