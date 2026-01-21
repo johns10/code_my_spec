@@ -159,9 +159,11 @@ defmodule CodeMySpec.MixProject do
           ],
           extra_steps: [
             # Include the tmux startup script in the release
-            {:copy, "scripts/start-with-tmux.sh", "bin/start-with-tmux"}
+            {:copy, "scripts/start-with-tmux.sh", "bin/start-with-tmux"},
+            # Package extension for distribution
+            build: [post: [CodeMySpecCli.Release.PackageExtension]]
           ],
-          debug: true,
+          debug: false,
           no_clean: false
         ]
       ]
