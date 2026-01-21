@@ -2,22 +2,19 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   @moduledoc """
   Evaluate/validate an agent task session's output.
 
-  Looks up the session by ID (from argument or persisted CurrentSession),
+  Looks up the session by ID (passed from the Stop hook via external_conversation_id lookup),
   determines its type, and calls the appropriate AgentTask module's evaluate/3
   function to validate Claude's output.
 
   ## Usage
 
-  From CLI (typically called by stop hook):
-      MIX_ENV=cli mix cli evaluate-agent-task
-      MIX_ENV=cli mix cli evaluate-agent-task -s 123
-
-  If no session ID is provided, reads from CurrentSession persistence.
+  Typically called by the Stop hook, which looks up the session by Claude's session ID
+  and passes the internal session ID.
 
   ## Output (JSON for hook decision control)
 
   Outputs JSON to stdout for Claude Code hook protocol:
-  - If valid: `{}` (empty map allows Claude to stop), clears session
+  - If valid: `{}` (empty map allows Claude to stop), marks session complete
   - If invalid: `{"decision": "block", "reason": "<feedback>"}` (blocks Claude from stopping)
   - If error: `{}` (allows Claude to stop), error message to stderr
   """
@@ -25,7 +22,6 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   use CodeMySpecCli.SlashCommands.SlashCommandBehaviour
 
   alias CodeMySpec.Sessions
-  alias CodeMySpec.Sessions.CurrentSession
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
   @doc """
@@ -37,14 +33,20 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
 
     with {:ok, session_id} when not is_nil(session_id) <- resolve_session_id(session_id_arg),
          {:ok, session} <- get_session(scope, session_id),
+         :ok <- check_session_active(session),
          {:ok, task_session} <- build_task_session(session),
          {:ok, sync_result} <- sync_project(scope),
          result <- session.type.evaluate(scope, task_session) do
       output_sync_metrics(sync_result)
+      maybe_complete_session(scope, session, result)
       format_result(result)
     else
       {:ok, nil} ->
         format_result({:ok, nil})
+
+      {:ok, {:already_closed, status}} ->
+        IO.puts(:stderr, "Session already #{status}, skipping evaluation")
+        %{}
 
       {:error, reason} ->
         format_setup_error(reason)
@@ -64,19 +66,8 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
     :ok
   end
 
-  defp resolve_session_id(nil) do
-    # No argument provided, try to load from CurrentSession
-    CurrentSession.get_session_id()
-  end
-
-  defp resolve_session_id(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {int_id, ""} -> {:ok, int_id}
-      _ -> {:error, "Invalid session ID: #{id}"}
-    end
-  end
-
-  defp resolve_session_id(id) when is_integer(id), do: {:ok, id}
+  defp resolve_session_id(nil), do: {:ok, nil}
+  defp resolve_session_id(id) when is_binary(id), do: {:ok, id}
 
   defp get_session(scope, session_id) do
     case Sessions.get_session(scope, session_id) do
@@ -85,10 +76,20 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
     end
   end
 
+  defp check_session_active(%{status: :active}), do: :ok
+  defp check_session_active(%{status: status}), do: {:ok, {:already_closed, status}}
+
+  defp maybe_complete_session(scope, session, {:ok, :valid}) do
+    Sessions.update_session(scope, session, %{status: :complete})
+  end
+
+  defp maybe_complete_session(_scope, _session, _result), do: :ok
+
   defp build_task_session(session) do
     # Session should have component and project preloaded
     {:ok,
      %{
+       external_id: session.external_conversation_id,
        component: session.component,
        project: session.project,
        environment: session.environment
@@ -98,7 +99,6 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
   defp format_result({:ok, nil}), do: %{}
 
   defp format_result({:ok, :valid}) do
-    CurrentSession.clear()
     IO.puts(:stderr, "All checks passed!")
     %{}
   end

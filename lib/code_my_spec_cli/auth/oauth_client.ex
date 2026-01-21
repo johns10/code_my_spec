@@ -55,6 +55,23 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   def authenticate(opts \\ []) do
     server_base_url = opts[:server_url] || get_server_url()
 
+    # Start the WebServer for OAuth callback
+    web_server_pid =
+      case CodeMySpecCli.WebServer.start() do
+        {:ok, pid} -> pid
+        {:error, :eaddrinuse} -> nil  # Another instance has the server running
+        {:error, reason} -> raise "Failed to start WebServer for OAuth: #{inspect(reason)}"
+      end
+
+    try do
+      do_authenticate(server_base_url)
+    after
+      # Always stop the WebServer when done
+      CodeMySpecCli.WebServer.stop(web_server_pid)
+    end
+  end
+
+  defp do_authenticate(server_base_url) do
     # Get or register OAuth client
     {:ok, client_id, client_secret} = get_or_register_client(server_base_url)
 

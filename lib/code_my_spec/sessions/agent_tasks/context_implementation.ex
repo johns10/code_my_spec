@@ -11,7 +11,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   alias CodeMySpec.Components.ComponentRepository
   alias CodeMySpec.Sessions.AgentTasks.{ComponentTest, ComponentCode}
 
-  @prompt_dir ".code_my_spec/internal/current_session/subagent_prompts"
+  defp prompt_dir(external_id), do: ".code_my_spec/sessions/#{external_id}/subagent_prompts"
 
   @doc """
   Generate prompt files and orchestration instructions for implementing a context and its child components.
@@ -21,7 +21,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   Returns {:ok, prompt_text}
   """
   def command(scope, session, _opts \\ []) do
-    %{component: context_component} = session
+    %{component: context_component, external_id: external_id} = session
     # Ensure requirements are preloaded on context component
     context_component = ComponentRepository.get_component(scope, context_component.id)
 
@@ -37,9 +37,10 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
              scope,
              session,
              components_needing_tests,
-             components_needing_code
+             components_needing_code,
+             external_id
            ),
-         {:ok, prompt} <- build_orchestration_prompt(context_component, prompt_files) do
+         {:ok, prompt} <- build_orchestration_prompt(context_component, prompt_files, external_id) do
       {:ok, prompt}
     end
   end
@@ -53,7 +54,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
   - {:error, reason} if evaluation failed
   """
   def evaluate(scope, session, opts \\ []) do
-    %{component: context_component} = session
+    %{component: context_component, external_id: external_id} = session
     # Ensure requirements are preloaded on context component
     context_component = ComponentRepository.get_component(scope, context_component.id)
 
@@ -64,14 +65,14 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
          {:ok, code_results} <- evaluate_code(scope, session, all_components, opts),
          {:ok, satisfied, unsatisfied} <-
            aggregate_results(all_components, test_results, code_results),
-         :ok <- cleanup_prompt_files(satisfied) do
+         :ok <- cleanup_prompt_files(satisfied, external_id) do
       case unsatisfied do
         [] ->
-          cleanup_prompt_directory()
+          cleanup_prompt_directory(external_id)
           {:ok, :valid}
 
         failed_components ->
-          feedback = build_feedback(failed_components)
+          feedback = build_feedback(failed_components, external_id)
           {:ok, :invalid, feedback}
       end
     end
@@ -122,11 +123,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     {:ok, needing_code}
   end
 
-  defp generate_prompt_files(scope, session, components_needing_tests, components_needing_code) do
+  defp generate_prompt_files(scope, session, components_needing_tests, components_needing_code, external_id) do
     %{project: project} = session
     {:ok, environment} = Environments.create(session.environment)
 
-    ensure_prompt_directory()
+    ensure_prompt_directory(external_id)
 
     # Generate test prompt files
     test_prompts =
@@ -140,7 +141,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         {:ok, prompt_content} = ComponentTest.command(scope, child_session)
 
         safe_name = safe_filename(child.module_name)
-        file_path = "#{@prompt_dir}/#{safe_name}_test.md"
+        file_path = "#{prompt_dir(external_id)}/#{safe_name}_test.md"
         :ok = Environments.write_file(environment, file_path, prompt_content)
 
         %{
@@ -162,7 +163,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         {:ok, prompt_content} = ComponentCode.command(scope, child_session)
 
         safe_name = safe_filename(child.module_name)
-        file_path = "#{@prompt_dir}/#{safe_name}_code.md"
+        file_path = "#{prompt_dir(external_id)}/#{safe_name}_code.md"
         :ok = Environments.write_file(environment, file_path, prompt_content)
 
         %{
@@ -175,8 +176,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     {:ok, test_prompts ++ code_prompts}
   end
 
-  defp ensure_prompt_directory do
-    File.mkdir_p!(@prompt_dir)
+  defp ensure_prompt_directory(external_id) do
+    File.mkdir_p!(prompt_dir(external_id))
     :ok
   end
 
@@ -186,7 +187,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     |> String.downcase()
   end
 
-  defp build_orchestration_prompt(context_component, []) do
+  defp build_orchestration_prompt(context_component, [], _external_id) do
     {:ok,
      """
      Context #{context_component.name} and all its child components already have passing tests and implementations.
@@ -194,7 +195,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
      """}
   end
 
-  defp build_orchestration_prompt(context_component, prompt_files) do
+  defp build_orchestration_prompt(context_component, prompt_files, _external_id) do
     # Group by component to show test + code together
     by_component =
       prompt_files
@@ -366,13 +367,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     {:ok, satisfied, unsatisfied_with_details}
   end
 
-  defp cleanup_prompt_files(satisfied_children) do
+  defp cleanup_prompt_files(satisfied_children, external_id) do
     Enum.each(satisfied_children, fn child ->
       safe_name = safe_filename(child.module_name)
 
       # Clean up both test and code prompt files
       Enum.each(["_test.md", "_code.md"], fn suffix ->
-        file_path = "#{@prompt_dir}/#{safe_name}#{suffix}"
+        file_path = "#{prompt_dir(external_id)}/#{safe_name}#{suffix}"
 
         if File.exists?(file_path) do
           File.rm(file_path)
@@ -383,10 +384,12 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     :ok
   end
 
-  defp cleanup_prompt_directory do
-    if File.exists?(@prompt_dir) and File.dir?(@prompt_dir) do
-      case File.ls(@prompt_dir) do
-        {:ok, []} -> File.rmdir(@prompt_dir)
+  defp cleanup_prompt_directory(external_id) do
+    dir = prompt_dir(external_id)
+
+    if File.exists?(dir) and File.dir?(dir) do
+      case File.ls(dir) do
+        {:ok, []} -> File.rmdir(dir)
         _ -> :ok
       end
     end
@@ -394,7 +397,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     :ok
   end
 
-  defp build_feedback(unsatisfied_components) do
+  defp build_feedback(unsatisfied_components, external_id) do
     components_list =
       unsatisfied_components
       |> Enum.map(fn %{component: comp, errors: errors} ->
@@ -416,7 +419,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     - For test failures: invoke `@"CodeMySpec:test-writer (agent)"` with the test prompt
     - For code failures: invoke `@"CodeMySpec:code-writer (agent)"` with the code prompt
 
-    Prompt files are located in #{@prompt_dir}/
+    Prompt files are located in #{prompt_dir(external_id)}/
     """
   end
 end

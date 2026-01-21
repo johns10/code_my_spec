@@ -11,7 +11,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   alias CodeMySpec.Components.ComponentRepository
   alias CodeMySpec.Sessions.AgentTasks.{ComponentSpec, ContextSpec}
 
-  @prompt_dir ".code_my_spec/internal/current_session/subagent_prompts"
+  defp prompt_dir(external_id), do: ".code_my_spec/sessions/#{external_id}/subagent_prompts"
 
   @doc """
   Generate the orchestration prompt for designing child components.
@@ -24,18 +24,18 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   Returns {:ok, prompt_text}
   """
   def command(scope, session, _opts \\ []) do
-    %{component: context_component} = session
+    %{component: context_component, external_id: external_id} = session
     # Ensure requirements are preloaded on context component
     context_component = ComponentRepository.get_component(scope, context_component.id)
 
     with {:ok, context_prompt_file} <-
-           maybe_generate_context_prompt(scope, session, context_component),
+           maybe_generate_context_prompt(scope, session, context_component, external_id),
          {:ok, children} <- get_child_components(scope, context_component),
          {:ok, children_needing_specs} <- filter_children_needing_specs(scope, children, session),
          {:ok, child_prompt_files} <-
-           generate_child_prompt_files(scope, session, children_needing_specs),
+           generate_child_prompt_files(scope, session, children_needing_specs, external_id),
          {:ok, prompt} <-
-           build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files) do
+           build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files, external_id) do
       {:ok, prompt}
     end
   end
@@ -49,7 +49,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   - {:error, reason} if evaluation failed
   """
   def evaluate(scope, session, _opts \\ []) do
-    %{component: context_component} = session
+    %{component: context_component, external_id: external_id} = session
     # Ensure requirements are preloaded on context component
     context_component = ComponentRepository.get_component(scope, context_component.id)
 
@@ -57,17 +57,17 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
            check_context_spec_status(scope, context_component, session),
          {:ok, children} <- get_child_components(scope, context_component),
          {:ok, satisfied, unsatisfied} <- check_children_spec_status(scope, children, session),
-         :ok <- cleanup_prompt_files(satisfied),
-         :ok <- maybe_cleanup_context_prompt(context_component, context_unsatisfied) do
+         :ok <- cleanup_prompt_files(satisfied, external_id),
+         :ok <- maybe_cleanup_context_prompt(context_component, context_unsatisfied, external_id) do
       all_unsatisfied = context_unsatisfied ++ unsatisfied
 
       case all_unsatisfied do
         [] ->
-          cleanup_prompt_directory()
+          cleanup_prompt_directory(external_id)
           {:ok, :valid}
 
         components_still_needing_specs ->
-          feedback = build_feedback(components_still_needing_specs)
+          feedback = build_feedback(components_still_needing_specs, external_id)
           {:ok, :invalid, feedback}
       end
     end
@@ -82,7 +82,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     {:ok, children}
   end
 
-  defp maybe_generate_context_prompt(scope, session, context_component) do
+  defp maybe_generate_context_prompt(scope, session, context_component, external_id) do
     # Filter persisted requirements to spec-related ones
     results =
       Requirements.check_requirements(
@@ -96,14 +96,14 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
     if context_needs_spec do
       {:ok, environment} = Environments.create(session.environment)
-      ensure_prompt_directory()
+      ensure_prompt_directory(external_id)
 
       # Use ContextSpec.command/3 to generate the prompt content
       {:ok, prompt_content} = ContextSpec.command(scope, session)
 
       # Write prompt file
       safe_name = safe_filename(context_component.module_name)
-      file_path = "#{@prompt_dir}/#{safe_name}_context.md"
+      file_path = "#{prompt_dir(external_id)}/#{safe_name}_context.md"
       :ok = Environments.write_file(environment, file_path, prompt_content)
 
       {:ok, %{component: context_component, file_path: file_path, type: :context}}
@@ -131,17 +131,18 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     {:ok, children_needing_specs}
   end
 
-  defp generate_child_prompt_files(scope, session, children_needing_specs) do
+  defp generate_child_prompt_files(scope, session, children_needing_specs, external_id) do
     %{project: project} = session
     {:ok, environment} = Environments.create(session.environment)
 
     # Ensure directory exists
-    ensure_prompt_directory()
+    ensure_prompt_directory(external_id)
 
     prompt_files =
       Enum.map(children_needing_specs, fn child ->
         # Build a mini-session for the child component
         child_session = %{
+          external_id: external_id,
           component: child,
           project: project,
           environment: session.environment
@@ -152,7 +153,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
         # Write prompt file
         safe_name = safe_filename(child.module_name)
-        file_path = "#{@prompt_dir}/#{safe_name}.md"
+        file_path = "#{prompt_dir(external_id)}/#{safe_name}.md"
         :ok = Environments.write_file(environment, file_path, prompt_content)
 
         %{
@@ -165,8 +166,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     {:ok, prompt_files}
   end
 
-  defp ensure_prompt_directory do
-    File.mkdir_p!(@prompt_dir)
+  defp ensure_prompt_directory(external_id) do
+    File.mkdir_p!(prompt_dir(external_id))
     :ok
   end
 
@@ -176,7 +177,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     |> String.downcase()
   end
 
-  defp build_orchestration_prompt(context_component, nil, []) do
+  defp build_orchestration_prompt(context_component, nil, [], _external_id) do
     # No context or children need specs
     {:ok,
      """
@@ -185,7 +186,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
      """}
   end
 
-  defp build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files) do
+  defp build_orchestration_prompt(context_component, context_prompt_file, child_prompt_files, _external_id) do
     all_prompt_files =
       case context_prompt_file do
         nil -> child_prompt_files
@@ -295,9 +296,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     {:ok, satisfied, unsatisfied_with_details}
   end
 
-  defp maybe_cleanup_context_prompt(context_component, []) do
+  defp maybe_cleanup_context_prompt(context_component, [], external_id) do
     # Context is satisfied, clean up its prompt file if it exists
-    file_path = "#{@prompt_dir}/#{safe_filename(context_component.module_name)}_context.md"
+    file_path = "#{prompt_dir(external_id)}/#{safe_filename(context_component.module_name)}_context.md"
 
     if File.exists?(file_path) do
       File.rm(file_path)
@@ -306,11 +307,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     :ok
   end
 
-  defp maybe_cleanup_context_prompt(_context_component, _unsatisfied), do: :ok
+  defp maybe_cleanup_context_prompt(_context_component, _unsatisfied, _external_id), do: :ok
 
-  defp cleanup_prompt_files(satisfied_children) do
+  defp cleanup_prompt_files(satisfied_children, external_id) do
     Enum.each(satisfied_children, fn child ->
-      file_path = "#{@prompt_dir}/#{safe_filename(child.module_name)}.md"
+      file_path = "#{prompt_dir(external_id)}/#{safe_filename(child.module_name)}.md"
 
       if File.exists?(file_path) do
         File.rm(file_path)
@@ -320,10 +321,12 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     :ok
   end
 
-  defp cleanup_prompt_directory do
-    if File.exists?(@prompt_dir) and File.dir?(@prompt_dir) do
-      case File.ls(@prompt_dir) do
-        {:ok, []} -> File.rmdir(@prompt_dir)
+  defp cleanup_prompt_directory(external_id) do
+    dir = prompt_dir(external_id)
+
+    if File.exists?(dir) and File.dir?(dir) do
+      case File.ls(dir) do
+        {:ok, []} -> File.rmdir(dir)
         _ -> :ok
       end
     end
@@ -331,7 +334,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     :ok
   end
 
-  defp build_feedback(unsatisfied_components) do
+  defp build_feedback(unsatisfied_components, external_id) do
     components_list =
       unsatisfied_components
       |> Enum.map(fn %{component: comp, unsatisfied_requirements: reqs, type: type} ->
@@ -348,7 +351,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
     Please ensure your `@"CodeMySpec:spec-writer (agent)"` subagents have completed creating the specification files for these components.
     The subagents should:
-    1. Read their assigned prompt file from #{@prompt_dir}/
+    1. Read their assigned prompt file from #{prompt_dir(external_id)}/
     2. Create valid specification documents following the Document Specifications
     3. Write the spec files to the correct locations
 

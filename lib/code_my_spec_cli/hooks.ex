@@ -6,9 +6,8 @@ defmodule CodeMySpecCli.Hooks do
 
   ## Supported Hook Events
 
-  - `Stop` - Routes based on active session:
-    - If session exists: evaluates the agent task via EvaluateAgentTask
-    - If no session: validates spec files tracked by FileEdits via ValidateEdits
+  - `Stop` - Always validates spec files via ValidateEdits, and additionally
+    evaluates the agent task via EvaluateAgentTask if there's an active session
   - `SubagentStop` - Validates spec files edited during a subagent session
   - `PostToolUse` - Tracks file edits during agent sessions via TrackEdits
 
@@ -19,7 +18,7 @@ defmodule CodeMySpecCli.Hooks do
 
   require Logger
 
-  alias CodeMySpec.Sessions.CurrentSession
+  alias CodeMySpec.Sessions
   alias CodeMySpec.Users.Scope
   alias CodeMySpecCli.Hooks.{TrackEdits, ValidateEdits}
   alias CodeMySpecCli.SlashCommands.EvaluateAgentTask
@@ -56,17 +55,30 @@ defmodule CodeMySpecCli.Hooks do
     end
   end
 
-  defp dispatch(%{"hook_event_name" => "Stop"} = hook_input) do
-    case CurrentSession.get_session_id() do
-      {:ok, session_id} when not is_nil(session_id) ->
-        Logger.info("[Hooks] Active session #{session_id}, dispatching to EvaluateAgentTask")
-        scope = Scope.for_cli()
-        EvaluateAgentTask.run(scope, %{})
+  defp dispatch(%{"hook_event_name" => "Stop", "session_id" => claude_session_id} = hook_input) do
+    # Always run ValidateEdits
+    validate_result = dispatch_validate_edits(hook_input)
 
-      {:ok, nil} ->
-        Logger.info("[Hooks] No active session, dispatching to ValidateEdits")
-        dispatch_validate_edits(hook_input)
+    # Additionally run EvaluateAgentTask if there's an active session for this Claude session
+    scope = Scope.for_cli()
+
+    case Sessions.get_active_session_by_external_id(scope, claude_session_id) do
+      %{id: session_id} = session ->
+        Logger.info("[Hooks] Found active session #{session_id} for Claude session #{claude_session_id}")
+        eval_result = EvaluateAgentTask.run(scope, %{session_id: session.id})
+        # Merge results, prioritizing any blocking decision from validation
+        merge_hook_results(validate_result, eval_result)
+
+      nil ->
+        Logger.info("[Hooks] No active session for Claude session #{claude_session_id}, only ValidateEdits ran")
+        validate_result
     end
+  end
+
+  defp dispatch(%{"hook_event_name" => "Stop"} = hook_input) do
+    # Stop without session_id - just run ValidateEdits
+    Logger.warning("[Hooks] Stop hook without session_id in input")
+    dispatch_validate_edits(hook_input)
   end
 
   defp dispatch(%{"hook_event_name" => "SubagentStop"} = hook_input) do
@@ -96,6 +108,28 @@ defmodule CodeMySpecCli.Hooks do
       :error ->
         Logger.warning("[Hooks] No session_id in hook input, skipping validation")
         %{}
+    end
+  end
+
+  # Merge results from multiple hooks, prioritizing any blocking decisions
+  defp merge_hook_results(result1, result2) do
+    case {result1["decision"], result2["decision"]} do
+      {"block", "block"} ->
+        # Both block - combine reasons
+        %{
+          "decision" => "block",
+          "reason" => "#{result1["reason"]}\n\n#{result2["reason"]}"
+        }
+
+      {"block", _} ->
+        result1
+
+      {_, "block"} ->
+        result2
+
+      _ ->
+        # Neither blocks - merge maps
+        Map.merge(result1, result2)
     end
   end
 
