@@ -160,6 +160,8 @@ defmodule CodeMySpec.MixProject do
           extra_steps: [
             # Include the tmux startup script in the release
             {:copy, "scripts/start-with-tmux.sh", "bin/start-with-tmux"},
+            # Patch Zig launcher to add "--" separator before args (prevents Elixir script loading)
+            fetch: [pre: [CodeMySpecCli.Release.PatchLauncherStep]],
             # Package extension for distribution
             build: [post: [CodeMySpecCli.Release.PackageExtension]]
           ],

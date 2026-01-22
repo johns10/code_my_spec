@@ -1,13 +1,16 @@
 defmodule Mix.Tasks.Cli do
   use Mix.Task
 
-  @shortdoc "CodeMySpec CLI"
+  @shortdoc "Run CodeMySpec CLI commands"
 
   def run(args) do
-    # Don't start the full application
+    # Set args in application env before starting
+    Application.put_env(:code_my_spec, :cli_args, args)
+
+    # Start the application - CliRunner will pick up args and execute
     Mix.Task.run("app.start", [])
 
-    # Call your CLI
-    CodeMySpecCli.Cli.run(args)
+    # Block until VM halts (CliRunner calls System.halt)
+    Process.sleep(:infinity)
   end
 end

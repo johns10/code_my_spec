@@ -1,14 +1,18 @@
 defmodule CodeMySpecCli.Application do
-  @impl true
+  @moduledoc """
+  CLI application.
+
+  CLI args come from either:
+  - Application env :cli_args (set by mix task)
+  - Burrito.Util.Args (when running as binary)
+  """
   use Application
-  # import Ratatouille.Constants, only: [key: 1]
 
-  def start(_type, _args) do
+  @impl true
+  def start(_type, _start_args) do
     ensure_db_directory()
-    Application.ensure_all_started(:telemetry)
 
-    # Add file logger backend at runtime
-    LoggerBackends.add({LoggerFileBackend, :file_log})
+    args = get_cli_args()
 
     children = [
       CodeMySpecCli.WebServer.Telemetry,
@@ -16,36 +20,25 @@ defmodule CodeMySpecCli.Application do
       CodeMySpec.Vault,
       CodeMySpecCli.Migrator,
       {Phoenix.PubSub, name: CodeMySpec.PubSub},
-      # Registry for OAuth callback coordination
       {Registry, keys: :unique, name: CodeMySpecCli.Registry},
-      # CodeMySpec.ProjectSync.FileWatcherServer,
-      CodeMySpec.Sessions.InteractionRegistry
+      CodeMySpec.Sessions.InteractionRegistry,
+      {CodeMySpecCli.CliRunner, args}
     ]
 
-    {:ok, supervisor} =
-      Supervisor.start_link(children, strategy: :one_for_one, name: CodeMySpecCli.Supervisor)
+    Supervisor.start_link(children, strategy: :one_for_one, name: CodeMySpecCli.Supervisor)
+  end
 
-    # Start the TUI after all services are running
-    # This blocks until the user quits
-    # Override quit_events to only use Ctrl+C, not 'q'
-    # Ratatouille.run(CodeMySpecCli.Screens.Main,
-    #   interval: 100,
-    #   quit_events: [{:key, key(:ctrl_c)}]
-    # )
+  defp get_cli_args do
+    Application.get_env(:code_my_spec, :cli_args) || burrito_args()
+  end
 
-    {:ok, supervisor}
+  defp burrito_args do
+    if System.get_env("__BURRITO_BIN_PATH"), do: Burrito.Util.Args.get_arguments()
   end
 
   defp ensure_db_directory do
-    # Ensure ~/.codemyspec directory exists and touch the database file
-    db_dir = Path.expand("~/.codemyspec")
-    db_file = Path.join(db_dir, "cli.db")
-
-    File.mkdir_p!(db_dir)
-
-    # Touch the database file if it doesn't exist
-    unless File.exists?(db_file) do
-      File.write!(db_file, "")
-    end
+    db_path = Path.expand("~/.codemyspec/cli.db")
+    db_path |> Path.dirname() |> File.mkdir_p!()
+    unless File.exists?(db_path), do: File.write!(db_path, "")
   end
 end

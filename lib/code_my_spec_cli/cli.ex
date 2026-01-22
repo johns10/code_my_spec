@@ -6,88 +6,115 @@ defmodule CodeMySpecCli.Cli do
   """
 
   def run(argv) do
+    # Strip leading "--" if present (Burrito passes args as "-extra -- args..."
+    # to prevent Elixir from interpreting them as script files)
+    argv =
+      case argv do
+        ["--" | rest] -> rest
+        other -> other
+      end
+
     # If no arguments provided, launch the TUI
     if argv == [] do
       Ratatouille.run(CodeMySpecCli.Screens.Main, interval: 100)
     else
-      Optimus.new!(
-        name: "codemyspec",
-        description: "AI-powered Phoenix code generation with proper architecture",
-        version: "0.1.0",
-        author: "CodeMySpec Team",
-        about: "Generate production-quality Phoenix code using Claude Code orchestration",
-        allow_unknown_args: false,
-        parse_double_dash: true,
-        subcommands: [
-          login: [
-            name: "login",
-            about: "Authenticate with the CodeMySpec server via OAuth2"
-          ],
-          logout: [
-            name: "logout",
-            about: "Clear stored authentication credentials"
-          ],
-          whoami: [
-            name: "whoami",
-            about: "Show current authenticated user (triggers token refresh if expired)"
-          ],
-          start_agent_task: [
-            name: "start-agent-task",
-            about: "Start an agent task session and get the first prompt",
-            options: [
-              external_id: [
-                value_name: "EXTERNAL_ID",
-                short: "-e",
-                long: "--external-id",
-                help: "Claude session ID (from ${CLAUDE_SESSION_ID} in skills)",
-                required: true,
-                parser: :string
-              ],
-              session_type: [
-                value_name: "SESSION_TYPE",
-                short: "-t",
-                long: "--session-type",
-                help: "Session type (e.g., 'component_spec')",
-                required: true,
-                parser: :string
-              ],
-              module_name: [
-                value_name: "MODULE_NAME",
-                short: "-m",
-                long: "--module-name",
-                help: "Component module name (e.g., 'MyApp.Accounts')",
-                required: true,
-                parser: :string
+      optimus =
+        Optimus.new!(
+          name: "codemyspec",
+          description: "AI-powered Phoenix code generation with proper architecture",
+          version: "0.1.0",
+          author: "CodeMySpec Team",
+          about: "Generate production-quality Phoenix code using Claude Code orchestration",
+          allow_unknown_args: false,
+          parse_double_dash: true,
+          subcommands: [
+            login: [
+              name: "login",
+              about: "Authenticate with the CodeMySpec server via OAuth2"
+            ],
+            logout: [
+              name: "logout",
+              about: "Clear stored authentication credentials"
+            ],
+            whoami: [
+              name: "whoami",
+              about: "Show current authenticated user (triggers token refresh if expired)"
+            ],
+            start_agent_task: [
+              name: "start-agent-task",
+              about: "Start an agent task session and get the first prompt",
+              options: [
+                external_id: [
+                  value_name: "EXTERNAL_ID",
+                  short: "-e",
+                  long: "--external-id",
+                  help: "Claude session ID (from ${CLAUDE_SESSION_ID} in skills)",
+                  required: true,
+                  parser: :string
+                ],
+                session_type: [
+                  value_name: "SESSION_TYPE",
+                  short: "-t",
+                  long: "--session-type",
+                  help: "Session type (e.g., 'component_spec')",
+                  required: true,
+                  parser: :string
+                ],
+                module_name: [
+                  value_name: "MODULE_NAME",
+                  short: "-m",
+                  long: "--module-name",
+                  help: "Component module name (e.g., 'MyApp.Accounts')",
+                  required: true,
+                  parser: :string
+                ]
               ]
-            ]
-          ],
-          evaluate_agent_task: [
-            name: "evaluate-agent-task",
-            about: "Evaluate/validate an agent task session's output",
-            options: [
-              session_id: [
-                value_name: "SESSION_ID",
-                short: "-s",
-                long: "--session-id",
-                help: "Session ID from start-agent-task",
-                required: true,
-                parser: :string
+            ],
+            evaluate_agent_task: [
+              name: "evaluate-agent-task",
+              about: "Evaluate/validate an agent task session's output",
+              options: [
+                session_id: [
+                  value_name: "SESSION_ID",
+                  short: "-s",
+                  long: "--session-id",
+                  help: "Session ID from start-agent-task",
+                  required: true,
+                  parser: :string
+                ]
               ]
+            ],
+            evaluate_agent_task: [
+              name: "evaluate-agent-task",
+              about: "Evaluate/validate an agent task session's output"
+            ],
+            hook: [
+              name: "hook",
+              about:
+                "Run a Claude Code hook handler (reads JSON from stdin, routes by hook_event_name, outputs JSON)"
             ]
-          ],
-          evaluate_agent_task: [
-            name: "evaluate-agent-task",
-            about: "Evaluate/validate an agent task session's output"
-          ],
-          hook: [
-            name: "hook",
-            about:
-              "Run a Claude Code hook handler (reads JSON from stdin, routes by hook_event_name, outputs JSON)"
           ]
-        ]
-      )
-      |> Optimus.parse!(argv)
-      |> execute()
+        )
+
+      # Use parse/2 instead of parse!/2 to handle --help and --version gracefully
+      # parse/2 returns {:ok, subcommand_path, parse_result} on success
+      case Optimus.parse(optimus, argv) do
+        {:ok, subcommand_path, parse_result} ->
+          execute({subcommand_path, parse_result})
+
+        {:error, errors} ->
+          # Optimus returns errors for invalid args
+          Enum.each(errors, &IO.puts(:stderr, &1))
+          System.halt(1)
+
+        :help ->
+          # parse/2 doesn't print help, we need to do it manually
+          IO.puts(Optimus.help(optimus))
+
+        :version ->
+          # Print version info
+          IO.puts("codemyspec version 0.1.0")
+      end
     end
   end
 
