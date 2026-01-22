@@ -82,7 +82,7 @@ defmodule CodeMySpecWeb.AccountLive.Picker do
           {:noreply,
            socket
            |> put_flash(:info, "Account selected successfully")
-           |> push_navigate(to: socket.assigns.return_to)}
+           |> push_navigate(to: "/app")}
 
         {:error, _changeset} ->
           {:noreply,

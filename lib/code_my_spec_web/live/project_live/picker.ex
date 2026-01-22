@@ -63,7 +63,6 @@ defmodule CodeMySpecWeb.ProjectLive.Picker do
   @impl true
   def handle_event("project-selected", %{"project-id" => project_id}, socket) do
     current_scope = socket.assigns.current_scope
-    project_id = String.to_integer(project_id)
 
     # Validate that the user has access to this project
     if Enum.any?(socket.assigns.projects, &(&1.id == project_id)) do
