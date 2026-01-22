@@ -154,7 +154,7 @@ defmodule CodeMySpec.Environments.Cli do
     interaction_id = Keyword.fetch!(opts, :interaction_id)
     session_id = Keyword.fetch!(opts, :session_id)
 
-    result = CodeMySpec.Tests.execute(args, interaction_id)
+    result = CodeMySpec.Tests.execute(args)
     scope = CodeMySpec.Users.Scope.for_cli()
 
     case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, result) do
@@ -202,7 +202,7 @@ defmodule CodeMySpec.Environments.Cli do
           {:ok, _} ->
             # No compilation errors, run tests
             test_result =
-              case CodeMySpec.Tests.execute(test_args, interaction_id) do
+              case CodeMySpec.Tests.execute(test_args) do
                 {:ok, test_run} ->
                   %{
                     status: test_run.execution_status,

@@ -9,12 +9,13 @@ defmodule CodeMySpec.Tests do
   alias CodeMySpec.Tests.TestRun
 
   @doc """
-  Execute mix test synchronously with real-time streaming and result parsing.
+  Execute mix test synchronously and parse results.
 
   ## Parameters
 
   - `args` - List of arguments to pass to mix test (e.g., ["test/my_test.exs", "--only", "integration"])
-  - `interaction_id` - Interaction identifier for status updates
+  - `opts` - Keyword list of options:
+    - `:project_root` - Project root directory to run tests from (defaults to cwd)
 
   ## Returns
 
@@ -23,107 +24,56 @@ defmodule CodeMySpec.Tests do
 
   ## Example
 
-      {:ok, test_run} = Tests.execute(["test/my_test.exs"], interaction_id)
+      {:ok, test_run} = Tests.execute(["test/my_test.exs"])
       test_run.stats.failures  # => 0
   """
-  @spec execute(args :: [String.t()], interaction_id :: String.t()) ::
+  @spec execute(args :: [String.t()], opts :: keyword()) ::
           {:ok, TestRun.t()} | {:error, {:parse_error, String.t()}}
-  def execute(args, interaction_id) do
-    # Create temp file for clean JSON test results
-    {:ok, temp_file} = Briefly.create()
+  def execute(args, opts \\ []) do
+    project_root = Keyword.get(opts, :project_root, File.cwd!())
+    temp_file =
+      Path.join(System.tmp_dir!(), "test_output_#{System.unique_integer([:positive])}.json")
 
-    # Build args for mix test (alias handles routing to agent_test in target project)
     test_args = ["test" | args]
-
-    # Build the command string for the test run record
     command = "mix " <> Enum.join(test_args, " ")
-
-    # Extract file_path from args (first arg that looks like a path)
     file_path = extract_file_path(args)
 
-    # Open port with EXUNIT_JSON_OUTPUT_FILE to separate test JSON from other output
-    port =
-      Port.open({:spawn_executable, System.find_executable("mix")}, [
-        :binary,
-        :exit_status,
-        :stderr_to_stdout,
-        :use_stdio,
-        {:line, 2048},
-        {:args, test_args},
-        {:env,
-         [
-           {~c"MIX_ENV", ~c"test"},
-           {~c"EXUNIT_JSON_OUTPUT_FILE", String.to_charlist(temp_file)},
-           {~c"EXUNIT_JSON_STREAMING", ~c"true"}
-         ]}
-      ])
+    env = [
+      {"MIX_ENV", "test"},
+      {"EXUNIT_JSON_OUTPUT_FILE", temp_file}
+    ]
 
-    # Stream stdout (compiler warnings, progress, etc.) and capture exit status
-    {raw_output, exit_code} = stream_test_output(port, interaction_id, [], nil)
+    Logger.info("[Tests] Running: #{command}")
 
-    # Read clean JSON from file
-    json_content =
-      case File.read(temp_file) do
-        {:ok, content} ->
-          File.rm(temp_file)
-          content
+    case System.cmd("mix", test_args, cd: project_root, stderr_to_stdout: true, env: env) do
+      {raw_output, exit_code} ->
+        json_content =
+          case File.read(temp_file) do
+            {:ok, content} ->
+              File.rm(temp_file)
+              content
 
-        {:error, reason} ->
-          Logger.warning("Failed to read test results file #{temp_file}: #{inspect(reason)}")
-          File.rm(temp_file)
-          "{}"
-      end
+            {:error, reason} ->
+              Logger.warning("Failed to read test results file #{temp_file}: #{inspect(reason)}")
+              File.rm(temp_file)
+              "{}"
+          end
 
-    # Parse JSON and build TestRun struct
-    parse_test_results(json_content, %{
-      file_path: file_path,
-      command: command,
-      exit_code: exit_code,
-      raw_output: raw_output,
-      ran_at: DateTime.utc_now()
-    })
-  end
-
-  # Stream output from port, updating InteractionRegistry in real-time
-  defp stream_test_output(port, interaction_id, acc, exit_code) do
-    receive do
-      {^port, {:data, {:eol, line}}} ->
-        # Try to parse line as JSON and update InteractionRegistry
-        case Jason.decode(line) do
-          {:ok, json_message} ->
-            CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-              last_activity:
-                Map.merge(json_message, %{
-                  event_type: :test_event,
-                  timestamp: DateTime.utc_now()
-                })
-            })
-
-          {:error, _} ->
-            # Not JSON, skip
-            :ok
-        end
-
-        # Accumulate line and continue streaming
-        stream_test_output(port, interaction_id, [line | acc], exit_code)
-
-      {^port, {:data, {:noeol, partial}}} ->
-        # Partial line without newline, accumulate and continue
-        stream_test_output(port, interaction_id, [partial | acc], exit_code)
-
-      {^port, {:exit_status, status}} ->
-        # Port exited, return accumulated output and exit code
-        output =
-          acc
-          |> Enum.reverse()
-          |> Enum.join("\n")
-
-        {output, status}
+        parse_test_results(json_content, %{
+          file_path: file_path,
+          command: command,
+          exit_code: exit_code,
+          raw_output: raw_output,
+          ran_at: DateTime.utc_now()
+        })
     end
+  rescue
+    exception ->
+      Logger.error("[Tests] Execution error: #{Exception.message(exception)}")
+      {:error, {:execution_error, Exception.message(exception)}}
   end
 
   defp extract_file_path(args) do
-    # Find the first argument that looks like a file path
     Enum.find(args, "unknown", fn arg ->
       String.contains?(arg, "/") or String.ends_with?(arg, ".exs") or
         String.ends_with?(arg, ".ex")
@@ -141,7 +91,6 @@ defmodule CodeMySpec.Tests do
   end
 
   defp build_test_run(data, metadata) do
-    # Determine execution status from the data
     execution_status = determine_execution_status(data, metadata.exit_code)
 
     attrs =

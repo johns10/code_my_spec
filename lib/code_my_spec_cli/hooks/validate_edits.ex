@@ -16,6 +16,7 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   alias CodeMySpec.FileEdits
   alias CodeMySpec.Problems
   alias CodeMySpec.Problems.ProblemRenderer
+  alias CodeMySpec.Tests
   alias CodeMySpec.Tests.TestRun
 
   @doc """
@@ -338,17 +339,13 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
   defp run_tests(test_files, project_root) do
     Logger.info("[ValidateEdits] Running #{length(test_files)} test files")
 
-    # Run mix test with the specific files
-    args = ["test", "--formatter", "ExUnit.CLIFormatter" | test_files]
-
-    case execute_tests(args, project_root) do
+    case Tests.execute(test_files, project_root: project_root) do
       {:ok, %TestRun{failures: failures}} when failures != [] ->
         Logger.info("[ValidateEdits] Found #{length(failures)} test failures")
         convert_failures_to_problems(failures)
 
       {:ok, %TestRun{execution_status: :error} = test_run} ->
         Logger.error("[ValidateEdits] Test execution error: #{test_run.raw_output}")
-        # Return a single problem for the execution error
         [
           %Problems.Problem{
             severity: :error,
@@ -367,84 +364,6 @@ defmodule CodeMySpecCli.Hooks.ValidateEdits do
       {:error, reason} ->
         Logger.error("[ValidateEdits] Test execution failed: #{inspect(reason)}")
         []
-    end
-  end
-
-  defp execute_tests(args, project_root) do
-    # Create temp file for JSON test output
-    temp_file =
-      Path.join(System.tmp_dir!(), "test_output_#{System.unique_integer([:positive])}.json")
-
-    # System.cmd expects string tuples for env, not charlists
-    env = [
-      {"MIX_ENV", "test"},
-      {"EXUNIT_JSON_OUTPUT_FILE", temp_file}
-    ]
-
-    Logger.info("[ValidateEdits] Running: mix #{Enum.join(args, " ")}")
-
-    case System.cmd("mix", args, cd: project_root, stderr_to_stdout: true, env: env) do
-      {output, exit_code} ->
-        # Read JSON from temp file
-        json_content =
-          case File.read(temp_file) do
-            {:ok, content} ->
-              File.rm(temp_file)
-              content
-
-            {:error, _} ->
-              File.rm(temp_file)
-              "{}"
-          end
-
-        parse_test_results(json_content, exit_code, output)
-    end
-  rescue
-    exception ->
-      Logger.error("[ValidateEdits] Test execution error: #{Exception.message(exception)}")
-      {:error, Exception.message(exception)}
-  end
-
-  defp parse_test_results(json_content, exit_code, raw_output) do
-    case Jason.decode(json_content) do
-      {:ok, data} ->
-        execution_status =
-          cond do
-            exit_code == 0 ->
-              :success
-
-            get_in(data, ["stats", "failures"]) && get_in(data, ["stats", "failures"]) > 0 ->
-              :failure
-
-            exit_code != 0 ->
-              :error
-
-            true ->
-              :error
-          end
-
-        test_run =
-          TestRun.changeset(
-            %TestRun{},
-            Map.merge(data, %{
-              "exit_code" => exit_code,
-              "execution_status" => execution_status,
-              "raw_output" => raw_output
-            })
-          )
-          |> Ecto.Changeset.apply_changes()
-
-        {:ok, test_run}
-
-      {:error, _} ->
-        # JSON parsing failed, try to determine status from exit code
-        {:ok,
-         %TestRun{
-           exit_code: exit_code,
-           execution_status: if(exit_code == 0, do: :success, else: :error),
-           raw_output: raw_output,
-           failures: []
-         }}
     end
   end
 

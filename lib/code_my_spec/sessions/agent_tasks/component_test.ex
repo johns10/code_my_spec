@@ -287,10 +287,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentTest do
   end
 
   defp run_tests(test_file_path) do
-    args = [test_file_path]
-    interaction_id = "component_test_#{System.unique_integer([:positive])}"
-
-    Tests.execute(args, interaction_id)
+    Tests.execute([test_file_path])
   end
 
   defp validate_quality(compile_result, tdd_state_result, alignment_result, overall_score) do

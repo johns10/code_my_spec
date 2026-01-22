@@ -195,10 +195,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   end
 
   defp run_tests(test_file_path) do
-    args = [test_file_path]
-    interaction_id = "component_code_#{System.unique_integer([:positive])}"
-
-    Tests.execute(args, interaction_id)
+    Tests.execute([test_file_path])
   end
 
   defp build_test_failure_feedback(%{failures: failures, stats: stats}) do
