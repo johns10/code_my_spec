@@ -118,7 +118,7 @@ defmodule CodeMySpecCli.Release.PackageExtension do
     run_cmd("git", ["push", "origin", "v#{version}", "--force"], extension_dir)
   end
 
-  defp create_github_release(binary_path, binary_name, version) do
+  defp create_github_release(binary_path, _binary_name, version) do
     # Use GitHub CLI (gh) to create release and upload binary
     tag = "v#{version}"
 

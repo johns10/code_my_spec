@@ -27,12 +27,17 @@ defmodule CodeMySpec.MixProject do
   def application do
     [
       mod:
-        case Mix.env() do
-          :cli -> {CodeMySpecCli.Application, []}
-          _ -> {CodeMySpec.Application, []}
+        if Mix.env() == :cli or System.get_env("BURRITO_BUILD") do
+          {CodeMySpecCli.Application, []}
+        else
+          {CodeMySpec.Application, []}
         end,
       extra_applications: [:logger, :runtime_tools]
     ]
+  end
+
+  def cli do
+    [preferred_envs: [cli: :cli]]
   end
 
   # Specifies which paths to compile per environment.

@@ -322,8 +322,6 @@ defmodule CodeMySpecCli.Auth.OAuthClient do
   end
 
   defp refresh_token_for_user(user) do
-    IO.puts("refr3eshing")
-
     case user.oauth_refresh_token do
       nil ->
         # No refresh token, need to re-authenticate
