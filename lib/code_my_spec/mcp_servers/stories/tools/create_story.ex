@@ -3,9 +3,9 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
 
   use Hermes.Server.Component, type: :tool
 
-  alias CodeMySpec.Stories
   alias CodeMySpec.MCPServers.Stories.StoriesMapper
   alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.Stories
 
   schema do
     field :title, :string, required: true
@@ -16,7 +16,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.create_story(scope, params) do
+         story_params <- transform_params(params),
+         {:ok, story} <- Stories.create_story(scope, story_params) do
       {:reply, StoriesMapper.story_response(story), frame}
     else
       {:error, changeset = %Ecto.Changeset{}} ->
@@ -25,5 +26,16 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
       {:error, atom} ->
         {:reply, StoriesMapper.error(atom), frame}
     end
+  end
+
+  # Transform acceptance_criteria strings to criteria nested params
+  defp transform_params(params) do
+    criteria =
+      params
+      |> Map.get(:acceptance_criteria, [])
+      |> Enum.map(fn description -> %{description: description} end)
+
+    params
+    |> Map.put(:criteria, criteria)
   end
 end

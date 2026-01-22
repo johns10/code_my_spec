@@ -1,18 +1,24 @@
 defmodule CodeMySpec.Stories.StoriesRepository do
+  @moduledoc false
+
   import Ecto.Query, warn: false
 
-  alias CodeMySpec.Projects.Project
   alias CodeMySpec.Accounts.Account
+  alias CodeMySpec.Projects.Project
   alias CodeMySpec.Repo
-  alias CodeMySpec.Users.Scope
   alias CodeMySpec.Stories.Story
+  alias CodeMySpec.Users.Scope
 
   def list_stories(%Scope{} = scope) do
-    Repo.all_by(Story, project_id: scope.active_project.id)
+    Story
+    |> Repo.all_by(project_id: scope.active_project.id)
+    |> Repo.preload(:criteria)
   end
 
   def list_project_stories(%Scope{} = scope) do
-    Repo.all_by(Story, project_id: scope.active_project.id)
+    Story
+    |> Repo.all_by(project_id: scope.active_project.id)
+    |> Repo.preload(:criteria)
   end
 
   def list_project_stories_by_component_priority(%Scope{} = scope) do
@@ -24,7 +30,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
         asc_nulls_last: c.priority,
         asc: s.title
       ],
-      preload: [:component]
+      preload: [:component, :criteria]
     )
     |> Repo.all()
   end
@@ -44,11 +50,15 @@ defmodule CodeMySpec.Stories.StoriesRepository do
   end
 
   def get_story(%Scope{} = scope, id) do
-    Repo.get_by(Story, id: id, project_id: scope.active_project_id)
+    Story
+    |> Repo.get_by(id: id, project_id: scope.active_project_id)
+    |> Repo.preload(:criteria)
   end
 
   def get_story!(%Scope{} = scope, id) do
-    Repo.get_by!(Story, id: id, project_id: scope.active_project_id)
+    Story
+    |> Repo.get_by!(id: id, project_id: scope.active_project_id)
+    |> Repo.preload(:criteria)
   end
 
   def create_story(
@@ -56,13 +66,15 @@ defmodule CodeMySpec.Stories.StoriesRepository do
           scope,
         attrs
       ) do
+    attrs_with_ownership = inject_criteria_ownership(attrs, project_id, account_id)
+
     %Story{}
-    |> Story.changeset(attrs)
+    |> Story.changeset(attrs_with_ownership)
     |> Ecto.Changeset.put_change(:project_id, project_id)
     |> Ecto.Changeset.put_change(:account_id, account_id)
     |> PaperTrail.insert(originator: scope.user)
     |> case do
-      {:ok, %{model: story}} -> {:ok, story}
+      {:ok, %{model: story}} -> {:ok, Repo.preload(story, :criteria)}
       {:error, changeset} -> {:error, changeset}
     end
   end
@@ -72,17 +84,19 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     |> Story.changeset(attrs)
     |> PaperTrail.insert(originator: scope.user)
     |> case do
-      {:ok, %{model: story}} -> {:ok, story}
+      {:ok, %{model: story}} -> {:ok, Repo.preload(story, :criteria)}
       {:error, changeset} -> {:error, changeset}
     end
   end
 
   def update_story(%Scope{} = scope, %Story{} = story, attrs) do
+    attrs_with_ownership = inject_criteria_ownership(attrs, story.project_id, story.account_id)
+
     story
-    |> Story.changeset(attrs)
+    |> Story.changeset(attrs_with_ownership)
     |> PaperTrail.update(originator: scope.user)
     |> case do
-      {:ok, %{model: story}} -> {:ok, story}
+      {:ok, %{model: story}} -> {:ok, Repo.preload(story, :criteria, force: true)}
       {:error, changeset} -> {:error, changeset}
     end
   end
@@ -153,7 +167,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
       lock_expires_at: lock_expires_at
     }
 
-    case is_locked?(story) do
+    case locked?(story) do
       true -> {:error, :already_locked}
       false -> update_lock_fields(story, attrs)
     end
@@ -178,7 +192,7 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     end
   end
 
-  def is_locked?(%Story{} = story) do
+  def locked?(%Story{} = story) do
     not is_nil(story.locked_by) and
       not is_nil(story.lock_expires_at) and
       DateTime.compare(story.lock_expires_at, DateTime.utc_now()) == :gt
@@ -213,5 +227,55 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     story
     |> Story.lock_changeset(attrs)
     |> Repo.update()
+  end
+
+  # Injects project_id and account_id into criteria attrs before changeset processing
+  defp inject_criteria_ownership(attrs, project_id, account_id) do
+    criteria_key = if is_map(attrs) && Map.has_key?(attrs, :criteria), do: :criteria, else: "criteria"
+
+    case get_in_flexible(attrs, criteria_key) do
+      nil ->
+        attrs
+
+      criteria when is_list(criteria) ->
+        updated_criteria =
+          Enum.map(criteria, fn criterion ->
+            criterion
+            |> put_flexible(:project_id, project_id)
+            |> put_flexible(:account_id, account_id)
+          end)
+
+        put_flexible(attrs, criteria_key, updated_criteria)
+
+      criteria when is_map(criteria) ->
+        # Handle map format from form params like %{"0" => %{...}, "1" => %{...}}
+        updated_criteria =
+          Enum.into(criteria, %{}, fn {key, criterion} ->
+            updated =
+              criterion
+              |> put_flexible(:project_id, project_id)
+              |> put_flexible(:account_id, account_id)
+
+            {key, updated}
+          end)
+
+        put_flexible(attrs, criteria_key, updated_criteria)
+    end
+  end
+
+  defp get_in_flexible(map, key) when is_atom(key), do: Map.get(map, key) || Map.get(map, to_string(key))
+  defp get_in_flexible(map, key) when is_binary(key), do: Map.get(map, key) || Map.get(map, String.to_existing_atom(key))
+
+  defp put_flexible(map, key, value) when is_map(map) do
+    # Use atom key if map has atom keys, string key otherwise
+    actual_key =
+      cond do
+        is_struct(map) -> key
+        map |> Map.keys() |> Enum.any?(&is_atom/1) -> key
+        is_atom(key) -> to_string(key)
+        true -> key
+      end
+
+    Map.put(map, actual_key, value)
   end
 end

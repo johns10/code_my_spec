@@ -49,10 +49,21 @@ defmodule CodeMySpecWeb.StoryLive.Index do
             <div class="mb-4">
               <h3 class="font-semibold mb-2">Acceptance Criteria:</h3>
               <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                <li :for={criterion <- parse_acceptance_criteria(story.acceptance_criteria)}>
-                  {criterion}
+                <li :for={criterion <- story.criteria} class="flex items-center gap-2">
+                  <.icon
+                    :if={criterion.verified}
+                    name="hero-lock-closed"
+                    class="size-3 text-success inline"
+                  />
+                  <span class={[criterion.verified && "font-medium"]}>{criterion.description}</span>
                 </li>
               </ul>
+              <div
+                :if={Enum.empty?(story.criteria) && !Enum.empty?(parse_acceptance_criteria(story.acceptance_criteria))}
+                class="text-xs text-base-content/50 mt-1"
+              >
+                (legacy criteria: {length(parse_acceptance_criteria(story.acceptance_criteria))})
+              </div>
             </div>
 
             <div :if={!is_nil(story.component)} class="mb-4">
@@ -152,10 +163,18 @@ defmodule CodeMySpecWeb.StoryLive.Index do
   end
 
   defp story_to_attrs(story) do
+    # Prefer criteria association, fall back to legacy acceptance_criteria field
+    criteria_list =
+      if Enum.empty?(story.criteria) do
+        parse_acceptance_criteria(story.acceptance_criteria)
+      else
+        Enum.map(story.criteria, & &1.description)
+      end
+
     %{
       title: story.title,
       description: story.description,
-      acceptance_criteria: parse_acceptance_criteria(story.acceptance_criteria)
+      acceptance_criteria: criteria_list
     }
   end
 end

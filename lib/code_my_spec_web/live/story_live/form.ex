@@ -17,35 +17,52 @@ defmodule CodeMySpecWeb.StoryLive.Form do
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:description]} type="textarea" label="Description" />
         <div class="fieldset mb-2">
-          <label>
-            <span class="label mb-1">Acceptance Criteria</span>
-            <div class="space-y-2">
-              <div
-                :for={{criterion, index} <- Enum.with_index(@acceptance_criteria)}
-                class="flex items-center gap-2"
-              >
+          <span class="label mb-1">Acceptance Criteria</span>
+          <div class="space-y-2">
+            <.inputs_for :let={criterion_form} field={@form[:criteria]}>
+              <div class="flex items-center gap-2">
+                <input type="hidden" name="story[criteria_sort][]" value={criterion_form.index} />
                 <input
                   type="text"
-                  name={"acceptance_criteria[#{index}]"}
-                  value={criterion}
+                  name={criterion_form[:description].name}
+                  id={criterion_form[:description].id}
+                  value={criterion_form[:description].value}
+                  placeholder="Enter criterion..."
                   class="flex-1 input"
-                  phx-change="update_criterion"
-                  phx-value-index={index}
                 />
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="hidden" name={criterion_form[:verified].name} value="false" />
+                  <input
+                    type="checkbox"
+                    name={criterion_form[:verified].name}
+                    value="true"
+                    checked={Phoenix.HTML.Form.normalize_value("checkbox", criterion_form[:verified].value)}
+                    class="checkbox checkbox-sm"
+                  />
+                  <.icon name="hero-lock-closed" class="size-4 text-base-content/60" />
+                </label>
                 <button
                   type="button"
+                  name="story[criteria_drop][]"
+                  value={criterion_form.index}
+                  phx-click={JS.dispatch("change")}
                   class="btn btn-sm btn-error btn-outline"
-                  phx-click="remove_criterion"
-                  phx-value-index={index}
                 >
                   <.icon name="hero-x-mark" class="size-4" />
                 </button>
               </div>
-              <button type="button" class="btn btn-sm btn-outline" phx-click="add_criterion">
-                <.icon name="hero-plus" class="size-4" /> Add Criterion
-              </button>
-            </div>
-          </label>
+            </.inputs_for>
+            <input type="hidden" name="story[criteria_drop][]" />
+            <button
+              type="button"
+              name="story[criteria_sort][]"
+              value="new"
+              phx-click={JS.dispatch("change")}
+              class="btn btn-sm btn-outline"
+            >
+              <.icon name="hero-plus" class="size-4" /> Add Criterion
+            </button>
+          </div>
         </div>
         <.input
           field={@form[:status]}
@@ -80,17 +97,15 @@ defmodule CodeMySpecWeb.StoryLive.Form do
     socket
     |> assign(:page_title, "Edit Story")
     |> assign(:story, story)
-    |> assign(:acceptance_criteria, story.acceptance_criteria || [])
     |> assign(:form, to_form(Stories.change_story(socket.assigns.current_scope, story)))
   end
 
   defp apply_action(socket, :new, _params) do
-    story = %Story{account_id: socket.assigns.current_scope.active_account.id}
+    story = %Story{account_id: socket.assigns.current_scope.active_account.id, criteria: []}
 
     socket
     |> assign(:page_title, "New Story")
     |> assign(:story, story)
-    |> assign(:acceptance_criteria, [])
     |> assign(:form, to_form(Stories.change_story(socket.assigns.current_scope, story)))
   end
 
@@ -103,34 +118,7 @@ defmodule CodeMySpecWeb.StoryLive.Form do
   end
 
   def handle_event("save", %{"story" => story_params}, socket) do
-    story_params =
-      Map.put(story_params, "acceptance_criteria", socket.assigns.acceptance_criteria)
-
     save_story(socket, socket.assigns.live_action, story_params)
-  end
-
-  def handle_event("add_criterion", _params, socket) do
-    {:noreply, assign(socket, :acceptance_criteria, socket.assigns.acceptance_criteria ++ [""])}
-  end
-
-  def handle_event("remove_criterion", %{"index" => index}, socket) do
-    index = String.to_integer(index)
-    criteria = List.delete_at(socket.assigns.acceptance_criteria, index)
-    {:noreply, assign(socket, :acceptance_criteria, criteria)}
-  end
-
-  def handle_event(
-        "update_criterion",
-        %{
-          "_target" => ["acceptance_criteria", index_str],
-          "acceptance_criteria" => acceptance_criteria
-        },
-        socket
-      ) do
-    index = String.to_integer(index_str)
-    value = Map.get(acceptance_criteria, index_str, "")
-    criteria = List.replace_at(socket.assigns.acceptance_criteria, index, value)
-    {:noreply, assign(socket, :acceptance_criteria, criteria)}
   end
 
   defp save_story(socket, :edit, story_params) do

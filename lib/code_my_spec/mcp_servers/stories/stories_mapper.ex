@@ -1,6 +1,8 @@
 defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
-  alias Hermes.Server.Response
+  @moduledoc false
+
   alias CodeMySpec.MCPServers.Formatters
+  alias Hermes.Server.Response
 
   def story_response(story) do
     Response.tool()
@@ -9,6 +11,7 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       title: story.title,
       description: story.description,
       acceptance_criteria: story.acceptance_criteria,
+      criteria: format_criteria(story.criteria),
       component_id: story.component_id
     })
   end
@@ -32,6 +35,7 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       title: story.title,
       description: story.description,
       acceptance_criteria: story.acceptance_criteria,
+      criteria: format_criteria(story.criteria),
       component_id: story.component_id
     })
   end
@@ -89,11 +93,31 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
   end
 
   defp story_summary(story) do
-    %{
+    base = %{
       id: story.id,
       title: story.title,
       description: story.description,
       component_id: story.component_id
     }
+
+    # Include criteria if loaded
+    if Ecto.assoc_loaded?(story.criteria) do
+      Map.put(base, :criteria, format_criteria(story.criteria))
+    else
+      base
+    end
   end
+
+  defp format_criteria(criteria) when is_list(criteria) do
+    Enum.map(criteria, fn c ->
+      %{
+        id: c.id,
+        description: c.description,
+        verified: c.verified,
+        verified_at: c.verified_at
+      }
+    end)
+  end
+
+  defp format_criteria(_), do: []
 end

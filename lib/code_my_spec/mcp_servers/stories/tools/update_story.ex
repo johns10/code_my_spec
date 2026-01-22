@@ -1,15 +1,17 @@
 defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
   @moduledoc """
   Updates a user story.
-  Include all acceptance query in the input.
-  It will be persisted exactly as you send it.
+
+  Include all acceptance criteria in the input. Non-verified criteria will be
+  replaced with your input. Verified (locked) criteria are preserved and cannot
+  be modified or deleted via this tool - they are protected from LLM changes.
   """
 
   use Hermes.Server.Component, type: :tool
 
-  alias CodeMySpec.Stories
   alias CodeMySpec.MCPServers.Stories.StoriesMapper
   alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.Stories
 
   schema do
     field :id, :string, required: true
@@ -21,15 +23,51 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         story <- Stories.get_story(scope, params.id),
-         {:ok, story} <- Stories.update_story(scope, story, Map.drop(params, [:id])) do
+         story when not is_nil(story) <- Stories.get_story(scope, params.id),
+         update_params <- transform_params(params, story),
+         {:ok, story} <- Stories.update_story(scope, story, update_params) do
       {:reply, StoriesMapper.story_response(story), frame}
     else
+      nil ->
+        {:reply, StoriesMapper.not_found_error(), frame}
+
       {:error, changeset = %Ecto.Changeset{}} ->
         {:reply, StoriesMapper.validation_error(changeset), frame}
 
       {:error, atom} ->
         {:reply, StoriesMapper.error(atom), frame}
     end
+  end
+
+  # Transform params, respecting verified (locked) criteria
+  defp transform_params(params, story) do
+    base_params = Map.drop(params, [:id, :acceptance_criteria])
+
+    # Only transform criteria if acceptance_criteria was provided
+    if Map.has_key?(params, :acceptance_criteria) do
+      criteria = build_criteria_params(params.acceptance_criteria, story.criteria)
+      Map.put(base_params, :criteria, criteria)
+    else
+      base_params
+    end
+  end
+
+  # Build criteria params that preserve verified criteria and replace unverified ones
+  defp build_criteria_params(new_descriptions, existing_criteria) do
+    # Keep verified criteria with their IDs (so they're preserved via cast_assoc)
+    verified_criteria =
+      existing_criteria
+      |> Enum.filter(& &1.verified)
+      |> Enum.map(fn c ->
+        %{id: c.id, description: c.description, verified: c.verified, verified_at: c.verified_at}
+      end)
+
+    # Transform new descriptions to criteria params (these will replace unverified criteria)
+    new_criteria =
+      new_descriptions
+      |> Enum.map(fn description -> %{description: description} end)
+
+    # Verified criteria come first, then new criteria
+    verified_criteria ++ new_criteria
   end
 end

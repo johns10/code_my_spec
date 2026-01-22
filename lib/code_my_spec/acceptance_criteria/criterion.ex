@@ -52,4 +52,21 @@ defmodule CodeMySpec.AcceptanceCriteria.Criterion do
       :account_id
     ])
   end
+
+  @doc """
+  Changeset for nested forms via cast_assoc.
+  story_id is set automatically via the association.
+  project_id and account_id are injected by the story's repository.
+  """
+  def nested_changeset(criterion, attrs) do
+    criterion
+    |> cast(attrs, [
+      :description,
+      :verified,
+      :verified_at,
+      :project_id,
+      :account_id
+    ])
+    |> validate_required([:description])
+  end
 end

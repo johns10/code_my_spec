@@ -185,12 +185,14 @@ defmodule CodeMySpec.UserPreferences do
 
   """
   def select_active_account(%Scope{} = scope, account_id) do
+    attrs = %{active_account_id: account_id, active_project_id: nil}
+
     case get_user_preference(scope) do
       {:ok, _user_preference} ->
-        update_user_preferences(scope, %{active_account_id: account_id})
+        update_user_preferences(scope, attrs)
 
       {:error, :not_found} ->
-        create_user_preferences(scope, %{active_account_id: account_id})
+        create_user_preferences(scope, attrs)
     end
   end
 

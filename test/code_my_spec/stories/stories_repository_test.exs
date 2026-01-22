@@ -342,7 +342,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       assert locked_story.locked_by == user.id
       assert not is_nil(locked_story.locked_at)
       assert not is_nil(locked_story.lock_expires_at)
-      assert StoriesRepository.is_locked?(locked_story)
+      assert StoriesRepository.locked?(locked_story)
     end
 
     test "acquire_lock/3 fails when story already locked" do
@@ -361,13 +361,13 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
       story = story_fixture(scope)
 
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
-      assert StoriesRepository.is_locked?(locked_story)
+      assert StoriesRepository.locked?(locked_story)
 
       assert {:ok, released_story} = StoriesRepository.release_lock(scope, locked_story)
       assert is_nil(released_story.locked_by)
       assert is_nil(released_story.locked_at)
       assert is_nil(released_story.lock_expires_at)
-      refute StoriesRepository.is_locked?(released_story)
+      refute StoriesRepository.locked?(released_story)
     end
 
     test "extend_lock/3 successfully extends lock for owner" do
@@ -392,16 +392,16 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
                StoriesRepository.extend_lock(other_scope, locked_story, 60)
     end
 
-    test "is_locked?/1 returns true for valid lock" do
+    test "locked?/1 returns true for valid lock" do
       scope = full_scope_fixture()
       story = story_fixture(scope)
 
-      refute StoriesRepository.is_locked?(story)
+      refute StoriesRepository.locked?(story)
       {:ok, locked_story} = StoriesRepository.acquire_lock(scope, story, 30)
-      assert StoriesRepository.is_locked?(locked_story)
+      assert StoriesRepository.locked?(locked_story)
     end
 
-    test "is_locked?/1 returns false for expired lock" do
+    test "locked?/1 returns false for expired lock" do
       %{user: user} = scope = full_scope_fixture()
 
       past_time = DateTime.utc_now() |> DateTime.add(-1, :hour)
@@ -413,7 +413,7 @@ defmodule CodeMySpec.Stories.StoriesRepositoryTest do
           lock_expires_at: past_time
         })
 
-      refute StoriesRepository.is_locked?(story)
+      refute StoriesRepository.locked?(story)
     end
 
     test "lock_owner/1 returns lock owner user id" do
