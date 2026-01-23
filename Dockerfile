@@ -1,28 +1,28 @@
-# Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian
+# Find eligible builder and runner images on Docker Hub. We use Debian
 # instead of Alpine to avoid DNS resolution issues in production.
 #
-# https://hub.docker.com/r/hexpm/elixir/tags?name=ubuntu
-# https://hub.docker.com/_/ubuntu/tags
+# https://hub.docker.com/_/elixir/tags
+# https://hub.docker.com/_/debian/tags
 #
 # This file is based on these images:
 #
-#   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian/tags?name=bookworm-20250224-slim - for the release image
+#   - https://hub.docker.com/_/elixir/tags - for the build image
+#   - https://hub.docker.com/_/debian/tags - for the release image
 #   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: docker.io/hexpm/elixir:1.18.2-erlang-27.3-debian-bookworm-20250224-slim
+#   - Ex: elixir:1.19.5-otp-27-slim
 #
-ARG ELIXIR_VERSION=1.18.2
-ARG OTP_VERSION=27.3
-ARG DEBIAN_VERSION=bookworm-20250224-slim
+ARG ELIXIR_VERSION=1.19.5
+ARG OTP_VERSION=27
+ARG DEBIAN_VERSION=bookworm-slim
 
-ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
+ARG BUILDER_IMAGE="elixir:${ELIXIR_VERSION}-otp-${OTP_VERSION}-slim"
+ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential git \
+  && apt-get install -y --no-install-recommends build-essential git ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
@@ -64,7 +64,7 @@ RUN mix assets.deploy
 COPY config/runtime.exs config/
 
 COPY rel rel
-RUN mix release
+RUN mix release code_my_spec
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
