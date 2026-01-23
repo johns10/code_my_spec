@@ -14,7 +14,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -32,7 +32,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -49,7 +49,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -67,7 +67,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -85,7 +85,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -104,7 +104,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -124,7 +124,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component,
         state: %{}
@@ -147,7 +147,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component,
         state: %{}
@@ -171,7 +171,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextCodingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component,
         state: %{existing_key: "existing_value"}

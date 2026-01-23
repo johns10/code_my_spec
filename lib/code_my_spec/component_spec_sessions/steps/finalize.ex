@@ -7,7 +7,7 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.Finalize do
 
   def get_command(
         _scope,
-        %{environment: environment, component: component, project: project} = session,
+        %{environment_type: environment, component: component, project: project} = session,
         _opts \\ []
       ) do
     %{design_file: design_file} = CodeMySpec.Utils.component_files(component, project)

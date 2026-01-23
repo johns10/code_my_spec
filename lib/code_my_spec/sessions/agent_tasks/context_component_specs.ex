@@ -101,7 +101,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     context_needs_spec = Enum.any?(results, fn result -> not result.satisfied end)
 
     if context_needs_spec do
-      {:ok, environment} = Environments.create(session.environment)
+      {:ok, environment} = Environments.create(session.environment_type)
       ensure_prompt_directory(external_id)
 
       # Use ContextSpec.command/3 to generate the prompt content
@@ -139,7 +139,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp generate_child_prompt_files(scope, session, children_needing_specs, external_id) do
     %{project: project} = session
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     # Ensure directory exists
     ensure_prompt_directory(external_id)
@@ -151,7 +151,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
           external_id: external_id,
           component: child,
           project: project,
-          environment: session.environment
+          environment_type: session.environment_type
         }
 
         # Use ComponentSpec.command/3 to generate the prompt content

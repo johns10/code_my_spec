@@ -44,7 +44,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.Initialize do
     }
 
     command_string =
-      Environments.environment_setup_command(session.environment, environment_attrs)
+      Environments.environment_setup_command(session.environment_type, environment_attrs)
 
     command = Command.new(__MODULE__, command_string)
 

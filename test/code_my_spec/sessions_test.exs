@@ -39,7 +39,7 @@ defmodule CodeMySpec.SessionsTest do
         type: ContextSpecSessions,
         state: %{},
         agent: :claude_code,
-        environment: :local
+        environment_type: :local
       }
 
       scope = full_scope_fixture()
@@ -49,7 +49,7 @@ defmodule CodeMySpec.SessionsTest do
       assert session.type == ContextSpecSessions
       assert session.state == %{}
       assert session.agent == :claude_code
-      assert session.environment == :local
+      assert session.environment_type == :local
       assert session.account_id == scope.active_account.id
     end
 
@@ -67,7 +67,7 @@ defmodule CodeMySpec.SessionsTest do
         type: ContextSpecSessions,
         state: %{},
         agent: :claude_code,
-        environment: :vscode
+        environment_type: :vscode
       }
 
       assert {:ok, %Session{} = session} = Sessions.update_session(scope, session, update_attrs)
@@ -75,7 +75,7 @@ defmodule CodeMySpec.SessionsTest do
       assert session.type == ContextSpecSessions
       assert session.state == %{}
       assert session.agent == :claude_code
-      assert session.environment == :vscode
+      assert session.environment_type == :vscode
     end
 
     test "update_session/3 with invalid scope raises" do

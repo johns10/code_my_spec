@@ -84,7 +84,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -199,7 +199,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -299,7 +299,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -349,7 +349,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -425,7 +425,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -475,7 +475,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -517,7 +517,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -556,7 +556,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -595,7 +595,7 @@ defmodule CodeMySpec.ContextCodingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextCodingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 

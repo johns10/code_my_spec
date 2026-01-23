@@ -53,7 +53,7 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.GenerateComponentSpec do
           ""
       end
 
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     %{code_file: code_file, test_file: test_file} =
       Utils.component_files(component, project)

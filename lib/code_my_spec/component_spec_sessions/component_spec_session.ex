@@ -85,7 +85,7 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
           ""
       end
 
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     %{code_file: code_file, test_file: test_file} =
       Utils.component_files(component, project)
@@ -130,7 +130,7 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
 
   defp read_spec_file(session) do
     %{spec_file: path} = Utils.component_files(session.component, session.project)
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     case Environments.read_file(environment, path) do
       {:ok, content} ->

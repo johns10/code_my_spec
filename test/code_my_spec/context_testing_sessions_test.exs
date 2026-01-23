@@ -84,7 +84,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -187,7 +187,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -275,7 +275,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -324,7 +324,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -388,7 +388,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -437,7 +437,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -478,7 +478,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -519,7 +519,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 
@@ -557,7 +557,7 @@ defmodule CodeMySpec.ContextTestingSessionsTest do
         Sessions.create_session(scope, %{
           type: ContextTestingSessions,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           component_id: accounts_context.id
         })
 

@@ -29,7 +29,7 @@ defmodule CodeMySpec.Sessions.CommandResolverTest do
         Sessions.create_session(scope, %{
           type: CodeMySpec.ComponentSpecSessions,
           component_id: component.id,
-          environment: :local
+          environment_type: :local
         })
 
       assert {:ok, interaction} = Sessions.next_command(scope, session.id)
@@ -48,7 +48,7 @@ defmodule CodeMySpec.Sessions.CommandResolverTest do
         Sessions.create_session(scope, %{
           type: CodeMySpec.ComponentSpecSessions,
           component_id: component.id,
-          environment: :local
+          environment_type: :local
         })
 
       # First call creates interaction
@@ -73,7 +73,7 @@ defmodule CodeMySpec.Sessions.CommandResolverTest do
         Sessions.create_session(scope, %{
           type: CodeMySpec.ComponentSpecSessions,
           component_id: component.id,
-          environment: :local
+          environment_type: :local
         })
 
       # First call creates interaction

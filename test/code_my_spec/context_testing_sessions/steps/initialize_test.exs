@@ -18,7 +18,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -36,7 +36,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -55,7 +55,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -73,7 +73,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -90,7 +90,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -108,7 +108,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -126,7 +126,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -145,7 +145,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -163,7 +163,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -181,7 +181,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -200,7 +200,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextTestingSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -228,7 +228,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
       session =
         session_fixture(scope, %{
           type: CodeMySpec.ContextTestingSessions,
-          environment: :local,
+          environment_type: :local,
           component_id: parent_component.id,
           state: %{}
         })
@@ -254,7 +254,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
       session =
         session_fixture(scope, %{
           type: CodeMySpec.ContextTestingSessions,
-          environment: :local,
+          environment_type: :local,
           component_id: parent_component.id,
           state: %{}
         })
@@ -282,7 +282,7 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.InitializeTest do
       session =
         session_fixture(scope, %{
           type: CodeMySpec.ContextTestingSessions,
-          environment: :local,
+          environment_type: :local,
           component_id: parent_component.id,
           state: %{}
         })

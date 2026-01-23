@@ -228,7 +228,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextDesignReview do
   # Private functions - Evaluation
 
   defp read_review_file(session, review_file_path) do
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     case Environments.read_file(environment, review_file_path) do
       {:ok, content} ->
