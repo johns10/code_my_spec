@@ -2,6 +2,37 @@
 
 AI-powered specification-driven development for Phoenix applications.
 
+## Installation (Claude Code Extension)
+
+### 1. Clone the extension repository
+
+```bash
+git clone https://github.com/Code-My-Spec/code_my_spec_claude_code_extension.git
+cd code_my_spec_claude_code_extension
+```
+
+### 2. Run the installer
+
+```bash
+./install.sh
+```
+
+This downloads the appropriate binary for your platform from GitHub Releases.
+
+### 3. Add extension to Claude Code
+
+```bash
+claude extension add /path/to/code_my_spec_claude_code_extension
+```
+
+### Troubleshooting
+
+**macOS security warning:** If macOS blocks the binary, allow it in System Preferences > Security & Privacy.
+
+**Permission denied:** Run `chmod +x bin/cms`
+
+---
+
 ## Development Setup
 
 To start your Phoenix server:
@@ -36,7 +67,7 @@ This generates:
 ### Build and Publish to GitHub
 
 ```bash
-PUBLISH_RELEASE=true MIX_ENV=cli mix release --overwrite
+PUBLISH_RELEASE=true MIX_ENV=prod mix release --overwrite
 ```
 
 This will:
