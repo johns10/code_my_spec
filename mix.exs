@@ -112,10 +112,9 @@ defmodule CodeMySpec.MixProject do
       {:uuid, "~> 1.1.8"},
       {:inflex, "~> 2.1.0"},
 
-      # CLI deps,
-      {:burrito, "~> 1.5"},
-      {:optimus, "~> 0.5"},
-      {:ratatouille, "~> 0.5"},
+      # CLI deps
+      {:burrito, "~> 1.5", only: :cli},
+      {:optimus, "~> 0.5", only: :cli},
       {:oauth2, "~> 2.0"},
       {:logger_backends, "~> 1.0"},
       {:logger_file_backend, "~> 0.0.14"}
