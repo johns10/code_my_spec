@@ -92,6 +92,20 @@ defmodule CodeMySpecCli.Cli do
               name: "hook",
               about:
                 "Run a Claude Code hook handler (reads JSON from stdin, routes by hook_event_name, outputs JSON)"
+            ],
+            init: [
+              name: "init",
+              about: "Initialize CodeMySpec in the current directory (creates .code_my_spec/config.yml)",
+              options: [
+                project_id: [
+                  value_name: "PROJECT_ID",
+                  short: "-p",
+                  long: "--project-id",
+                  help: "Project ID from the CodeMySpec server (if known)",
+                  required: false,
+                  parser: :string
+                ]
+              ]
             ]
           ]
         )
@@ -187,6 +201,9 @@ defmodule CodeMySpecCli.Cli do
 
       {[:hook], _} ->
         CodeMySpecCli.Hooks.run()
+
+      {[:init], %{options: opts}} ->
+        CodeMySpecCli.Commands.Init.run(opts)
 
       _ ->
         # No subcommand - launch TUI
