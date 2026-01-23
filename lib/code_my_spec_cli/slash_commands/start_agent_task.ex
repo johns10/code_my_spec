@@ -20,10 +20,10 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   use CodeMySpecCli.SlashCommands.SlashCommandBehaviour
 
   alias CodeMySpec.Components
-  alias CodeMySpec.Sessions
-  alias CodeMySpec.Sessions.AgentTasks
   alias CodeMySpec.ProjectSync.Sync
   alias CodeMySpec.Requirements
+  alias CodeMySpec.Sessions
+  alias CodeMySpec.Sessions.AgentTasks
 
   # Maps CLI session type names to AgentTask modules
   # Note: "spec" is handled specially in resolve_session_type/2 to auto-detect context vs component
@@ -31,6 +31,7 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     "component_spec" => AgentTasks.ComponentSpec,
     "context_spec" => AgentTasks.ContextSpec,
     "context_component_specs" => AgentTasks.ContextComponentSpecs,
+    "context_design_review" => AgentTasks.ContextDesignReview,
     "implement_context" => AgentTasks.ContextImplementation,
     "component_code" => AgentTasks.ComponentCode,
     "component_test" => AgentTasks.ComponentTest
@@ -100,11 +101,21 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
     {:error, "Module name is required. Use -m or --module-name"}
   end
 
+  defp get_component(nil, _module_name) do
+    {:error,
+     "No project configured. Run the CLI in a directory with .code_my_spec/config.yml or run /init first."}
+  end
+
   defp get_component(scope, module_name) do
     case Components.get_component_by_module_name(scope, module_name) do
       nil -> {:error, "Component not found with module name: #{module_name}"}
       component -> {:ok, component}
     end
+  end
+
+  defp get_project(nil) do
+    {:error,
+     "No project configured. Run the CLI in a directory with .code_my_spec/config.yml or run /init first."}
   end
 
   defp get_project(scope) do
@@ -133,6 +144,11 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
        project: project,
        environment: :cli
      }}
+  end
+
+  defp sync_project(nil) do
+    {:error,
+     "No project configured. Run the CLI in a directory with .code_my_spec/config.yml or run /init first."}
   end
 
   defp sync_project(scope) do
