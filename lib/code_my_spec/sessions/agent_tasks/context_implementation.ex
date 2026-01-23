@@ -132,7 +132,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
          external_id
        ) do
     %{project: project} = session
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     ensure_prompt_directory(external_id)
 
@@ -142,7 +142,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: project,
-          environment: session.environment
+          environment_type: session.environment_type
         }
 
         {:ok, prompt_content} = ComponentTest.command(scope, child_session)
@@ -164,7 +164,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: project,
-          environment: session.environment
+          environment_type: session.environment_type
         }
 
         {:ok, prompt_content} = ComponentCode.command(scope, child_session)
@@ -309,7 +309,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: session.project,
-          environment: session.environment
+          environment_type: session.environment_type
         }
 
         result = ComponentTest.evaluate(scope, child_session, opts)
@@ -325,7 +325,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: session.project,
-          environment: session.environment
+          environment_type: session.environment_type
         }
 
         result = ComponentCode.evaluate(scope, child_session, opts)

@@ -9,7 +9,7 @@ defmodule CodeMySpec.ComponentCodingSessions.Steps.Initialize do
   @impl true
   def get_command(
         _scope,
-        %Session{environment: environment, project: project} = session,
+        %Session{environment_type: environment, project: project} = session,
         _opts \\ []
       ) do
     attrs = %{

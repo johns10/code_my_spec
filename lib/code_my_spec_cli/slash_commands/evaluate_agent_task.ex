@@ -93,7 +93,7 @@ defmodule CodeMySpecCli.SlashCommands.EvaluateAgentTask do
        external_id: session.external_conversation_id,
        component: session.component,
        project: session.project,
-       environment: session.environment
+       environment_type: session.environment_type
      }}
   end
 

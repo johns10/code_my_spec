@@ -21,7 +21,7 @@ defmodule CodeMySpecWeb.SessionsJSON do
       type: session.type |> Atom.to_string() |> String.split(".") |> List.last(),
       display_name: session.display_name,
       agent: session.agent,
-      environment: session.environment,
+      environment_type: session.environment_type,
       execution_mode: session.execution_mode,
       status: session.status,
       state: session.state,

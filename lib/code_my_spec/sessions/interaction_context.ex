@@ -61,7 +61,7 @@ defmodule CodeMySpec.Sessions.InteractionContext do
   defp get_latest_interaction(%Session{interactions: [latest | _]}), do: {:ok, latest}
 
   # Create execution environment from session configuration
-  defp create_environment(%Session{environment: type, id: session_id, state: state}, _interaction) do
+  defp create_environment(%Session{environment_type: type, id: session_id, state: state}, _interaction) do
     alias CodeMySpec.Environments
 
     opts = [session_id: session_id]

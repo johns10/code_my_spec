@@ -150,7 +150,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
 
   defp read_spec_file(session) do
     %{spec_file: path} = Utils.component_files(session.component, session.project)
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     case Environments.read_file(environment, path) do
       {:ok, content} ->
@@ -174,7 +174,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
 
   defp create_child_spec_files(session, %{"components" => components})
        when is_list(components) do
-    {:ok, environment} = Environments.create(session.environment)
+    {:ok, environment} = Environments.create(session.environment_type)
 
     results =
       Enum.map(components, fn %{module_name: module_name, description: description} ->

@@ -8,7 +8,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.Finalize do
 
   def get_command(
         _scope,
-        %{environment: environment, component: component, project: project} = session,
+        %{environment_type: environment, component: component, project: project} = session,
         _opts \\ []
       ) do
     %{test_file: test_file} =

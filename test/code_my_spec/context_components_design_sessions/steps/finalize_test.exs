@@ -31,7 +31,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.FinalizeTest do
           component_id: context_component.id,
           project_id: project.id,
           agent: :claude_code,
-          environment: :local,
+          environment_type: :local,
           execution_mode: :manual
         })
 
@@ -199,7 +199,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.FinalizeTest do
         project: project,
         component: nil,
         agent: :claude_code,
-        environment: :local
+        environment_type: :local
       }
 
       assert {:error, "Context component not found in session"} =

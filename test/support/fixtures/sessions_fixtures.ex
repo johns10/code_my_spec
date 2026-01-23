@@ -13,7 +13,7 @@ defmodule CodeMySpec.SessionsFixtures do
     attrs =
       Enum.into(attrs, %{
         agent: :claude_code,
-        environment: :local,
+        environment_type: :local,
         state: %{},
         status: :active,
         type: CodeMySpec.ContextSpecSessions,

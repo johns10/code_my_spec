@@ -153,7 +153,7 @@ defmodule CodeMySpec.ContextCodingSessions.Steps.SpawnComponentCodingSessions do
       session_id: parent_session.id,
       execution_mode: :agentic,
       agent: parent_session.agent,
-      environment: parent_session.environment,
+      environment_type: parent_session.environment_type,
       project_id: scope.active_project_id,
       state: %{
         parent_branch_name: branch_name

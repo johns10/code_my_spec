@@ -14,7 +14,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextComponentsDesignSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -34,7 +34,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextComponentsDesignSessions,
-        environment: :vscode,
+        environment_type: :vscode,
         project: project,
         component: component
       }
@@ -54,7 +54,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextComponentsDesignSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }
@@ -71,7 +71,7 @@ defmodule CodeMySpec.ContextComponentsDesignSessions.Steps.InitializeTest do
 
       session = %Session{
         type: CodeMySpec.ContextComponentsDesignSessions,
-        environment: :local,
+        environment_type: :local,
         project: project,
         component: component
       }

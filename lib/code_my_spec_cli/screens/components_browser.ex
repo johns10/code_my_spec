@@ -180,7 +180,7 @@ defmodule CodeMySpecCli.Screens.ComponentsBrowser do
     session_attrs = %{
       type: requirement.satisfied_by,
       agent: :claude_code,
-      environment: :cli,
+      environment_type: :cli,
       execution_mode: :manual,
       component_id: model.detail_component.id,
       state: %{}

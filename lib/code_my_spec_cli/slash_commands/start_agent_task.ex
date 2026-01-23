@@ -128,7 +128,7 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
   defp create_session(scope, external_id, session_module, component) do
     Sessions.create_session(scope, %{
       type: session_module,
-      environment: :cli,
+      environment_type: :cli,
       agent: :claude_code,
       execution_mode: :manual,
       component_id: component.id,
@@ -142,7 +142,7 @@ defmodule CodeMySpecCli.SlashCommands.StartAgentTask do
        external_id: external_id,
        component: component,
        project: project,
-       environment: :cli
+       environment_type: :cli
      }}
   end
 
