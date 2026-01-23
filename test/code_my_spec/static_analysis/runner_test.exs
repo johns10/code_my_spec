@@ -280,10 +280,6 @@ defmodule CodeMySpec.StaticAnalysis.RunnerTest do
 
         temp_dir = Path.join(project_dir, "_temp_no_spec_filter")
         File.mkdir_p!(temp_dir)
-        # Copy mix.exs so Credo can run
-        File.cp!(Path.join(project_dir, "mix.exs"), Path.join(temp_dir, "mix.exs"))
-        # Copy deps so Credo is available
-        File.cp_r!(Path.join(project_dir, "deps"), Path.join(temp_dir, "deps"))
 
         project = project_fixture(scope, %{code_repo: temp_dir})
         scope = user_scope_fixture(user, account, project)
