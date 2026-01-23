@@ -92,9 +92,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextDesignReview do
   end
 
   defp calculate_review_file_path(context_spec_path) do
-    # Context spec path: "docs/specs/code_my_spec/sessions.md"
-    # Review file path: "docs/specs/code_my_spec/sessions/design_review.md"
-    review_path = String.replace_suffix(context_spec_path, ".md", "/design_review.md")
+    # Context spec path: "docs/spec/code_my_spec/sessions.spec.md"
+    # Review file path: "docs/spec/code_my_spec/sessions/design_review.md"
+    review_path = String.replace_suffix(context_spec_path, ".spec.md", "/design_review.md")
     {:ok, review_path}
   end
 
