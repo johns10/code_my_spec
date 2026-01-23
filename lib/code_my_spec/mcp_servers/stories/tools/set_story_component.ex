@@ -1,5 +1,9 @@
 defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent do
-  @moduledoc "Assigns a component to a story"
+  @moduledoc """
+  Links a story to a component that implements it.
+
+  Use this to track which component satisfies which user story.
+  """
 
   use Hermes.Server.Component, type: :tool
 
@@ -8,8 +12,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :story_id, :string, required: true
-    field :component_id, :string, required: true
+    field :story_id, :string, required: true, doc: "Story ID (use list_story_titles to find)"
+    field :component_id, :string, required: true, doc: "Component ID to link"
   end
 
   @impl true
@@ -17,7 +21,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent do
     with {:ok, scope} <- Validators.validate_scope(frame),
          story when not is_nil(story) <- Stories.get_story(scope, params.story_id),
          {:ok, updated_story} <- Stories.set_story_component(scope, story, params.component_id) do
-      {:reply, StoriesMapper.story_response(updated_story), frame}
+      {:reply, StoriesMapper.story_component_set_response(updated_story), frame}
     else
       nil ->
         {:reply, StoriesMapper.error("Story not found"), frame}

@@ -1,5 +1,9 @@
 defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteStory do
-  @moduledoc "Deletes a user story"
+  @moduledoc """
+  Deletes a user story permanently.
+
+  Use list_story_titles to find story IDs. This action cannot be undone.
+  """
 
   use Hermes.Server.Component, type: :tool
 
@@ -8,16 +12,19 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteStory do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :id, :string, required: true
+    field :id, :string, required: true, doc: "Story ID to delete (use list_story_titles to find IDs)"
   end
 
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         story <- Stories.get_story!(scope, params.id),
+         story when not is_nil(story) <- Stories.get_story(scope, params.id),
          {:ok, story} <- Stories.delete_story(scope, story) do
-      {:reply, StoriesMapper.story_response(story), frame}
+      {:reply, StoriesMapper.story_deleted_response(story), frame}
     else
+      nil ->
+        {:reply, StoriesMapper.not_found_error(), frame}
+
       {:error, changeset = %Ecto.Changeset{}} ->
         {:reply, StoriesMapper.validation_error(changeset), frame}
 

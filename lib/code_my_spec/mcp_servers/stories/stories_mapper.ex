@@ -1,20 +1,229 @@
 defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
-  @moduledoc false
+  @moduledoc """
+  Maps story data to MCP responses using a hybrid format:
+  human-readable summary + JSON data for programmatic access.
+  """
 
   alias CodeMySpec.MCPServers.Formatters
   alias Hermes.Server.Response
 
+  # ---------------------------------------------------------------------------
+  # Tool Responses (hybrid format: summary + JSON)
+  # ---------------------------------------------------------------------------
+
   def story_response(story) do
-    Response.tool()
-    |> Response.json(%{
-      id: story.id,
-      title: story.title,
-      description: story.description,
-      acceptance_criteria: story.acceptance_criteria,
-      criteria: format_criteria(story.criteria),
-      component_id: story.component_id
-    })
+    data = story_data(story)
+    summary = "Story created: \"#{story.title}\" (ID: #{story.id})"
+
+    hybrid_response(summary, data)
   end
+
+  def story_updated_response(story) do
+    data = story_data(story)
+    summary = "Story updated: \"#{story.title}\" (ID: #{story.id})"
+
+    hybrid_response(summary, data)
+  end
+
+  def story_get_response(story) do
+    data = story_data(story)
+    criteria_count = length(story.criteria || [])
+    verified_count = Enum.count(story.criteria || [], & &1.verified)
+
+    summary = """
+    ## #{story.title} (ID: #{story.id})
+
+    #{story.description || "No description"}
+
+    **Acceptance Criteria:** #{criteria_count} total, #{verified_count} verified
+    """
+
+    hybrid_response(String.trim(summary), data)
+  end
+
+  def story_deleted_response(story) do
+    Response.tool()
+    |> Response.text("Story deleted: \"#{story.title}\" (ID: #{story.id})")
+  end
+
+  def story_component_set_response(story) do
+    data = story_data(story)
+    summary = "Component assigned to story: \"#{story.title}\" (ID: #{story.id}) -> Component #{story.component_id}"
+
+    hybrid_response(summary, data)
+  end
+
+  def story_component_cleared_response(story) do
+    data = story_data(story)
+    summary = "Component cleared from story: \"#{story.title}\" (ID: #{story.id})"
+
+    hybrid_response(summary, data)
+  end
+
+  def stories_list_response(stories, total, limit, offset) do
+    count = length(stories)
+    summaries = Enum.map(stories, &story_summary/1)
+
+    summary_text =
+      if count == 0 do
+        if offset > 0 do
+          "No more stories. Showing #{offset + 1}-#{offset} of #{total} total."
+        else
+          "No stories found."
+        end
+      else
+        story_lines =
+          stories
+          |> Enum.map(fn s -> "- #{s.title} (ID: #{s.id})" end)
+          |> Enum.join("\n")
+
+        range_start = offset + 1
+        range_end = offset + count
+        pagination_hint =
+          if total > range_end do
+            "\n\n*Use offset: #{range_end} to see more (#{total - range_end} remaining)*"
+          else
+            ""
+          end
+
+        "Showing #{range_start}-#{range_end} of #{total} stories:\n#{story_lines}#{pagination_hint}"
+      end
+
+    data = %{
+      stories: summaries,
+      total: total,
+      limit: limit,
+      offset: offset,
+      has_more: total > offset + count
+    }
+
+    hybrid_response(summary_text, data)
+  end
+
+  def story_titles_response(titles) do
+    count = length(titles)
+
+    summary_text =
+      if count == 0 do
+        "No stories found."
+      else
+        title_lines =
+          titles
+          |> Enum.map(fn t -> "- #{t.title} (ID: #{t.id})" end)
+          |> Enum.join("\n")
+
+        "#{count} stories:\n#{title_lines}"
+      end
+
+    hybrid_response(summary_text, %{stories: titles, count: count})
+  end
+
+  def stories_batch_response(stories) do
+    count = length(stories)
+    summaries = Enum.map(stories, &story_summary/1)
+
+    story_lines =
+      stories
+      |> Enum.take(5)
+      |> Enum.map(fn s -> "- #{s.title} (ID: #{s.id})" end)
+      |> Enum.join("\n")
+
+    more = if count > 5, do: "\n... and #{count - 5} more", else: ""
+    summary = "Created #{count} stories:\n#{story_lines}#{more}"
+
+    hybrid_response(summary, %{success: true, count: count, stories: summaries})
+  end
+
+  def batch_errors_response(successes, failures) do
+    created_count = length(successes)
+    failed_count = length(failures)
+
+    success_lines =
+      if created_count > 0 do
+        lines =
+          successes
+          |> Enum.take(3)
+          |> Enum.map(fn s -> "- #{s.title} (ID: #{s.id})" end)
+          |> Enum.join("\n")
+
+        more = if created_count > 3, do: "\n  ... and #{created_count - 3} more", else: ""
+        "Created #{created_count} stories:\n#{lines}#{more}"
+      else
+        "No stories created."
+      end
+
+    failure_lines =
+      failures
+      |> Enum.take(3)
+      |> Enum.map(fn {index, changeset} ->
+        errors = Formatters.extract_errors(changeset)
+        error_text = errors |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end) |> Enum.join("; ")
+        "- Story #{index + 1}: #{error_text}"
+      end)
+      |> Enum.join("\n")
+
+    more_failures = if failed_count > 3, do: "\n... and #{failed_count - 3} more failures", else: ""
+
+    summary = """
+    ## Batch Creation Partial Failure
+
+    #{success_lines}
+
+    Failed #{failed_count} stories:
+    #{failure_lines}#{more_failures}
+    """
+
+    data = %{
+      success: false,
+      created_count: created_count,
+      failed_count: failed_count,
+      created_stories: Enum.map(successes, &story_summary/1),
+      errors:
+        Enum.map(failures, fn {index, changeset} ->
+          %{index: index, errors: Formatters.extract_errors(changeset)}
+        end)
+    }
+
+    Response.tool()
+    |> Response.error(String.trim(summary) <> "\n\nData: " <> Jason.encode!(data))
+  end
+
+  def prompt_response(prompt) do
+    Response.tool()
+    |> Response.text(prompt)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Criterion Responses
+  # ---------------------------------------------------------------------------
+
+  def criterion_added_response(criterion, story) do
+    data = criterion_data(criterion)
+    summary = "Criterion added to \"#{story.title}\" (ID: #{criterion.id}): #{criterion.description}"
+
+    hybrid_response(summary, data)
+  end
+
+  def criterion_updated_response(criterion) do
+    data = criterion_data(criterion)
+    summary = "Criterion updated (ID: #{criterion.id}): #{criterion.description}"
+
+    hybrid_response(summary, data)
+  end
+
+  def criterion_deleted_response(criterion) do
+    Response.tool()
+    |> Response.text("Criterion deleted (ID: #{criterion.id}): #{criterion.description}")
+  end
+
+  def criterion_not_found_error do
+    Response.tool()
+    |> Response.error("Criterion not found. Use get_story to see criteria IDs.")
+  end
+
+  # ---------------------------------------------------------------------------
+  # Error Responses
+  # ---------------------------------------------------------------------------
 
   def validation_error(changeset) do
     Response.tool()
@@ -28,68 +237,43 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
     |> Response.error(error)
   end
 
+  def not_found_error do
+    Response.tool()
+    |> Response.error("Story not found. Verify the story ID exists using list_stories.")
+  end
+
+  # ---------------------------------------------------------------------------
+  # Resource Responses
+  # ---------------------------------------------------------------------------
+
   def story_resource(story) do
     Response.resource()
-    |> Response.json(%{
+    |> Response.json(story_data(story))
+  end
+
+  def stories_list_resource(stories) do
+    Response.resource()
+    |> Response.json(%{stories: Enum.map(stories, &story_summary/1)})
+  end
+
+  # ---------------------------------------------------------------------------
+  # Private Helpers
+  # ---------------------------------------------------------------------------
+
+  defp hybrid_response(summary, data) do
+    Response.tool()
+    |> Response.text(summary <> "\n\nData: " <> Jason.encode!(data))
+  end
+
+  defp story_data(story) do
+    %{
       id: story.id,
       title: story.title,
       description: story.description,
       acceptance_criteria: story.acceptance_criteria,
       criteria: format_criteria(story.criteria),
       component_id: story.component_id
-    })
-  end
-
-  def stories_list_resource(stories) do
-    Response.resource()
-    |> Response.json(%{
-      stories: Enum.map(stories, &story_summary/1)
-    })
-  end
-
-  def stories_list_response(stories) do
-    Response.tool()
-    |> Response.json(%{
-      stories: Enum.map(stories, &story_summary/1)
-    })
-  end
-
-  def not_found_error do
-    Response.tool()
-    |> Response.error("Resource not found")
-  end
-
-  def stories_batch_response(stories) do
-    Response.tool()
-    |> Response.json(%{
-      success: true,
-      count: length(stories),
-      stories: Enum.map(stories, &story_summary/1)
-    })
-  end
-
-  def batch_errors_response(successes, failures) do
-    Response.tool()
-    |> Response.json(%{
-      success: false,
-      created_count: length(successes),
-      failed_count: length(failures),
-      created_stories: Enum.map(successes, &story_summary/1),
-      errors:
-        Enum.map(failures, fn {index, changeset} ->
-          %{
-            index: index,
-            errors: Formatters.format_changeset_errors(changeset)
-          }
-        end)
-    })
-  end
-
-  def prompt_response(prompt) do
-    Response.tool()
-    |> Response.json(%{
-      content: prompt
-    })
+    }
   end
 
   defp story_summary(story) do
@@ -100,7 +284,6 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       component_id: story.component_id
     }
 
-    # Include criteria if loaded
     if Ecto.assoc_loaded?(story.criteria) do
       Map.put(base, :criteria, format_criteria(story.criteria))
     else
@@ -109,15 +292,18 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
   end
 
   defp format_criteria(criteria) when is_list(criteria) do
-    Enum.map(criteria, fn c ->
-      %{
-        id: c.id,
-        description: c.description,
-        verified: c.verified,
-        verified_at: c.verified_at
-      }
-    end)
+    Enum.map(criteria, &criterion_data/1)
   end
 
   defp format_criteria(_), do: []
+
+  defp criterion_data(c) do
+    %{
+      id: c.id,
+      description: c.description,
+      story_id: c.story_id,
+      verified: c.verified,
+      verified_at: c.verified_at
+    }
+  end
 end

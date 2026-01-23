@@ -11,6 +11,13 @@ defmodule CodeMySpec.MCPServers.StoriesServer do
   component(CodeMySpec.MCPServers.Stories.Tools.DeleteStory)
   component(CodeMySpec.MCPServers.Stories.Tools.GetStory)
   component(CodeMySpec.MCPServers.Stories.Tools.ListStories)
+  component(CodeMySpec.MCPServers.Stories.Tools.ListStoryTitles)
+
+  # Criterion tools
+  component(CodeMySpec.MCPServers.Stories.Tools.AddCriterion)
+  component(CodeMySpec.MCPServers.Stories.Tools.UpdateCriterion)
+  component(CodeMySpec.MCPServers.Stories.Tools.DeleteCriterion)
+
   component(CodeMySpec.MCPServers.Stories.Tools.StartStoryInterview)
   component(CodeMySpec.MCPServers.Stories.Tools.StartStoryReview)
 end

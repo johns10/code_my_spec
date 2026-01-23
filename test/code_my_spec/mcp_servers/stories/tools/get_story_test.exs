@@ -21,5 +21,20 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.GetStoryTest do
       assert {:reply, response, ^frame} = GetStory.execute(params, frame)
       assert response.type == :tool
     end
+
+    test "returns not found error for non-existent story" do
+      scope = full_scope_fixture()
+      params = %{story_id: "99999"}
+
+      frame = %Frame{assigns: %{current_scope: scope}}
+
+      assert {:reply, response, ^frame} = GetStory.execute(params, frame)
+      assert response.type == :tool
+      assert response.isError == true
+
+      protocol = Hermes.Server.Response.to_protocol(response)
+      content = hd(protocol["content"])["text"]
+      assert content =~ "not found"
+    end
   end
 end

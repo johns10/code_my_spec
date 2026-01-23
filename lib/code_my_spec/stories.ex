@@ -52,6 +52,28 @@ defmodule CodeMySpec.Stories do
   def list_stories(scope), do: impl().list_stories(scope)
   def list_project_stories(scope), do: impl().list_project_stories(scope)
 
+  @doc """
+  Lists stories with pagination and optional search.
+  Returns {stories, total_count}.
+
+  Options:
+  - :limit - max stories to return (default: 20)
+  - :offset - stories to skip (default: 0)
+  - :search - text to filter by title/description
+  """
+  def list_project_stories_paginated(scope, opts \\ []),
+    do: impl().list_project_stories_paginated(scope, opts)
+
+  @doc """
+  Lists just story IDs and titles (lightweight, no criteria).
+  Returns list of %{id, title, component_id}.
+
+  Options:
+  - :search - text to filter by title
+  """
+  def list_story_titles(scope, opts \\ []),
+    do: impl().list_story_titles(scope, opts)
+
   def list_project_stories_by_component_priority(scope),
     do: impl().list_project_stories_by_component_priority(scope)
 

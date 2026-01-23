@@ -1,5 +1,12 @@
 defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
-  @moduledoc "Creates a user story"
+  @moduledoc """
+  Creates a user story with title, description, and acceptance criteria.
+
+  Example:
+    title: "User Login"
+    description: "As a user, I want to log in so I can access my account"
+    acceptance_criteria: ["User can enter email and password", "Invalid credentials show error"]
+  """
 
   use Hermes.Server.Component, type: :tool
 
@@ -8,9 +15,9 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
   alias CodeMySpec.Stories
 
   schema do
-    field :title, :string, required: true
-    field :description, :string, required: true
-    field :acceptance_criteria, {:list, :string}, required: true
+    field :title, :string, required: true, doc: "Story title (e.g., 'User Login Feature')"
+    field :description, :string, required: true, doc: "User story description (e.g., 'As a user, I want to...')"
+    field :acceptance_criteria, {:list, :string}, required: true, doc: "List of acceptance criteria strings"
   end
 
   @impl true

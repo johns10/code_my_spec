@@ -45,7 +45,7 @@ defmodule CodeMySpec.MCPServers.StoriesServerTest do
       create_story_tool = Enum.find(tools, &(&1.name == "create_story"))
 
       assert create_story_tool != nil
-      assert create_story_tool.description == "Creates a user story"
+      assert create_story_tool.description =~ "Creates a user story"
 
       # Check schema has required fields
       schema = create_story_tool.input_schema
@@ -54,6 +54,14 @@ defmodule CodeMySpec.MCPServers.StoriesServerTest do
       assert "title" in required_fields
       assert "description" in required_fields
       assert "acceptance_criteria" in required_fields
+    end
+
+    test "list_story_titles tool is registered" do
+      tools = StoriesServer.__components__(:tool)
+      tool = Enum.find(tools, &(&1.name == "list_story_titles"))
+
+      assert tool != nil
+      assert tool.description =~ "lightweight"
     end
 
     test "resources have proper URIs" do

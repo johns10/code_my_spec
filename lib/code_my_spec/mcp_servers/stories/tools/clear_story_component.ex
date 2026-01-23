@@ -1,5 +1,9 @@
 defmodule CodeMySpec.MCPServers.Stories.Tools.ClearStoryComponent do
-  @moduledoc "Clears the component assignment from a story"
+  @moduledoc """
+  Removes the component link from a story.
+
+  Use this when a story is no longer satisfied by its assigned component.
+  """
 
   use Hermes.Server.Component, type: :tool
 
@@ -8,15 +12,15 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ClearStoryComponent do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :story_id, :string, required: true
+    field :story_id, :string, required: true, doc: "Story ID to unlink from component"
   end
 
   @impl true
-  def execute(%{"story_id" => story_id}, frame) do
+  def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         {:ok, story} <- Stories.get_story(scope, story_id),
+         {:ok, story} <- Stories.get_story(scope, params.story_id),
          {:ok, updated_story} <- Stories.clear_story_component(scope, story) do
-      {:reply, StoriesMapper.story_response(updated_story), frame}
+      {:reply, StoriesMapper.story_component_cleared_response(updated_story), frame}
     else
       {:error, changeset = %Ecto.Changeset{}} ->
         {:reply, StoriesMapper.validation_error(changeset), frame}

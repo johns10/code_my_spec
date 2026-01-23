@@ -14,10 +14,10 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
   alias CodeMySpec.Stories
 
   schema do
-    field :id, :string, required: true
-    field :title, :string
-    field :description, :string
-    field :acceptance_criteria, {:list, :string}
+    field :id, :string, required: true, doc: "Story ID to update (use list_story_titles to find IDs)"
+    field :title, :string, doc: "New title (optional)"
+    field :description, :string, doc: "New description (optional)"
+    field :acceptance_criteria, {:list, :string}, doc: "Replace unverified criteria with these (optional)"
   end
 
   @impl true
@@ -26,7 +26,7 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
          story when not is_nil(story) <- Stories.get_story(scope, params.id),
          update_params <- transform_params(params, story),
          {:ok, story} <- Stories.update_story(scope, story, update_params) do
-      {:reply, StoriesMapper.story_response(story), frame}
+      {:reply, StoriesMapper.story_updated_response(story), frame}
     else
       nil ->
         {:reply, StoriesMapper.not_found_error(), frame}

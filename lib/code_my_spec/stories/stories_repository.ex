@@ -21,6 +21,66 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     |> Repo.preload(:criteria)
   end
 
+  @doc """
+  Lists stories with pagination and optional search.
+  Returns {stories, total_count}.
+  """
+  def list_project_stories_paginated(%Scope{} = scope, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 20)
+    offset = Keyword.get(opts, :offset, 0)
+    search = Keyword.get(opts, :search)
+
+    base_query =
+      from(s in Story,
+        where: s.project_id == ^scope.active_project.id,
+        order_by: [desc: s.updated_at]
+      )
+
+    query =
+      if search && search != "" do
+        search_term = "%#{search}%"
+        from(s in base_query, where: ilike(s.title, ^search_term) or ilike(s.description, ^search_term))
+      else
+        base_query
+      end
+
+    total = Repo.aggregate(query, :count, :id)
+
+    stories =
+      query
+      |> limit(^limit)
+      |> offset(^offset)
+      |> Repo.all()
+      |> Repo.preload(:criteria)
+
+    {stories, total}
+  end
+
+  @doc """
+  Lists just story IDs and titles (lightweight, no criteria).
+  Useful for quick lookups and selection.
+  """
+  def list_story_titles(%Scope{} = scope, opts \\ []) do
+    search = Keyword.get(opts, :search)
+
+    base_query =
+      from(s in Story,
+        where: s.project_id == ^scope.active_project.id,
+        order_by: [asc: s.title],
+        select: %{id: s.id, title: s.title, component_id: s.component_id}
+      )
+
+    query =
+      if search && search != "" do
+        search_term = "%#{search}%"
+        from(s in base_query, where: ilike(s.title, ^search_term))
+      else
+        base_query
+      end
+
+    Repo.all(query)
+  end
+
   def list_project_stories_by_component_priority(%Scope{} = scope) do
     from(s in Story,
       left_join: c in assoc(s, :component),
