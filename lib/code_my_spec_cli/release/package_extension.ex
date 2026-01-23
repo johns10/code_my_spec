@@ -101,7 +101,7 @@ defmodule CodeMySpecCli.Release.PackageExtension do
   defp push_to_github(extension_dir, version) do
     # Initialize git repo if needed
     unless File.exists?(Path.join(extension_dir, ".git")) do
-      run_cmd("git", ["init"], extension_dir)
+      run_cmd("git", ["init", "-b", "main"], extension_dir)
 
       run_cmd(
         "git",
@@ -114,6 +114,7 @@ defmodule CodeMySpecCli.Release.PackageExtension do
     run_cmd("git", ["add", "."], extension_dir)
     run_cmd("git", ["commit", "-m", "Release v#{version}", "--allow-empty"], extension_dir)
     run_cmd("git", ["tag", "-f", "v#{version}"], extension_dir)
+    # Push branch and tag - ignore branch push errors since we only need the tag for releases
     run_cmd("git", ["push", "-u", "origin", "main", "--force"], extension_dir)
     run_cmd("git", ["push", "origin", "v#{version}", "--force"], extension_dir)
   end
