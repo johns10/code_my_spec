@@ -16,8 +16,7 @@ defmodule CodeMySpec.MixProject do
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_deps: :app_tree,
         ignore_warnings: ".dialyzer_ignore.exs"
-      ],
-      releases: releases()
+      ]
     ]
   end
 
@@ -26,18 +25,9 @@ defmodule CodeMySpec.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod:
-        if Mix.env() == :cli or System.get_env("BURRITO_BUILD") do
-          {CodeMySpecCli.Application, []}
-        else
-          {CodeMySpec.Application, []}
-        end,
+      mod: {CodeMySpec.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
-  end
-
-  def cli do
-    [preferred_envs: [cli: :cli]]
   end
 
   # Specifies which paths to compile per environment.
@@ -111,13 +101,7 @@ defmodule CodeMySpec.MixProject do
       {:httpoison, "~> 2.0"},
       {:uuid, "~> 1.1.8"},
       {:inflex, "~> 2.1.0"},
-
-      # CLI deps
-      {:burrito, "~> 1.5", only: :cli},
-      {:optimus, "~> 0.5", only: :cli},
-      {:oauth2, "~> 2.0"},
-      {:logger_backends, "~> 1.0"},
-      {:logger_file_backend, "~> 0.0.14"}
+      {:sexy_spex, "~> 0.1.0"}
     ]
   end
 
@@ -146,33 +130,6 @@ defmodule CodeMySpec.MixProject do
         "phx.digest"
       ],
       tui: ["run --no-halt"]
-    ]
-  end
-
-  defp releases do
-    [
-      code_my_spec_cli: [
-        steps: [:assemble, &Burrito.wrap/1],
-        burrito: [
-          targets: [
-            # macos: [os: :darwin, cpu: :x86_64],
-            macos_m1: [os: :darwin, cpu: :aarch64]
-            # linux: [os: :linux, cpu: :x86_64],
-            # linux_aarch64: [os: :linux, cpu: :aarch64],
-            # windows: [os: :windows, cpu: :x86_64]
-          ],
-          extra_steps: [
-            # Include the tmux startup script in the release
-            {:copy, "scripts/start-with-tmux.sh", "bin/start-with-tmux"},
-            # Patch Zig launcher to add "--" separator before args (prevents Elixir script loading)
-            fetch: [pre: [CodeMySpecCli.Release.PatchLauncherStep]],
-            # Package extension for distribution
-            build: [post: [CodeMySpecCli.Release.PackageExtension]]
-          ],
-          debug: false,
-          no_clean: false
-        ]
-      ]
     ]
   end
 end
