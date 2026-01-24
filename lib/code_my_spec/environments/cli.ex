@@ -9,7 +9,6 @@ defmodule CodeMySpec.Environments.Cli do
   @behaviour CodeMySpec.Environments.EnvironmentsBehaviour
   alias CodeMySpec.Environments.Cli.TmuxAdapter
   alias CodeMySpec.Environments.Environment
-  alias CodeMySpecCli.WebServer.Config
   require Logger
 
   # Allow adapter injection for testing
@@ -114,148 +113,21 @@ defmodule CodeMySpec.Environments.Cli do
   def run_command(
         %Environment{ref: window_name},
         %CodeMySpec.Sessions.Command{command: "claude", metadata: metadata},
-        opts
+        _opts
       ) do
-    with {:ok, session_id} <- get_session_id(opts),
-         {:ok, interaction_id} <- get_interaction_id(opts),
-         :ok <- ensure_window_or_pane_exists(window_name),
+    with :ok <- ensure_window_or_pane_exists(window_name),
          {:ok, temp_path} <- Briefly.create(),
          prompt <- Map.get(metadata, "prompt", ""),
          args <- Map.get(metadata, "args", []),
          :ok <- File.write(temp_path, prompt) do
-      # Build Claude command with piped prompt
       claude_cmd = build_claude_command_with_pipe(temp_path, args)
-
-      # Build environment variables for Claude CLI
-      env_vars = %{
-        "CODE_MY_SPEC_SESSION_ID" => to_string(session_id),
-        "CODE_MY_SPEC_INTERACTION_ID" => to_string(interaction_id),
-        "CODE_MY_SPEC_HOOK_URL" => "#{Config.local_server_url()}/sessions/#{session_id}/hooks"
-      }
-
-      # Build final command with environment variables
-      full_command = build_command_with_env(claude_cmd, env_vars)
-
-      send_keys(window_name, full_command)
+      send_keys(window_name, claude_cmd)
       :ok
     end
   end
 
   def run_command(%Environment{}, %CodeMySpec.Sessions.Command{command: "pass"}, _opts) do
     {:ok, %{}}
-  end
-
-  def run_command(
-        %Environment{},
-        %CodeMySpec.Sessions.Command{command: "mix_test", metadata: %{"args" => args}},
-        opts
-      )
-      when is_list(args) do
-    interaction_id = Keyword.fetch!(opts, :interaction_id)
-    session_id = Keyword.fetch!(opts, :session_id)
-
-    result = CodeMySpec.Tests.execute(args)
-    scope = CodeMySpec.Users.Scope.for_cli()
-
-    case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, result) do
-      {:ok, _updated_session} ->
-        Logger.info("Test execution completed for session #{session_id}")
-
-      {:error, reason} ->
-        Logger.error("Failed to handle test result for session #{session_id}: #{inspect(reason)}")
-    end
-  end
-
-  def run_command(
-        %Environment{},
-        %CodeMySpec.Sessions.Command{command: "run_checks", metadata: %{"checks" => checks}},
-        opts
-      )
-      when is_map(checks) do
-    with {:ok, interaction_id} <- Keyword.fetch(opts, :interaction_id),
-         {:ok, session_id} <- Keyword.fetch(opts, :session_id),
-         {compile_args, test_args} <- extract_check_args(checks) do
-      # Run checks in a Task, calling synchronous versions
-      # Set initial state
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "running_compiler"
-      })
-
-      # Run compilation synchronously
-      compile_result = CodeMySpec.Compile.execute(compile_args)
-
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "compiler_finished"
-      })
-
-      # Check if compilation has errors
-      results = %{compile: compile_result}
-
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "running_tests"
-      })
-
-      Logger.info(inspect(test_args))
-
-      final_results =
-        case check_compilation_errors(results) do
-          {:ok, _} ->
-            # No compilation errors, run tests
-            test_result =
-              case CodeMySpec.Tests.execute(test_args) do
-                {:ok, test_run} ->
-                  %{
-                    status: test_run.execution_status,
-                    data: %{test_results: test_run},
-                    exit_code: test_run.exit_code || 0,
-                    output: test_run.raw_output || ""
-                  }
-
-                {:error, {:parse_error, raw_output}} ->
-                  %{
-                    status: :error,
-                    data: %{test_results: %{}},
-                    exit_code: 1,
-                    output: raw_output
-                  }
-              end
-
-            %{compile: compile_result, test: test_result}
-
-          {:error, _} ->
-            # Compilation errors, skip tests
-            %{compile: compile_result}
-        end
-
-      # Mark as complete
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "tests_complete"
-      })
-
-      # Mark as complete
-      CodeMySpec.Sessions.InteractionRegistry.update_status(interaction_id, %{
-        agent_state: "checks_complete"
-      })
-
-      # Merge and handle results
-      merged_result = merge_check_results(final_results)
-      scope = CodeMySpec.Users.Scope.for_cli()
-
-      case CodeMySpec.Sessions.handle_result(scope, session_id, interaction_id, merged_result) do
-        {:ok, updated_session} ->
-          Logger.info("Checks execution completed for session #{session_id}")
-          {:ok, updated_session}
-
-        {:error, reason} ->
-          Logger.error(
-            "Failed to handle checks result for session #{session_id}: #{inspect(reason)}"
-          )
-
-          {:error, reason}
-      end
-    else
-      :error -> {:error, :missing_required_option}
-    end
   end
 
   # Fallback for legacy format where command field contains the actual shell command
@@ -344,23 +216,6 @@ defmodule CodeMySpec.Environments.Cli do
 
   # Private functions
 
-  defp get_session_id(opts) do
-    case Keyword.fetch(opts, :session_id) do
-      :error -> {:error, :missing_session_id}
-      ok -> ok
-    end
-  end
-
-  defp get_interaction_id(opts) do
-    Logger.info(inspect(opts))
-    Logger.info(inspect(Keyword.fetch(opts, :interaction_id)))
-
-    case Keyword.fetch(opts, :interaction_id) do
-      :error -> {:error, :missing_interaction_id}
-      ok -> ok
-    end
-  end
-
   @doc false
   defp ensure_window_or_pane_exists(window_name) do
     # Check if pane with this title exists OR window exists
@@ -439,75 +294,5 @@ defmodule CodeMySpec.Environments.Cli do
         Logger.info("No pane with title #{window_name}, sending keys to window")
         adapter().send_keys(window_name, full_command)
     end
-  end
-
-  # Extract compile and test args from checks map
-  # Expects format: %{compile: %{args: [...]}, test: %{args: [...]}}
-  # Or JSON format: %{"compile" => %{"args" => [...]}, "test" => %{"args" => [...]}}
-  defp extract_check_args(checks) when is_map(checks) do
-    compile_args =
-      case Map.get(checks, :compile) || Map.get(checks, "compile") do
-        %{args: args} -> args
-        %{"args" => args} -> args
-        _ -> []
-      end
-
-    test_args =
-      case Map.get(checks, :test) || Map.get(checks, "test") do
-        %{args: args} -> args
-        %{"args" => args} -> args
-        _ -> []
-      end
-
-    {compile_args, test_args}
-  end
-
-  # Check if compilation has errors using Diagnostic schema
-  defp check_compilation_errors(%{compile: compile_result} = results) do
-    alias CodeMySpec.Compile.Diagnostic
-
-    case compile_result do
-      %{data: %{compiler_results: compiler_json}} when is_binary(compiler_json) ->
-        case Diagnostic.parse_json(compiler_json) do
-          {:ok, diagnostics} ->
-            has_errors = Enum.any?(diagnostics, &Diagnostic.error?/1)
-
-            if has_errors do
-              {:error, results}
-            else
-              {:ok, results}
-            end
-
-          {:error, _} ->
-            # Failed to parse, assume no errors
-            {:ok, results}
-        end
-
-      _ ->
-        # No compiler data or unexpected format, assume no errors
-        {:ok, results}
-    end
-  end
-
-  # Merge compile and test results into final result structure
-  defp merge_check_results(%{compile: compile_result, test: test_result}) do
-    # Both compile and test ran
-    compiler_data = get_in(compile_result, [:data, :compiler_results]) || "[]"
-    test_data = get_in(test_result, [:data, :test_results]) || %{}
-
-    %{
-      status: Map.get(test_result, :status, :ok),
-      data: %{
-        compiler_results: compiler_data,
-        test_results: test_data
-      },
-      exit_code: Map.get(test_result, :exit_code, 0),
-      output: Map.get(test_result, :output, "")
-    }
-  end
-
-  defp merge_check_results(%{compile: compile_result}) do
-    # Only compile ran (compilation failed)
-    compile_result
   end
 end

@@ -85,54 +85,6 @@ defmodule CodeMySpec.Environments.CliTest do
       assert cmd_str =~ ~r/claude\s+"read @.+"/
     end
 
-    test "sets CODE_MY_SPEC environment variables automatically" do
-      session_id = :rand.uniform(10000)
-      {:ok, env} = Cli.create(session_id: session_id)
-      command = %Command{command: "claude", metadata: %{"prompt" => "test", "args" => []}}
-
-      assert :ok =
-               Cli.run_command(env, command,
-                 session_id: session_id,
-                 interaction_id: Ecto.UUID.generate()
-               )
-
-      # Verify CODE_MY_SPEC environment variables were included
-      commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_name, cmd_str}] = commands
-      assert cmd_str =~ "export CODE_MY_SPEC_HOOK_URL="
-      assert cmd_str =~ "export CODE_MY_SPEC_SESSION_ID="
-      assert cmd_str =~ "export CODE_MY_SPEC_INTERACTION_ID="
-      assert cmd_str =~ "http://localhost:8314"
-      assert cmd_str =~ to_string(session_id)
-    end
-
-    test "sets correct session_id in environment" do
-      session_id = 12345
-      {:ok, env} = Cli.create(session_id: session_id)
-      command = %Command{command: "claude", metadata: %{"prompt" => "test", "args" => []}}
-
-      assert :ok =
-               Cli.run_command(env, command,
-                 session_id: session_id,
-                 interaction_id: Ecto.UUID.generate()
-               )
-
-      commands = MockTmuxAdapter.get_sent_commands()
-      [{_window_name, cmd_str}] = commands
-      assert cmd_str =~ "CODE_MY_SPEC_SESSION_ID='12345'"
-    end
-
-    test "fails when session_id is missing in opts" do
-      {:ok, env} = Cli.create(session_id: :rand.uniform(10000))
-      command = %Command{command: "claude", metadata: %{"prompt" => "test", "args" => []}}
-
-      assert {:error, :missing_session_id} = Cli.run_command(env, command)
-
-      # No commands should have been sent
-      commands = MockTmuxAdapter.get_sent_commands()
-      assert commands == []
-    end
-
     test "returns immediately without blocking" do
       session_id = :rand.uniform(10000)
       {:ok, env} = Cli.create(session_id: session_id)
