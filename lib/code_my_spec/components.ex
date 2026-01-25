@@ -192,13 +192,13 @@ defmodule CodeMySpec.Components do
 
     Registry.get_requirements_for_type(type)
     |> Enum.filter(fn %{name: name, artifact_type: artifact_type} ->
-      exclude = length(exclude_types) > 0 and name in exclude_types
+      exclude = exclude_types != [] and name in exclude_types
 
       include =
-        (length(include_types) > 0 and name in include_types) or length(include_types) == 0
+        (include_types != [] and name in include_types) or include_types == []
 
       artifact_match =
-        length(artifact_types) == 0 or artifact_type in artifact_types
+        artifact_types == [] or artifact_type in artifact_types
 
       include && !exclude && artifact_match
     end)

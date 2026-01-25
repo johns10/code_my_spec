@@ -44,7 +44,7 @@ defmodule CodeMySpec.ContextSpecSessions.Steps.ValidateSpec do
 
   defp create_spec_files(session, %{"components" => components})
        when is_list(components) do
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     # Create spec files for each component
     results =

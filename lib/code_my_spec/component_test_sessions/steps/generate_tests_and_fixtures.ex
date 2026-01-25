@@ -10,18 +10,15 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
         opts \\ []
       ) do
     with {:ok, test_rules} <- get_test_rules(scope, component),
-         similar_components <- Components.list_similar_components(scope, component),
-         {:ok, prompt} <- build_prompt(session, test_rules, similar_components),
-         {:ok, command} <-
-           Helpers.build_agent_command(
-             __MODULE__,
-             session,
-             :test_writer,
-             "component-test-and-fixture-generator",
-             prompt,
-             opts
-           ) do
-      {:ok, command}
+         {:ok, prompt} <- build_prompt(session, test_rules, Components.list_similar_components(scope, component)) do
+      Helpers.build_agent_command(
+        __MODULE__,
+        session,
+        :test_writer,
+        "component-test-and-fixture-generator",
+        prompt,
+        opts
+      )
     end
   end
 
@@ -140,7 +137,7 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.GenerateTestsAndFixtures do
 
   defp check_implementation_exists(session, code_file_path) do
     # Create environment to check file existence
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
     CodeMySpec.Environments.file_exists?(environment, code_file_path)
   end
 end

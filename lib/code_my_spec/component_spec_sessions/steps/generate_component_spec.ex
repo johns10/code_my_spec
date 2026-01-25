@@ -8,17 +8,15 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.GenerateComponentSpec do
 
   def get_command(scope, %Session{component: component} = session, opts \\ []) do
     with {:ok, rules} <- get_design_rules(scope, component),
-         {:ok, prompt} <- build_spec_prompt(session, rules),
-         {:ok, command} <-
-           Helpers.build_agent_command(
-             __MODULE__,
-             session,
-             :component_designer,
-             "component-design-generator",
-             prompt,
-             opts
-           ) do
-      {:ok, command}
+         {:ok, prompt} <- build_spec_prompt(session, rules) do
+      Helpers.build_agent_command(
+        __MODULE__,
+        session,
+        :component_designer,
+        "component-design-generator",
+        prompt,
+        opts
+      )
     end
   end
 
@@ -53,7 +51,7 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.GenerateComponentSpec do
           ""
       end
 
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     %{code_file: code_file, test_file: test_file} =
       Utils.component_files(component, project)

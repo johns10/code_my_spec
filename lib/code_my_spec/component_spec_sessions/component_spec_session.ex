@@ -7,7 +7,7 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
   - `evaluate/3` - Called by stop hook to validate output and provide feedback
   """
 
-  alias CodeMySpec.{Rules, Utils, Environments, Documents}
+  alias CodeMySpec.{Documents, Environments, Rules, Utils}
   alias CodeMySpec.Documents.DocumentSpecProjector
   alias CodeMySpec.Components.Component
 
@@ -25,9 +25,8 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
   def command(scope, session, _opts \\ []) do
     %{component: component} = session
 
-    with {:ok, rules} <- get_design_rules(scope, component),
-         {:ok, prompt} <- build_spec_prompt(session, rules) do
-      {:ok, prompt}
+    with {:ok, rules} <- get_design_rules(scope, component) do
+      build_spec_prompt(session, rules)
     end
   end
 
@@ -85,7 +84,7 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
           ""
       end
 
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     %{code_file: code_file, test_file: test_file} =
       Utils.component_files(component, project)
@@ -130,7 +129,7 @@ defmodule CodeMySpec.ComponentSpecSessions.ComponentSpecSession do
 
   defp read_spec_file(session) do
     %{spec_file: path} = Utils.component_files(session.component, session.project)
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     case Environments.read_file(environment, path) do
       {:ok, content} ->

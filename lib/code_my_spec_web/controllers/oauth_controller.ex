@@ -19,8 +19,11 @@ defmodule CodeMySpecWeb.OAuthController do
     case conn.assigns[:current_scope] do
       nil ->
         # User not authenticated, redirect to login with return path
+        return_to = "/oauth/authorize?" <> URI.encode_query(params)
+
         conn
         |> put_session(:oauth_params, params)
+        |> put_session(:user_return_to, return_to)
         |> redirect(to: ~p"/users/log-in")
 
       scope ->
@@ -35,6 +38,9 @@ defmodule CodeMySpecWeb.OAuthController do
             json(conn, payload)
 
           {:error, error, http_status} ->
+            require Logger
+            Logger.error("OAuth preauthorize failed: #{inspect(error)}, params: #{inspect(params)}")
+
             conn
             |> put_status(http_status)
             |> put_flash(:error, "OAuth authorization error: #{inspect(error)}")

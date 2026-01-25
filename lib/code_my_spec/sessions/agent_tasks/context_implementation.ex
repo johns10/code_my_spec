@@ -40,9 +40,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
              components_needing_tests,
              components_needing_code,
              external_id
-           ),
-         {:ok, prompt} <- build_orchestration_prompt(context_component, prompt_files, external_id) do
-      {:ok, prompt}
+           ) do
+      build_orchestration_prompt(context_component, prompt_files, external_id)
     end
   end
 
@@ -132,7 +131,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
          external_id
        ) do
     %{project: project} = session
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     ensure_prompt_directory(external_id)
 
@@ -142,7 +141,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: project,
-          environment_type: session.environment_type
+          environment_type: session.environment_type,
+          working_dir: session[:working_dir]
         }
 
         {:ok, prompt_content} = ComponentTest.command(scope, child_session)
@@ -164,7 +164,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: project,
-          environment_type: session.environment_type
+          environment_type: session.environment_type,
+          working_dir: session[:working_dir]
         }
 
         {:ok, prompt_content} = ComponentCode.command(scope, child_session)
@@ -216,8 +217,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
       |> Enum.sort_by(fn {comp, _, _} -> comp.name end)
 
     component_tasks =
-      by_component
-      |> Enum.map(fn {component, test_file, code_file} ->
+      Enum.map_join(by_component, "\n", fn {component, test_file, code_file} ->
         test_section =
           if test_file do
             "   - Test prompt: #{test_file.file_path}"
@@ -238,7 +238,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         #{code_section}
         """
       end)
-      |> Enum.join("\n")
 
     total_components = length(by_component)
 
@@ -309,7 +308,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: session.project,
-          environment_type: session.environment_type
+          environment_type: session.environment_type,
+          working_dir: session[:working_dir]
         }
 
         result = ComponentTest.evaluate(scope, child_session, opts)
@@ -325,7 +325,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
         child_session = %{
           component: child,
           project: session.project,
-          environment_type: session.environment_type
+          environment_type: session.environment_type,
+          working_dir: session[:working_dir]
         }
 
         result = ComponentCode.evaluate(scope, child_session, opts)
@@ -406,8 +407,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
 
   defp build_feedback(unsatisfied_components, external_id) do
     components_list =
-      unsatisfied_components
-      |> Enum.map(fn %{component: comp, errors: errors} ->
+      Enum.map_join(unsatisfied_components, "\n\n", fn %{component: comp, errors: errors} ->
         error_text =
           Enum.map_join(errors, "\n    ", fn {type, feedback} ->
             "#{type}: #{feedback}"
@@ -415,7 +415,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
 
         "- #{comp.name} (#{comp.module_name}):\n    #{error_text}"
       end)
-      |> Enum.join("\n\n")
 
     """
     The following components have failing tests or implementations:

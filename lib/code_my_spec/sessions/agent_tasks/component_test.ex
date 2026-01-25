@@ -35,10 +35,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentTest do
   def command(scope, session, _opts \\ []) do
     %{component: component} = session
 
-    with {:ok, test_rules} <- get_test_rules(scope, component),
-         similar_components <- Components.list_similar_components(scope, component),
-         {:ok, prompt} <- build_test_prompt(session, test_rules, similar_components) do
-      {:ok, prompt}
+    with {:ok, test_rules} <- get_test_rules(scope, component) do
+      similar_components = Components.list_similar_components(scope, component)
+      build_test_prompt(session, test_rules, similar_components)
     end
   end
 
@@ -200,7 +199,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentTest do
   end
 
   defp check_file_exists(session, file_path) do
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
     Environments.file_exists?(environment, file_path)
   end
 

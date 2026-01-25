@@ -190,14 +190,14 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
         updated
 
       {:error, changeset} ->
-        Logger.error("#{__MODULE__} failed to update result", changeset: changeset)
+        Logger.error("#{__MODULE__} failed to update result: #{inspect(changeset)}")
         result
     end
   end
 
   defp check_implementation_exists(session, code_file_path) do
     # Create environment to check file existence
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
     CodeMySpec.Environments.file_exists?(environment, code_file_path)
   end
 end

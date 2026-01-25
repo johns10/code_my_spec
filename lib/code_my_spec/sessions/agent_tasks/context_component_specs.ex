@@ -34,15 +34,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
          {:ok, children} <- get_child_components(scope, context_component),
          {:ok, children_needing_specs} <- filter_children_needing_specs(scope, children, session),
          {:ok, child_prompt_files} <-
-           generate_child_prompt_files(scope, session, children_needing_specs, external_id),
-         {:ok, prompt} <-
-           build_orchestration_prompt(
-             context_component,
-             context_prompt_file,
-             child_prompt_files,
-             external_id
-           ) do
-      {:ok, prompt}
+           generate_child_prompt_files(scope, session, children_needing_specs, external_id) do
+      build_orchestration_prompt(
+        context_component,
+        context_prompt_file,
+        child_prompt_files,
+        external_id
+      )
     end
   end
 
@@ -101,7 +99,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     context_needs_spec = Enum.any?(results, fn result -> not result.satisfied end)
 
     if context_needs_spec do
-      {:ok, environment} = Environments.create(session.environment_type)
+      {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
       ensure_prompt_directory(external_id)
 
       # Use ContextSpec.command/3 to generate the prompt content
@@ -139,7 +137,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp generate_child_prompt_files(scope, session, children_needing_specs, external_id) do
     %{project: project} = session
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     # Ensure directory exists
     ensure_prompt_directory(external_id)
@@ -151,7 +149,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
           external_id: external_id,
           component: child,
           project: project,
-          environment_type: session.environment_type
+          environment_type: session.environment_type,
+          working_dir: session[:working_dir]
         }
 
         # Use ComponentSpec.command/3 to generate the prompt content
@@ -205,15 +204,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
       end
 
     task_instructions =
-      all_prompt_files
-      |> Enum.map(fn %{component: comp, file_path: path} ->
+      Enum.map_join(all_prompt_files, "\n\n", fn %{component: comp, file_path: path} ->
         """
         ## Task: Design #{comp.name}
 
         Read the prompt file at #{path} and follow the instructions to create the specification. Write the spec file to the location specified in the prompt.
         """
       end)
-      |> Enum.join("\n\n")
 
     context_note = if context_prompt_file, do: " (including the context itself)", else: ""
     total_count = length(all_prompt_files)
@@ -348,13 +345,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp build_feedback(unsatisfied_components, external_id) do
     components_list =
-      unsatisfied_components
-      |> Enum.map(fn %{component: comp, unsatisfied_requirements: reqs, type: type} ->
+      Enum.map_join(unsatisfied_components, "\n", fn %{component: comp, unsatisfied_requirements: reqs, type: type} ->
         type_label = if type == :context, do: "context", else: "component"
-        req_messages = Enum.map(reqs, &format_requirement_message/1) |> Enum.join("; ")
+        req_messages = Enum.map_join(reqs, "; ", &format_requirement_message/1)
         "- #{comp.name} (#{comp.module_name}) [#{type_label}]: #{req_messages}"
       end)
-      |> Enum.join("\n")
 
     """
     The following components still need their specifications completed:

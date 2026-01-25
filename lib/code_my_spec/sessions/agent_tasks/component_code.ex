@@ -7,7 +7,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   - `evaluate/3` - Called by stop hook to run tests and provide feedback
   """
 
-  alias CodeMySpec.{Rules, Utils, Components, Tests, Environments}
+  alias CodeMySpec.{Components, Environments, Rules, Tests, Utils}
 
   @doc """
   Generate the command/prompt for Claude to implement a component.
@@ -23,11 +23,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   def command(scope, session, _opts \\ []) do
     %{component: component, project: project} = session
 
-    with {:ok, rules} <- get_implementation_rules(scope, component),
-         similar_components <- Components.list_similar_components(scope, component),
-         {:ok, prompt} <-
-           build_implementation_prompt(project, component, rules, similar_components) do
-      {:ok, prompt}
+    with {:ok, rules} <- get_implementation_rules(scope, component) do
+      similar_components = Components.list_similar_components(scope, component)
+      build_implementation_prompt(project, component, rules, similar_components)
     end
   end
 
@@ -150,7 +148,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   end
 
   defp check_required_files(session, test_file_path, code_file_path) do
-    {:ok, environment} = Environments.create(session.environment_type)
+    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     missing_files = []
 
@@ -180,9 +178,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
 
   defp format_missing_files_error(missing_files) do
     file_list =
-      missing_files
-      |> Enum.map(fn {type, path} -> "- #{type} file: #{path}" end)
-      |> Enum.join("\n")
+      Enum.map_join(missing_files, "\n", fn {type, path} -> "- #{type} file: #{path}" end)
 
     """
     Required files do not exist:
@@ -200,8 +196,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
 
   defp build_test_failure_feedback(%{failures: failures, stats: stats}) do
     failure_details =
-      failures
-      |> Enum.map(fn failure ->
+      Enum.map_join(failures, "\n\n", fn failure ->
         error_detail =
           case failure.error do
             %{message: message} -> "Error: #{message}"
@@ -210,7 +205,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
 
         "#{failure.full_title}\n#{error_detail}"
       end)
-      |> Enum.join("\n\n")
 
     """
     Tests failed: #{stats.failures} of #{stats.tests} tests failed.
