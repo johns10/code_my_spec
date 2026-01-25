@@ -56,6 +56,22 @@ defmodule CodeMySpec.Environments.EnvironmentsBehaviour do
   @callback write_file(env :: Environment.t(), path :: String.t(), content :: String.t()) ::
               :ok | {:error, term()}
 
+  @doc """
+  Delete a file from the file system.
+
+  Should be idempotent - returns :ok even if file doesn't exist.
+  The environment reference may be used for remote file access in some implementations.
+  """
+  @callback delete_file(env :: Environment.t(), path :: String.t()) ::
+              :ok | {:error, term()}
+
+  @doc """
+  Check if a file exists in the file system.
+
+  The environment reference may be used for remote file access in some implementations.
+  """
+  @callback file_exists?(env :: Environment.t(), path :: String.t()) :: boolean()
+
   # Remove later, or reconsider:
 
   @callback environment_setup_command(env :: Environment.t(), attrs :: map()) :: String.t()

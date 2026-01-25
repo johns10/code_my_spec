@@ -91,6 +91,23 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
   end
 
   @impl true
+  def delete_file(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+
+    case File.rm(resolved_path) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok  # File doesn't exist, that's fine
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl true
+  def file_exists?(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+    File.exists?(resolved_path)
+  end
+
+  @impl true
   def environment_setup_command(_env, %{branch_name: branch_name, working_dir: working_dir}) do
     "git -C #{working_dir} switch -C #{branch_name}"
   end
@@ -149,11 +166,6 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
       {:error, :process_failed, {exit_code, output}} ->
         {clean_terminal_output(output), exit_code}
     end
-  end
-
-  def file_exists?(env, path) do
-    resolved_path = resolve_path(path, env.cwd)
-    File.exists?(resolved_path)
   end
 
   # Resolve path relative to working_dir if it's a relative path

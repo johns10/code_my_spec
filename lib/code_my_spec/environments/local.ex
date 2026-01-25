@@ -38,6 +38,23 @@ defmodule CodeMySpec.Environments.Local do
   end
 
   @impl true
+  def delete_file(env, path) do
+    resolved_path = resolve_path(path, env.ref.working_dir)
+
+    case File.rm(resolved_path) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok  # File doesn't exist, that's fine
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl true
+  def file_exists?(env, path) do
+    resolved_path = resolve_path(path, env.ref.working_dir)
+    File.exists?(resolved_path)
+  end
+
+  @impl true
   def environment_setup_command(_env, %{}) do
     ""
   end

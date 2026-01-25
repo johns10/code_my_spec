@@ -97,6 +97,15 @@ defmodule CodeMySpec.Environments do
     impl(type).write_file(env, path, content)
   end
 
+  @doc """
+  Delete a file from the execution environment's file system.
+  """
+  @spec delete_file(env :: Environment.t(), path :: String.t()) ::
+          :ok | {:error, term()}
+  def delete_file(%Environment{type: type} = env, path) do
+    impl(type).delete_file(env, path)
+  end
+
   # Private functions
 
   defp impl(:cli),

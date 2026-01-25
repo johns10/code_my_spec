@@ -188,6 +188,24 @@ defmodule CodeMySpec.Environments.Cli do
   end
 
   @doc """
+  Delete a file from the server-side file system.
+
+  Idempotent - returns :ok even if file doesn't exist.
+  Resolves paths relative to the environment's working directory if set.
+  """
+  @spec delete_file(env :: Environment.t(), path :: String.t()) ::
+          :ok | {:error, term()}
+  def delete_file(env, path) do
+    resolved_path = resolve_path(path, env.cwd)
+
+    case File.rm(resolved_path) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok  # File doesn't exist, that's fine
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Check if a file exists on the server-side file system.
 
   Resolves paths relative to the environment's working directory if set.
