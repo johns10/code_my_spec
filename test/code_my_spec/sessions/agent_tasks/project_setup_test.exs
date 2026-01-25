@@ -31,7 +31,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
   end
 
   defp create_session(tmp_dir) do
-    %{environment_type: create_environment(tmp_dir)}
+    %{environment: create_environment(tmp_dir)}
   end
 
   defp write_file!(tmp_dir, relative_path, content) do
@@ -126,8 +126,18 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
   defp create_auth_structure(tmp_dir, app_name) do
     accounts_dir = Path.join([tmp_dir, "lib", app_name, "accounts"])
     File.mkdir_p!(accounts_dir)
-    write_file!(tmp_dir, "lib/#{app_name}/accounts/user.ex", "defmodule #{Macro.camelize(app_name)}.Accounts.User do\nend\n")
-    write_file!(tmp_dir, "lib/#{app_name}/accounts/accounts.ex", "defmodule #{Macro.camelize(app_name)}.Accounts do\nend\n")
+
+    write_file!(
+      tmp_dir,
+      "lib/#{app_name}/accounts/user.ex",
+      "defmodule #{Macro.camelize(app_name)}.Accounts.User do\nend\n"
+    )
+
+    write_file!(
+      tmp_dir,
+      "lib/#{app_name}/accounts/accounts.ex",
+      "defmodule #{Macro.camelize(app_name)}.Accounts do\nend\n"
+    )
   end
 
   defp create_docs_structure(tmp_dir, app_name) do
@@ -162,7 +172,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
       # Since we can't easily mock System.cmd, we test the function with a mock environment
       # that simulates an old Elixir version response
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # We'll test this by verifying the function handles the case where
       # elixir --version returns an old version
@@ -182,7 +192,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
       tmp_dir: tmp_dir
     } do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       status = ProjectSetup.check_status(env, session)
 
@@ -192,7 +202,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "returns phoenix_project_exists false when mix.exs missing", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # Don't create any files - empty directory
       status = ProjectSetup.check_status(env, session)
@@ -203,10 +213,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "returns project_compiles false with errors when compilation fails", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # Create a project with syntax errors
       create_phoenix_project_structure(tmp_dir, "broken_app")
+
       write_file!(tmp_dir, "lib/broken_app/bad_module.ex", """
       defmodule BrokenApp.BadModule do
         def broken do
@@ -228,7 +239,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "returns codemyspec_deps_installed false with missing_deps list", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # Create project without CodeMySpec deps
       create_phoenix_project_structure(tmp_dir, "my_app")
@@ -242,7 +253,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "returns docs_repo_configured false when docs submodule missing", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # Create project without docs submodule
       create_phoenix_project_structure(tmp_dir, "my_app")
@@ -254,7 +265,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "returns docs_structure_complete false with missing_docs_dirs list", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # Create project with docs dir but incomplete structure
       create_phoenix_project_structure(tmp_dir, "my_app")
@@ -270,7 +281,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "extracts app_name from mix.exs project definition", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       create_phoenix_project_structure(tmp_dir, "custom_app_name")
 
@@ -282,7 +293,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "handles missing mix.exs gracefully", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       # Empty directory - no mix.exs
       status = ProjectSetup.check_status(env, session)
@@ -295,7 +306,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
     test "warns but does not fail on PostgreSQL check failure", %{tmp_dir: tmp_dir} do
       env = create_environment(tmp_dir)
-      session = %{environment_type: env}
+      session = %{environment: env}
 
       status = ProjectSetup.check_status(env, session)
 
@@ -375,6 +386,19 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetupTest do
 
       # Should include instructions for creating Phoenix project
       assert prompt =~ "phx.new" or prompt =~ "mix"
+    end
+
+    test "includes auth generation when auth_generated is false", %{tmp_dir: tmp_dir} do
+      scope = create_scope()
+      session = create_session(tmp_dir)
+
+      # Create project without auth
+      create_phoenix_project_structure(tmp_dir, "my_app")
+
+      assert {:ok, prompt} = ProjectSetup.command(scope, session, [])
+
+      # Should include auth generation instructions
+      assert prompt =~ "phx.gen.auth" or prompt =~ "auth"
     end
 
     test "includes dependency block when codemyspec_deps_installed is false", %{tmp_dir: tmp_dir} do
