@@ -28,9 +28,14 @@ defmodule CodeMySpec.Sessions.AgentTasks.ValidateEdits do
   - Code/test files (.ex/.exs) using Credo static analysis
   - Runs tests for edited code and test files
   """
-  @spec run(String.t()) :: {:ok, :valid} | {:error, [String.t()]}
-  def run(session_id) do
+  @spec run(String.t(), keyword()) :: {:ok, :valid} | {:error, [String.t()]}
+  def run(session_id, opts \\ []) do
+    working_dir = Keyword.get(opts, :working_dir)
     Logger.info("[ValidateEdits] Starting validation for session: #{session_id}")
+
+    if working_dir do
+      Logger.info("[ValidateEdits] Working directory: #{working_dir}")
+    end
 
     all_files = FileEdits.get_edited_files(session_id)
     Logger.info("[ValidateEdits] All edited files: #{inspect(all_files)}")
@@ -41,8 +46,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ValidateEdits do
     Logger.info("[ValidateEdits] Code files to check with Credo: #{inspect(code_files)}")
 
     spec_errors = get_spec_errors(spec_files)
-    credo_problems = get_credo_problems(code_files)
-    test_problems = get_test_problems(code_files)
+    credo_problems = get_credo_problems(code_files, working_dir)
+    test_problems = get_test_problems(code_files, working_dir)
 
     all_errors =
       spec_errors ++
@@ -150,13 +155,13 @@ defmodule CodeMySpec.Sessions.AgentTasks.ValidateEdits do
   end
 
   # Run Credo on specific files and return Problem structs
-  defp get_credo_problems([]), do: []
+  defp get_credo_problems([], _working_dir), do: []
 
-  defp get_credo_problems(file_paths) do
+  defp get_credo_problems(file_paths, working_dir) do
     Logger.info("[ValidateEdits] Running Credo on #{length(file_paths)} files")
 
-    # Determine project root (cwd) from the first file path
-    cwd = find_project_root(hd(file_paths))
+    # Use provided working_dir or determine project root from the first file path
+    cwd = working_dir || find_project_root(hd(file_paths))
 
     case cwd do
       nil ->
@@ -255,22 +260,24 @@ defmodule CodeMySpec.Sessions.AgentTasks.ValidateEdits do
   # ============================================================================
 
   # Run tests for edited code/test files and return Problem structs for failures
-  defp get_test_problems([]), do: []
+  defp get_test_problems([], _working_dir), do: []
 
-  defp get_test_problems(file_paths) do
+  defp get_test_problems(file_paths, working_dir) do
     Logger.info("[ValidateEdits] Finding tests for #{length(file_paths)} files")
 
-    # Determine project root from the first file
-    case find_project_root(hd(file_paths)) do
+    # Use provided working_dir or determine project root from the first file
+    project_root = working_dir || find_project_root(hd(file_paths))
+
+    case project_root do
       nil ->
         Logger.warning("[ValidateEdits] Could not determine project root, skipping tests")
         []
 
-      project_root ->
+      root ->
         # Map files to their corresponding test files
         test_files =
           file_paths
-          |> Enum.flat_map(&find_test_files(&1, project_root))
+          |> Enum.flat_map(&find_test_files(&1, root))
           |> Enum.uniq()
           |> Enum.filter(&File.exists?/1)
 
@@ -282,7 +289,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ValidateEdits do
             []
 
           files ->
-            run_tests(files, project_root)
+            run_tests(files, root)
         end
     end
   end
