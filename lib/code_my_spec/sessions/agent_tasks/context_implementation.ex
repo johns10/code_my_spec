@@ -133,8 +133,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
     %{project: project} = session
     {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
-    ensure_prompt_directory(external_id)
-
     # Generate test prompt files
     test_prompts =
       Enum.map(components_needing_tests, fn child ->
@@ -182,11 +180,6 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
       end)
 
     {:ok, test_prompts ++ code_prompts}
-  end
-
-  defp ensure_prompt_directory(external_id) do
-    File.mkdir_p!(prompt_dir(external_id))
-    :ok
   end
 
   defp safe_filename(module_name) do

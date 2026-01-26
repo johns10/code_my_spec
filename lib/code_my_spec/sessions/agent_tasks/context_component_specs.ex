@@ -27,6 +27,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
   def command(scope, session, _opts \\ []) do
     %{component: context_component, external_id: external_id} = session
     # Ensure requirements are preloaded on context component
+    IO.inspect("starting")
     context_component = ComponentRepository.get_component(scope, context_component.id)
 
     with {:ok, context_prompt_file} <-
@@ -99,18 +100,20 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
     context_needs_spec = Enum.any?(results, fn result -> not result.satisfied end)
 
     if context_needs_spec do
-      {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
-      ensure_prompt_directory(external_id)
+      {:ok, environment} =
+        Environments.create(session.environment_type, working_dir: session[:working_dir])
 
       # Use ContextSpec.command/3 to generate the prompt content
       {:ok, prompt_content} = ContextSpec.command(scope, session)
 
-      # Write prompt file
+      # Write prompt file (write_file will create parent directories)
       safe_name = safe_filename(context_component.module_name)
-      file_path = "#{prompt_dir(external_id)}/#{safe_name}_context.md"
-      :ok = Environments.write_file(environment, file_path, prompt_content)
+      relative_path = "#{prompt_dir(external_id)}/#{safe_name}_context.md"
+      :ok = Environments.write_file(environment, relative_path, prompt_content)
 
-      {:ok, %{component: context_component, file_path: file_path, type: :context}}
+      # Store absolute path for orchestration prompt (agents need full path)
+      absolute_path = Path.join(session[:working_dir] || ".", relative_path)
+      {:ok, %{component: context_component, file_path: absolute_path, type: :context}}
     else
       {:ok, nil}
     end
@@ -137,10 +140,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp generate_child_prompt_files(scope, session, children_needing_specs, external_id) do
     %{project: project} = session
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
 
-    # Ensure directory exists
-    ensure_prompt_directory(external_id)
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     prompt_files =
       Enum.map(children_needing_specs, fn child ->
@@ -158,22 +160,20 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
         # Write prompt file
         safe_name = safe_filename(child.module_name)
-        file_path = "#{prompt_dir(external_id)}/#{safe_name}.md"
-        :ok = Environments.write_file(environment, file_path, prompt_content)
+        relative_path = "#{prompt_dir(external_id)}/#{safe_name}.md"
+        :ok = Environments.write_file(environment, relative_path, prompt_content)
+
+        # Store absolute path for orchestration prompt (agents need full path)
+        absolute_path = Path.join(session[:working_dir] || ".", relative_path)
 
         %{
           component: child,
-          file_path: file_path,
+          file_path: absolute_path,
           type: :child
         }
       end)
 
     {:ok, prompt_files}
-  end
-
-  defp ensure_prompt_directory(external_id) do
-    File.mkdir_p!(prompt_dir(external_id))
-    :ok
   end
 
   defp safe_filename(module_name) do
@@ -345,7 +345,11 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextComponentSpecs do
 
   defp build_feedback(unsatisfied_components, external_id) do
     components_list =
-      Enum.map_join(unsatisfied_components, "\n", fn %{component: comp, unsatisfied_requirements: reqs, type: type} ->
+      Enum.map_join(unsatisfied_components, "\n", fn %{
+                                                       component: comp,
+                                                       unsatisfied_requirements: reqs,
+                                                       type: type
+                                                     } ->
         type_label = if type == :context, do: "context", else: "component"
         req_messages = Enum.map_join(reqs, "; ", &format_requirement_message/1)
         "- #{comp.name} (#{comp.module_name}) [#{type_label}]: #{req_messages}"
