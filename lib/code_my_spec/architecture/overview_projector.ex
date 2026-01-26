@@ -181,10 +181,11 @@ defmodule CodeMySpec.Architecture.OverviewProjector do
     # Type badge
     parts = parts ++ ["**#{component.type}**\n"]
 
-    # Description (if enabled and present)
+    # Description (if enabled and present) - use first paragraph only
     parts =
       if include_descriptions && component.description do
-        parts ++ ["\n#{component.description}\n"]
+        sanitized = sanitize_description(component.description)
+        parts ++ ["\n#{sanitized}\n"]
       else
         parts
       end
@@ -215,5 +216,19 @@ defmodule CodeMySpec.Architecture.OverviewProjector do
     Enum.sort_by(components, fn component ->
       {component.priority || 999, component.name}
     end)
+  end
+
+  # Extract first paragraph from description, removing markdown noise
+  defp sanitize_description(nil), do: nil
+
+  defp sanitize_description(description) do
+    description
+    |> String.trim()
+    # Split on double newlines (paragraph breaks) and take first
+    |> String.split(~r/\n\n+/)
+    |> List.first()
+    # Remove **Type**: prefix if present (it's redundant with the type badge)
+    |> String.replace(~r/^\*\*Type\*\*:\s*\w+\s*\n*/i, "")
+    |> String.trim()
   end
 end

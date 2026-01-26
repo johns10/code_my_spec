@@ -15,6 +15,13 @@ defmodule CodeMySpec.Components.ComponentRepository do
     |> Repo.all()
   end
 
+  @spec count_components(Scope.t()) :: non_neg_integer()
+  def count_components(%Scope{active_project_id: project_id}) do
+    Component
+    |> where([c], c.project_id == ^project_id)
+    |> Repo.aggregate(:count, :id)
+  end
+
   @spec list_child_components(Scope.t(), integer()) :: [Component.t()]
   def list_child_components(%Scope{active_project_id: project_id}, parent_component_id) do
     Component

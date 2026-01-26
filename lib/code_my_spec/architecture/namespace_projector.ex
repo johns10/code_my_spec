@@ -98,7 +98,8 @@ defmodule CodeMySpec.Architecture.NamespaceProjector do
 
     parts =
       if show_descriptions && component.description do
-        parts ++ [component.description]
+        sanitized = sanitize_description_for_tree(component.description)
+        parts ++ [sanitized]
       else
         parts
       end
@@ -247,11 +248,35 @@ defmodule CodeMySpec.Architecture.NamespaceProjector do
 
     parts =
       if show_descriptions && component.description do
-        parts ++ [" #{component.description}"]
+        sanitized = sanitize_description_for_tree(component.description)
+        parts ++ [" #{sanitized}"]
       else
         parts
       end
 
     Enum.join(parts, "")
+  end
+
+  # Collapse description to single line, truncate if too long
+  defp sanitize_description_for_tree(nil), do: ""
+
+  defp sanitize_description_for_tree(description) do
+    description
+    |> String.trim()
+    # Remove **Type**: prefix
+    |> String.replace(~r/^\*\*Type\*\*:\s*\w+\s*/i, "")
+    # Replace newlines with spaces
+    |> String.replace(~r/\s*\n\s*/, " ")
+    # Collapse multiple spaces
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+    # Truncate to reasonable length for tree view
+    |> truncate(120)
+  end
+
+  defp truncate(string, max_length) when byte_size(string) <= max_length, do: string
+
+  defp truncate(string, max_length) do
+    String.slice(string, 0, max_length - 3) <> "..."
   end
 end

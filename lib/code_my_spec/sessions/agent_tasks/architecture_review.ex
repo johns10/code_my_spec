@@ -1,63 +1,99 @@
-defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
+defmodule CodeMySpec.Sessions.AgentTasks.ArchitectureReview do
   @moduledoc """
-  Reviews current architecture design against best practices.
+  Architecture review session for Claude Code slash commands.
 
-  Provides feedback on surface-to-domain separation, dependency flow,
-  component organization, and alignment with user stories. References
-  architecture view files for current system state.
+  Reviews current architecture design against best practices, checking
+  surface-to-domain separation, dependency flow, component organization,
+  and alignment with user stories.
+
+  Two main functions:
+  - `command/3` - Called by slash command to generate the review prompt
+  - `evaluate/3` - Called by stop hook (currently auto-approves)
   """
 
-  use Hermes.Server.Component, type: :tool
+  alias CodeMySpec.{Components, Stories, Architecture}
 
-  alias CodeMySpec.Stories
-  alias CodeMySpec.Components
-  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.McpServers.Validators
+  @doc """
+  Generate the command/prompt for Claude to review architecture.
 
-  schema do
+  Called by the slash command to build the prompt with:
+  - Architecture metrics
+  - Unsatisfied user stories
+  - Component organization
+  - Dependency health
+
+  Returns {:ok, prompt_text}
+  """
+  def command(scope, session, _opts \\ []) do
+    %{project: project} = session
+    working_dir = Map.get(session, :working_dir)
+
+    unsatisfied_stories = Stories.list_unsatisfied_stories(scope)
+    components = Components.list_components_with_dependencies(scope)
+    dependency_validation = Components.validate_dependency_graph(scope)
+
+    # Generate fresh architecture views
+    output_dir =
+      if working_dir do
+        Path.join(working_dir, "docs/architecture/")
+      else
+        "docs/architecture/"
+      end
+
+    Architecture.generate_views(scope, output_dir: output_dir)
+
+    metrics = calculate_architecture_metrics(components, dependency_validation)
+    prompt = build_review_prompt(project, unsatisfied_stories, components, metrics, output_dir)
+
+    {:ok, prompt}
   end
 
-  @impl true
-  def execute(_params, frame) do
-    with {:ok, scope} <- Validators.validate_project_scope(frame) do
-      unsatisfied_stories = Stories.list_unsatisfied_stories(scope)
-      components = Components.list_components_with_dependencies(scope)
-      dependency_validation = Components.validate_dependency_graph(scope)
+  @doc """
+  Evaluate the architecture review session output.
 
-      metrics = calculate_architecture_metrics(components, dependency_validation)
-
-      prompt = build_review_prompt(unsatisfied_stories, components, metrics)
-
-      {:reply, ArchitectureMapper.prompt_response(prompt), frame}
-    else
-      {:error, reason} ->
-        {:reply, ArchitectureMapper.error(reason), frame}
-    end
+  Architecture review is a conversational session - no strict validation.
+  Returns {:ok, :valid} to allow the session to complete.
+  """
+  def evaluate(_scope, _session, _opts \\ []) do
+    {:ok, :valid}
   end
 
-  defp build_review_prompt(unsatisfied_stories, components, metrics) do
+  # Private functions
+
+  defp build_review_prompt(project, unsatisfied_stories, components, metrics, output_dir) do
     """
-    ## Architecture Design Review
+    # Architecture Design Review
 
-    **Architecture Views:**
+    ## Project: #{project.name}
+
+    #{project.description || "No description provided"}
+
+    ## Architecture Views
+
     Review the current system state in these files:
-    - `docs/architecture/overview.md` - Component overview with descriptions
-    - `docs/architecture/dependency_graph.mmd` - Mermaid dependency visualization
-    - `docs/architecture/namespace_hierarchy.md` - Namespace tree structure
+    - `#{Path.join(output_dir, "overview.md")}` - Component overview with descriptions
+    - `#{Path.join(output_dir, "dependency_graph.mmd")}` - Mermaid dependency visualization
+    - `#{Path.join(output_dir, "namespace_hierarchy.md")}` - Namespace tree structure
 
-    **Architecture Metrics:**
+    ## Architecture Metrics
+
     #{format_metrics(metrics)}
 
-    **Unsatisfied Stories:** #{length(unsatisfied_stories)} stories without assigned components
+    ## Unsatisfied Stories
+
+    **#{length(unsatisfied_stories)} stories** without assigned components
+
     #{format_unsatisfied_stories(unsatisfied_stories)}
 
-    **Component Organization:**
+    ## Component Organization
+
     #{format_component_organization(components)}
 
-    **Dependency Health:**
+    ## Dependency Health
+
     #{format_dependency_health(metrics)}
 
-    **Review Questions:**
+    ## Review Questions
 
     1. **Surface-to-Domain Separation:**
        - Are surface components (controllers, liveviews, CLI) properly separated from domain logic?
@@ -80,12 +116,20 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
        - Are there orphaned components without clear purpose?
        - Are there missing domain contexts needed to support surface components?
 
-    **Next Steps:**
+    ## Next Steps
+
     Focus on:
     - Mapping the #{length(unsatisfied_stories)} unsatisfied stories to surface components
     - Reviewing and resolving dependency issues if any were found
     - Ensuring clean separation between surface (interface) and domain (logic) layers
     - Creating spec files for any missing components identified in the review
+
+    Use the architecture tools to investigate and make changes:
+    - `list_specs` or `list_spec_names` - Browse existing components
+    - `get_spec` - Read component specifications
+    - `get_component_view` - See a component's dependency tree
+    - `create_spec` - Create new component specifications
+    - `validate_dependency_graph` - Check for circular dependencies
     """
   end
 
@@ -110,8 +154,6 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
   defp calculate_cycles({:error, cycles}), do: length(cycles)
 
   defp is_orphaned?(component) do
-    # A component is orphaned if it has no incoming or outgoing dependencies
-    # and isn't a root context
     incoming = component.incoming_dependencies || []
     outgoing = component.outgoing_dependencies || []
 
@@ -124,13 +166,13 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
     - Surface Components: #{metrics.surface_components} (controllers, liveviews, CLI, workers)
     - Domain Components: #{metrics.domain_components} (contexts, schemas, repositories)
     - Contexts: #{metrics.contexts}
-    - Circular Dependencies: #{metrics.circular_dependencies} #{if metrics.circular_dependencies == 0, do: "✅", else: "❌"}
-    - Orphaned Components: #{metrics.orphaned_components} #{if metrics.orphaned_components == 0, do: "✅", else: "⚠️"}
+    - Circular Dependencies: #{metrics.circular_dependencies}
+    - Orphaned Components: #{metrics.orphaned_components}
     """
   end
 
   defp format_unsatisfied_stories([]) do
-    "All stories have been assigned to components ✅"
+    "All stories have been assigned to components."
   end
 
   defp format_unsatisfied_stories(stories) do
@@ -158,7 +200,7 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
         |> Enum.sort_by(fn {type, _} -> component_type_order(type) end)
 
       by_type
-      |> Enum.map_join("\n", fn {type, comps} ->
+      |> Enum.map_join("\n\n", fn {type, comps} ->
         "**#{String.capitalize(type)}s** (#{length(comps)}):\n" <>
           (comps
            |> Enum.take(5)
@@ -194,15 +236,15 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
   defp component_type_order(_), do: 99
 
   defp format_dependency_health(%{circular_dependencies: 0}) do
-    "No circular dependencies found ✅\n\nDependency graph is healthy. Ensure new dependencies maintain this clean state."
+    "No circular dependencies found.\n\nDependency graph is healthy. Ensure new dependencies maintain this clean state."
   end
 
   defp format_dependency_health(%{circular_dependencies: count}) do
     """
-    #{count} circular dependencies detected ❌
+    #{count} circular dependencies detected.
 
     Circular dependencies violate clean architecture principles and make code harder to test and maintain.
-    Use the ValidateDependencyGraph tool to identify specific cycles, then refactor to break them.
+    Use the `validate_dependency_graph` tool to identify specific cycles, then refactor to break them.
     """
   end
 end

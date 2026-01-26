@@ -1,5 +1,11 @@
 defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpec do
-  @moduledoc "Retrieves a component spec with metadata and content"
+  @moduledoc """
+  Retrieves a component spec with metadata and content.
+
+  Returns component info from the database plus spec file content if it exists.
+  If no spec file exists yet, returns component info with a note about the missing file.
+  Use `create_spec` to create a spec file for a component.
+  """
 
   use Hermes.Server.Component, type: :tool
 
@@ -19,10 +25,17 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpec do
     with {:ok, scope} <- Validators.validate_project_scope(frame),
          {:ok, env} <- Environments.create(:cli),
          {:ok, component} <- find_component(scope, params),
-         {:ok, spec_path} <- build_spec_path(component.module_name),
-         {:ok, spec_content} <- read_spec_file(env, spec_path) do
+         {:ok, spec_path} <- build_spec_path(component.module_name) do
+      spec_result = read_spec_file(env, spec_path)
       Environments.destroy(env)
-      {:reply, ArchitectureMapper.spec_response(component, spec_path, spec_content), frame}
+
+      case spec_result do
+        {:ok, spec_content} ->
+          {:reply, ArchitectureMapper.spec_response(component, spec_path, spec_content), frame}
+
+        {:error, :not_found} ->
+          {:reply, ArchitectureMapper.spec_not_found_response(component, spec_path), frame}
+      end
     else
       {:error, reason} ->
         {:reply, ArchitectureMapper.error(reason), frame}
@@ -67,8 +80,8 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpec do
   defp read_spec_file(env, spec_path) do
     case Environments.read_file(env, spec_path) do
       {:ok, content} -> {:ok, content}
-      {:error, :enoent} -> {:error, "Spec file not found: #{spec_path}"}
-      {:error, reason} -> {:error, "Failed to read spec file: #{inspect(reason)}"}
+      {:error, :enoent} -> {:error, :not_found}
+      {:error, _reason} -> {:error, :not_found}
     end
   end
 end

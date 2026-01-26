@@ -8,16 +8,19 @@ defmodule CodeMySpec.ProjectSync.Sync do
 
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Components
+  alias CodeMySpec.Architecture
   alias CodeMySpec.Requirements.Sync, as: RequirementsSync
   alias CodeMySpec.Tests.TestRun
 
   @type sync_result :: %{
           contexts: [Components.Component.t()],
           requirements_updated: integer(),
+          architecture_views: [String.t()],
           errors: [term()],
           timings: %{
             contexts_sync_ms: integer(),
             requirements_sync_ms: integer(),
+            architecture_ms: integer(),
             total_ms: integer()
           }
         }
@@ -30,12 +33,14 @@ defmodule CodeMySpec.ProjectSync.Sync do
   2. Gets current file list from filesystem
   3. Gets latest test results (or empty test run if none exist)
   4. Analyzes and updates all component requirements
-  5. Returns consolidated sync statistics
+  5. Generates architecture view files (overview, dependency graph, namespace hierarchy)
+  6. Returns consolidated sync statistics
 
   ## Parameters
     - `scope` - The user scope
     - `opts` - Options (optional)
       - `:base_dir` - Base directory to sync from (defaults to current working directory)
+      - `:architecture_output_dir` - Directory for architecture views (defaults to "docs/architecture/")
 
   ## Returns
     - `{:ok, sync_result}` on success
@@ -45,6 +50,7 @@ defmodule CodeMySpec.ProjectSync.Sync do
   def sync_all(%Scope{} = scope, opts \\ []) do
     total_start = System.monotonic_time(:millisecond)
     base_dir = Keyword.get(opts, :base_dir, File.cwd!())
+    IO.puts(:stderr, "sync_all: base_dir=#{inspect(base_dir)}")
 
     # Phase 1: Sync components (identify what changed)
     contexts_start = System.monotonic_time(:millisecond)
@@ -78,16 +84,30 @@ defmodule CodeMySpec.ProjectSync.Sync do
         )
 
       requirements_sync_ms = System.monotonic_time(:millisecond) - requirements_start
+
+      # Phase 4: Generate architecture views
+      architecture_start = System.monotonic_time(:millisecond)
+      architecture_output_dir = Keyword.get(opts, :architecture_output_dir, "docs/architecture/")
+
+      architecture_views =
+        case Architecture.generate_views(scope, output_dir: Path.join(base_dir, architecture_output_dir)) do
+          {:ok, paths} -> paths
+          {:error, _reason} -> []
+        end
+
+      architecture_ms = System.monotonic_time(:millisecond) - architecture_start
       total_ms = System.monotonic_time(:millisecond) - total_start
 
       {:ok,
        %{
          contexts: components_with_requirements,
          requirements_updated: length(expanded_changed_ids),
+         architecture_views: architecture_views,
          errors: [],
          timings: %{
            contexts_sync_ms: contexts_sync_ms,
            requirements_sync_ms: requirements_sync_ms,
+           architecture_ms: architecture_ms,
            total_ms: total_ms
          }
        }}

@@ -23,12 +23,13 @@ defmodule CodeMySpec.McpServers.ArchitectureServer do
   component(CodeMySpec.McpServers.Architecture.Tools.CreateSpec)
   component(CodeMySpec.McpServers.Architecture.Tools.UpdateSpecMetadata)
   component(CodeMySpec.McpServers.Architecture.Tools.ListSpecs)
+  component(CodeMySpec.McpServers.Architecture.Tools.ListSpecNames)
   component(CodeMySpec.McpServers.Architecture.Tools.GetSpec)
   component(CodeMySpec.McpServers.Architecture.Tools.DeleteSpec)
 
-  # Design workflow
-  component(CodeMySpec.McpServers.Architecture.Tools.StartArchitectureDesign)
-  component(CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign)
+  # Design workflow tools replaced by skills:
+  # - /design-architecture replaces StartArchitectureDesign
+  # - /review-architecture replaces ReviewArchitectureDesign
 
   # Architecture analysis
   # component(CodeMySpec.McpServers.Architecture.Tools.GetArchitectureSummary)

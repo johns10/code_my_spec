@@ -12,7 +12,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetup do
 
   alias CodeMySpec.Environments.Environment
 
-  @required_deps [:ngrok, :credo, :client_utils, :mix_machine, :sobelow]
+  @required_deps [:credo, :client_utils, :mix_machine, :sobelow]
   @min_elixir_version {1, 18, 0}
 
   @doc """
@@ -465,23 +465,12 @@ defmodule CodeMySpec.Sessions.AgentTasks.ProjectSetup do
     The following dependencies are missing:
     #{missing_list}
 
-    Add these dependencies to your `mix.exs` file in the `deps/0` function:
+    Add these dependencies to your `mix.exs` file in the `deps/0` function. Look up the latest versions on hex.pm for each package:
 
-    ```elixir
-    defp deps do
-      [
-        # ... existing deps ...
-
-        # CodeMySpec integration
-        {:ngrok, git: "https://github.com/johns10/ex_ngrok", branch: "main", only: [:dev]},
-        {:exunit_json_formatter, git: "https://github.com/johns10/exunit_json_formatter", branch: "master"},
-        {:credo, "~> 1.7.13"},
-        {:client_utils, git: "https://github.com/example/client_utils"},
-        {:mix_machine, "~> 1.0"},
-        {:sobelow, "~> 0.13"}
-      ]
-    end
-    ```
+    - `:credo` - static code analysis
+    - `:client_utils` - CodeMySpec client utilities
+    - `:mix_machine` - mix task utilities (use git: "https://github.com/johns10/mix_machine")
+    - `:sobelow` - security-focused static analysis
 
     Then fetch dependencies:
     ```bash

@@ -31,10 +31,41 @@ defmodule CodeMySpec.McpServers.Architecture.ArchitectureMapper do
     })
   end
 
+  def spec_not_found_response(component, spec_path) do
+    Response.tool()
+    |> Response.json(%{
+      component: component_detail(component),
+      spec_path: spec_path,
+      spec_exists: false,
+      message: "Spec file does not exist yet. Use create_spec to create it."
+    })
+  end
+
   def specs_list_response(components) do
     Response.tool()
     |> Response.json(%{
       specs: Enum.map(components, &spec_summary/1)
+    })
+  end
+
+  def specs_list_paginated_response(%{specs: specs, total: total, limit: limit, offset: offset, has_more: has_more}) do
+    Response.tool()
+    |> Response.json(%{
+      specs: Enum.map(specs, &spec_summary/1),
+      pagination: %{
+        total: total,
+        limit: limit,
+        offset: offset,
+        has_more: has_more
+      }
+    })
+  end
+
+  def spec_names_response(names) do
+    Response.tool()
+    |> Response.json(%{
+      count: length(names),
+      specs: names
     })
   end
 
