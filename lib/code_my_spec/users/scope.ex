@@ -30,7 +30,7 @@ defmodule CodeMySpec.Users.Scope do
   @type t :: %__MODULE__{
           user: User.t() | nil,
           active_account: Account.t() | nil,
-          active_account_id: integer() | nil,
+          active_account_id: Ecto.UUID.t() | nil,
           active_project: Project.t() | nil,
           active_project_id: Ecto.UUID.t() | nil
         }

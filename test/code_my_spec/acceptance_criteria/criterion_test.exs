@@ -156,7 +156,7 @@ defmodule CodeMySpec.AcceptanceCriteria.CriterionTest do
 
   defp valid_attrs(overrides \\ %{}) do
     story_id = System.unique_integer([:positive])
-    account_id = System.unique_integer([:positive])
+    account_id = Ecto.UUID.generate()
     project_id = Ecto.UUID.generate()
 
     Map.merge(

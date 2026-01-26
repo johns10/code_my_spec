@@ -3,7 +3,7 @@ defmodule CodeMySpec.Accounts.Account do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-          id: pos_integer() | nil,
+          id: Ecto.UUID.t() | nil,
           name: String.t(),
           slug: String.t() | nil,
           type: :personal | :team,
@@ -15,6 +15,7 @@ defmodule CodeMySpec.Accounts.Account do
 
   @reserved_slugs ~w(admin api www help support docs blog)
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "accounts" do
     field :name, :string
     field :slug, :string

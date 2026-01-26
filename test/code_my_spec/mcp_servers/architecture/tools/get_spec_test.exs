@@ -270,7 +270,7 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpecTest do
       assert response.isError == true
     end
 
-    test "returns error when spec file doesn't exist" do
+    test "returns component info with spec_exists: false when spec file doesn't exist" do
       scope = full_scope_fixture()
 
       # Create component but no spec file
@@ -285,7 +285,15 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpecTest do
 
       assert {:reply, response, ^frame} = GetSpec.execute(params, frame)
       assert response.type == :tool
-      assert response.isError == true
+      # Not an error - returns component info with spec_exists: false
+      assert response.isError == false
+
+      # Parse the response content
+      [content] = response.content
+      data = Jason.decode!(content.text)
+      assert data["spec_exists"] == false
+      assert data["message"] == "Spec file does not exist yet. Use create_spec to create it."
+      assert data["component"]["module_name"] == "TestApp.NoSpecFile"
     end
 
     test "returns error when scope is invalid" do

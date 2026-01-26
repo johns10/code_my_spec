@@ -101,6 +101,6 @@ config :code_my_spec,
   content_watch_directory: "/Users/johndavenport/Documents/github/code_my_spec/docs/content",
   content_watch_scope: %{
     user_id: 1,
-    account_id: 4,
+    account_id: "0f27281c-240b-4d6d-8e52-9c5972329522",
     project_id: "708492f9-454e-482f-a2eb-be64f0356b87"
   }

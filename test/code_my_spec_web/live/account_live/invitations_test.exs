@@ -49,9 +49,11 @@ defmodule CodeMySpecWeb.AccountLive.InvitationsTest do
     end
 
     test "redirects when account not found", %{conn: conn} do
+      nonexistent_id = Ecto.UUID.generate()
+
       assert {:error,
               {:redirect, %{to: "/app/accounts", flash: %{"error" => "Account not found"}}}} =
-               live(conn, ~p"/app/accounts/999/invitations")
+               live(conn, ~p"/app/accounts/#{nonexistent_id}/invitations")
     end
 
     test "redirects when user has no access to account", %{conn: conn} do

@@ -17,7 +17,7 @@ defmodule CodeMySpec.AcceptanceCriteria.Criterion do
           verified_at: DateTime.t() | nil,
           story_id: integer() | nil,
           project_id: Ecto.UUID.t() | nil,
-          account_id: integer() | nil,
+          account_id: Ecto.UUID.t() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -27,7 +27,7 @@ defmodule CodeMySpec.AcceptanceCriteria.Criterion do
     field :verified, :boolean, default: false
     field :verified_at, :utc_datetime
     field :project_id, :binary_id
-    field :account_id, :id
+    field :account_id, :binary_id
 
     belongs_to :story, CodeMySpec.Stories.Story
 

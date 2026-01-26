@@ -15,7 +15,7 @@ defmodule CodeMySpec.Projects.Project do
           deploy_key: String.t() | nil,
           google_analytics_property_id: String.t() | nil,
           setup_error: String.t() | nil,
-          account_id: integer() | nil,
+          account_id: Ecto.UUID.t() | nil,
           status:
             :created
             | :setup_queued
@@ -41,7 +41,7 @@ defmodule CodeMySpec.Projects.Project do
     field :deploy_key, :string
     field :google_analytics_property_id, :string
     field :setup_error, :string
-    field :account_id, :id
+    field :account_id, :binary_id
 
     field :status, Ecto.Enum,
       values: [

@@ -14,7 +14,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
           metadata: map() | nil,
           project_id: Ecto.UUID.t() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
-          account_id: integer() | nil,
+          account_id: Ecto.UUID.t() | nil,
           account: Account.t() | Ecto.Association.NotLoaded.t() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -28,7 +28,7 @@ defmodule CodeMySpec.ContentAdmin.ContentAdmin do
     field :metadata, :map
 
     belongs_to :project, Project, type: :binary_id
-    belongs_to :account, Account
+    belongs_to :account, Account, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end

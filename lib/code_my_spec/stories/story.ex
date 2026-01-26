@@ -18,7 +18,7 @@ defmodule CodeMySpec.Stories.Story do
           locked_by: integer() | nil,
           project_id: Ecto.UUID.t() | nil,
           component_id: Ecto.UUID.t() | nil,
-          account_id: integer() | nil,
+          account_id: Ecto.UUID.t() | nil,
           first_version: PaperTrail.Version.t() | nil,
           current_version: PaperTrail.Version.t() | nil,
           inserted_at: DateTime.t() | nil,
@@ -34,7 +34,7 @@ defmodule CodeMySpec.Stories.Story do
     field :lock_expires_at, :utc_datetime
     field :locked_by, :id
     field :project_id, :binary_id
-    field :account_id, :id
+    field :account_id, :binary_id
 
     has_many :criteria, CodeMySpec.AcceptanceCriteria.Criterion, on_replace: :delete
 

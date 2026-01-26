@@ -3,7 +3,7 @@ defmodule CodeMySpec.UserPreferences.UserPreference do
   import Ecto.Changeset
 
   schema "user_preferences" do
-    belongs_to :active_account, CodeMySpec.Accounts.Account
+    belongs_to :active_account, CodeMySpec.Accounts.Account, type: :binary_id
     belongs_to :active_project, CodeMySpec.Projects.Project, type: :binary_id
     field :token, :string
     field :user_id, :id

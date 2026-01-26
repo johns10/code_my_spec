@@ -29,7 +29,7 @@ defmodule CodeMySpec.Sessions.Session do
           display_name: String.t() | nil,
           project_id: Ecto.UUID.t() | nil,
           project: Project.t() | Ecto.Association.NotLoaded.t() | nil,
-          account_id: integer() | nil,
+          account_id: Ecto.UUID.t() | nil,
           account: Account.t() | Ecto.Association.NotLoaded.t() | nil,
           user_id: integer() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t() | nil,
@@ -57,7 +57,7 @@ defmodule CodeMySpec.Sessions.Session do
     field :state, :map
 
     belongs_to :project, Project, type: :binary_id
-    belongs_to :account, Account
+    belongs_to :account, Account, type: :binary_id
     belongs_to :user, User
     belongs_to :component, Component, type: :binary_id
     belongs_to :parent_session, __MODULE__, foreign_key: :session_id, type: :binary_id

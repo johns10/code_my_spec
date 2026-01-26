@@ -61,7 +61,7 @@ defmodule CodeMySpec.AccountsTest do
       scope = user_scope_fixture(user)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_account!(scope, 999)
+        Accounts.get_account!(scope, Ecto.UUID.generate())
       end
     end
   end

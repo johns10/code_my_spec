@@ -50,7 +50,7 @@ defmodule CodeMySpec.Accounts.AccountsRepositoryTest do
     end
 
     test "returns nil when account doesn't exist" do
-      assert AccountsRepository.get_account(999) == nil
+      assert AccountsRepository.get_account(Ecto.UUID.generate()) == nil
     end
   end
 
@@ -64,7 +64,7 @@ defmodule CodeMySpec.Accounts.AccountsRepositoryTest do
 
     test "raises when account doesn't exist" do
       assert_raise Ecto.NoResultsError, fn ->
-        AccountsRepository.get_account!(999)
+        AccountsRepository.get_account!(Ecto.UUID.generate())
       end
     end
   end

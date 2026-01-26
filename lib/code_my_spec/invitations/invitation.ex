@@ -13,7 +13,7 @@ defmodule CodeMySpec.Invitations.Invitation do
           expires_at: DateTime.t(),
           accepted_at: DateTime.t() | nil,
           cancelled_at: DateTime.t() | nil,
-          account_id: integer(),
+          account_id: Ecto.UUID.t(),
           invited_by_id: integer(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -29,7 +29,7 @@ defmodule CodeMySpec.Invitations.Invitation do
     field :accepted_at, :utc_datetime
     field :cancelled_at, :utc_datetime
 
-    belongs_to :account, Account
+    belongs_to :account, Account, type: :binary_id
     belongs_to :invited_by, User
 
     timestamps()

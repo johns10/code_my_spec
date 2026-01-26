@@ -113,7 +113,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
     end
   end
 
-  @spec load_account(integer()) :: {:ok, Account.t()} | {:error, :account_not_found}
+  @spec load_account(Ecto.UUID.t()) :: {:ok, Account.t()} | {:error, :account_not_found}
   defp load_account(account_id) do
     case AccountsRepository.get_account(account_id) do
       nil -> {:error, :account_not_found}
@@ -121,7 +121,7 @@ defmodule CodeMySpec.ContentSync.FileWatcher.Impl do
     end
   end
 
-  @spec load_project(integer()) :: {:ok, Project.t()} | {:error, :project_not_found}
+  @spec load_project(Ecto.UUID.t()) :: {:ok, Project.t()} | {:error, :project_not_found}
   defp load_project(project_id) do
     case Repo.get(Project, project_id) do
       nil -> {:error, :project_not_found}

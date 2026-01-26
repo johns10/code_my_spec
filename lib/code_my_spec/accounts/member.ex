@@ -22,7 +22,7 @@ defmodule CodeMySpec.Accounts.Member do
           id: integer(),
           role: :owner | :admin | :member,
           user_id: integer(),
-          account_id: integer(),
+          account_id: Ecto.UUID.t(),
           user: CodeMySpec.Users.User.t() | Ecto.Association.NotLoaded.t(),
           account: CodeMySpec.Accounts.Account.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: NaiveDateTime.t(),
@@ -33,7 +33,7 @@ defmodule CodeMySpec.Accounts.Member do
     field :role, Ecto.Enum, values: [:owner, :admin, :member], default: :member
 
     belongs_to :user, CodeMySpec.Users.User
-    belongs_to :account, CodeMySpec.Accounts.Account
+    belongs_to :account, CodeMySpec.Accounts.Account, type: :binary_id
 
     timestamps()
   end
