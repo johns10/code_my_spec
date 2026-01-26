@@ -1,6 +1,8 @@
 defmodule CodeMySpec.Components.ComponentRepository do
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias CodeMySpec.Repo
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Components.Component
@@ -9,6 +11,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
   def list_components(%Scope{active_project_id: project_id}) do
     Component
     |> where([c], c.project_id == ^project_id)
+    |> preload([:project, :child_components])
     |> Repo.all()
   end
 
@@ -89,7 +92,7 @@ defmodule CodeMySpec.Components.ComponentRepository do
       returning: true
     )
     |> case do
-      {:ok, component} -> component
+      {:ok, component} -> Repo.preload(component, [:project, :child_components])
       {:error, _changeset} = error -> error
     end
   end
