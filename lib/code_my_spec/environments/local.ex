@@ -33,6 +33,7 @@ defmodule CodeMySpec.Environments.Local do
   @impl true
   def write_file(env, path, content) do
     resolved_path = resolve_path(path, env.ref.working_dir)
+
     with :ok <- File.mkdir_p(Path.dirname(resolved_path)) do
       File.write(resolved_path, content)
     end
@@ -44,7 +45,8 @@ defmodule CodeMySpec.Environments.Local do
 
     case File.rm(resolved_path) do
       :ok -> :ok
-      {:error, :enoent} -> :ok  # File doesn't exist, that's fine
+      # File doesn't exist, that's fine
+      {:error, :enoent} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end

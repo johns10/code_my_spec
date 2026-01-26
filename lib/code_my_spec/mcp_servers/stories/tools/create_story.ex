@@ -16,8 +16,14 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
 
   schema do
     field :title, :string, required: true, doc: "Story title (e.g., 'User Login Feature')"
-    field :description, :string, required: true, doc: "User story description (e.g., 'As a user, I want to...')"
-    field :acceptance_criteria, {:list, :string}, required: true, doc: "List of acceptance criteria strings"
+
+    field :description, :string,
+      required: true,
+      doc: "User story description (e.g., 'As a user, I want to...')"
+
+    field :acceptance_criteria, {:list, :string},
+      required: true,
+      doc: "List of acceptance criteria strings"
   end
 
   @impl true

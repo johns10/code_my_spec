@@ -58,7 +58,9 @@ defmodule CodeMySpec.ArchitectureTest do
       assert length(paths) == 1
       assert Enum.any?(paths, &String.contains?(&1, "overview"))
 
-      assert {:ok, paths} = Architecture.generate_views(scope, only: [:dependency_graph, :namespace_hierarchy])
+      assert {:ok, paths} =
+               Architecture.generate_views(scope, only: [:dependency_graph, :namespace_hierarchy])
+
       assert length(paths) == 2
       assert Enum.any?(paths, &String.contains?(&1, "dependency_graph"))
       assert Enum.any?(paths, &String.contains?(&1, "namespace_hierarchy"))
@@ -323,15 +325,17 @@ defmodule CodeMySpec.ArchitectureTest do
       context1 = component_fixture(scope, %{type: "context", name: "Context1"})
       context2 = component_fixture(scope, %{type: "context", name: "Context2"})
 
-      target = component_fixture(scope, %{
-        name: "Target",
-        parent_component_id: context1.id
-      })
+      target =
+        component_fixture(scope, %{
+          name: "Target",
+          parent_component_id: context1.id
+        })
 
-      dependent = component_fixture(scope, %{
-        name: "Dependent",
-        parent_component_id: context2.id
-      })
+      dependent =
+        component_fixture(scope, %{
+          name: "Dependent",
+          parent_component_id: context2.id
+        })
 
       %Dependency{}
       |> Dependency.changeset(%{
@@ -364,10 +368,11 @@ defmodule CodeMySpec.ArchitectureTest do
     test "accepts single component ID or module name" do
       scope = full_scope_fixture()
 
-      component = component_fixture(scope, %{
-        name: "TestComponent",
-        module_name: "MyApp.TestComponent"
-      })
+      component =
+        component_fixture(scope, %{
+          name: "TestComponent",
+          module_name: "MyApp.TestComponent"
+        })
 
       # Test with ID
       view_by_id = Architecture.generate_component_view(scope, component.id)
@@ -402,10 +407,11 @@ defmodule CodeMySpec.ArchitectureTest do
     test "shows component name and description as header" do
       scope = full_scope_fixture()
 
-      component = component_fixture(scope, %{
-        name: "UserContext",
-        description: "Manages user authentication and profiles"
-      })
+      component =
+        component_fixture(scope, %{
+          name: "UserContext",
+          description: "Manages user authentication and profiles"
+        })
 
       view = Architecture.generate_component_view(scope, component.id)
 
@@ -416,15 +422,17 @@ defmodule CodeMySpec.ArchitectureTest do
     test "lists direct dependencies with descriptions" do
       scope = full_scope_fixture()
 
-      target = component_fixture(scope, %{
-        name: "Target",
-        description: "Target component"
-      })
+      target =
+        component_fixture(scope, %{
+          name: "Target",
+          description: "Target component"
+        })
 
-      dep = component_fixture(scope, %{
-        name: "Dependency",
-        description: "A dependency component"
-      })
+      dep =
+        component_fixture(scope, %{
+          name: "Dependency",
+          description: "A dependency component"
+        })
 
       %Dependency{}
       |> Dependency.changeset(%{
@@ -470,15 +478,17 @@ defmodule CodeMySpec.ArchitectureTest do
     test "shows full module names for each dependency" do
       scope = full_scope_fixture()
 
-      target = component_fixture(scope, %{
-        name: "Target",
-        module_name: "MyApp.Core.Target"
-      })
+      target =
+        component_fixture(scope, %{
+          name: "Target",
+          module_name: "MyApp.Core.Target"
+        })
 
-      dep = component_fixture(scope, %{
-        name: "Dependency",
-        module_name: "MyApp.Utils.Dependency"
-      })
+      dep =
+        component_fixture(scope, %{
+          name: "Dependency",
+          module_name: "MyApp.Utils.Dependency"
+        })
 
       %Dependency{}
       |> Dependency.changeset(%{
@@ -495,10 +505,11 @@ defmodule CodeMySpec.ArchitectureTest do
     test "handles components with no dependencies" do
       scope = full_scope_fixture()
 
-      isolated = component_fixture(scope, %{
-        name: "Isolated",
-        description: "Standalone component"
-      })
+      isolated =
+        component_fixture(scope, %{
+          name: "Isolated",
+          description: "Standalone component"
+        })
 
       view = Architecture.generate_component_view(scope, isolated.id)
 

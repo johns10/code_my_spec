@@ -48,7 +48,9 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
 
   def story_component_set_response(story) do
     data = story_data(story)
-    summary = "Component assigned to story: \"#{story.title}\" (ID: #{story.id}) -> Component #{story.component_id}"
+
+    summary =
+      "Component assigned to story: \"#{story.title}\" (ID: #{story.id}) -> Component #{story.component_id}"
 
     hybrid_response(summary, data)
   end
@@ -79,6 +81,7 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
 
         range_start = offset + 1
         range_end = offset + count
+
         pagination_hint =
           if total > range_end do
             "\n\n*Use offset: #{range_end} to see more (#{total - range_end} remaining)*"
@@ -157,12 +160,16 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
       |> Enum.take(3)
       |> Enum.map(fn {index, changeset} ->
         errors = Formatters.extract_errors(changeset)
-        error_text = errors |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end) |> Enum.join("; ")
+
+        error_text =
+          errors |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end) |> Enum.join("; ")
+
         "- Story #{index + 1}: #{error_text}"
       end)
       |> Enum.join("\n")
 
-    more_failures = if failed_count > 3, do: "\n... and #{failed_count - 3} more failures", else: ""
+    more_failures =
+      if failed_count > 3, do: "\n... and #{failed_count - 3} more failures", else: ""
 
     summary = """
     ## Batch Creation Partial Failure
@@ -199,7 +206,9 @@ defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
 
   def criterion_added_response(criterion, story) do
     data = criterion_data(criterion)
-    summary = "Criterion added to \"#{story.title}\" (ID: #{criterion.id}): #{criterion.description}"
+
+    summary =
+      "Criterion added to \"#{story.title}\" (ID: #{criterion.id}): #{criterion.description}"
 
     hybrid_response(summary, data)
   end

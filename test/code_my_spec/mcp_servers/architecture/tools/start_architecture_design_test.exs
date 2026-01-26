@@ -155,10 +155,11 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.StartArchitectureDesignTest d
       scope = full_scope_fixture()
 
       # Create a component
-      component = component_fixture(scope, %{
-        module_name: "MyApp.Feature",
-        type: "context"
-      })
+      component =
+        component_fixture(scope, %{
+          module_name: "MyApp.Feature",
+          type: "context"
+        })
 
       # Create a story assigned to that component (satisfied)
       story_fixture(scope, %{
@@ -192,16 +193,18 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.StartArchitectureDesignTest d
     test "includes component dependencies in output" do
       scope = full_scope_fixture()
 
-      accounts = component_fixture(scope, %{
-        module_name: "MyApp.Accounts",
-        type: "context"
-      })
+      accounts =
+        component_fixture(scope, %{
+          module_name: "MyApp.Accounts",
+          type: "context"
+        })
 
-      reports = component_fixture(scope, %{
-        module_name: "MyApp.Reports",
-        type: "context",
-        description: "Generates reports"
-      })
+      reports =
+        component_fixture(scope, %{
+          module_name: "MyApp.Reports",
+          type: "context",
+          description: "Generates reports"
+        })
 
       dependency_fixture(scope, reports, accounts)
 

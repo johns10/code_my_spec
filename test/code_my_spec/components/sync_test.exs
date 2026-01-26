@@ -448,6 +448,7 @@ defmodule CodeMySpec.Components.SyncTest do
       assert length(first_changed_ids) == 2
 
       Process.sleep(10)
+
       {:ok, all_components, second_changed_ids} =
         Sync.sync_changed(scope, base_dir: tmp_dir, force: true)
 
@@ -462,6 +463,7 @@ defmodule CodeMySpec.Components.SyncTest do
       write_spec(tmp_dir, "MyApp.Accounts.User")
 
       {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
       {:ok, expanded_ids} =
         Sync.update_parent_relationships(scope, all_components, changed_ids)
 

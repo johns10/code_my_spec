@@ -36,7 +36,9 @@ defmodule CodeMySpecWeb.StoryLive.Form do
                     type="checkbox"
                     name={criterion_form[:verified].name}
                     value="true"
-                    checked={Phoenix.HTML.Form.normalize_value("checkbox", criterion_form[:verified].value)}
+                    checked={
+                      Phoenix.HTML.Form.normalize_value("checkbox", criterion_form[:verified].value)
+                    }
                     class="checkbox checkbox-sm"
                   />
                   <.icon name="hero-lock-closed" class="size-4 text-base-content/60" />

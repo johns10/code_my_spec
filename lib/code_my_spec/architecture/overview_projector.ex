@@ -153,7 +153,11 @@ defmodule CodeMySpec.Architecture.OverviewProjector do
 
     # Format all children using map_join for efficiency
     children_content =
-      Enum.map_join(sorted_children, "\n", &format_component(&1, include_descriptions, include_dependencies))
+      Enum.map_join(
+        sorted_children,
+        "\n",
+        &format_component(&1, include_descriptions, include_dependencies)
+      )
 
     # Combine sections
     content_parts =

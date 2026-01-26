@@ -31,6 +31,7 @@ defmodule CodeMySpec.Tests do
           {:ok, TestRun.t()} | {:error, {:parse_error, String.t()}}
   def execute(args, opts \\ []) do
     project_root = Keyword.get(opts, :project_root, File.cwd!())
+
     temp_file =
       Path.join(System.tmp_dir!(), "test_output_#{System.unique_integer([:positive])}.json")
 

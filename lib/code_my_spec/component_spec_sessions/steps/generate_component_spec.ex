@@ -51,7 +51,8 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.GenerateComponentSpec do
           ""
       end
 
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     %{code_file: code_file, test_file: test_file} =
       Utils.component_files(component, project)

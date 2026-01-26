@@ -19,6 +19,7 @@ defmodule CodeMySpec.Requirements.Sync do
 
   alias CodeMySpec.Repo
   alias CodeMySpec.Components
+
   alias CodeMySpec.Components.{
     Component,
     ComponentStatus,
@@ -26,6 +27,7 @@ defmodule CodeMySpec.Requirements.Sync do
     HierarchicalTree,
     Registry
   }
+
   alias CodeMySpec.{Requirements, Utils}
   alias CodeMySpec.Requirements.Requirement
   alias CodeMySpec.Tests.TestResult
@@ -66,7 +68,14 @@ defmodule CodeMySpec.Requirements.Sync do
           [TestResult.t()],
           keyword()
         ) :: [Component.t()]
-  def sync_requirements(scope, components, changed_component_ids, file_list, test_results, opts \\ []) do
+  def sync_requirements(
+        scope,
+        components,
+        changed_component_ids,
+        file_list,
+        test_results,
+        opts \\ []
+      ) do
     force = Keyword.get(opts, :force, false)
 
     # Always update component_status (cheap: just file existence checks)

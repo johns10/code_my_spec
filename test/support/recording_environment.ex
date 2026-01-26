@@ -96,7 +96,8 @@ defmodule CodeMySpec.Support.RecordingEnvironment do
 
     case File.rm(resolved_path) do
       :ok -> :ok
-      {:error, :enoent} -> :ok  # File doesn't exist, that's fine
+      # File doesn't exist, that's fine
+      {:error, :enoent} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end

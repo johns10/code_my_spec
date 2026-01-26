@@ -197,7 +197,9 @@ defmodule CodeMySpec.ComponentTestSessions.Steps.RunTests do
 
   defp check_implementation_exists(session, code_file_path) do
     # Create environment to check file existence
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
+
     CodeMySpec.Environments.file_exists?(environment, code_file_path)
   end
 end

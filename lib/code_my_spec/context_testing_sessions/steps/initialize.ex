@@ -13,7 +13,11 @@ defmodule CodeMySpec.ContextTestingSessions.Steps.Initialize do
   alias CodeMySpec.Sessions.{Command, Session}
 
   @impl true
-  def get_command(_scope, %Session{environment_type: environment, project: project} = session, _opts) do
+  def get_command(
+        _scope,
+        %Session{environment_type: environment, project: project} = session,
+        _opts
+      ) do
     attrs = %{
       branch_name: Utils.branch_name(session),
       repo_url: project.code_repo,

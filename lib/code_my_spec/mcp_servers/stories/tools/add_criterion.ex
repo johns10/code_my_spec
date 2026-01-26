@@ -21,7 +21,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.AddCriterion do
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
          story when not is_nil(story) <- Stories.get_story(scope, params.story_id),
-         {:ok, criterion} <- AcceptanceCriteria.create_criterion(scope, story, %{description: params.description}) do
+         {:ok, criterion} <-
+           AcceptanceCriteria.create_criterion(scope, story, %{description: params.description}) do
       {:reply, StoriesMapper.criterion_added_response(criterion, story), frame}
     else
       nil ->

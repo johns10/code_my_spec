@@ -166,7 +166,12 @@ defmodule CodeMySpecWeb.StoryLiveTest do
       assert html =~ criterion.description
     end
 
-    test "toggles criterion verified status", %{conn: conn, scope: scope, story: story, criterion: criterion} do
+    test "toggles criterion verified status", %{
+      conn: conn,
+      scope: scope,
+      story: story,
+      criterion: criterion
+    } do
       {:ok, show_live, html} = live(conn, ~p"/app/stories/#{story}")
 
       # Initially not verified
@@ -225,7 +230,11 @@ defmodule CodeMySpecWeb.StoryLiveTest do
       assert List.first(updated_story.criteria).description == "Updated criterion description"
     end
 
-    test "updates criterion verified status via form checkbox", %{conn: conn, scope: scope, story: story} do
+    test "updates criterion verified status via form checkbox", %{
+      conn: conn,
+      scope: scope,
+      story: story
+    } do
       {:ok, form_live, _html} = live(conn, ~p"/app/stories/#{story}/edit")
 
       original_criterion = List.first(story.criteria)

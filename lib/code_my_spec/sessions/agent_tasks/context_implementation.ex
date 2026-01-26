@@ -131,7 +131,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextImplementation do
          external_id
        ) do
     %{project: project} = session
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     # Generate test prompt files
     test_prompts =

@@ -47,7 +47,9 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CriterionToolsTest do
     test "updates criterion description" do
       scope = full_scope_fixture()
       story = story_fixture(scope, %{title: "Test Story"})
-      {:ok, criterion} = AcceptanceCriteria.create_criterion(scope, story, %{description: "Original"})
+
+      {:ok, criterion} =
+        AcceptanceCriteria.create_criterion(scope, story, %{description: "Original"})
 
       frame = %Frame{assigns: %{current_scope: scope}}
       params = %{criterion_id: to_string(criterion.id), description: "Updated description"}
@@ -66,7 +68,10 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CriterionToolsTest do
     test "prevents updating verified criterion" do
       scope = full_scope_fixture()
       story = story_fixture(scope, %{title: "Test Story"})
-      {:ok, criterion} = AcceptanceCriteria.create_criterion(scope, story, %{description: "Original"})
+
+      {:ok, criterion} =
+        AcceptanceCriteria.create_criterion(scope, story, %{description: "Original"})
+
       {:ok, _verified} = AcceptanceCriteria.mark_verified(scope, criterion)
 
       frame = %Frame{assigns: %{current_scope: scope}}
@@ -101,7 +106,9 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CriterionToolsTest do
     test "deletes criterion" do
       scope = full_scope_fixture()
       story = story_fixture(scope, %{title: "Test Story"})
-      {:ok, criterion} = AcceptanceCriteria.create_criterion(scope, story, %{description: "To delete"})
+
+      {:ok, criterion} =
+        AcceptanceCriteria.create_criterion(scope, story, %{description: "To delete"})
 
       frame = %Frame{assigns: %{current_scope: scope}}
       params = %{criterion_id: to_string(criterion.id)}
@@ -123,7 +130,10 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CriterionToolsTest do
     test "prevents deleting verified criterion" do
       scope = full_scope_fixture()
       story = story_fixture(scope, %{title: "Test Story"})
-      {:ok, criterion} = AcceptanceCriteria.create_criterion(scope, story, %{description: "Verified one"})
+
+      {:ok, criterion} =
+        AcceptanceCriteria.create_criterion(scope, story, %{description: "Verified one"})
+
       {:ok, _verified} = AcceptanceCriteria.mark_verified(scope, criterion)
 
       frame = %Frame{assigns: %{current_scope: scope}}

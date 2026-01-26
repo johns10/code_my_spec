@@ -179,7 +179,9 @@ defmodule CodeMySpec.Architecture do
     component = ComponentRepository.get_component_with_dependencies(scope, component_id)
 
     direct_dependents = get_direct_dependents(component, all_components)
-    transitive_dependents = get_transitive_dependents(direct_dependents, all_components, MapSet.new([component_id]))
+
+    transitive_dependents =
+      get_transitive_dependents(direct_dependents, all_components, MapSet.new([component_id]))
 
     all_affected = [component] ++ direct_dependents ++ transitive_dependents
     affected_contexts = get_affected_contexts(all_affected, all_components)
@@ -214,7 +216,8 @@ defmodule CodeMySpec.Architecture do
       end)
       |> Enum.uniq_by(& &1.id)
 
-    new_visited = Enum.reduce(direct_dependents, visited, fn dep, acc -> MapSet.put(acc, dep.id) end)
+    new_visited =
+      Enum.reduce(direct_dependents, visited, fn dep, acc -> MapSet.put(acc, dep.id) end)
 
     case new_dependents do
       [] ->
@@ -290,7 +293,12 @@ defmodule CodeMySpec.Architecture do
 
         component ->
           # Preload dependencies manually
-          Repo.preload(component, [:dependencies, :dependents, :outgoing_dependencies, :incoming_dependencies])
+          Repo.preload(component, [
+            :dependencies,
+            :dependents,
+            :outgoing_dependencies,
+            :incoming_dependencies
+          ])
       end
     end
   end

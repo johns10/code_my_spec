@@ -14,10 +14,15 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
   alias CodeMySpec.Stories
 
   schema do
-    field :id, :string, required: true, doc: "Story ID to update (use list_story_titles to find IDs)"
+    field :id, :string,
+      required: true,
+      doc: "Story ID to update (use list_story_titles to find IDs)"
+
     field :title, :string, doc: "New title (optional)"
     field :description, :string, doc: "New description (optional)"
-    field :acceptance_criteria, {:list, :string}, doc: "Replace unverified criteria with these (optional)"
+
+    field :acceptance_criteria, {:list, :string},
+      doc: "Replace unverified criteria with these (optional)"
   end
 
   @impl true

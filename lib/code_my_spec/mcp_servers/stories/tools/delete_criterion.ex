@@ -13,13 +13,16 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteCriterion do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :criterion_id, :string, required: true, doc: "Criterion ID to delete (from get_story response)"
+    field :criterion_id, :string,
+      required: true,
+      doc: "Criterion ID to delete (from get_story response)"
   end
 
   @impl true
   def execute(params, frame) do
     with {:ok, scope} <- Validators.validate_scope(frame),
-         criterion when not is_nil(criterion) <- AcceptanceCriteria.get_criterion(scope, params.criterion_id),
+         criterion when not is_nil(criterion) <-
+           AcceptanceCriteria.get_criterion(scope, params.criterion_id),
          :ok <- check_not_verified(criterion),
          {:ok, deleted} <- AcceptanceCriteria.delete_criterion(scope, criterion) do
       {:reply, StoriesMapper.criterion_deleted_response(deleted), frame}
@@ -28,7 +31,10 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteCriterion do
         {:reply, StoriesMapper.criterion_not_found_error(), frame}
 
       {:error, :criterion_verified} ->
-        {:reply, StoriesMapper.error("Cannot delete verified criterion. Verified criteria are locked and protected from removal."), frame}
+        {:reply,
+         StoriesMapper.error(
+           "Cannot delete verified criterion. Verified criteria are locked and protected from removal."
+         ), frame}
 
       {:error, changeset = %Ecto.Changeset{}} ->
         {:reply, StoriesMapper.validation_error(changeset), frame}

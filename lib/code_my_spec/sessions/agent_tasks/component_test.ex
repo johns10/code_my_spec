@@ -199,7 +199,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentTest do
   end
 
   defp check_file_exists(session, file_path) do
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
+
     Environments.file_exists?(environment, file_path)
   end
 

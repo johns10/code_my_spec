@@ -29,7 +29,7 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
     with {:ok, rules} <- get_design_rules(scope),
          similar <- Components.list_similar_components(scope, component),
          stories <- Stories.list_component_stories(scope, component.id) do
-         build_spec_prompt(session, rules, stories, similar)
+      build_spec_prompt(session, rules, stories, similar)
     end
   end
 
@@ -149,7 +149,9 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
 
   defp read_spec_file(session) do
     %{spec_file: path} = Utils.component_files(session.component, session.project)
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     case Environments.read_file(environment, path) do
       {:ok, content} ->
@@ -173,7 +175,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ContextSpec do
 
   defp create_child_spec_files(session, %{"components" => components})
        when is_list(components) do
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     results =
       Enum.map(components, fn %{module_name: module_name, description: description} ->

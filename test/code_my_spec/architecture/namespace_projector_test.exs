@@ -293,12 +293,12 @@ defmodule CodeMySpec.Architecture.NamespaceProjectorTest do
       # Check that indentation increases by 2 spaces per level
       # This is a basic check - actual indentation will depend on tree structure
       assert Enum.any?(lines, fn line ->
-        String.match?(line, ~r/^  /)
-      end)
+               String.match?(line, ~r/^  /)
+             end)
 
       assert Enum.any?(lines, fn line ->
-        String.match?(line, ~r/^    /)
-      end)
+               String.match?(line, ~r/^    /)
+             end)
     end
   end
 

@@ -33,7 +33,9 @@ defmodule CodeMySpec.ComponentSpecSessions.Steps.ReviseSpec do
 
   defp read_current_spec(session) do
     %{spec_file: path} = Utils.component_files(session.component, session.project)
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     case Environments.read_file(environment, path) do
       {:ok, content} -> {:ok, content}

@@ -39,7 +39,10 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     query =
       if search && search != "" do
         search_term = "%#{search}%"
-        from(s in base_query, where: ilike(s.title, ^search_term) or ilike(s.description, ^search_term))
+
+        from(s in base_query,
+          where: ilike(s.title, ^search_term) or ilike(s.description, ^search_term)
+        )
       else
         base_query
       end
@@ -291,7 +294,8 @@ defmodule CodeMySpec.Stories.StoriesRepository do
 
   # Injects project_id and account_id into criteria attrs before changeset processing
   defp inject_criteria_ownership(attrs, project_id, account_id) do
-    criteria_key = if is_map(attrs) && Map.has_key?(attrs, :criteria), do: :criteria, else: "criteria"
+    criteria_key =
+      if is_map(attrs) && Map.has_key?(attrs, :criteria), do: :criteria, else: "criteria"
 
     case get_in_flexible(attrs, criteria_key) do
       nil ->
@@ -323,8 +327,11 @@ defmodule CodeMySpec.Stories.StoriesRepository do
     end
   end
 
-  defp get_in_flexible(map, key) when is_atom(key), do: Map.get(map, key) || Map.get(map, to_string(key))
-  defp get_in_flexible(map, key) when is_binary(key), do: Map.get(map, key) || Map.get(map, String.to_existing_atom(key))
+  defp get_in_flexible(map, key) when is_atom(key),
+    do: Map.get(map, key) || Map.get(map, to_string(key))
+
+  defp get_in_flexible(map, key) when is_binary(key),
+    do: Map.get(map, key) || Map.get(map, String.to_existing_atom(key))
 
   defp put_flexible(map, key, value) when is_map(map) do
     # Use atom key if map has atom keys, string key otherwise

@@ -59,7 +59,10 @@ defmodule CodeMySpecWeb.StoryLive.Index do
                 </li>
               </ul>
               <div
-                :if={Enum.empty?(story.criteria) && !Enum.empty?(parse_acceptance_criteria(story.acceptance_criteria))}
+                :if={
+                  Enum.empty?(story.criteria) &&
+                    !Enum.empty?(parse_acceptance_criteria(story.acceptance_criteria))
+                }
                 class="text-xs text-base-content/50 mt-1"
               >
                 (legacy criteria: {length(parse_acceptance_criteria(story.acceptance_criteria))})

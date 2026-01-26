@@ -197,7 +197,10 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.ValidateDependencyGraphTest d
 
       accounts = component_fixture(scope, %{module_name: "MyApp.Accounts", type: "context"})
       blog = component_fixture(scope, %{module_name: "MyApp.Blog", type: "context"})
-      user_schema = component_fixture(scope, %{module_name: "MyApp.Accounts.User", type: "schema"})
+
+      user_schema =
+        component_fixture(scope, %{module_name: "MyApp.Accounts.User", type: "schema"})
+
       post_schema = component_fixture(scope, %{module_name: "MyApp.Blog.Post", type: "schema"})
 
       # Controllers depend on contexts

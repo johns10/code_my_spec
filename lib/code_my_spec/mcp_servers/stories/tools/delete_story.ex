@@ -12,7 +12,9 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteStory do
   alias CodeMySpec.MCPServers.Validators
 
   schema do
-    field :id, :string, required: true, doc: "Story ID to delete (use list_story_titles to find IDs)"
+    field :id, :string,
+      required: true,
+      doc: "Story ID to delete (use list_story_titles to find IDs)"
   end
 
   @impl true

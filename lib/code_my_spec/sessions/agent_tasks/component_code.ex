@@ -148,7 +148,8 @@ defmodule CodeMySpec.Sessions.AgentTasks.ComponentCode do
   end
 
   defp check_required_files(session, test_file_path, code_file_path) do
-    {:ok, environment} = Environments.create(session.environment_type, working_dir: session[:working_dir])
+    {:ok, environment} =
+      Environments.create(session.environment_type, working_dir: session[:working_dir])
 
     missing_files = []
 

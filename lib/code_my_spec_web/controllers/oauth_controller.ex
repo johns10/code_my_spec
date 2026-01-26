@@ -39,7 +39,10 @@ defmodule CodeMySpecWeb.OAuthController do
 
           {:error, error, http_status} ->
             require Logger
-            Logger.error("OAuth preauthorize failed: #{inspect(error)}, params: #{inspect(params)}")
+
+            Logger.error(
+              "OAuth preauthorize failed: #{inspect(error)}, params: #{inspect(params)}"
+            )
 
             conn
             |> put_status(http_status)

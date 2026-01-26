@@ -70,8 +70,11 @@ defmodule CodeMySpec.Components.Sync do
       filter_files_by_mtime(impl_file_infos, synced_at_map, force, :impl, base_dir)
 
     # Parse ONLY changed files
-    {changed_spec_data, spec_errors} = parse_files(changed_spec_files, &parse_spec_file(&1, base_dir))
-    {changed_impl_data, impl_errors} = parse_files(changed_impl_files, &parse_impl_file(&1, base_dir))
+    {changed_spec_data, spec_errors} =
+      parse_files(changed_spec_files, &parse_spec_file(&1, base_dir))
+
+    {changed_impl_data, impl_errors} =
+      parse_files(changed_impl_files, &parse_impl_file(&1, base_dir))
 
     parse_errors = spec_errors ++ impl_errors
 
@@ -82,11 +85,15 @@ defmodule CodeMySpec.Components.Sync do
     # For unchanged files, derive module names from paths (no file I/O)
     # NOTE: This assumes file paths match module names (e.g., mcp_servers.ex → McpServers)
     # If you have acronyms that need special casing (MCPServers), rename the file to match
-    unchanged_spec_modules = extract_module_names_from_paths(unchanged_spec_files, base_dir, :spec)
-    unchanged_impl_modules = extract_module_names_from_paths(unchanged_impl_files, base_dir, :impl)
+    unchanged_spec_modules =
+      extract_module_names_from_paths(unchanged_spec_files, base_dir, :spec)
+
+    unchanged_impl_modules =
+      extract_module_names_from_paths(unchanged_impl_files, base_dir, :impl)
 
     # Merge changed data by module name
     changed_merged = merge_by_module_name(changed_spec_data, changed_impl_data)
+
     unchanged_module_names =
       MapSet.union(
         MapSet.new(unchanged_spec_modules),
@@ -135,7 +142,12 @@ defmodule CodeMySpec.Components.Sync do
   """
   @spec update_parent_relationships(Scope.t(), [Component.t()], [binary()], keyword()) ::
           {:ok, [binary()]} | {:error, term()}
-  def update_parent_relationships(%Scope{} = scope, all_components, changed_component_ids, opts \\ []) do
+  def update_parent_relationships(
+        %Scope{} = scope,
+        all_components,
+        changed_component_ids,
+        opts \\ []
+      ) do
     force = Keyword.get(opts, :force, false)
 
     if force do
@@ -219,7 +231,8 @@ defmodule CodeMySpec.Components.Sync do
   def sync_all(%Scope{} = scope, opts \\ []) do
     # Delegate to new optimized functions
     with {:ok, all_components, changed_ids} <- sync_changed(scope, opts),
-         {:ok, _expanded_ids} <- update_parent_relationships(scope, all_components, changed_ids, opts) do
+         {:ok, _expanded_ids} <-
+           update_parent_relationships(scope, all_components, changed_ids, opts) do
       {:ok, all_components, []}
     end
   rescue
