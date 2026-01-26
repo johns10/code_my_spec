@@ -1,8 +1,8 @@
-defmodule CodeMySpec.Hooks.ValidateEditsTest do
+defmodule CodeMySpec.Sessions.AgentTasks.ValidateEditsTest do
   use CodeMySpec.DataCase, async: true
 
   alias CodeMySpec.FileEdits
-  alias CodeMySpec.Hooks.ValidateEdits
+  alias CodeMySpec.Sessions.AgentTasks.ValidateEdits
 
   @moduletag :tmp_dir
 
