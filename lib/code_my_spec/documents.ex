@@ -10,14 +10,15 @@ defmodule CodeMySpec.Documents do
 
   ## Parameters
   - `markdown_content` - The markdown string to parse
-  - `document_type` - Document type atom (e.g., :context, :schema, :spec) to look up definition
+  - `document_type` - Document type string (e.g., "spec", "schema", "context_spec") to look up definition
 
   Returns `{:ok, document}` with sections map and type or `{:error, reason}` on failure.
   """
   def create_dynamic_document(markdown_content, document_type) do
     doc_def = CodeMySpec.Documents.Registry.get_definition(document_type)
 
-    with {:ok, sections} <- MarkdownParser.parse(markdown_content),
+    with :ok <- validate_h1_title(markdown_content, document_type),
+         {:ok, sections} <- MarkdownParser.parse(markdown_content),
          :ok <- validate_required_sections(sections, doc_def.required_sections),
          :ok <-
            validate_additional_sections(
@@ -29,6 +30,22 @@ defmodule CodeMySpec.Documents do
       {:ok, %{sections: sections, type: document_type}}
     end
   end
+
+  # Spec files (spec, schema, context_spec) must have a valid H1 title
+  @spec_types ["spec", "schema", "context_spec"]
+
+  defp validate_h1_title(markdown_content, document_type) when document_type in @spec_types do
+    case Regex.run(~r/^# ([A-Z][a-zA-Z0-9_.]+)$/m, markdown_content) do
+      [_, _module_name] ->
+        :ok
+
+      _ ->
+        {:error,
+         "Missing or invalid H1 title. Spec files must start with '# ModuleName' in PascalCase format (e.g., # CodeMySpec.Accounts)"}
+    end
+  end
+
+  defp validate_h1_title(_markdown_content, _document_type), do: :ok
 
   defp validate_required_sections(sections, required_sections) do
     missing =

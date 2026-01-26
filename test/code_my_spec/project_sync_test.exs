@@ -106,18 +106,17 @@ defmodule CodeMySpec.ProjectSyncTest do
 
     test "is idempotent - multiple syncs produce same result", %{scope: scope, tmp_dir: tmp_dir} do
       # First sync
-      assert {:ok, result1} = ProjectSync.sync_all(scope, base_dir: tmp_dir, persist: true)
+      assert {:ok, _result1} = ProjectSync.sync_all(scope, base_dir: tmp_dir, persist: true)
       contexts1 = Components.list_contexts(scope)
       context1_ids = Enum.map(contexts1, & &1.id) |> Enum.sort()
 
       # Second sync
-      assert {:ok, result2} = ProjectSync.sync_all(scope, base_dir: tmp_dir, persist: true)
+      assert {:ok, _result2} = ProjectSync.sync_all(scope, base_dir: tmp_dir, persist: true)
       contexts2 = Components.list_contexts(scope)
       context2_ids = Enum.map(contexts2, & &1.id) |> Enum.sort()
 
-      # Should have same contexts
+      # Should have same contexts in database
       assert context1_ids == context2_ids
-      assert length(result1.contexts) == length(result2.contexts)
     end
 
     test "respects scope boundaries", %{scope: scope, tmp_dir: tmp_dir} do

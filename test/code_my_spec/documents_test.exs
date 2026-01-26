@@ -7,7 +7,7 @@ defmodule CodeMySpec.DocumentsTest do
   describe "create_dynamic_document/2" do
     test "creates a valid schema document from markdown" do
       markdown = """
-      # User Schema
+      # UserSchema
       Represents user account entities with authentication credentials.
 
       ## Fields

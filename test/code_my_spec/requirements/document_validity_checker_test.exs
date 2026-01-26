@@ -33,7 +33,7 @@ defmodule CodeMySpec.Requirements.DocumentValidityCheckerTest do
   """
 
   @valid_schema_content """
-  # User Schema
+  # UserSchema
   Represents user entities.
 
   ## Fields
