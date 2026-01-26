@@ -2,6 +2,16 @@ defmodule CodeMySpec.Components.Sync do
   @moduledoc """
   Synchronizes components from filesystem to database. Parent-child relationships
   are derived from module name hierarchy.
+
+  ## Optimized sync phases
+
+  This module provides three separate phases for efficient incremental syncing:
+
+  1. `sync_changed/2` - Identifies and syncs only changed components
+  2. `update_parent_relationships/4` - Updates parent relationships for affected components only
+  3. `sync_all/2` - Backward-compatible full sync (delegates to new functions)
+
+  Each phase pre-filters before expensive operations, reducing file I/O and database writes.
   """
 
   require Logger
@@ -11,8 +21,184 @@ defmodule CodeMySpec.Components.Sync do
   alias CodeMySpec.Components.Sync.FileInfo
   alias CodeMySpec.Users.Scope
 
+  @type parse_error :: {path :: String.t(), reason :: term()}
+
+  @doc """
+  Synchronizes only changed components from spec files and implementation files.
+
+  Returns `{:ok, all_components, changed_component_ids}` where:
+  - `all_components` is the complete list of components (changed + unchanged)
+  - `changed_component_ids` is the list of IDs for components that were modified
+
+  Module names come from:
+  1. Implementation's declared module name (highest priority)
+  2. Spec's H1 title
+  3. Path-derived name (lowest priority)
+
+  Component type is determined by namespace depth:
+  - 2 parts (e.g., MyApp.Accounts) → context
+  - 3+ parts (e.g., MyApp.Accounts.User) → module
+
+  ## Options
+
+  - `:base_dir` - Base directory to scan (defaults to current working directory)
+  - `:force` - When true, ignores mtime and syncs all files (defaults to false)
+
+  ## Optimization
+
+  Pre-filters files by mtime BEFORE parsing. Unchanged files are never read.
+  """
+  @spec sync_changed(Scope.t(), keyword()) ::
+          {:ok, [Component.t()], [binary()]} | {:error, term()}
+  def sync_changed(%Scope{} = scope, opts \\ []) do
+    base_dir = Keyword.get(opts, :base_dir, ".")
+    force = Keyword.get(opts, :force, false)
+
+    # Load existing components and build synced_at lookup
+    existing_components = Components.list_components(scope)
+    synced_at_map = Map.new(existing_components, fn c -> {c.module_name, c.synced_at} end)
+
+    # Collect file infos with mtimes
+    spec_file_infos = FileInfo.collect_files(base_dir, "docs/spec/**/*.spec.md")
+    impl_file_infos = FileInfo.collect_files(base_dir, "lib/**/*.ex")
+
+    # PRE-FILTER by mtime BEFORE parsing (key optimization)
+    {changed_spec_files, unchanged_spec_files} =
+      filter_files_by_mtime(spec_file_infos, synced_at_map, force, :spec, base_dir)
+
+    {changed_impl_files, unchanged_impl_files} =
+      filter_files_by_mtime(impl_file_infos, synced_at_map, force, :impl, base_dir)
+
+    # Parse ONLY changed files
+    {changed_spec_data, spec_errors} = parse_files(changed_spec_files, &parse_spec_file(&1, base_dir))
+    {changed_impl_data, impl_errors} = parse_files(changed_impl_files, &parse_impl_file(&1, base_dir))
+
+    parse_errors = spec_errors ++ impl_errors
+
+    Enum.each(parse_errors, fn {path, error} ->
+      Logger.warning("Failed to parse #{path}: #{inspect(error)}")
+    end)
+
+    # For unchanged files, derive module names from paths (no file I/O)
+    # NOTE: This assumes file paths match module names (e.g., mcp_servers.ex → McpServers)
+    # If you have acronyms that need special casing (MCPServers), rename the file to match
+    unchanged_spec_modules = extract_module_names_from_paths(unchanged_spec_files, base_dir, :spec)
+    unchanged_impl_modules = extract_module_names_from_paths(unchanged_impl_files, base_dir, :impl)
+
+    # Merge changed data by module name
+    changed_merged = merge_by_module_name(changed_spec_data, changed_impl_data)
+    unchanged_module_names =
+      MapSet.union(
+        MapSet.new(unchanged_spec_modules),
+        MapSet.new(unchanged_impl_modules)
+      )
+
+    # Upsert ONLY changed components
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    synced_components = Enum.map(changed_merged, &upsert_from_data(scope, &1, now))
+    changed_component_ids = Enum.map(synced_components, & &1.id)
+
+    # Get unchanged components from existing (already in DB, no upsert needed)
+    unchanged_components =
+      Enum.filter(existing_components, &(&1.module_name in unchanged_module_names))
+
+    all_components = synced_components ++ unchanged_components
+
+    # Cleanup removed components
+    all_module_names =
+      MapSet.new(changed_merged, & &1.module_name)
+      |> MapSet.union(unchanged_module_names)
+
+    cleanup_removed(scope, existing_components, all_module_names)
+
+    {:ok, all_components, changed_component_ids}
+  rescue
+    error ->
+      Logger.error("Error during sync_changed: #{inspect(error)}")
+      {:error, error}
+  end
+
+  @doc """
+  Updates parent relationships for components that were affected by changes.
+
+  Only updates components that:
+  - Were just synced (in `changed_component_ids` list)
+  - Have a parent that was just synced (parent created/deleted affects children)
+
+  Returns `{:ok, expanded_changed_ids}` where expanded_changed_ids includes:
+  - Original changed component IDs
+  - Additional component IDs whose parent relationships changed
+
+  ## Options
+
+  - `:force` - When true, updates all parent relationships (defaults to false)
+  """
+  @spec update_parent_relationships(Scope.t(), [Component.t()], [binary()], keyword()) ::
+          {:ok, [binary()]} | {:error, term()}
+  def update_parent_relationships(%Scope{} = scope, all_components, changed_component_ids, opts \\ []) do
+    force = Keyword.get(opts, :force, false)
+
+    if force do
+      # Force mode: update all parent relationships
+      derive_all_parent_relationships(scope, all_components)
+      {:ok, Enum.map(all_components, & &1.id)}
+    else
+      # Incremental mode: only update affected components
+      component_map = Map.new(all_components, &{&1.module_name, &1})
+      changed_ids_set = MapSet.new(changed_component_ids)
+
+      # Build map of id -> module_name for reverse lookup
+      id_to_module = Map.new(all_components, &{&1.id, &1.module_name})
+
+      changed_module_names =
+        changed_component_ids
+        |> Enum.map(&Map.get(id_to_module, &1))
+        |> MapSet.new()
+
+      # Find affected components (changed + children of changed)
+      affected_components =
+        all_components
+        |> Enum.filter(fn component ->
+          component.id in changed_ids_set ||
+            parent_changed?(component, component_map, changed_module_names)
+        end)
+
+      # Update parent relationships for affected components
+      newly_updated_ids =
+        affected_components
+        |> Enum.map(fn component ->
+          new_parent = find_nearest_ancestor(component.module_name, component_map)
+
+          # Only update if parent actually changed
+          cond do
+            new_parent && new_parent.id != component.parent_component_id ->
+              Components.update_component(scope, component, %{parent_component_id: new_parent.id})
+              component.id
+
+            is_nil(new_parent) && !is_nil(component.parent_component_id) ->
+              Components.update_component(scope, component, %{parent_component_id: nil})
+              component.id
+
+            true ->
+              nil
+          end
+        end)
+        |> Enum.reject(&is_nil/1)
+
+      # Return expanded set: original changed + newly updated
+      expanded_changed_ids = MapSet.union(changed_ids_set, MapSet.new(newly_updated_ids))
+      {:ok, MapSet.to_list(expanded_changed_ids)}
+    end
+  rescue
+    error ->
+      Logger.error("Error during update_parent_relationships: #{inspect(error)}")
+      {:error, error}
+  end
+
   @doc """
   Synchronizes all components from spec files and implementation files.
+
+  This is the backward-compatible interface that delegates to the new optimized functions.
 
   Module names come from:
   1. Implementation's declared module name (highest priority)
@@ -28,56 +214,43 @@ defmodule CodeMySpec.Components.Sync do
   - `:base_dir` - Base directory to scan (defaults to current working directory)
   - `:force` - When true, ignores mtime and syncs all files (defaults to false)
   """
-  @type parse_error :: {path :: String.t(), reason :: term()}
-
   @spec sync_all(Scope.t(), keyword()) ::
           {:ok, [Component.t()], [parse_error()]} | {:error, term()}
   def sync_all(%Scope{} = scope, opts \\ []) do
-    base_dir = Keyword.get(opts, :base_dir, ".")
-    force = Keyword.get(opts, :force, false)
-
-    existing_components = Components.list_components(scope)
-    synced_at_map = Map.new(existing_components, fn c -> {c.module_name, c.synced_at} end)
-
-    # Parse spec and impl files
-    spec_file_infos = FileInfo.collect_files(base_dir, "docs/spec/**/*.spec.md")
-    impl_file_infos = FileInfo.collect_files(base_dir, "lib/**/*.ex")
-
-    {spec_data, spec_errors} = parse_files(spec_file_infos, &parse_spec_file(&1, base_dir))
-    {impl_data, impl_errors} = parse_files(impl_file_infos, &parse_impl_file(&1, base_dir))
-
-    parse_errors = spec_errors ++ impl_errors
-
-    Enum.each(parse_errors, fn {path, error} ->
-      Logger.warning("Failed to parse #{path}: #{inspect(error)}")
-    end)
-
-    # Merge by module name (impl takes precedence)
-    merged = merge_by_module_name(spec_data, impl_data)
-
-    # Filter to components needing sync
-    {to_sync, unchanged} =
-      Enum.split_with(merged, &needs_sync?(&1, synced_at_map, force))
-
-    # Upsert changed components
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-    synced = Enum.map(to_sync, &upsert_from_data(scope, &1, now))
-
-    # Get unchanged from DB
-    unchanged_names = MapSet.new(unchanged, & &1.module_name)
-    unchanged_components = Enum.filter(existing_components, &(&1.module_name in unchanged_names))
-
-    all_components = synced ++ unchanged_components
-
-    # Derive parent relationships and cleanup
-    derive_parent_relationships(scope, all_components)
-    cleanup_removed(scope, existing_components, MapSet.new(merged, & &1.module_name))
-
-    {:ok, all_components, parse_errors}
+    # Delegate to new optimized functions
+    with {:ok, all_components, changed_ids} <- sync_changed(scope, opts),
+         {:ok, _expanded_ids} <- update_parent_relationships(scope, all_components, changed_ids, opts) do
+      {:ok, all_components, []}
+    end
   rescue
     error ->
-      Logger.error("Error during sync: #{inspect(error)}")
+      Logger.error("Error during sync_all: #{inspect(error)}")
       {:error, error}
+  end
+
+  # --- File filtering (new optimization) ---
+
+  defp filter_files_by_mtime(file_infos, synced_at_map, force, type, base_dir) do
+    if force do
+      {file_infos, []}
+    else
+      Enum.split_with(file_infos, fn file_info ->
+        module_name = derive_module_from_path(file_info.path, base_dir, type)
+
+        case Map.get(synced_at_map, module_name) do
+          # New component
+          nil -> true
+          # Check if file is newer than last sync
+          synced_at -> DateTime.compare(file_info.mtime, synced_at) == :gt
+        end
+      end)
+    end
+  end
+
+  defp extract_module_names_from_paths(file_infos, base_dir, type) do
+    Enum.map(file_infos, fn file_info ->
+      derive_module_from_path(file_info.path, base_dir, type)
+    end)
   end
 
   # --- Parsing ---
@@ -240,15 +413,6 @@ defmodule CodeMySpec.Components.Sync do
 
   # --- Sync logic ---
 
-  defp needs_sync?(_data, _map, true), do: true
-
-  defp needs_sync?(data, synced_at_map, false) do
-    case Map.get(synced_at_map, data.module_name) do
-      nil -> true
-      synced_at -> DateTime.compare(data.mtime, synced_at) == :gt
-    end
-  end
-
   defp upsert_from_data(%Scope{} = scope, data, synced_at) do
     attrs = %{
       module_name: data.module_name,
@@ -262,7 +426,14 @@ defmodule CodeMySpec.Components.Sync do
     Components.upsert_component(scope, attrs)
   end
 
-  defp derive_parent_relationships(scope, components) do
+  # --- Parent relationships (optimized) ---
+
+  defp parent_changed?(component, _component_map, changed_module_names) do
+    parent_name = parent_module_name(component.module_name)
+    parent_name && parent_name in changed_module_names
+  end
+
+  defp derive_all_parent_relationships(scope, components) do
     component_map = Map.new(components, &{&1.module_name, &1})
 
     Enum.each(components, fn component ->

@@ -8,7 +8,7 @@ defmodule CodeMySpec.ProjectSync.Sync do
 
   alias CodeMySpec.Users.Scope
   alias CodeMySpec.Components
-  alias CodeMySpec.ProjectCoordinator
+  alias CodeMySpec.Requirements.Sync, as: RequirementsSync
   alias CodeMySpec.Tests.TestRun
 
   @type sync_result :: %{
@@ -46,27 +46,39 @@ defmodule CodeMySpec.ProjectSync.Sync do
     total_start = System.monotonic_time(:millisecond)
     base_dir = Keyword.get(opts, :base_dir, File.cwd!())
 
-    # Time context sync
+    # Phase 1: Sync components (identify what changed)
     contexts_start = System.monotonic_time(:millisecond)
 
-    with {:ok, contexts_result, _errors} <- Components.Sync.sync_all(scope, base_dir: base_dir) do
+    with {:ok, all_components, changed_component_ids} <-
+           Components.Sync.sync_changed(scope, base_dir: base_dir),
+         # Phase 2: Update parent relationships (expand changed set)
+         {:ok, expanded_changed_ids} <-
+           Components.Sync.update_parent_relationships(scope, all_components, changed_component_ids, opts) do
       contexts_sync_ms = System.monotonic_time(:millisecond) - contexts_start
 
-      # Time requirements sync
+      # Phase 3: Sync requirements for changed components
       requirements_start = System.monotonic_time(:millisecond)
       file_list = get_file_list(base_dir)
       test_run = get_latest_test_run(base_dir)
 
-      # Sync project requirements - pass opts through for persist control
-      _components = ProjectCoordinator.sync_project_requirements(scope, file_list, test_run, opts)
-      requirements_sync_ms = System.monotonic_time(:millisecond) - requirements_start
+      # Pass changed component IDs to requirements sync for selective updates
+      components_with_requirements =
+        RequirementsSync.sync_requirements(
+          scope,
+          all_components,
+          MapSet.new(expanded_changed_ids),
+          file_list,
+          test_run.failures,
+          opts
+        )
 
+      requirements_sync_ms = System.monotonic_time(:millisecond) - requirements_start
       total_ms = System.monotonic_time(:millisecond) - total_start
 
       {:ok,
        %{
-         contexts: contexts_result,
-         requirements_updated: 0,
+         contexts: components_with_requirements,
+         requirements_updated: length(expanded_changed_ids),
          errors: [],
          timings: %{
            contexts_sync_ms: contexts_sync_ms,

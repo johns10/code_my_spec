@@ -389,4 +389,197 @@ defmodule CodeMySpec.Components.SyncTest do
       assert Enum.any?(components, &(&1.module_name == "MyApp.Helper"))
     end
   end
+
+  describe "sync_changed/2" do
+    test "returns all components and changed IDs on first sync", %{scope: scope, tmp_dir: tmp_dir} do
+      write_spec(tmp_dir, "MyApp.Accounts")
+      write_impl(tmp_dir, "MyApp.Accounts")
+
+      {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      assert length(all_components) == 1
+      assert length(changed_ids) == 1
+      assert hd(all_components).module_name == "MyApp.Accounts"
+      assert hd(changed_ids) == hd(all_components).id
+    end
+
+    test "returns empty changed IDs when nothing changed", %{scope: scope, tmp_dir: tmp_dir} do
+      write_spec(tmp_dir, "MyApp.Accounts")
+
+      {:ok, _, first_changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+      assert length(first_changed_ids) == 1
+
+      Process.sleep(10)
+      {:ok, all_components, second_changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      assert length(all_components) == 1
+      assert length(second_changed_ids) == 0
+    end
+
+    test "returns only changed component IDs when file is modified", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
+      write_spec(tmp_dir, "MyApp.Accounts")
+      write_spec(tmp_dir, "MyApp.Users")
+
+      {:ok, _, first_changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+      assert length(first_changed_ids) == 2
+
+      Process.sleep(1100)
+      accounts_path = module_to_spec_path(tmp_dir, "MyApp.Accounts")
+      File.touch!(accounts_path)
+
+      {:ok, all_components, second_changed_ids} =
+        Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      assert length(all_components) == 2
+      assert length(second_changed_ids) == 1
+
+      changed_component = Enum.find(all_components, &(&1.id in second_changed_ids))
+      assert changed_component.module_name == "MyApp.Accounts"
+    end
+
+    test "force option marks all components as changed", %{scope: scope, tmp_dir: tmp_dir} do
+      write_spec(tmp_dir, "MyApp.Accounts")
+      write_spec(tmp_dir, "MyApp.Users")
+
+      {:ok, _, first_changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+      assert length(first_changed_ids) == 2
+
+      Process.sleep(10)
+      {:ok, all_components, second_changed_ids} =
+        Sync.sync_changed(scope, base_dir: tmp_dir, force: true)
+
+      assert length(all_components) == 2
+      assert length(second_changed_ids) == 2
+    end
+  end
+
+  describe "update_parent_relationships/4" do
+    test "updates parent relationships for changed components", %{scope: scope, tmp_dir: tmp_dir} do
+      write_spec(tmp_dir, "MyApp.Accounts")
+      write_spec(tmp_dir, "MyApp.Accounts.User")
+
+      {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+      {:ok, expanded_ids} =
+        Sync.update_parent_relationships(scope, all_components, changed_ids)
+
+      # Both components should be in expanded set (both were created)
+      assert length(expanded_ids) == 2
+
+      accounts = Enum.find(all_components, &(&1.module_name == "MyApp.Accounts"))
+      user = Enum.find(all_components, &(&1.module_name == "MyApp.Accounts.User"))
+
+      # Verify parent relationship was set
+      user_from_db = Components.get_component(scope, user.id)
+      assert user_from_db.parent_component_id == accounts.id
+    end
+
+    test "expands changed set when parent is created", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
+      # First sync: create child without parent
+      write_spec(tmp_dir, "MyApp.Accounts.User")
+
+      {:ok, _, _} = Sync.sync_all(scope, base_dir: tmp_dir)
+
+      # Second sync: add parent (child's parent relationship will change)
+      Process.sleep(1100)
+      write_spec(tmp_dir, "MyApp.Accounts")
+
+      {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      # Only parent changed (newly created)
+      assert length(changed_ids) == 1
+      accounts = Enum.find(all_components, &(&1.module_name == "MyApp.Accounts"))
+      assert hd(changed_ids) == accounts.id
+
+      {:ok, expanded_ids} =
+        Sync.update_parent_relationships(scope, all_components, changed_ids)
+
+      # Expanded set includes both parent and child (child's parent_component_id changed)
+      assert length(expanded_ids) == 2
+      assert accounts.id in expanded_ids
+
+      user = Enum.find(all_components, &(&1.module_name == "MyApp.Accounts.User"))
+      assert user.id in expanded_ids
+
+      # Verify parent relationship was updated
+      user_from_db = Components.get_component(scope, user.id)
+      assert user_from_db.parent_component_id == accounts.id
+    end
+
+    test "does not expand changed set when unrelated components change", %{
+      scope: scope,
+      tmp_dir: tmp_dir
+    } do
+      write_spec(tmp_dir, "MyApp.Accounts")
+      write_spec(tmp_dir, "MyApp.Accounts.User")
+      write_spec(tmp_dir, "MyApp.Blog")
+
+      {:ok, _, _} = Sync.sync_all(scope, base_dir: tmp_dir)
+
+      # Modify only Blog (unrelated to Accounts hierarchy)
+      Process.sleep(1100)
+      blog_path = module_to_spec_path(tmp_dir, "MyApp.Blog")
+      File.touch!(blog_path)
+
+      {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      assert length(changed_ids) == 1
+
+      {:ok, expanded_ids} =
+        Sync.update_parent_relationships(scope, all_components, changed_ids)
+
+      # Only Blog changed, no expansion
+      assert length(expanded_ids) == 1
+      blog = Enum.find(all_components, &(&1.module_name == "MyApp.Blog"))
+      assert hd(expanded_ids) == blog.id
+    end
+
+    test "force option updates all relationships", %{scope: scope, tmp_dir: tmp_dir} do
+      write_spec(tmp_dir, "MyApp.Accounts")
+      write_spec(tmp_dir, "MyApp.Accounts.User")
+      write_spec(tmp_dir, "MyApp.Blog")
+
+      {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      {:ok, expanded_ids} =
+        Sync.update_parent_relationships(scope, all_components, changed_ids, force: true)
+
+      # Force mode: all components included
+      assert length(expanded_ids) == 3
+    end
+
+    test "handles adding new child to existing hierarchy", %{scope: scope, tmp_dir: tmp_dir} do
+      # First sync: just parent
+      write_spec(tmp_dir, "MyApp.Accounts")
+      {:ok, _, _} = Sync.sync_all(scope, base_dir: tmp_dir)
+
+      # Second sync: add child
+      Process.sleep(1100)
+      write_spec(tmp_dir, "MyApp.Accounts.User")
+
+      {:ok, all_components, changed_ids} = Sync.sync_changed(scope, base_dir: tmp_dir)
+
+      # Only new child changed
+      assert length(changed_ids) == 1
+      user = Enum.find(all_components, &(&1.module_name == "MyApp.Accounts.User"))
+      assert hd(changed_ids) == user.id
+
+      {:ok, expanded_ids} =
+        Sync.update_parent_relationships(scope, all_components, changed_ids)
+
+      # Only child in expanded set (parent didn't change)
+      assert length(expanded_ids) == 1
+      assert user.id in expanded_ids
+
+      # Verify parent relationship was set
+      user_from_db = Components.get_component(scope, user.id)
+      accounts = Enum.find(all_components, &(&1.module_name == "MyApp.Accounts"))
+      assert user_from_db.parent_component_id == accounts.id
+    end
+  end
 end
