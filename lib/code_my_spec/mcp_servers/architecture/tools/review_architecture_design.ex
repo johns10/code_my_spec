@@ -19,7 +19,7 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
 
   @impl true
   def execute(_params, frame) do
-    with {:ok, scope} <- Validators.validate_scope(frame) do
+    with {:ok, scope} <- Validators.validate_project_scope(frame) do
       unsatisfied_stories = Stories.list_unsatisfied_stories(scope)
       components = Components.list_components_with_dependencies(scope)
       dependency_validation = Components.validate_dependency_graph(scope)

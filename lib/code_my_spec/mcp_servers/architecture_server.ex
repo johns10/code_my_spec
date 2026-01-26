@@ -4,6 +4,21 @@ defmodule CodeMySpec.McpServers.ArchitectureServer do
     version: "1.0.0",
     capabilities: [:tools]
 
+  alias Hermes.Server.Frame
+
+  @impl true
+  def init(_client_info, frame) do
+    scope = frame.assigns[:current_scope] || resolve_scope()
+    {:ok, Frame.assign(frame, :current_scope, scope)}
+  end
+
+  defp resolve_scope do
+    case Application.get_env(:code_my_spec, :scope_resolver) do
+      resolver when is_function(resolver, 0) -> resolver.()
+      _ -> nil
+    end
+  end
+
   # Spec file management
   component(CodeMySpec.McpServers.Architecture.Tools.CreateSpec)
   component(CodeMySpec.McpServers.Architecture.Tools.UpdateSpecMetadata)

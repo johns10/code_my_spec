@@ -14,7 +14,7 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.ListSpecs do
 
   @impl true
   def execute(params, frame) do
-    with {:ok, scope} <- Validators.validate_scope(frame),
+    with {:ok, scope} <- Validators.validate_project_scope(frame),
          {:ok, components} <- list_components(scope, params) do
       {:reply, ArchitectureMapper.specs_list_response(components), frame}
     else

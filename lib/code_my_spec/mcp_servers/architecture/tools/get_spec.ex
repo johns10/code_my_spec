@@ -16,7 +16,7 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpec do
 
   @impl true
   def execute(params, frame) do
-    with {:ok, scope} <- Validators.validate_scope(frame),
+    with {:ok, scope} <- Validators.validate_project_scope(frame),
          {:ok, env} <- Environments.create(:cli),
          {:ok, component} <- find_component(scope, params),
          {:ok, spec_path} <- build_spec_path(component.module_name),

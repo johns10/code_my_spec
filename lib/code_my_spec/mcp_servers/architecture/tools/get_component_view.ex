@@ -24,7 +24,7 @@ defmodule CodeMySpec.McpServers.Architecture.Tools.GetComponentView do
 
   @impl true
   def execute(params, frame) do
-    with {:ok, scope} <- Validators.validate_scope(frame),
+    with {:ok, scope} <- Validators.validate_project_scope(frame),
          {:ok, component} <- find_component(scope, params),
          {:ok, component_full} <- load_component_details(scope, component.id) do
       markdown = build_component_view(component_full)
