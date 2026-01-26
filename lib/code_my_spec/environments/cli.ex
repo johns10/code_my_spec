@@ -174,16 +174,17 @@ defmodule CodeMySpec.Environments.Cli do
   Write content to a file on the server-side file system.
 
   Creates parent directories if they don't exist.
-  The environment reference is not used since file operations are server-side.
+  Resolves paths relative to the environment's working directory if set.
   """
   @spec write_file(env :: Environment.t(), path :: String.t(), content :: String.t()) ::
           :ok | {:error, term()}
-  def write_file(_env, path, content) do
+  def write_file(env, path, content) do
+    resolved_path = resolve_path(path, env.cwd)
     Logger.info("write file called")
 
-    with :ok <- ensure_parent_directory(path) do
+    with :ok <- ensure_parent_directory(resolved_path) do
       Logger.info("parent directory ensured")
-      File.write(path, content)
+      File.write(resolved_path, content)
     end
   end
 

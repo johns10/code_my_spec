@@ -31,9 +31,10 @@ defmodule CodeMySpec.Environments.Local do
   end
 
   @impl true
-  def write_file(_env, path, content) do
-    with :ok <- File.mkdir_p(Path.dirname(path)) do
-      File.write(path, content)
+  def write_file(env, path, content) do
+    resolved_path = resolve_path(path, env.ref.working_dir)
+    with :ok <- File.mkdir_p(Path.dirname(resolved_path)) do
+      File.write(resolved_path, content)
     end
   end
 
