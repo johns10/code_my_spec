@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitectureTest do
+defmodule CodeMySpec.McpServers.Components.Tools.ShowArchitectureTest do
   use CodeMySpec.DataCase, async: true
 
   import CodeMySpec.ComponentsFixtures
@@ -8,7 +8,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitectureTest do
   import CodeMySpec.AccountsFixtures
   import CodeMySpec.StoriesFixtures
 
-  alias CodeMySpec.MCPServers.Components.Tools.ShowArchitecture
+  alias CodeMySpec.McpServers.Components.Tools.ShowArchitecture
   alias Hermes.Server.Frame
 
   describe "ShowArchitecture tool" do

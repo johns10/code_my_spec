@@ -86,13 +86,13 @@ defmodule CodeMySpecWeb.Router do
     pipe_through :mcp_protected
 
     forward "/stories", Hermes.Server.Transport.StreamableHTTP.Plug,
-      server: CodeMySpec.MCPServers.StoriesServer
+      server: CodeMySpec.McpServers.StoriesServer
 
     forward "/components", Hermes.Server.Transport.StreamableHTTP.Plug,
-      server: CodeMySpec.MCPServers.ComponentsServer
+      server: CodeMySpec.McpServers.ComponentsServer
 
     forward "/analytics-admin", Hermes.Server.Transport.StreamableHTTP.Plug,
-      server: CodeMySpec.MCPServers.AnalyticsAdminServer
+      server: CodeMySpec.McpServers.AnalyticsAdminServer
   end
 
   # API routes

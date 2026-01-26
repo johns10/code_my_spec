@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
+defmodule CodeMySpec.McpServers.Components.Tools.ContextStatisticsTest do
   use CodeMySpec.DataCase, async: true
 
   import CodeMySpec.ComponentsFixtures
@@ -8,7 +8,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatisticsTest do
   import CodeMySpec.AccountsFixtures
   import CodeMySpec.StoriesFixtures
 
-  alias CodeMySpec.MCPServers.Components.Tools.ContextStatistics
+  alias CodeMySpec.McpServers.Components.Tools.ContextStatistics
   alias Hermes.Server.Frame
 
   describe "ContextStatistics tool" do

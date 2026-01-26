@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.ListSpecsTest do
+defmodule CodeMySpec.McpServers.Architecture.Tools.ListSpecsTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Architecture.Tools.ListSpecs
+  alias CodeMySpec.McpServers.Architecture.Tools.ListSpecs
   alias CodeMySpec.Components
   alias Hermes.Server.Frame
   import CodeMySpec.UsersFixtures

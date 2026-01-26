@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.DeleteDependency do
+defmodule CodeMySpec.McpServers.Components.Tools.DeleteDependency do
   @moduledoc "Deletes a dependency relationship between components"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :id, :string, required: true

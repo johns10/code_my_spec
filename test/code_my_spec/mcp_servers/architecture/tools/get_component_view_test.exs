@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.GetComponentViewTest do
+defmodule CodeMySpec.McpServers.Architecture.Tools.GetComponentViewTest do
   use ExUnit.Case, async: false
 
-  alias CodeMySpec.MCPServers.Architecture.Tools.GetComponentView
+  alias CodeMySpec.McpServers.Architecture.Tools.GetComponentView
   alias Hermes.Server.Frame
 
   import CodeMySpec.UsersFixtures

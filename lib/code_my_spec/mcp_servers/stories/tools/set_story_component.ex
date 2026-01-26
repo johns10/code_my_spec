@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent do
+defmodule CodeMySpec.McpServers.Stories.Tools.SetStoryComponent do
   @moduledoc """
   Links a story to a component that implements it.
 
@@ -8,8 +8,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :story_id, :string, required: true, doc: "Story ID (use list_story_titles to find)"

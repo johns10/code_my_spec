@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.GetSpec do
+defmodule CodeMySpec.McpServers.Architecture.Tools.GetSpec do
   @moduledoc "Retrieves a component spec with metadata and content"
 
   use Hermes.Server.Component, type: :tool
@@ -6,8 +6,8 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.GetSpec do
   alias CodeMySpec.Components
   alias CodeMySpec.Components.ComponentRepository
   alias CodeMySpec.Environments
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :module_name, :string

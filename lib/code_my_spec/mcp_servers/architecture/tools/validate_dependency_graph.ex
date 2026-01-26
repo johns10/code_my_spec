@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.ValidateDependencyGraph do
+defmodule CodeMySpec.McpServers.Architecture.Tools.ValidateDependencyGraph do
   @moduledoc """
   Validates the component dependency graph for circular dependencies.
 
@@ -10,8 +10,8 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.ValidateDependencyGraph do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

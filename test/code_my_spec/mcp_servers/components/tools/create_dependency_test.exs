@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencyTest do
+defmodule CodeMySpec.McpServers.Components.Tools.CreateDependencyTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Components.Tools.CreateDependency
+  alias CodeMySpec.McpServers.Components.Tools.CreateDependency
   alias Hermes.Server.Frame
   import CodeMySpec.UsersFixtures
   import CodeMySpec.ComponentsFixtures

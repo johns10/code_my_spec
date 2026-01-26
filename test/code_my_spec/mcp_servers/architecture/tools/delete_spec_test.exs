@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.DeleteSpecTest do
+defmodule CodeMySpec.McpServers.Architecture.Tools.DeleteSpecTest do
   use ExUnit.Case, async: false
 
-  alias CodeMySpec.MCPServers.Architecture.Tools.DeleteSpec
+  alias CodeMySpec.McpServers.Architecture.Tools.DeleteSpec
   alias CodeMySpec.Components
   alias Hermes.Server.Frame
   import CodeMySpec.UsersFixtures

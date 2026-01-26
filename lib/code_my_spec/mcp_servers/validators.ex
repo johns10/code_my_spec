@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Validators do
+defmodule CodeMySpec.McpServers.Validators do
   @moduledoc """
   Validation functions for MCP servers.
   """

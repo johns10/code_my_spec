@@ -1,6 +1,6 @@
-defmodule CodeMySpec.MCPServers.Architecture.ArchitectureMapper do
+defmodule CodeMySpec.McpServers.Architecture.ArchitectureMapper do
   alias Hermes.Server.Response
-  alias CodeMySpec.MCPServers.Formatters
+  alias CodeMySpec.McpServers.Formatters
 
   def spec_created(component, spec_path) do
     Response.tool()

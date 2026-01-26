@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomMetrics do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.ListCustomMetrics do
   @moduledoc """
   Lists custom metrics for a Google Analytics 4 property.
 
@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomMetrics do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

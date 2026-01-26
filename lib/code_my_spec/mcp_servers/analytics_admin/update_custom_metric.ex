@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomMetric do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.UpdateCustomMetric do
   @moduledoc """
   Updates a custom metric for a Google Analytics 4 property.
 
@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.UpdateCustomMetric do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field(:name, :string,

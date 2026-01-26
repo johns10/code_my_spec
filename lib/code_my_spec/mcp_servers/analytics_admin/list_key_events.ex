@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListKeyEvents do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.ListKeyEvents do
   @moduledoc """
   Lists key events for a Google Analytics 4 property.
 
@@ -12,7 +12,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListKeyEvents do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field(:page_size, :integer,

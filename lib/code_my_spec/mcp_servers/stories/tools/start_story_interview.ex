@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.StartStoryInterview do
+defmodule CodeMySpec.McpServers.Stories.Tools.StartStoryInterview do
   @moduledoc "Starts an interview session to develop and refine user stories"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

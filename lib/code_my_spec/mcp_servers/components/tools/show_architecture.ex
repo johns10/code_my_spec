@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitecture do
+defmodule CodeMySpec.McpServers.Components.Tools.ShowArchitecture do
   @moduledoc """
   Shows the complete system architecture with comprehensive details including:
   - Full dependency graph with component relationships and types
@@ -13,8 +13,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ShowArchitecture do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

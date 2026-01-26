@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Formatters do
+defmodule CodeMySpec.McpServers.Formatters do
   @moduledoc """
   Formats responses and errors for MCP servers in a hybrid format:
   human-readable summary + JSON data for programmatic access.

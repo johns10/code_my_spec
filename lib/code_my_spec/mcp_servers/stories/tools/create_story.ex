@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
+defmodule CodeMySpec.McpServers.Stories.Tools.CreateStory do
   @moduledoc """
   Creates a user story with title, description, and acceptance criteria.
 
@@ -10,8 +10,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStory do
 
   use Hermes.Server.Component, type: :tool
 
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
   alias CodeMySpec.Stories
 
   schema do

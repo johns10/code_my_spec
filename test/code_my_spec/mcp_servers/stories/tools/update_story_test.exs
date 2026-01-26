@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStoryTest do
+defmodule CodeMySpec.McpServers.Stories.Tools.UpdateStoryTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Stories.Tools.UpdateStory
+  alias CodeMySpec.McpServers.Stories.Tools.UpdateStory
   alias Hermes.Server.Frame
   import CodeMySpec.StoriesFixtures
   import CodeMySpec.UsersFixtures

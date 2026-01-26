@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomDimensions do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.ListCustomDimensions do
   @moduledoc """
   Lists custom dimensions for a Google Analytics 4 property.
 
@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomDimensions do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

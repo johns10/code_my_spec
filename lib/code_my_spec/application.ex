@@ -20,9 +20,9 @@ defmodule CodeMySpec.Application do
         CodeMySpec.Sessions.InteractionRegistry,
         {Registry, keys: :unique, name: CodeMySpec.Sessions.SessionRegistry},
         Hermes.Server.Registry,
-        {CodeMySpec.MCPServers.StoriesServer, transport: :streamable_http},
-        {CodeMySpec.MCPServers.ComponentsServer, transport: :streamable_http},
-        {CodeMySpec.MCPServers.AnalyticsAdminServer, transport: :streamable_http},
+        {CodeMySpec.McpServers.StoriesServer, transport: :streamable_http},
+        {CodeMySpec.McpServers.ComponentsServer, transport: :streamable_http},
+        {CodeMySpec.McpServers.AnalyticsAdminServer, transport: :streamable_http},
         # Start a worker by calling: CodeMySpec.Worker.start_link(arg)
         # {CodeMySpec.Worker, arg},
         # Start to serve requests, typically the last entry

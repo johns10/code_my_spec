@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.ListStories do
+defmodule CodeMySpec.McpServers.Stories.Tools.ListStories do
   @moduledoc """
   Lists stories in a project with pagination.
 
@@ -9,8 +9,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStories do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   @default_limit 20
   @max_limit 100

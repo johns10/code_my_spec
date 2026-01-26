@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependency do
+defmodule CodeMySpec.McpServers.Components.Tools.CreateDependency do
   @moduledoc "Creates a dependency relationship between components"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :source_component_id, :integer, required: true

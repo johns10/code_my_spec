@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponent do
+defmodule CodeMySpec.McpServers.Components.Tools.UpdateComponent do
   @moduledoc """
   Updates a component.
   Include all fields in the input that you want to update.
@@ -8,8 +8,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponent do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :id, :string, required: true

@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStories do
+defmodule CodeMySpec.McpServers.Stories.Tools.CreateStories do
   @moduledoc """
   Creates multiple user stories in batch.
   Returns successful creations and any validation errors.
@@ -7,8 +7,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.CreateStories do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :stories, {:list, :map}, required: true

@@ -1,23 +1,23 @@
-defmodule CodeMySpec.MCPServers.StoriesServer do
+defmodule CodeMySpec.McpServers.StoriesServer do
   use Hermes.Server,
     name: "stories-server",
     version: "1.0.0",
     capabilities: [:tools]
 
   # Tool components
-  component(CodeMySpec.MCPServers.Stories.Tools.CreateStory)
-  # component(CodeMySpec.MCPServers.Stories.Tools.CreateStories)
-  component(CodeMySpec.MCPServers.Stories.Tools.UpdateStory)
-  component(CodeMySpec.MCPServers.Stories.Tools.DeleteStory)
-  component(CodeMySpec.MCPServers.Stories.Tools.GetStory)
-  component(CodeMySpec.MCPServers.Stories.Tools.ListStories)
-  component(CodeMySpec.MCPServers.Stories.Tools.ListStoryTitles)
+  component(CodeMySpec.McpServers.Stories.Tools.CreateStory)
+  # component(CodeMySpec.McpServers.Stories.Tools.CreateStories)
+  component(CodeMySpec.McpServers.Stories.Tools.UpdateStory)
+  component(CodeMySpec.McpServers.Stories.Tools.DeleteStory)
+  component(CodeMySpec.McpServers.Stories.Tools.GetStory)
+  component(CodeMySpec.McpServers.Stories.Tools.ListStories)
+  component(CodeMySpec.McpServers.Stories.Tools.ListStoryTitles)
 
   # Criterion tools
-  component(CodeMySpec.MCPServers.Stories.Tools.AddCriterion)
-  component(CodeMySpec.MCPServers.Stories.Tools.UpdateCriterion)
-  component(CodeMySpec.MCPServers.Stories.Tools.DeleteCriterion)
+  component(CodeMySpec.McpServers.Stories.Tools.AddCriterion)
+  component(CodeMySpec.McpServers.Stories.Tools.UpdateCriterion)
+  component(CodeMySpec.McpServers.Stories.Tools.DeleteCriterion)
 
-  component(CodeMySpec.MCPServers.Stories.Tools.StartStoryInterview)
-  component(CodeMySpec.MCPServers.Stories.Tools.StartStoryReview)
+  component(CodeMySpec.McpServers.Stories.Tools.StartStoryInterview)
+  component(CodeMySpec.McpServers.Stories.Tools.StartStoryReview)
 end

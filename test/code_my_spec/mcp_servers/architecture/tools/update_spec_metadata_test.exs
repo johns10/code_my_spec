@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.UpdateSpecMetadataTest do
+defmodule CodeMySpec.McpServers.Architecture.Tools.UpdateSpecMetadataTest do
   use ExUnit.Case, async: false
 
-  alias CodeMySpec.MCPServers.Architecture.Tools.UpdateSpecMetadata
+  alias CodeMySpec.McpServers.Architecture.Tools.UpdateSpecMetadata
   alias CodeMySpec.Components
   alias Hermes.Server.Frame
   import CodeMySpec.UsersFixtures

@@ -1,12 +1,12 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.UpdateSpecMetadata do
+defmodule CodeMySpec.McpServers.Architecture.Tools.UpdateSpecMetadata do
   @moduledoc "Updates spec file metadata without overwriting function/field documentation"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
   alias CodeMySpec.Environments
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :module_name, :string, required: true

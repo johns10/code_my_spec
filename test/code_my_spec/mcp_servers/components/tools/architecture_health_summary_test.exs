@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummaryTest do
+defmodule CodeMySpec.McpServers.Components.Tools.ArchitectureHealthSummaryTest do
   use CodeMySpec.DataCase, async: true
 
   import CodeMySpec.ComponentsFixtures
@@ -8,7 +8,7 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummaryTest d
   import CodeMySpec.AccountsFixtures
   import CodeMySpec.StoriesFixtures
 
-  alias CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary
+  alias CodeMySpec.McpServers.Components.Tools.ArchitectureHealthSummary
   alias Hermes.Server.Frame
 
   describe "ArchitectureHealthSummary tool" do

@@ -1,12 +1,12 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ReviewContextDesign do
+defmodule CodeMySpec.McpServers.Components.Tools.ReviewContextDesign do
   @moduledoc "Reviews current context design against best practices and provides architectural feedback"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.{ComponentsMapper, Tools.ShowArchitecture}
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.{ComponentsMapper, Tools.ShowArchitecture}
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

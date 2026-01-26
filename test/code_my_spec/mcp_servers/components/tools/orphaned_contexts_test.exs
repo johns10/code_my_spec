@@ -1,8 +1,8 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.OrphanedContextsTest do
+defmodule CodeMySpec.McpServers.Components.Tools.OrphanedContextsTest do
   use ExUnit.Case, async: true
   import CodeMySpec.UsersFixtures
 
-  alias CodeMySpec.MCPServers.Components.Tools.OrphanedContexts
+  alias CodeMySpec.McpServers.Components.Tools.OrphanedContexts
   alias Hermes.Server.Frame
 
   setup do

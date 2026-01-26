@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.ArchitectureMapperTest do
+defmodule CodeMySpec.McpServers.Architecture.ArchitectureMapperTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
   alias CodeMySpec.Components.Component
   import CodeMySpec.UsersFixtures
 

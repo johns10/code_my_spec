@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.ReviewArchitectureDesign do
+defmodule CodeMySpec.McpServers.Architecture.Tools.ReviewArchitectureDesign do
   @moduledoc """
   Reviews current architecture design against best practices.
 
@@ -11,8 +11,8 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.ReviewArchitectureDesign do
 
   alias CodeMySpec.Stories
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

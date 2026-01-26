@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.OrphanedContexts do
+defmodule CodeMySpec.McpServers.Components.Tools.OrphanedContexts do
   @moduledoc "Lists all contexts with no user story and no dependencies"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

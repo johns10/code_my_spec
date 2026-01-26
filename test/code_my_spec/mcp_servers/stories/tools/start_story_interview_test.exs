@@ -1,8 +1,8 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.StartStoryInterviewTest do
+defmodule CodeMySpec.McpServers.Stories.Tools.StartStoryInterviewTest do
   use ExUnit.Case, async: true
   import CodeMySpec.UsersFixtures
 
-  alias CodeMySpec.MCPServers.Stories.Tools.StartStoryInterview
+  alias CodeMySpec.McpServers.Stories.Tools.StartStoryInterview
   alias Hermes.Server.Frame
 
   setup do

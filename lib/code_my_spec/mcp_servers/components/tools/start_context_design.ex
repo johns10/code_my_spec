@@ -1,12 +1,12 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.StartContextDesign do
+defmodule CodeMySpec.McpServers.Components.Tools.StartContextDesign do
   @moduledoc "Initiates guided context design session"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

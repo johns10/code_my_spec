@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateCriterion do
+defmodule CodeMySpec.McpServers.Stories.Tools.UpdateCriterion do
   @moduledoc """
   Updates the description of an existing acceptance criterion.
 
@@ -9,8 +9,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateCriterion do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.AcceptanceCriteria
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :criterion_id, :string,

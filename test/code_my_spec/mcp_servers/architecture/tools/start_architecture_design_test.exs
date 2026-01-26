@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.StartArchitectureDesignTest do
+defmodule CodeMySpec.McpServers.Architecture.Tools.StartArchitectureDesignTest do
   use ExUnit.Case, async: false
 
-  alias CodeMySpec.MCPServers.Architecture.Tools.StartArchitectureDesign
+  alias CodeMySpec.McpServers.Architecture.Tools.StartArchitectureDesign
   alias Hermes.Server.Frame
 
   import CodeMySpec.UsersFixtures

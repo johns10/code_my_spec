@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.StoriesServerTest do
+defmodule CodeMySpec.McpServers.StoriesServerTest do
   use ExUnit.Case
-  doctest CodeMySpec.MCPServers.StoriesServer
-  alias CodeMySpec.MCPServers.StoriesServer
+  doctest CodeMySpec.McpServers.StoriesServer
+  alias CodeMySpec.McpServers.StoriesServer
 
   describe "server capabilities" do
     test "reports correct capabilities" do

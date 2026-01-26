@@ -1,9 +1,9 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.CriterionToolsTest do
+defmodule CodeMySpec.McpServers.Stories.Tools.CriterionToolsTest do
   use ExUnit.Case, async: true
   import CodeMySpec.UsersFixtures
   import CodeMySpec.StoriesFixtures
 
-  alias CodeMySpec.MCPServers.Stories.Tools.{AddCriterion, UpdateCriterion, DeleteCriterion}
+  alias CodeMySpec.McpServers.Stories.Tools.{AddCriterion, UpdateCriterion, DeleteCriterion}
   alias CodeMySpec.AcceptanceCriteria
   alias Hermes.Server.Frame
   alias Hermes.Server.Response

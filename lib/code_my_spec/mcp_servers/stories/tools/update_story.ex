@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
+defmodule CodeMySpec.McpServers.Stories.Tools.UpdateStory do
   @moduledoc """
   Updates a user story.
 
@@ -9,8 +9,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.UpdateStory do
 
   use Hermes.Server.Component, type: :tool
 
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
   alias CodeMySpec.Stories
 
   schema do

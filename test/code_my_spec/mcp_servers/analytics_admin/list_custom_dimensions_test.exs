@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.ListCustomDimensionsTest do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.ListCustomDimensionsTest do
   use ExUnit.Case, async: true
 
   alias CodeMySpec.TestRecorder

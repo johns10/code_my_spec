@@ -1,12 +1,12 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.ListSpecs do
+defmodule CodeMySpec.McpServers.Architecture.Tools.ListSpecs do
   @moduledoc "Lists all component specs in the project"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
   alias CodeMySpec.Components.ComponentRepository
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :type, :string

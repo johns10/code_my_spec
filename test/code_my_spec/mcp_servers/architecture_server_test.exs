@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.ArchitectureServerTest do
+defmodule CodeMySpec.McpServers.ArchitectureServerTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.ArchitectureServer
+  alias CodeMySpec.McpServers.ArchitectureServer
 
   describe "ArchitectureServer" do
     test "has correct server info" do

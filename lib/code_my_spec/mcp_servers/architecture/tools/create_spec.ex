@@ -1,12 +1,12 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.CreateSpec do
+defmodule CodeMySpec.McpServers.Architecture.Tools.CreateSpec do
   @moduledoc "Creates a new component spec file and syncs to database"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
   alias CodeMySpec.Environments
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :module_name, :string, required: true

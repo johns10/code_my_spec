@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.SetStoryComponentTest do
+defmodule CodeMySpec.McpServers.Stories.Tools.SetStoryComponentTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Stories.Tools.SetStoryComponent
+  alias CodeMySpec.McpServers.Stories.Tools.SetStoryComponent
   alias Hermes.Server.Frame
   import CodeMySpec.StoriesFixtures
   import CodeMySpec.UsersFixtures

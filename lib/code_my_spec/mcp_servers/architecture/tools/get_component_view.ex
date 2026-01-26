@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.GetComponentView do
+defmodule CodeMySpec.McpServers.Architecture.Tools.GetComponentView do
   @moduledoc """
   Generates detailed markdown view of a component and its full dependency tree.
 
@@ -13,8 +13,8 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.GetComponentView do
 
   alias CodeMySpec.Components
   alias CodeMySpec.Components.Component, as: ComponentSchema
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
   alias CodeMySpec.Repo
 
   schema do

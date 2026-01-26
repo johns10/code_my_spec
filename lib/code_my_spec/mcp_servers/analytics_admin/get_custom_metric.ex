@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomMetric do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.GetCustomMetric do
   @moduledoc """
   Gets details for a specific custom metric in a Google Analytics 4 property.
 
@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomMetric do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field(:name, :string,

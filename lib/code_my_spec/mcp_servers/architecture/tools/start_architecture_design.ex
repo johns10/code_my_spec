@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.StartArchitectureDesign do
+defmodule CodeMySpec.McpServers.Architecture.Tools.StartArchitectureDesign do
   @moduledoc """
   Initiates guided architecture design session with surface-level component mapping.
 
@@ -11,8 +11,8 @@ defmodule CodeMySpec.MCPServers.Architecture.Tools.StartArchitectureDesign do
 
   alias CodeMySpec.Stories
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end

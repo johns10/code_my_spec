@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateKeyEvent do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.CreateKeyEvent do
   @moduledoc """
   Creates a key event for a Google Analytics 4 property.
 
@@ -13,7 +13,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.CreateKeyEvent do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field(:event_name, :string,

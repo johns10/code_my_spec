@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.ListStoryTitles do
+defmodule CodeMySpec.McpServers.Stories.Tools.ListStoryTitles do
   @moduledoc """
   Lists story titles in a project (lightweight).
 
@@ -9,8 +9,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ListStoryTitles do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :search, :string, doc: "Filter by title (case-insensitive)"

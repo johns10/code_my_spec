@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers do
+defmodule CodeMySpec.McpServers do
   @moduledoc """
   MCP (Model Context Protocol) servers context.
 

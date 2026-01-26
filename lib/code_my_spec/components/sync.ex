@@ -84,7 +84,7 @@ defmodule CodeMySpec.Components.Sync do
 
     # For unchanged files, derive module names from paths (no file I/O)
     # NOTE: This assumes file paths match module names (e.g., mcp_servers.ex → McpServers)
-    # If you have acronyms that need special casing (MCPServers), rename the file to match
+    # If you have acronyms that need special casing (McpServers), rename the file to match
     unchanged_spec_modules =
       extract_module_names_from_paths(unchanged_spec_files, base_dir, :spec)
 

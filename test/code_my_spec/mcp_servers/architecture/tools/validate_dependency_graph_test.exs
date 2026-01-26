@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.ValidateDependencyGraphTest do
+defmodule CodeMySpec.McpServers.Architecture.Tools.ValidateDependencyGraphTest do
   use ExUnit.Case, async: false
 
-  alias CodeMySpec.MCPServers.Architecture.Tools.ValidateDependencyGraph
+  alias CodeMySpec.McpServers.Architecture.Tools.ValidateDependencyGraph
   alias Hermes.Server.Frame
 
   import CodeMySpec.UsersFixtures

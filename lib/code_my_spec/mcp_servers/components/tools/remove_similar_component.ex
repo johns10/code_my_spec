@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.RemoveSimilarComponent do
+defmodule CodeMySpec.McpServers.Components.Tools.RemoveSimilarComponent do
   @moduledoc "Removes a similar component relationship"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :component_id, :integer, required: true

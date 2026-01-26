@@ -1,6 +1,6 @@
-defmodule CodeMySpec.MCPServers.Components.ComponentsMapper do
+defmodule CodeMySpec.McpServers.Components.ComponentsMapper do
   alias Hermes.Server.Response
-  alias CodeMySpec.MCPServers.Formatters
+  alias CodeMySpec.McpServers.Formatters
 
   def component_response(component) do
     similar_components =

@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.DeleteComponent do
+defmodule CodeMySpec.McpServers.Components.Tools.DeleteComponent do
   @moduledoc "Deletes a component"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :id, :integer, required: true

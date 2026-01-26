@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteCriterion do
+defmodule CodeMySpec.McpServers.Stories.Tools.DeleteCriterion do
   @moduledoc """
   Deletes an acceptance criterion from a story.
 
@@ -9,8 +9,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.DeleteCriterion do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.AcceptanceCriteria
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :criterion_id, :string,

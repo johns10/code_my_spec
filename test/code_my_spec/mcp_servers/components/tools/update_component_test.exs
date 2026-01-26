@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.UpdateComponentTest do
+defmodule CodeMySpec.McpServers.Components.Tools.UpdateComponentTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Components.Tools.UpdateComponent
+  alias CodeMySpec.McpServers.Components.Tools.UpdateComponent
   alias Hermes.Server.Frame
   import CodeMySpec.ComponentsFixtures
   import CodeMySpec.UsersFixtures

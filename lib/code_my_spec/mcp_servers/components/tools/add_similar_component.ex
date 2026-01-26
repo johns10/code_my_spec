@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.AddSimilarComponent do
+defmodule CodeMySpec.McpServers.Components.Tools.AddSimilarComponent do
   @moduledoc "Adds a similar component relationship"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :component_id, :integer, required: true

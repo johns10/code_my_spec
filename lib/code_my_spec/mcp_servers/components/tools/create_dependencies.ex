@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencies do
+defmodule CodeMySpec.McpServers.Components.Tools.CreateDependencies do
   @moduledoc """
   Creates multiple dependencies in batch.
   Returns successful creations and any validation errors.
@@ -7,8 +7,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.CreateDependencies do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :dependencies,

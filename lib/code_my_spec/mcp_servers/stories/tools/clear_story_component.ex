@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Stories.Tools.ClearStoryComponent do
+defmodule CodeMySpec.McpServers.Stories.Tools.ClearStoryComponent do
   @moduledoc """
   Removes the component link from a story.
 
@@ -8,8 +8,8 @@ defmodule CodeMySpec.MCPServers.Stories.Tools.ClearStoryComponent do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Stories
-  alias CodeMySpec.MCPServers.Stories.StoriesMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Stories.StoriesMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :story_id, :string, required: true, doc: "Story ID to unlink from component"

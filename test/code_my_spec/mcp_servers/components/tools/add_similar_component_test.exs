@@ -1,7 +1,7 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.AddSimilarComponentTest do
+defmodule CodeMySpec.McpServers.Components.Tools.AddSimilarComponentTest do
   use ExUnit.Case, async: true
 
-  alias CodeMySpec.MCPServers.Components.Tools.AddSimilarComponent
+  alias CodeMySpec.McpServers.Components.Tools.AddSimilarComponent
   alias Hermes.Server.Frame
   import CodeMySpec.ComponentsFixtures
   import CodeMySpec.UsersFixtures

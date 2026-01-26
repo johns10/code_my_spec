@@ -1,12 +1,12 @@
-defmodule CodeMySpec.MCPServers.Architecture.Tools.DeleteSpec do
+defmodule CodeMySpec.McpServers.Architecture.Tools.DeleteSpec do
   @moduledoc "Deletes a component spec file and removes from database"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
   alias CodeMySpec.Environments
-  alias CodeMySpec.MCPServers.Architecture.ArchitectureMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Architecture.ArchitectureMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :module_name, :string, required: true

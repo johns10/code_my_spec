@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatistics do
+defmodule CodeMySpec.McpServers.Components.Tools.ContextStatistics do
   @moduledoc """
   Provides statistical overview of each component context including:
   - Story count per component
@@ -10,8 +10,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ContextStatistics do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :sort_by, :string, default: "story_count", values: ["story_count", "dependency_count"]

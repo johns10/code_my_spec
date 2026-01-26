@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomDimension do
+defmodule CodeMySpec.McpServers.AnalyticsAdmin.Tools.GetCustomDimension do
   @moduledoc """
   Gets details for a specific custom dimension in a Google Analytics 4 property.
 
@@ -11,7 +11,7 @@ defmodule CodeMySpec.MCPServers.AnalyticsAdmin.Tools.GetCustomDimension do
 
   alias Hermes.Server.Response
   alias CodeMySpec.Google.Analytics
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field(:name, :string,

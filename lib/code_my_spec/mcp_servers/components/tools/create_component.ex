@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.CreateComponent do
+defmodule CodeMySpec.McpServers.Components.Tools.CreateComponent do
   @moduledoc "Creates a component"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :name, :string, required: true

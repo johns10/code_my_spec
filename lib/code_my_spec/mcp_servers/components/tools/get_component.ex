@@ -1,11 +1,11 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.GetComponent do
+defmodule CodeMySpec.McpServers.Components.Tools.GetComponent do
   @moduledoc "Gets a single component by ID"
 
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
     field :component_id, :string, required: true

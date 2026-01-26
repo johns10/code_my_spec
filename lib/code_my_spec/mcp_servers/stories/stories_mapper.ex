@@ -1,10 +1,10 @@
-defmodule CodeMySpec.MCPServers.Stories.StoriesMapper do
+defmodule CodeMySpec.McpServers.Stories.StoriesMapper do
   @moduledoc """
   Maps story data to MCP responses using a hybrid format:
   human-readable summary + JSON data for programmatic access.
   """
 
-  alias CodeMySpec.MCPServers.Formatters
+  alias CodeMySpec.McpServers.Formatters
   alias Hermes.Server.Response
 
   # ---------------------------------------------------------------------------

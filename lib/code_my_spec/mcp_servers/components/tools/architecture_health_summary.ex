@@ -1,4 +1,4 @@
-defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
+defmodule CodeMySpec.McpServers.Components.Tools.ArchitectureHealthSummary do
   @moduledoc """
   Provides a comprehensive health overview of the system architecture including:
   - Story coverage: assigned/unassigned component counts
@@ -12,8 +12,8 @@ defmodule CodeMySpec.MCPServers.Components.Tools.ArchitectureHealthSummary do
   use Hermes.Server.Component, type: :tool
 
   alias CodeMySpec.Components
-  alias CodeMySpec.MCPServers.Components.ComponentsMapper
-  alias CodeMySpec.MCPServers.Validators
+  alias CodeMySpec.McpServers.Components.ComponentsMapper
+  alias CodeMySpec.McpServers.Validators
 
   schema do
   end
