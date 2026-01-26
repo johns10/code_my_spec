@@ -53,7 +53,12 @@ defmodule CodeMySpec.ProjectSync.Sync do
            Components.Sync.sync_changed(scope, base_dir: base_dir),
          # Phase 2: Update parent relationships (expand changed set)
          {:ok, expanded_changed_ids} <-
-           Components.Sync.update_parent_relationships(scope, all_components, changed_component_ids, opts) do
+           Components.Sync.update_parent_relationships(
+             scope,
+             all_components,
+             changed_component_ids,
+             opts
+           ) do
       contexts_sync_ms = System.monotonic_time(:millisecond) - contexts_start
 
       # Phase 3: Sync requirements for changed components
