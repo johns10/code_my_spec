@@ -82,7 +82,7 @@ defmodule CodeMySpec.MixProject do
       {:meck, "~> 0.9"},
       {:exvcr, "~> 0.15", only: :test},
       {:paper_trail, "~> 1.1"},
-      {:hermes_mcp, "~> 0.14"},
+      {:hermes_mcp, github: "johns10/hermes-mcp", branch: "fix/stdio-batch-messages"},
       {:oban, "~> 2.19.4"},
       {:briefly, "~> 0.5.1"},
       {:ex_oauth2_provider, "~> 0.5.7"},
